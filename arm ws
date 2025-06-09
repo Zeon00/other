@@ -84,21 +84,20 @@ local Toggle = MainTab:CreateToggle({
       while _G.AutoClick == true do
       task.wait()
       local args = {
-         true,
-         "Rod"
-      }
+	            true,
+	            "Rod"
+               }
       game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(unpack(args))
-      
       local args = {
-         "DuckPond"
-      }
+         	"DuckPond"
+         }
       game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
       local args = {
-         271,
-         581.4503261633217
-      }
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
-      end
+                  	6,
+                  	21.158376198261976
+                  }
+         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+         end
         print("FARMING")
    end,
 })
