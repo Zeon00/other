@@ -140,7 +140,7 @@ local Toggle = MainTab:CreateToggle({
    Callback = function(Value)
       _G.AutoClick = true
       while _G.AutoClick == true do
-      task.wait(0.1)
+      task.wait()
      	local args = {
 	"Raspberry"
 	"2"
