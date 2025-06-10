@@ -133,28 +133,7 @@ local Toggle = MainTab:CreateToggle({
         print("FARMING")
    end,
 })
-local Toggle = MainTab:CreateToggle({
-   Name = "raspberry",
-   CurrentValue = false,
-   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-      _G.AutoClick = true
-      while _G.AutoClick == true do
-      task.wait()
-     local args = {
-	"Raspberry"
-	"2"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
-local args = {
-	"Raspberry"
-	"1"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
-end
-        print("FARMING")
-   end,
-})
+
 local Toggle = MainTab:CreateToggle({
    Name = "LDS HUB",
    CurrentValue = false,
