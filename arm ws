@@ -193,7 +193,7 @@ local Toggle = MainTab:CreateToggle({
    Callback = function(Value)
       _G.AutoClick = true
 while _G.AutoClick == true do
-task.wait()
+task.wait(3)
 local args = {
 	"Starter Crate"
 }
