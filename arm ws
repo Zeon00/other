@@ -174,20 +174,15 @@ local Toggle = Tab:CreateToggle({
    CurrentValue = false,
    Flag = "toggle1",
    Callback = function(CurrentValue)
-      if CurrentValue then
-         -- Start the loop
-         _G.loop4 = true
-         while _G.loop4 do
+           	_G.AutoClick = true
+    		while _G.AutoClick == true do
+     		task.wait(2)
             local args = {"Rewind","x250"}
 	         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
    	       local args = {"Evil Cash","x25"}
 	         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-	      task.wait(5) -- Adjust the wait time as needed
          end
-      else
-         -- Stop the loop
-         _G.loop4 = false
-      end
+      
    end,
 })
 local Toggle = Tab:CreateToggle({
