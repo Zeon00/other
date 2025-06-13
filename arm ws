@@ -179,9 +179,7 @@ local Toggle = Tab:CreateToggle({
      		task.wait(2)
             local args = {"Rewind","x250"}
 	         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-   	       local args = {"Evil Cash","x25"}
-	         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-         end
+   	       end
       
    end,
 })
