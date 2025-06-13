@@ -61,7 +61,7 @@ local Toggle = Tab:CreateToggle({
 })
 local Toggle = Tab:CreateToggle({
    Name = "Auto Win",
-   CurrentValue = false,
+   CurrentValue = true,
    Flag = "toggle1",
    Callback = function(CurrentValue)
       if CurrentValue then
@@ -80,7 +80,7 @@ local Toggle = Tab:CreateToggle({
 })
 local Toggle = Tab:CreateToggle({
    Name = "Auto Mancing",
-   CurrentValue = false,
+   CurrentValue = true,
    Flag = "toggle1",
    Callback = function(CurrentValue)
       if CurrentValue then
@@ -111,7 +111,7 @@ local Toggle = Tab:CreateToggle({
 })
 local Toggle = Tab:CreateToggle({
    Name = "Auto Roll",
-   CurrentValue = false,
+   CurrentValue = true,
    Flag = "toggle1",
    Callback = function(CurrentValue)
       if CurrentValue then
@@ -129,7 +129,7 @@ local Toggle = Tab:CreateToggle({
 })
 local Toggle = Tab:CreateToggle({
    Name = "Auto Egg Rewind",
-   CurrentValue = false,
+   CurrentValue = true,
    Flag = "toggle1",
    Callback = function(CurrentValue)
       if CurrentValue then
