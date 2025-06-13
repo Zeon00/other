@@ -51,7 +51,7 @@ local Toggle = Tab:CreateToggle({
          while _G.loop4 do
             game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
          	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-           wait() -- Adjust the wait time as needed
+           task.wait() -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
@@ -70,7 +70,7 @@ local Toggle = Tab:CreateToggle({
          while _G.loop4 do
              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-          wait() -- Adjust the wait time as needed
+          task.wait() -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
@@ -101,7 +101,7 @@ local Toggle = Tab:CreateToggle({
                   	21.158376198261976
                   }
          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
-      wait() -- Adjust the wait time as needed
+      task.wait() -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
@@ -119,7 +119,7 @@ local Toggle = Tab:CreateToggle({
          _G.loop4 = true
          while _G.loop4 do
              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
-            wait(1) -- Adjust the wait time as needed
+            task.wait(1) -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
@@ -140,7 +140,7 @@ local Toggle = Tab:CreateToggle({
 	                  "MoneyBoss",
 	                     [4] = false}
 	            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
-	         wait(2) -- Adjust the wait time as needed
+	         task.wait(2) -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
@@ -159,7 +159,7 @@ local Toggle = Tab:CreateToggle({
          while _G.loop4 do
             local args = {"Ducky","x25"}
 	         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-	      wait(3) -- Adjust the wait time as needed
+	      task.wait(3) -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
@@ -180,7 +180,7 @@ local Toggle = Tab:CreateToggle({
 	         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
    	       local args = {"Evil Cash","x25"}
 	         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-	      wait(5) -- Adjust the wait time as needed
+	      task.wait(5) -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
@@ -202,7 +202,7 @@ local Toggle = Tab:CreateToggle({
              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
             local args = {true}
 	         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-            wait() -- Adjust the wait time as needed
+            task.wait() -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
@@ -223,7 +223,7 @@ local Toggle = Tab:CreateToggle({
              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
              local args = {true}
 	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-        wait() -- Adjust the wait time as needed
+        task.wait() -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
@@ -248,7 +248,7 @@ local Toggle = Tab:CreateToggle({
             	"Gold Crate"
                   }
             game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer(unpack(args))
-         wait(3) -- Adjust the wait time as needed
+         task.wait(3) -- Adjust the wait time as needed
          end
       else
          -- Stop the loop
