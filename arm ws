@@ -143,7 +143,7 @@ local Toggle = MainTab:CreateToggle({
 	local toggle = false
 	Callback = function(_G.AutoClick)
 	
-      while toggle = true do
+      while toggle  do
       task.wait()
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
