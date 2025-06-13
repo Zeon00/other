@@ -88,10 +88,8 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         print("FARMING")
    end,
 })
-
-
 local Toggle = MainTab:CreateToggle({
-   Name = "Auto Spin ",
+   Name = "Auto Spin Duck",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Value)
@@ -103,12 +101,24 @@ local Toggle = MainTab:CreateToggle({
 	"x25"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-local args = {
+end
+        print("FARMING")
+   end,
+})
+
+local Toggle = MainTab:CreateToggle({
+   Name = "Auto Spin Rewind",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait(4)
+      local args = {
 	"Rewind",
 	"x25"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-
       end
         print("FARMING")
    end,
