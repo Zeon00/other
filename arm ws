@@ -165,7 +165,7 @@ local Toggle = MainTab:CreateToggle({
       _G.AutoClick = true
       while _G.AutoClick == true do
       task.wait(4)
-   	local args = {"Rewind","x25"}
+   	local args = {"Rewind","x250"}
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
    	 local args = {"Evil Cash","x25"}
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
@@ -223,8 +223,8 @@ local Toggle = MainTab:CreateToggle({
       task.wait(0.1)
      	local args = {
 	workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia","HazmatMafia","HazmatMafia","HazmatMafia","GoldenMafia"),
-	workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia","HazmatMafia","HazmatMafia","HazmatMafia","GoldenMafia"),
-"x1000"
+	workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia","HazmatMafia","HazmatMafia","HazmatMafia","GoldenMafia")
+
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 local args = {true}
