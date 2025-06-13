@@ -140,14 +140,14 @@ local Toggle = MainTab:CreateToggle({
    Name = "Auto Swing ",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(value)
 	
-	Callback = function(value)
-	
-     	 while Toggle1 = true  do
+     	 _G.AutoClick = false
+          while _G.AutoClick = true do
      	 task.wait()
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-	if not Toggle1  then 
+	if _G.AutoClick = false  then 
 		break 
 		end
 	end
