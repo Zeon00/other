@@ -185,7 +185,7 @@ local Toggle = MainTab:CreateToggle({
       _G.AutoClick = true
       while _G.AutoClick == true do
       task.wait(4)
-   	local args = {"Rewind","x250"}
+   	local args = {"Rewind","x2500"}
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
    	 local args = {"Evil Cash","x25"}
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
