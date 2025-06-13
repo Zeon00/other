@@ -222,7 +222,7 @@ local Toggle = MainTab:CreateToggle({
       while _G.AutoClick == true do
       task.wait(0.1)
      	local args = {
-	workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindBank"):WaitForChild("NPC"):WaitForChild("TycoonTony","EvilTony")
+	workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia","EvilTony")
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 local args = {true}
