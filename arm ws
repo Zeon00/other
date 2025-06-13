@@ -141,7 +141,7 @@ local Toggle = MainTab:CreateToggle({
    CurrentValue = false,
    Flag = "AutoClick", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
 	Callback = function(Value)
-	local AutoClick = true
+	local AutoClick = false
          while AutoClick  do
      	 task.wait()
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
@@ -150,7 +150,7 @@ local Toggle = MainTab:CreateToggle({
 		break 
 		end
 	end
-        print("FARMING")
+        print("AutoClick")
    end,
 })
 
