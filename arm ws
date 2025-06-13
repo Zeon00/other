@@ -136,7 +136,7 @@ local Toggle = Tab:CreateToggle({
    Callback = function(CurrentValue)
       _G.AutoClick = true
     		while _G.AutoClick == true do
-     		task.wait(2)
+     		task.wait(4)
             local args = {
 	                  "MoneyBoss",
 	                     [4] = false}
@@ -170,7 +170,7 @@ local Toggle = Tab:CreateToggle({
    Callback = function(CurrentValue)
            	_G.AutoClick = true
     		while _G.AutoClick == true do
-     		task.wait(2)
+     		task.wait(4)
             local args = {"Rewind","x25"}
 	         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
    	       end
