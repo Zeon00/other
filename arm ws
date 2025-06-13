@@ -54,7 +54,6 @@ local Toggle = MainTab:CreateToggle({
       task.wait()
       game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
       game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-      
       end
         print("FARMING")
    end,
@@ -69,8 +68,7 @@ local Toggle = MainTab:CreateToggle({
       while _G.AutoClick == true do
       task.wait(0.5)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
-
-      end
+ end
         print("FARMING")
    end,
 })
