@@ -223,6 +223,7 @@ local Toggle = MainTab:CreateToggle({
       task.wait(0.1)
      	local args = {
 	workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia","HazmatMafia","HazmatMafia","HazmatMafia","GoldenMafia")
+	"x1000"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 local args = {true}
