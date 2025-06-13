@@ -141,14 +141,15 @@ local Toggle = MainTab:CreateToggle({
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
 	
-	Callback = function(toggle)
+	Callback = function(value)
 	local toggle = false
-      while toggle  do
-      task.wait()
+     	 while toggle  do
+     	 task.wait()
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-	if not toggle  then break 
-	end
+	if not toggle  then 
+		break 
+		end
 	end
         print("FARMING")
    end,
