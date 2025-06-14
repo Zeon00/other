@@ -64,6 +64,14 @@ local Toggle = Tab:CreateToggle({
    end,
 })
 local Toggle = Tab:CreateToggle({
+   Name = "LDS HUB",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/49f02b0d8c1f60207c84ae76e12abc1e.lua'))()
+   end,
+})
+local Toggle = Tab:CreateToggle({
    Name = "Auto Egg Rewind ",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
