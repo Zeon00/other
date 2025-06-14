@@ -370,7 +370,7 @@ local Toggle = Tab:CreateToggle({
         _G.AutoClick = true
 			while _G.AutoClick == true do
 		task.wait()
-		game:GetService("ReplicatedStorage"):IncreaseSpeed:FireServer():
+		game:GetService("ReplicatedStorage").IncreaseSpeed:FireServer()
 		end
 		else
 		_G.AutoClick = false
