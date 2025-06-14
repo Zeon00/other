@@ -41,139 +41,300 @@ Rayfield:Notify({
 local Tab = Window:CreateTab("Main", 4483362458) -- Title, Image
 local Section = Tab:CreateSection("Main")
 local Toggle = Tab:CreateToggle({
-   Name = "Auto Swing",
+   Name = "Stop All Auto ",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      _G.AutoClick = false
+      while _G.AutoClick == true do
+      task.wait()
+      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
+      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
+      end
+        print("FARMING")
+   end,
+})
+local Tab = Window:CreateTab("Main", 4483362458) -- Title, Image
+local Section = Tab:CreateSection("Main")
+local Toggle = Tab:CreateToggle({
+   Name = "Auto Trainer ",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(CurrentValue)
       if CurrentValue then
         _G.AutoClick = true
-			while _G.AutoClick == true do
-		task.wait()
-		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-	    game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-            end
+	while _G.AutoClick == true do
+		task.wait(3)
+		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Starter Crate")
+		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Gold Crate")
+           end
 		else
 		_G.AutoClick = false
-        end
+           end
    end,
 })
+local Toggle = Tab:CreateToggle({
+   Name = "Auto Roll",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait(0.5)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
+ end
+        print("FARMING")
+   end,
+})
+
+local Toggle = Tab:CreateToggle({
+   Name = "Auto Egg Rewind ",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait(3)
+      local args = {
+	"MoneyBoss",
+	[4] = false}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
+	end
+        print("FARMING")
+   end,
+})
+local Toggle = Tab:CreateToggle({
+   Name = "Equip Rewind",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      local args = {
+	"RewindBank",
+	"Dumbells",
+	"RewindBank12"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+ print("FARMING")
+   end,
+})
+local Toggle = Tab:CreateToggle({
+   Name = "Equip Duck",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      local args = {
+	"EvilDuckfair",
+	"Dumbells",
+	"EvilDuckfair12"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+        print("FARMING")
+   end,
+})
+local Toggle = Tab:CreateToggle({
+   Name = "Auto Swing ",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait()
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+	end
+        print("FARMING")
+   end,
+})
+
+local Toggle = Tab:CreateToggle({
+   Name = "Equip Best Pet",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      local args = {game:GetService("Players"):WaitForChild("benz_0x7")}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PetService"):WaitForChild("RF"):WaitForChild("equipBest"):InvokeServer(unpack(args))
+        print("FARMING")
+   end,
+})
+
 local Toggle = Tab:CreateToggle({
    Name = "Auto Spin Duck",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-		task.wait(1)
-		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer("Ducky","x25")
-	        end
-		else
-		_G.AutoClick = false
-        end
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait(3)
+      local args = {"Ducky","x25"}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+	end
+        print("FARMING")
    end,
 })
+
 local Toggle = Tab:CreateToggle({
    Name = "Auto Spin Rewind",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-		task.wait(1)
-		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer("Rewind","x25")
-   	        end
-		else
-		_G.AutoClick = false
-        end
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait(4)
+   	local args = {"Rewind","x250"}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+   	 local args = {"Evil Cash","x25"}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+	end
+        print("FARMING")
    end,
 })
 local Toggle = Tab:CreateToggle({
-   Name = "Auto Win Battle",
+   Name = "Auto Win",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-		task.wait()
-		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-           end
-		else
-		_G.AutoClick = false
-        end
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait()
+      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
+      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
+      end
+        print("FARMING")
    end,
 })
 local Toggle = Tab:CreateToggle({
-   Name = "Auto Memancing",
+   Name = "Auto Mancing",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-	  task.wait()
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(true,"Rod")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(6,21.158376198261976)
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(350,701.2133657261729)
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(330,688.2020009160042)
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(229,238.89522057026625)
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(198,183.36665788665414)
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(314,309.18530075997114)
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(53,75.70159120857716)
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(353,348.4534294679761)
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
-      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(52,69.3482518568635)
-           end
-		else
-		_G.AutoClick = false
-        end
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait()
+      local args = {
+	            true,
+	            "Rod"
+               }
+      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(unpack(args))
+      local args = {
+         	"DuckPond"
+         }
+      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
+      local args = {
+                  	6,
+                  	21.158376198261976
+                  }
+         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+      local args = {
+	"DuckPond"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
+local args = {
+	350,
+	701.2133657261729
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+local args = {
+	"DuckPond"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
+local args = {
+	330,
+	688.2020009160042
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+local args = {
+	"DuckPond"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
+local args = {
+	229,
+	238.89522057026625
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+local args = {
+	"DuckPond"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
+local args = {
+	198,
+	183.36665788665414
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+local args = {
+	"DuckPond"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
+local args = {
+	314,
+	309.18530075997114
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+local args = {
+	"DuckPond"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
+local args = {
+	53,
+	75.70159120857716
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+local args = {
+	"DuckPond"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
+local args = {
+	353,
+	348.4534294679761
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+local args = {
+	"DuckPond"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer(unpack(args))
+local args = {
+	52,
+	69.3482518568635
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
+
+end
+        print("FARMING")
    end,
 })
 local Toggle = Tab:CreateToggle({
-   Name = "Auto Battle Mafia",
+   Name = "Mafia",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-		task.wait()
-		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia","GoldenMafia"))
-	    game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-           end
-		else
-		_G.AutoClick = false
-        end
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait(0.1)
+     	local args = {
+	workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia","GoldenMafia")}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+local args = {true}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+       	
+end
+        print("FARMING")
    end,
 })
 local Toggle = Tab:CreateToggle({
-   Name = "Auto Battle Duck",
+   Name = "Duck",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-		task.wait()
-		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("DuckEvent"):WaitForChild("NPC"):WaitForChild("DestroyerDucky"))
-	    game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-           end
-		else
-		_G.AutoClick = false
-        end
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait(0.1)
+     	local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("DuckEvent"):WaitForChild("NPC"):WaitForChild("DestroyerDucky")}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+local args = {true}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+       end
+        print("FARMING")
    end,
 })
+
 local Toggle = Tab:CreateToggle({
    Name = "Sell All Duck",
    CurrentValue = false,
@@ -263,6 +424,8 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         print("FARMING")
    end,
 })
+
+
 local Toggle = Tab:CreateToggle({
    Name = "anti AFK",
    CurrentValue = false,
@@ -287,93 +450,5 @@ ab.TextColor3=Color3.new(0,1,1)ab.TextSize=20;local bb=game:service'VirtualUser'
 game:service'Players'.LocalPlayer.Idled:connect(function()
 bb:CaptureController()bb:ClickButton2(Vector2.new())
 ab.Text="Roblox tried to kick u but i kicked him instead"wait(2)ab.Text="Status : Active"end) 
-   end,
-})
-local Tab = Window:CreateTab("Other", 4483362458) -- Title, Image
-local Section = Tab:CreateSection("Misc")
-local Toggle = Tab:CreateToggle({
-   Name = "Auto Trainer",
-   CurrentValue = false,
-   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-		task.wait(3)
-		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Starter Crate")
-		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Gold Crate")
-            end
-		else
-		_G.AutoClick = false
-        end
-   end,
-})
-local Toggle = Tab:CreateToggle({
-   Name = "Auto Roll Aura",
-   CurrentValue = false,
-   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-		task.wait(1)
-		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
-            end
-		else
-		_G.AutoClick = false
-        end
-   end,
-})
-local Toggle = Tab:CreateToggle({
-   Name = "Auto Egg Rewind",
-   CurrentValue = false,
-   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-		      task.wait(2)
-	          local args = {
-	                  "MoneyBoss",
-	                     [4] = false}
-	           game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
-      	     end
-		else
-		_G.AutoClick = false
-        end
-   end,
-})
-local Toggle = Tab:CreateToggle({
-   Name = "Auto Equip Rewind",
-   CurrentValue = false,
-   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("RewindBank","Dumbells","RewindBank12")
-        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PetService"):WaitForChild("RF"):WaitForChild("equipBest"):InvokeServer(game:GetService("Players"):WaitForChild("benz_0x7"))
-   end,
-})
-local Toggle = Tab:CreateToggle({
-   Name = "Auto Equip Duck",
-   CurrentValue = false,
-   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Dumbells","EvilDuckfair12")
-        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PetService"):WaitForChild("RF"):WaitForChild("equipBest"):InvokeServer(game:GetService("Players"):WaitForChild("benz_0x7"))		
-   end,
-})
-local Toggle = Tab:CreateToggle({
-   Name = "Auto Click",
-   CurrentValue = false,
-   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(CurrentValue)
-      if CurrentValue then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-		task.wait()
-		game:GetService("ReplicatedStorage").IncreaseSpeed:FireServer()
-		end
-		else
-		_G.AutoClick = false
-        end
    end,
 })
