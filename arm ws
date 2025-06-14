@@ -166,7 +166,6 @@ local args = {
 	69.3482518568635
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(unpack(args))
-end
  task.wait() -- Adjust the wait time as needed
          end
       else
