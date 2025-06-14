@@ -103,7 +103,7 @@ local Toggle = Tab:CreateToggle({
    Callback = function(Value)
       _G.AutoClick = true
       while _G.AutoClick == true do
-      task.wait(3)
+      task.wait(1)
       local args = {
 	"MoneyBoss",
 	[4] = false}
@@ -172,7 +172,7 @@ local Toggle = Tab:CreateToggle({
    Callback = function(Value)
       _G.AutoClick = true
       while _G.AutoClick == true do
-      task.wait(3)
+      task.wait(2)
       local args = {"Ducky","x25"}
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
 	end
@@ -187,10 +187,23 @@ local Toggle = Tab:CreateToggle({
    Callback = function(Value)
       _G.AutoClick = true
       while _G.AutoClick == true do
-      task.wait(4)
-   	local args = {"Rewind","x250"}
+      task.wait(2)
+   	local args = {"Rewind","x25"}
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-   	 local args = {"Evil Cash","x25"}
+   	end
+        print("FARMING")
+   end,
+})
+
+local Toggle = Tab:CreateToggle({
+   Name = "Auto Spin Rewind Evil",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+      _G.AutoClick = true
+      while _G.AutoClick == true do
+      task.wait(2)
+   	local args = {"Evil Cash","x25"}
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
 	end
         print("FARMING")
