@@ -421,6 +421,11 @@ local args = {
 	"All"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer(unpack(args))
+local args = {
+	"Robot Ducky",
+	"All"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer(unpack(args))
 
         print("FARMING")
    end,
