@@ -479,7 +479,10 @@ local args = {"Fire","Evil Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 local args = {"Fire","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-print("FARMING")
+		    end
+		else
+		_G.AutoClick = false
+        end
    end,
 })
 local Toggle = Tab:CreateToggle({
@@ -506,7 +509,10 @@ local args = {"Earth","Evil Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 local args = {"Earth","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-print("FARMING")
+		    end
+		else
+		_G.AutoClick = false
+        end
    end,
 })
 local Toggle = Tab:CreateToggle({
