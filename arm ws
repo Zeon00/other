@@ -459,54 +459,25 @@ local Toggle = Tab:CreateToggle({
    Name = "Add Strength",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-      local args = {
-	"Fire",
-	"Earth Spirit Fruit",
-	"All"
-}
+      Callback = function(CurrentValue)
+      if CurrentValue then
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+local args = {"Fire","Earth Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Fire",
-	"Water Spirit Fruit",
-	"All"
-}
+local args = {"Fire","Water Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Fire",
-	"Fire Spirit Fruit",
-	"All"
-}
+local args = {"Fire","Fire Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Fire",
-	"Animal Spirit Fruit",
-	"All"
-}
+local args = {"Fire","Animal Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Fire",
-	"Ice Spirit Fruit",
-	"All"
-}
+local args = {"Fire","Ice Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Fire",
-	"Skeleton Spirit Fruit",
-	"All"
-}
+local args = {"Fire","Skeleton Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Fire",
-	"Evil Spirit Fruit",
-	"All"
-}
+local args = {"Fire","Evil Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Fire",
-	"Godly Spirit Fruit",
-	"All"
-}
+local args = {"Fire","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 print("FARMING")
    end,
@@ -515,54 +486,25 @@ local Toggle = Tab:CreateToggle({
    Name = "Add Lucky",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-      local args = {
-	"Earth",
-	"Earth Spirit Fruit",
-	"All"
-}
+      Callback = function(CurrentValue)
+      if CurrentValue then
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+local args = {"Earth","Earth Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Earth",
-	"Water Spirit Fruit",
-	"All"
-}
+local args = {"Earth","Water Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Earth",
-	"Fire Spirit Fruit",
-	"All"
-}
+local args = {"Earth","Fire Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Earth",
-	"Animal Spirit Fruit",
-	"All"
-}
+local args = {"Earth","Animal Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Earth",
-	"Ice Spirit Fruit",
-	"All"
-}
+local args = {"Earth","Ice Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Earth",
-	"Skeleton Spirit Fruit",
-	"All"
-}
+local args = {"Earth","Skeleton Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Earth",
-	"Evil Spirit Fruit",
-	"All"
-}
+local args = {"Earth","Evil Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Earth",
-	"Godly Spirit Fruit",
-	"All"
-}
+local args = {"Earth","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 print("FARMING")
    end,
@@ -571,162 +513,116 @@ local Toggle = Tab:CreateToggle({
    Name = "Add Rift",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-      local args = {
-	"Water",
-	"Earth Spirit Fruit",
-	"All"
-}
+      Callback = function(CurrentValue)
+      if CurrentValue then
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+local args = {"Water","Earth Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Water",
-	"Water Spirit Fruit",
-	"All"
-}
+local args = {"Water","Water Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Water",
-	"Fire Spirit Fruit",
-	"All"
-}
+local args = {"Water","Fire Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Water",
-	"Animal Spirit Fruit",
-	"All"
-}
+local args = {"Water","Animal Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Water",
-	"Ice Spirit Fruit",
-	"All"
-}
+local args = {"Water","Ice Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Water",
-	"Skeleton Spirit Fruit",
-	"All"
-}
+local args = {"Water","Skeleton Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Water",
-	"Evil Spirit Fruit",
-	"All"
-}
+local args = {"Water","Evil Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Water",
-	"Godly Spirit Fruit",
-	"All"
-}
+local args = {"Water","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-print("FARMING")
+		    end
+		else
+		_G.AutoClick = false
+        end
    end,
 })
 local Toggle = Tab:CreateToggle({
    Name = "Add Training",
+   local Toggle = Tab:CreateToggle({
+   Name = "Add Strength",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-      local args = {
-	"Wind",
-	"Earth Spirit Fruit",
-	"All"
-}
+      Callback = function(CurrentValue)
+      if CurrentValue then
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+local args = {"Wind","Earth Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Wind",
-	"Water Spirit Fruit",
-	"All"
-}
+local args = {"Wind","Water Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Wind",
-	"Fire Spirit Fruit",
-	"All"
-}
+local args = {"Wind","Fire Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Wind",
-	"Animal Spirit Fruit",
-	"All"
-}
+local args = {"Wind","Animal Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Wind",
-	"Ice Spirit Fruit",
-	"All"
-}
+local args = {"Wind","Ice Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Wind",
-	"Skeleton Spirit Fruit",
-	"All"
-}
+local args = {"Wind","Skeleton Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Wind",
-	"Evil Spirit Fruit",
-	"All"
-}
+local args = {"Wind","Evil Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {
-	"Wind",
-	"Godly Spirit Fruit",
-	"All"
-}
+local args = {"Wind","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
- print("FARMING")
+		    end
+		else
+		_G.AutoClick = false
+        end
    end,
 })
 local Toggle = Tab:CreateToggle({
    Name = "Battle Mafia",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-      _G.AutoClick = true
-      while _G.AutoClick == true do
-      task.wait(0.1)
-     	local args = {
-	workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia","GoldenMafia")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-       	
-end
-        print("FARMING")
+   Callback = function(CurrentValue)
+      if CurrentValue then
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+				local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia","GoldenMafia")}
+				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+		    end
+		else
+		_G.AutoClick = false
+        end
    end,
 })
+
 local Toggle = Tab:CreateToggle({
    Name = "Battle Duck",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-      _G.AutoClick = true
-      while _G.AutoClick == true do
-      task.wait(0.1)
-     	local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("DuckEvent"):WaitForChild("NPC"):WaitForChild("DestroyerDucky")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-       end
-        print("FARMING")
+   Callback = function(CurrentValue)
+      if CurrentValue then
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+				local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("DuckEvent"):WaitForChild("NPC"):WaitForChild("DestroyerDucky")}
+				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+				task.wait(0.1)
+		    end
+		else
+		_G.AutoClick = false
+        end
    end,
 })
 local Toggle = Tab:CreateToggle({
-   Name = "Farm Ritt",
+   Name = "Farm Rift",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-      _G.AutoClick = true
-      while _G.AutoClick == true do
-      task.wait(0.1)
-     	local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("20"):WaitForChild("NPC"):WaitForChild("GoldChampion","TempleGuardian")}
-        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-         local args = {true}
-	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-       end
-        print("FARMING")
+   Callback = function(CurrentValue)
+      if CurrentValue then
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+				local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("20"):WaitForChild("NPC"):WaitForChild("GoldChampion","TempleGuardian")}
+				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+				task.wait(0.1)
+		    end
+		else
+		_G.AutoClick = false
+        end
    end,
 })
 local Tab = Window:CreateTab("For Auto Rebirth", 4483362458) -- Title, Image
@@ -736,9 +632,9 @@ local Toggle = Tab:CreateToggle({
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(CurrentValue)
+      if CurrentValue then
         _G.AutoClick = true
 			while _G.AutoClick == true do
-			  task.wait()
      	      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onRebirthRequest"):FireServer()
               game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
 		      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
@@ -746,7 +642,10 @@ local Toggle = Tab:CreateToggle({
               game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Dumbells","EvilDuckfair12")
 			  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
               game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
- 		    end
+		    end
+		else
+		_G.AutoClick = false
+        end
    end,
 })
 local Toggle = Tab:CreateToggle({
