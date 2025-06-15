@@ -55,7 +55,7 @@ local Toggle = Tab:CreateToggle({
    end,
 })
 local Toggle = Tab:CreateToggle({
-   Name = "Auto Click",
+   Name = "Auto Click Mobile",
    CurrentValue = false,
    Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(CurrentValue)
@@ -78,7 +78,7 @@ local Toggle = Tab:CreateToggle({
    Callback = function(Value)
       _G.AutoClick = true
       while _G.AutoClick == true do
-      task.wait(1)
+      task.wait(3)
       local args = {
 	"MoneyBoss",
 	[4] = false}
@@ -727,5 +727,44 @@ local Toggle = Tab:CreateToggle({
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
        end
         print("FARMING")
+   end,
+})
+local Tab = Window:CreateTab("For Auto Rebirth", 4483362458) -- Title, Image
+local Section = Tab:CreateSection("Other")
+local Toggle = Tab:CreateToggle({
+   Name = "Auto Rebirth and Super Rebirth",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(CurrentValue)
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+			  task.wait()
+     	      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onRebirthRequest"):FireServer()
+              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
+		      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+			  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Dumbells","EvilDuckfair12")
+			  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
+              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
+ 		    end
+   end,
+})
+local Toggle = Tab:CreateToggle({
+   Name = "Battle Dog Space",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(CurrentValue)
+      if CurrentValue then
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+     	      local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("7"):WaitForChild("NPC"):WaitForChild("SpaceDog")}
+              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+		      local args = {true}
+	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+      		  task.wait(0.1)
+		    end
+		else
+		_G.AutoClick = false
+        end
    end,
 })
