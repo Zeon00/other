@@ -689,3 +689,21 @@ local Toggle = Tab:CreateToggle({
         end
    end,
 })
+local Toggle = Tab:CreateToggle({
+   Name = "Stage 19",
+   CurrentValue = false,
+   Flag = "Toggle1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(CurrentValue)
+      if CurrentValue then
+        _G.AutoClick = true
+		while _G.AutoClick == true do
+     	      	local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("19"):WaitForChild("NPC"):WaitForChild("FlamingReaper")}
+		game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+	        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+      		task.wait(0.1)
+		    end
+		else
+		_G.AutoClick = false
+        end
+   end,
+}
