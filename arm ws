@@ -706,4 +706,4 @@ local Toggle = Tab:CreateToggle({
 		_G.AutoClick = false
         end
    end,
-}
+})
