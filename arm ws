@@ -66,7 +66,8 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemShopService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer("DuckyShop",5)DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
 DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
 end)
-btns:Seperator()
+
+
 local tgls = serv:Channel("Player")
 tgls:Toggle("Auto Swing",false, function(bool)
 if bool then
