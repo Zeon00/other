@@ -2,7 +2,7 @@ local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/daw
 
 local win = DiscordLib:Window("discord library")
 
-local serv = win:Server("Preview", "")
+local serv = win:Server("Menu", "")
 
 local btns = serv:Channel("Equip")
 
@@ -67,7 +67,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
 end)
 btns:Seperator()
-
+local tgls = serv:Channel("Player")
 tgls:Toggle("Auto Swing",false, function(bool)
 if bool then
         _G.AutoClick = true
