@@ -114,7 +114,6 @@ if bool then
         end
 		print(bool)
 end)
-local serv = win:Server("Fight", "")
 local tgls = serv:Channel("Battle")
 tgls:Toggle("Auto Win",false, function(bool)
 if bool then
