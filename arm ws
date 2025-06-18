@@ -2,7 +2,7 @@ local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/daw
 
 local win = DiscordLib:Window("discord library")
 
-local serv = win:Server("Menu", "")
+local serv = win:Server("Menu", "10511856020")
 
 local btns = serv:Channel("Equip")
 
@@ -67,7 +67,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
 end)
 
-
+local serv = win:Server("Most", "")
 local tgls = serv:Channel("Player")
 tgls:Toggle("Auto Swing",false, function(bool)
 if bool then
@@ -114,6 +114,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         end
 		print(bool)
 end)
+local serv = win:Server("Fight", "")
 local tgls = serv:Channel("Battle")
 tgls:Toggle("Auto Win",false, function(bool)
 if bool then
@@ -132,14 +133,10 @@ tgls:Toggle("Battle Mafia",false, function(bool)
 if bool then
         _G.AutoClick = true
 			while _G.AutoClick == true do
-     			 task.wait()
-               			local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia")}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+      task.wait()
+                game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-		    		local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("GoldenMafia")}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-				end
+	        end
 	  		else
 		      _G.AutoClick = false
             end
@@ -216,6 +213,7 @@ if bool then
             end
 		print(bool)
 end)
+local serv = win:Server("Option", "")
 local tgls = serv:Channel("Misc")
 tgls:Toggle("Auto Trainer",false, function(bool)
 if bool then
@@ -413,7 +411,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         end
 		
 end)
-
+local serv = win:Server("Etc", "")
 local btns = serv:Channel("Other")
 btns:Button("Stop All Auto", function()
        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
@@ -453,4 +451,3 @@ game:service'Players'.LocalPlayer.Idled:connect(function()
 bb:CaptureController()bb:ClickButton2(Vector2.new())
 ab.Text="Roblox tried to kick u but i kicked him instead"wait(2)ab.Text="Status : Active"end) DiscordLib:Notification("Notification", "Anti AFK Running!", "Okay!")
 end)
-btns:Seperator()
