@@ -129,7 +129,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
             end
 		print(bool)
 end)
-tgls:Toggle("Battle Mafia",false, function(bool)
+tgls:Toggle("Battle Mafia founder",false, function(bool)
 if bool then
         _G.AutoClick = true
 			while _G.AutoClick == true do
@@ -137,6 +137,17 @@ if bool then
                			local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia")}
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+		        	end
+	  		else
+		      _G.AutoClick = false
+            end
+		print(bool)
+end)
+tgls:Toggle("Battle Mafia Tony",false, function(bool)
+if bool then
+        _G.AutoClick = true
+			while _G.AutoClick == true do
+     				task.wait()
 		        	local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("EvilTony")}
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
