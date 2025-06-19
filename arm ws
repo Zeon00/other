@@ -29,6 +29,7 @@ btns:Button("Auto Fishing", function()
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(330,688.2020009160042)
 	 task.wait(0.2) 
 	end
+	DiscordLib:Notification("Notification", "Already Fish!", "Okay!")
     end)
 btns:Seperator()
 
@@ -39,6 +40,7 @@ btns:Button("Auto Win", function()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
 	        end
+			DiscordLib:Notification("Notification", "Already Win!", "Okay!")
 end)
 btns:Seperator()
 
@@ -49,6 +51,7 @@ btns:Button("Auto Swing", function()
 	        	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	        	  task.wait()
 			end
+			DiscordLib:Notification("Notification", "Already Swing!", "Okay!")
  end)
  btns:Seperator()
  
@@ -60,7 +63,9 @@ btns:Button("Auto Egg Rewind", function()
       local args = {"MoneyBoss",[4] = false}
 	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
            end
+		   DiscordLib:Notification("Notification", "Already Buy Egg!", "Okay!")
  end)
+ 
  
 local serv = win:Server("Menu", "10511856020")
 
