@@ -2,8 +2,7 @@ local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/daw
 
 local win = DiscordLib:Window("discord library")
 local serv = win:Server("For Use", "10511856020")
-
- local btns = serv:Channel("First")
+local btns = serv:Channel("First")
 btns:Button("Auto Fishing", function()
 	 local run = true
 	while run == true do
@@ -155,7 +154,6 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
 end)
 
-
 local btns = serv:Channel("Collect ATM")
 btns:Button("Auto Collect ATM1", function()
         local run = true
@@ -281,7 +279,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 task.wait(0.1)	       
 end
 end
-btns:Seperator()
+
 
 btns:Button("Auto Upgarde Snack", function()
         local run = true
