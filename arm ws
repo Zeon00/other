@@ -155,27 +155,132 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
 end)
 
-local btns = serv:Channel("Collect")
-btns:Button("Auto Collect ATM", function()
+local btns = serv:Channel("Collect ATM")
+local btns = serv:Channel("Collect ATM")
+btns:Button("Auto Collect ATM1", function()
         local run = true
 			while run == true do     
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM2)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM3)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM4)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM5)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM6)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM7)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind2)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind3)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind4)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind5)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind6)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind7)
-task.wait(5)	       
+task.wait(0.1)	       
 end
 end)
+btns:Seperator()
+
+btns:Button("Auto Collect ATM2", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM2)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Collect ATM3", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM3)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Collect ATM4", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM4)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Collect ATM5", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM5)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Collect ATM6", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM6)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Collect ATM7", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM7)
+task.wait(0.1)	       
+end
+end)
+
+local btns = serv:Channel("Collect Personal Trainer")
+btns:Button("Auto Personal Trainer 1", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind1)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Personal Trainer 2", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind2)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Personal Trainer 3", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind3)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Personal Trainer 4", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind4)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Personal Trainer 5", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind5)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Personal Trainer 6", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind6)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+
+btns:Button("Auto Personal Trainer 7", function()
+        local run = true
+			while run == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind7)
+task.wait(0.1)	       
+end
+end
 btns:Seperator()
 
 btns:Button("Auto Upgarde Snack", function()
