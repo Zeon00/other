@@ -68,9 +68,19 @@ local serv = win:Server("Menu", "10511856020")
 
 local btns = serv:Channel("Equip")
 
-btns:Button("Buy Lucky VI", function()
+btns:Button("Buy Arm", function()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer("HiddenMerchant",4)
+DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
+end)
+btns:Seperator()
+
+btns:Button("Buy Lucky VI", function()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer("HiddenMerchant",5)
+DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
+end)
+btns:Seperator()
+
+btns:Button("Buy Lucky VI", function()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer("BankMerchant",5)
 DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
 end)
