@@ -46,10 +46,9 @@ btns:Seperator()
 btns:Button("Auto Swing", function()
         _G.AutoClick = true
 			while _G.AutoClick == true do
+				task.wait()
               	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	        	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-	        	  task.wait()
-			
 		end
  end)
  btns:Seperator()
