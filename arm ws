@@ -29,7 +29,6 @@ btns:Button("Auto Fishing", function()
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(330,688.2020009160042)
 	 task.wait(0.2) 
-	DiscordLib:Notification("Notification", "Already Fish!", "Okay!")
 	end
     end)
 btns:Seperator()
@@ -40,7 +39,6 @@ btns:Button("Auto Win", function()
       task.wait()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-DiscordLib:Notification("Notification", "Already Win!", "Okay!")
 end
 end)
 btns:Seperator()
@@ -51,7 +49,7 @@ btns:Button("Auto Swing", function()
               	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	        	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	        	  task.wait()
-			DiscordLib:Notification("Notification", "Already Swing!", "Okay!")
+			
 		end
  end)
  btns:Seperator()
@@ -62,7 +60,7 @@ btns:Button("Auto Egg Rewind", function()
 		task.wait(3)
       local args = {"MoneyBoss",[4] = false}
 	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
-		DiscordLib:Notification("Notification", "Already Buy Egg!", "Okay!")
+		
 		end
  end)
  
