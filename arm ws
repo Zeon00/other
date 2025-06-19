@@ -83,6 +83,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 task.wait(0.1)	       
 end
 end)
+btns:Seperator()
 
 btns:Button("Buy Arm", function()
 local args = {
