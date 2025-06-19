@@ -177,7 +177,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind5)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind6)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind7)
-task.wait()	       
+task.wait(1)	       
 end
 	  		else
 		      _G.AutoClick = false
@@ -204,7 +204,7 @@ local args = {{Item="Starfruit",Tier=2}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
 local args = {{Item="Dragon Fruit",Tier=2}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-task.wait()
+task.wait(1)
 			end
 	  		else
 		      _G.AutoClick = false
