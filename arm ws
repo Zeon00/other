@@ -155,7 +155,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
 end)
 
-local btns = serv:Channel("Collect ATM")
+
 local btns = serv:Channel("Collect ATM")
 btns:Button("Auto Collect ATM1", function()
         local run = true
