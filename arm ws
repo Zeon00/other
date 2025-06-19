@@ -149,8 +149,12 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",12)
 DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
 end)
-btns:Seperator() 
 
+btns:Button("Anti afk", function()
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
+DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
+end)
+btns:Seperator() 
 local tgls = serv:Channel("Spin Event") 
 tgls:Toggle("Auto Spin rewind",false, function(bool)
 if bool then
