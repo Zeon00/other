@@ -5,8 +5,8 @@ local serv = win:Server("For Use", "10511856020")
 
  local btns = serv:Channel("First")
 btns:Button("Auto Fishing", function()
- _G.AutoClick = true
-	while _G.AutoClick == true do
+	 local run = true
+	while run == true do
         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(true,"Rod")
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(314,309.18530075997114)
@@ -34,39 +34,36 @@ btns:Button("Auto Fishing", function()
 btns:Seperator()
 
 btns:Button("Auto Win", function()
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-      task.wait()
+	 local run = true
+	while run == true do
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
+task.wait()
 end
 end)
 btns:Seperator()
 
 btns:Button("Auto Swing", function()
-        _G.AutoClick = true
-			while _G.AutoClick == true do
-				task.wait()
+	 local run = true
+	while run == true do
               	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	        	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+			task.wait()
 		end
  end)
  btns:Seperator()
  
 btns:Button("Auto Egg Rewind", function()
-        _G.AutoClick = true
-	while _G.AutoClick == true do
-		task.wait(3)
+	 local run = true
+	while run == true do				
       local args = {"MoneyBoss",[4] = false}
 	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
-		
+		task.wait(0.1)
 		end
  end)
  
 local serv = win:Server("Menu", "10511856020")
-
 local btns = serv:Channel("Equip")
-
 btns:Button("Buy Arm", function()
 local args = {
 	"Hidden Merchant",
@@ -158,18 +155,17 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
 end)
 
-local serv = win:Server("Most", "")
-local tgls = serv:Channel("Player")
-tgls:Toggle("Auto Collect ATM",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do     
+local btns = serv:Channel("Collect")
+btns:Button("Auto Collect ATM", function()
+        local run = true
+			while run == true do     
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM1)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM2)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM3)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM4)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM5)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM6)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(RewindATM7)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind1)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind2)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind3)
@@ -179,15 +175,12 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(Rewind7)
 task.wait(1)	       
 end
-	  		else
-		      _G.AutoClick = false
-            end
-		print(bool)
 end)
-tgls:Toggle("Auto Upgarde Snack",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+btns:Seperator()
+
+btns:Button("Auto Upgarde Snack", function()
+        local run = true
+			while run == true do
               	  local args = {{Item="Banana",Tier=1}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
 local args = {{Item="Cookie",Tier=1}}
@@ -206,10 +199,6 @@ local args = {{Item="Dragon Fruit",Tier=2}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
 task.wait(1)
 			end
-	  		else
-		      _G.AutoClick = false
-            end
-		print(bool)
 end)
 
 local tgls = serv:Channel("Battle")
