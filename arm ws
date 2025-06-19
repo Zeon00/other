@@ -47,7 +47,7 @@ task.wait(0.1)
 end
 end)
 
-btns:Button("Buy Item and Anti AFK", function()
+btns:Button("Buy Item", function()
 local args = {
 	"Hidden Merchant",
 	4
@@ -63,7 +63,6 @@ local args = {
 	5
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
 DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
 end)
 
