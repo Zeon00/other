@@ -85,6 +85,30 @@ end
 end)
 btns:Seperator()
 
+btns:Button("Auto Upgarde Snack", function()
+        local run = true
+			while run == true do
+              	  local args = {{Item="Banana",Tier=1}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item="Cookie",Tier=1}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item="Starfruit",Tier=1}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item="Dragon Fruit",Tier=1}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item="Banana",Tier=2}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item="Cookie",Tier=2}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item="Starfruit",Tier=2}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item="Dragon Fruit",Tier=2}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+task.wait(0.1)
+			end
+end)
+
+btns:Seperator()
 btns:Button("Buy Arm", function()
 local args = {
 	"Hidden Merchant",
