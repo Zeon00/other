@@ -48,22 +48,15 @@ end
 end)
 
 btns:Button("Buy Item", function()
+local run = true
+while run == true do
 local args = {
 	"Hidden Merchant",
 	4
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {
-	"Hidden Merchant",
-	5
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {
-	"Bank Merchant",
-	5
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-DiscordLib:Notification("Notification", "Already Buy!", "Okay!")
+task.wait(5)
+end
 end)
 
 btns:Button("Equip Rewind", function()
