@@ -4,8 +4,8 @@ local win = DiscordLib:Window("discord library")
 local serv = win:Server("Event", "www.roblox.com/library/11759293347")
 local btns = serv:Channel("Rewind Event")
 btns:Button("Auto Collect ATM", function()
-        local run = true
-			while run == true do     
+        local run1 = true
+			while run1 == true do     
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM1")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM2")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM3")
@@ -25,8 +25,8 @@ end
 end)
 
 btns:Button("Auto Upgrade Snack", function()
-        local run = true
-			while run == true do
+        local run2 = true
+			while run2 == true do
 local args = {{Item="Banana",Tier=1}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
 local args = {{Item="Cookie",Tier=1}}
@@ -48,8 +48,8 @@ end
 end)
 
 btns:Button("Buy Item", function()
-local run = true
-while run == true do
+local run3 = true
+while run3 == true do
 local args = {
 	"Hidden Merchant",
 	4
@@ -65,8 +65,8 @@ DiscordLib:Notification("Notification", "Equip Change to Rewind!", "Okay!")
 end)
 
 btns:Button("Auto Egg Rewind", function()
-	    local run = true
-	    while run == true do				
+	    local run4 = true
+	    while run4 == true do				
             local args = {"MoneyBoss",[4] = false}
 	        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
 		    task.wait(0.1)
@@ -76,8 +76,8 @@ btns:Seperator()
 
 local btns = serv:Channel("Duck Event")
 btns:Button("Auto Fishing", function()
-	 local run = true
-	while run == true do
+	 local run5 = true
+	while run5 == true do
         game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(true,"Rod")
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("VerifyCatch"):InvokeServer(314,309.18530075997114)
@@ -150,51 +150,51 @@ DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
 end)
 btns:Seperator() 
 local tgls = serv:Channel("Spin Event") 
-tgls:Toggle("Auto Spin rewind",false, function(bool)
-if bool then
-        _G.AutoClick = true
-	while _G.AutoClick == true do
+tgls:Toggle("Auto Spin rewind",false, function(spin)
+if spin then
+        _G.spin1 = true
+	while _G.spin1 == true do
 		task.wait(2)
    	local args = {"Rewind","x25"}
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
            end
 		else
-		_G.AutoClick = false
+		_G.spin = false
            end
-		   print(bool)
+		   print(spin)
 end)
-tgls:Toggle("Auto Spin Rewind Evil",false, function(bool)
-if bool then
-        _G.AutoClick = true
-	while _G.AutoClick == true do
+tgls:Toggle("Auto Spin Rewind Evil",false, function(rewind)
+if rewind then
+        _G.rewind1 = true
+	while _G.rewind1 == true do
 		task.wait(2)
    	local args = {"Evil Cash","x25"}
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
            end
 		else
-		_G.AutoClick = false
+		_G.rewind1 = false
            end
-		   print(bool)
+		   print(rewind)
 end)
-tgls:Toggle("Auto Spin Duck",false, function(bool)
-if bool then
-        _G.AutoClick = true
-	while _G.AutoClick == true do
+tgls:Toggle("Auto Spin Duck",false, function(evil)
+if evil then
+        _G.evil1 = true
+	while _G.evil1 == true do
 		task.wait(2)
       local args = {"Ducky","x25"}
 	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
           end
 		else
-		_G.AutoClick = false
+		_G.evil1 = false
            end
-		   print(bool)
+		   print(evil)
 end)
 
 local serv = win:Server("Combat", "www.roblox.com/library/11759293347")
 local btns = serv:Channel("Player")
 btns:Button("Auto Win", function()
-	 local run = true
-	while run == true do
+	 local rune1 = true
+	while rune1 == true do
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
 task.wait()
@@ -202,24 +202,24 @@ end
 end)
 
 btns:Button("Auto Swing", function()
-		local run = true
-		while run == true do
+		local rune2 = true
+		while rune2 == true do
               	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	        	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 			task.wait()
 		end
  end)
 btns:Button("Auto Trainer Open", function()
-		local run = true
-		while run == true do
+		local rune3 = true
+		while rune3 == true do
 			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Starter Crate")
 			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Gold Crate")
 			task.wait(3) 
 		   end
 end)
 btns:Button("Auto Roll", function()
-		local run = true
-		while run == true do
+		local rune4 = true
+		while rune4 == true do
 			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
 			task.wait(0.1)
 		end
@@ -227,25 +227,25 @@ end)
 btns:Seperator() 
 
 local tgls = serv:Channel("Status") 
-tgls:Toggle("Auto Rebirth and Super",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Auto Rebirth and Super",false, function(rebirth)
+if rebirth then
+        _G.rebirth1 = true
+			while _G.rebirth1 == true do
      	      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onRebirthRequest"):FireServer()
               game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
-	      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-	      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+			  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
               task.wait()
                         end
 		else
-		_G.AutoClick = false
+		_G.rebirth1 = false
         end
-		print(bool)
+		print(rebirth)
 end)
-tgls:Toggle("Add Streght",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Add Streght",false, function(Streght)
+if Streght then
+        _G.Streght1 = true
+			while _G.Streght1 == true do
 local args = {"Fire","Earth Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 local args = {"Fire","Water Spirit Fruit","All"}
@@ -264,14 +264,14 @@ local args = {"Fire","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 		    end
 		else
-		_G.AutoClick = false
+		_G.Streght1 = false
         end
-		print(bool)
+		print(Streght)
 end)
-tgls:Toggle("Add Lucky",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Add Lucky",false, function(Lucky)
+if Lucky then
+        _G.Lucky1 = true
+			while _G.Lucky1 == true do
 local args = {"Earth","Earth Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 local args = {"Earth","Water Spirit Fruit","All"}
@@ -290,14 +290,14 @@ local args = {"Earth","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 		    end
 		else
-		_G.AutoClick = false
+		_G.Lucky1 = false
         end
-		print(bool)
+		print(Lucky)
 end)
-tgls:Toggle("Add Rift",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Add Rift",false, function(Rift)
+if Rift then
+        _G.Rift1 = true
+			while _G.Rift1 == true do
 local args = {"Water","Earth Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 local args = {"Water","Water Spirit Fruit","All"}
@@ -316,14 +316,14 @@ local args = {"Water","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 		    end
 		else
-		_G.AutoClick = false
+		_G.Rift1 = false
         end
-		print(bool)
+		print(Rift)
 end)
-tgls:Toggle("Add Training",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Add Training",false, function(Training)
+if Training then
+        _G.Training1 = true
+			while _G.Training1 == true do
 local args = {"Wind","Earth Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 local args = {"Wind","Water Spirit Fruit","All"}
@@ -342,16 +342,16 @@ local args = {"Wind","Godly Spirit Fruit","All"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
 		    end
 		else
-		_G.AutoClick = false
+		_G.Training1 = false
         end
-		
+		print(Training)
 end)
 local serv = win:Server("Battle", "www.roblox.com/library/11759293347")
 local tgls = serv:Channel("Rewind") 
-tgls:Toggle("Battle Mafia founder",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Battle Mafia founder",false, function(Mafia)
+if Mafia then
+        _G.Mafia1 = true
+			while _G.Mafia1 == true do
      				task.wait()
                	local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindEvent"):WaitForChild("NPC"):WaitForChild("HazmatMafia")}
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
@@ -379,14 +379,14 @@ if bool then
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
 				end
 	  		else
-		      _G.AutoClick = false
+		      _G.Mafia1 = false
             end
-		print(bool)
+		print(Mafia)
 end)
-tgls:Toggle("Battle Mafia Tony",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Battle Mafia Tony",false, function(Tony)
+if Tony then
+        _G.Tony1 = true
+			while _G.Tony1 == true do
      				task.wait()
 		        local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("RewindBank"):WaitForChild("NPC"):WaitForChild("TycoonTony")}
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
@@ -414,15 +414,15 @@ if bool then
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()			
 				end
 	  		else
-		      _G.AutoClick = false
+		      _G.Tony1 = false
             end
-		print(bool)
+		print(Tony)
 end)
 local tgls = serv:Channel("Duck") 
-tgls:Toggle("Battle Duck",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Battle Duck",false, function(Duck)
+if Duck then
+        _G.Duck1 = true
+			while _G.Duck1 == true do
 			     	 task.wait()
               	local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("DuckEvent"):WaitForChild("NPC"):WaitForChild("DestroyerDucky")}
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
@@ -450,14 +450,14 @@ if bool then
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
 				end
 	  		else
-		      _G.AutoClick = false
+		      _G.Duck1 = false
             end
-		print(bool)
+		print(Duck)
 end)
-tgls:Toggle("Battle Duck Evil",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Battle Duck Evil",false, function(duckevil)
+if duckevil then
+        _G.duckevil1 = true
+			while _G.duckevil1 == true do
 					task.wait()
                 local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("EvilDuckFair"):WaitForChild("NPC"):WaitForChild("EvilDestroyerDucky")}
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
@@ -485,29 +485,29 @@ if bool then
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
 				end
 	  		else
-		      _G.AutoClick = false
+		      _G.duckevil1 = false
             end
-		print(bool)
+		print(duckevil)
 end)
 local tgls = serv:Channel("Normal Stage") 
-tgls:Toggle("Mutant King",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Mutant King",false, function(Mutant)
+if Mutant then
+        _G.Mutant1 = true
+			while _G.Mutant1 == true do
       task.wait()
 			local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("4"):WaitForChild("NPC"):WaitForChild("MutantKing")}
             game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 	        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
 	        end
 	  		else
-		      _G.AutoClick = false
+		      _G.Mutant1 = false
             end
-		print(bool)
+		print(Mutant)
 end)
-tgls:Toggle("Space Dog",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Space Dog",false, function(Space)
+if Space then
+        _G.Space1 = true
+			while _G.Space1 == true do
       task.wait()
 			  local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("7"):WaitForChild("NPC"):WaitForChild("SpaceDog")}
               game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
@@ -515,14 +515,14 @@ if bool then
 	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
 	        end
 	  		else
-		      _G.AutoClick = false
+		      _G.Space1 = false
             end
-		print(bool)
+		print(Space)
 end)
-tgls:Toggle("Stage 19",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Stage 19",false, function(mob19)
+if mob19 then
+        _G.mob191 = true
+			while _G.mob191 == true do
 				task.wait()
 		        local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("19"):WaitForChild("NPC"):WaitForChild("FlamingReaper")}
 		        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
@@ -550,14 +550,14 @@ if bool then
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
 				end
 	  		else
-		      _G.AutoClick = false
+		      _G.mob191 = false
             end
-		print(bool)
+		print(mob19)
 end)
-tgls:Toggle("Stage 20",false, function(bool)
-if bool then
-        _G.AutoClick = true
-			while _G.AutoClick == true do
+tgls:Toggle("Stage 20",false, function(mob20)
+if mob20 then
+        _G.mob201 = true
+			while _G.mob201 == true do
       task.wait()
 				local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("20"):WaitForChild("NPC"):WaitForChild("GoldChampion","TempleGuardian")}
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
@@ -585,8 +585,7 @@ if bool then
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
 				end
 	  		else
-		      _G.AutoClick = false
+		      _G.mob201 = false
             end
-		print(bool)
+		print(mob20)
 end)
-
