@@ -180,25 +180,21 @@ if Duck then
            end
 		   print(Duck)
 end)
-tgls:Toggle("Auto Fishing Summer",false, function(fish)
-if fish then
-        _G.fish1 = true
-	while _G.fish1 == true do
-		task.wait(2)
+tgls:Toggle("Auto egg Summer",false, function(egg)
+if egg then
+        _G.egg1 = true
+	while _G.egg1 == true do
+		task.wait()
    	local args = {
-	true,
-	"Rod",
-	false
+	"BeachKraken",
+	[4] = false
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("RetractRod"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
            end
 		else
-		_G.fish1 = false
+		_G.egg1 = false
            end
-		   print(fish)
+		   print(egg)
 end)
 tgls:Toggle("Auto Spin rewind",false, function(spin)
 if spin then
