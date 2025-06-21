@@ -159,7 +159,7 @@ if spin then
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
            end
 		else
-		_G.spin = false
+		_G.spin1 = false
            end
 		   print(spin)
 end)
