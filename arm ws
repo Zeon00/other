@@ -7,7 +7,7 @@ btns:Button("Auto Grips Summer", function()
 local args = {
 	"SummerIsland",
 	"Grips",
-	"SummerIsland1"
+	"SummerIsland12"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 end)
@@ -153,12 +153,19 @@ tgls:Toggle("Auto Fishing Duck",false, function(Duck)
 if Duck then
         _G.Duck1 = true
 	while _G.Duck1 == true do
-        local args = {
+        
+local args = {
 	false,
 	"Rod",
 	true
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(unpack(args))
+local args = {
+	"SummerIsland",
+	"Grips",
+	"SummerIsland12"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(true,"Rod")
 	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("NetService"):WaitForChild("RF"):WaitForChild("StartCatching"):InvokeServer("DuckPond")
