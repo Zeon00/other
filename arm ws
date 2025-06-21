@@ -26,21 +26,6 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 task.wait()
 			end
 end)
-btns:Button("Auto Fishing Summer", function()
-        local run = true
-			while run == true do
-local args = {
-	true,
-	"Rod",
-	false
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("RetractRod"):InvokeServer()
-task.wait()
-			end
-end)
 btns:Seperator() 
 local btns = serv:Channel("Rewind Event")
 btns:Button("Auto Collect ATM", function()
@@ -190,6 +175,26 @@ DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
 end)
 btns:Seperator() 
 local tgls = serv:Channel("Spin Event") 
+tgls:Toggle("Auto Fishing Summer",false, function(fish)
+if fish then
+        _G.fish1 = true
+	while _G.fish1 == true do
+		task.wait(2)
+   	local args = {
+	true,
+	"Rod",
+	false
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("RetractRod"):InvokeServer()
+           end
+		else
+		_G.fish1 = false
+           end
+		   print(fish)
+end)
 tgls:Toggle("Auto Spin rewind",false, function(spin)
 if spin then
         _G.spin1 = true
