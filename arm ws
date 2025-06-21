@@ -2,6 +2,30 @@ local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/daw
 
 local win = DiscordLib:Window("discord library")
 local serv = win:Server("Event", "www.roblox.com/library/11759293347")
+local btns = serv:Channel("Summer Event")
+btns:Button("Auto Swing Summer", function()
+        local run = true
+			while run == true do
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+task.wait()
+			end
+end)
+btns:Button("Auto Fishing Summer", function()
+        local run = true
+			while run == true do
+local args = {
+	true,
+	"Rod",
+	false
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("RetractRod"):InvokeServer()
+task.wait()
+			end
+end)
+btns:Seperator() 
 local btns = serv:Channel("Rewind Event")
 btns:Button("Auto Collect ATM", function()
         local run1 = true
