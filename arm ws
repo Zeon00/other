@@ -3,6 +3,22 @@ local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/daw
 local win = DiscordLib:Window("discord library")
 local serv = win:Server("Event", "www.roblox.com/library/11759293347")
 local btns = serv:Channel("Summer Event")
+btns:Button("Auto Grips Summer", function()
+local args = {
+	"SummerIsland",
+	"Grips",
+	"SummerIsland1"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+end)
+btns:Button("Auto Dumbells Summer", function()
+local args = {
+	"SummerIsland",
+	"Dumbells",
+	"SummerIsland21"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+end)
 btns:Button("Auto Swing Summer", function()
         local run = true
 			while run == true do
