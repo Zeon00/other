@@ -187,6 +187,7 @@ if egg then
 		task.wait()
    	local args = {
 	"BeachKraken",
+	[7] = true,
 	[4] = false
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
