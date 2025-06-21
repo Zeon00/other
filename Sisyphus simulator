@@ -1,0 +1,227 @@
+local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/dawid-scripts/UI-Libs/main/discord%20lib.txt")()
+
+local win = DiscordLib:Window("discord library")
+local serv = win:Server("Main", "www.roblox.com/library/11759293347")
+local btns = serv:Channel("Claim Ballon")
+btns:Button("Auto Claim Ballon1", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(1)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon2", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(2)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon3", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(3)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon4", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(4)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon5", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(5)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon6", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(6)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon7", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(7)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon8", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(8)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon9", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(9)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon10", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(10)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon11", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(11)
+task.wait(0.1)	       
+end
+end)
+btns:Button("Auto Claim Ballon12", function()
+        local run1 = true
+			while run1 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("CGetOnlineReward"):FireServer(12)
+task.wait(0.1)	       
+end
+end)
+btns:Seperator()
+local btns = serv:Channel("Claim Reward")
+btns:Button("Auto Claim Candy", function()
+        local run2 = true
+			while run2 == true do     
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("HappyChild"):WaitForChild("AddChildLolly"):FireServer()
+task.wait()	       
+end
+end)
+
+
+btns:Button("Auto Daily Claim", function()
+        local run3 = true
+			while run3 == true do  
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("DailySign"):WaitForChild("[C-S]PlayerTrySign"):FireServer("1")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("DailySign"):WaitForChild("[C-S]PlayerTrySign"):FireServer("2")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("DailySign"):WaitForChild("[C-S]PlayerTrySign"):FireServer("3")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("DailySign"):WaitForChild("[C-S]PlayerTrySign"):FireServer("4")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("DailySign"):WaitForChild("[C-S]PlayerTrySign"):FireServer("5")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("DailySign"):WaitForChild("[C-S]PlayerTrySign"):FireServer("6")
+task.wait(1200.1)	       
+end
+end)
+
+btns:Button("Auto Online Claim", function()
+        local run4 = true
+			while run4 == true do  
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("1")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("2")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("3")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("4")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("5")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("6")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("7")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("8")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("9")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("10")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("11")
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Reward"):WaitForChild("[C-S]TryGetReward"):FireServer("12")
+task.wait(120.1)	       
+end
+end)
+btns:Seperator()
+
+local tgls = serv:Channel("Player") 
+tgls:Toggle("Auto Click",false, function(spin)
+if spin then
+        _G.spin1 = true
+	while _G.spin1 == true do
+		task.wait()
+	local args = {"1_4"}
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Tool"):WaitForChild("[C-S]TryBuyAndUseTool"):FireServer(unpack(args))
+local args = {game:GetService("Players").LocalPlayer.Character:WaitForChild("1_4")}
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Game"):WaitForChild("[C-S]PlayerClick"):FireServer(unpack(args))
+       end
+		else
+		_G.spin1 = false
+           end
+		   print(spin)
+end)
+
+tgls:Toggle("Auto Push Easter",false, function(Easter)
+if Easter then
+        _G.Easter1 = true
+	while _G.Easter1 == true do
+		task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Game"):WaitForChild("[C-S]PlayerTryBall"):FireServer(-10)
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Game"):WaitForChild("[C-S]PlayerEnd"):FireServer(true,1)
+       end
+		else
+		_G.Easter1 = false
+           end
+		   print(Easter)
+end)
+tgls:Toggle("Auto Push Santa",false, function(Santa)
+if Santa then
+        _G.Santa1 = true
+	while _G.Santa1 == true do
+		task.wait()
+local args = {
+	-1
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Game"):WaitForChild("[C-S]PlayerTryBall"):FireServer(unpack(args))
+local args = {
+	false,
+	0.99
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Game"):WaitForChild("[C-S]PlayerEnd"):FireServer(unpack(args))
+       end
+		else
+		_G.Santa1 = false
+           end
+		   print(Santa)
+end)
+tgls:Toggle("Auto Egg Santa",false, function(Santa2)
+if Santa2 then
+        _G.Santa20 = true
+	while _G.Santa20 == true do
+		task.wait()
+local args = {
+	"Easter5",
+	2
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Function"):WaitForChild("Luck"):WaitForChild("[C-S]DoLuck"):InvokeServer(unpack(args))
+       end
+		else
+		_G.Santa20 = false
+           end
+		   print(Santa2)
+end)
+tgls:Toggle("Auto Rebirth",false, function(Rebirth)
+if Rebirth then
+        _G.Rebirth1 = true
+	while _G.Rebirth1 == true do
+		task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Eco"):WaitForChild("[C-S]PlayerTryRebirth"):FireServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Event"):WaitForChild("Eco"):WaitForChild("[C-S]PlayerTrySuperRebirth"):FireServer()
+       end
+		else
+		_G.Rebirth1 = false
+           end
+		   print(Rebirth)
+end)
+tgls:Toggle("Auto Rebirth",false, function(Relic)
+if Relic then
+        _G.Relic1 = true
+	while _G.Relic1 == true do
+		task.wait()
+local args = {"10",1}
+game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Function"):WaitForChild("Ornaments"):WaitForChild("[C-S]PlayerTryDoLuck"):InvokeServer(unpack(args))
+	end
+		else
+		_G.Relic1 = false
+           end
+		   print(Relic)
+end)
+
+
