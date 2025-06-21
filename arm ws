@@ -15,7 +15,7 @@ btns:Button("Auto Dumbells Summer", function()
 local args = {
 	"SummerIsland",
 	"Dumbells",
-	"SummerIsland21"
+	"SummerIsland12"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 end)
