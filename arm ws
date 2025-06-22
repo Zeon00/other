@@ -40,7 +40,7 @@ if egg then
 	while _G.egg1 == true do
 		task.wait()
    	local args = {
-	"BeachKraken",
+	"BeachFossil",
 	[7] = true,
 	[4] = false
 }
@@ -57,7 +57,7 @@ if eggg then
 	while _G.eggg1 == true do
 		task.wait()
    	local args = {
-	"BeachKraken",
+	"BeachFossil",
 	[4] = false
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
