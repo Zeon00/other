@@ -5,7 +5,7 @@ local serv = win:Server("Event", "www.roblox.com/library/11759293347")
 local tgls = serv:Channel("Player") 
 tgls:Toggle("Auto Slap",false, function(slap)
         if slap then
-		_G.slap1 = false
+		_G.slap1 = true
             while _G.slap1 == true do
                     task.wait()
                     game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RefreshUI"):FireServer()
@@ -17,7 +17,7 @@ tgls:Toggle("Auto Slap",false, function(slap)
 end)
 tgls:Toggle("Auto Arm",false, function(Arm)
         if arm then
-		_G.Arm1 = false
+		_G.Arm1 = true
             while _G.Arm1 == true do
                     task.wait()
                     game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
@@ -31,7 +31,7 @@ end)
 local tgls = serv:Channel("Battle") 
 tgls:Toggle("Auto Battle 1",false, function(Battle1)
         if Battle1 then
-		_G.Battle12 = false
+		_G.Battle12 = true
             while _G.Battle12 == true do
                     task.wait()
                     game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(1)
@@ -44,7 +44,7 @@ tgls:Toggle("Auto Battle 1",false, function(Battle1)
 end)
 tgls:Toggle("Auto Battle 6",false, function(Battle6)
         if Battle6 then
-		_G.Battle62 = false
+		_G.Battle62 = true
             while _G.Battle62 == true do
                     task.wait()
                     game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(1)
