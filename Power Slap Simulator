@@ -18,10 +18,10 @@ tgls:Toggle("Auto Slap",false, function(slap)
            end
 		   print(slap)
 end)
-tgls:Toggle("Auto Arm",false, function(Arm)
-        if arm then
-		_G.Arm1 = true
-            while _G.Arm1 == true do
+tgls:Toggle("Auto Arm",false, function(armss)
+        if armss then
+		_G.armss1 = true
+            while _G.armss1 == true do
                     task.wait()
                     game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
 					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
@@ -29,9 +29,9 @@ tgls:Toggle("Auto Arm",false, function(Arm)
 					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
            end
 		else
-		_G.Arm1 = false
+		_G.armss1 = false
            end
-		   print(Arm)
+		   print(armss)
 end)
 local tgls = serv:Channel("Battle") 
 tgls:Toggle("Auto Battle 1",false, function(Battle1)
