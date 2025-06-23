@@ -271,6 +271,21 @@ if pirate then
 end)
 
 local tgls = serv:Channel("Normal Stage") 
+tgls:Toggle("End Fight",false, function(fight)
+if fight then
+        _G.fight1 = true
+			while _G.fight1 == true do
+      task.wait(1)
+local args = {
+	"SkipEnd"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestEndFight"):InvokeServer(unpack(args))
+				end
+	  		else
+		      _G.fight1 = false
+            end
+		print(fight)
+end)
 tgls:Toggle("Mutant King",false, function(Mutant)
 if Mutant then
         _G.Mutant1 = true
