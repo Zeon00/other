@@ -1,0 +1,62 @@
+local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/dawid-scripts/UI-Libs/main/discord%20lib.txt")()
+
+local win = DiscordLib:Window("discord library")
+local serv = win:Server("Event", "www.roblox.com/library/11759293347")
+local tgls = serv:Channel("Player") 
+tgls:Toggle("Auto Slap",false, function(slap)
+        if slap then
+		_G.slap1 = false
+            while _G.slap1 == true do
+                    task.wait()
+                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RefreshUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RefreshUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RefreshUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RefreshUI"):FireServer()
+           end
+		else
+		_G.slap1 = false
+           end
+		   print(slap)
+end)
+tgls:Toggle("Auto Arm",false, function(Arm)
+        if arm then
+		_G.Arm1 = false
+            while _G.Arm1 == true do
+                    task.wait()
+                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
+           end
+		else
+		_G.Arm1 = false
+           end
+		   print(Arm1)
+end)
+local tgls = serv:Channel("Battle") 
+tgls:Toggle("Auto Battle 1",false, function(Battle1)
+        if Battle1 then
+		_G.Battle12 = false
+            while _G.Battle12 == true do
+                    task.wait()
+                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(1)
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("NotifyUI"):FireServer(90000)
+           end
+		else
+		_G.Battle12 = false
+           end
+		   print(Battle1)
+end)
+tgls:Toggle("Auto Battle 6",false, function(Battle6)
+        if Battle6 then
+		_G.Battle62 = false
+            while _G.Battle62 == true do
+                    task.wait()
+                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(1)
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("NotifyUI"):FireServer(90000)
+           end
+		else
+		_G.Battle62 = false
+           end
+		   print(Battle6)
+end)
