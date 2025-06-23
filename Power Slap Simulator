@@ -39,7 +39,7 @@ tgls:Toggle("Auto Battle 1",false, function(Battle1)
 		_G.Battle12 = true
             while _G.Battle12 == true do
                     task.wait()
-                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(1)
+                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(12)
 					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("NotifyUI"):FireServer(90000)
            end
 		else
@@ -52,7 +52,7 @@ tgls:Toggle("Auto Battle 6",false, function(Battle6)
 		_G.Battle62 = true
             while _G.Battle62 == true do
                     task.wait()
-                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(6)
+                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(8)
 					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("NotifyUI"):FireServer(90000)
 					end
 		else
