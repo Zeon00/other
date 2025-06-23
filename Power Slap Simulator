@@ -60,3 +60,16 @@ tgls:Toggle("Auto Battle 6",false, function(Battle6)
 					end
 		   print(Battle6)
 end)
+tgls:Toggle("Auto Battle 9",false, function(Battle9)
+        if Battle6 then
+		_G.Battle92 = true
+            while _G.Battle92 == true do
+                    task.wait(1)
+                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(9)
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("NotifyUI"):FireServer(90000)
+					end
+		else
+		_G.Battle92 = false
+					end
+		   print(Battle9)
+end)
