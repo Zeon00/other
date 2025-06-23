@@ -9,6 +9,9 @@ tgls:Toggle("Auto Slap",false, function(slap)
             while _G.slap1 == true do
                     task.wait()
                     game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RefreshUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RefreshUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RefreshUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RefreshUI"):FireServer()
            end
 		else
 		_G.slap1 = false
@@ -21,7 +24,9 @@ tgls:Toggle("Auto Arm",false, function(Arm)
             while _G.Arm1 == true do
                     task.wait()
                     game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
-
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("UpdateUI"):FireServer()
            end
 		else
 		_G.Arm1 = false
@@ -47,11 +52,11 @@ tgls:Toggle("Auto Battle 6",false, function(Battle6)
 		_G.Battle62 = true
             while _G.Battle62 == true do
                     task.wait()
-                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(1)
+                    game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("RestartUI"):FireServer(6)
 					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("NotifyUI"):FireServer(90000)
-           end
+					end
 		else
 		_G.Battle62 = false
-           end
+					end
 		   print(Battle6)
 end)
