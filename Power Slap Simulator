@@ -31,7 +31,7 @@ tgls:Toggle("Auto Arm",false, function(Arm)
 		else
 		_G.Arm1 = false
            end
-		   print(Arm1)
+		   print(Arm)
 end)
 local tgls = serv:Channel("Battle") 
 tgls:Toggle("Auto Battle 1",false, function(Battle1)
