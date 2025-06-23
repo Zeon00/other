@@ -33,6 +33,21 @@ tgls:Toggle("Auto Arm",false, function(armss)
            end
 		   print(armss)
 end)
+local tgls = serv:Channel("EGG") 
+tgls:Toggle("Hatch Egg",false, function(Hatch)
+        if Hatch then
+		_G.Hatch1 = true
+            while _G.Hatch1 == true do
+                    task.wait(3)
+                    local args = {6,1}
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("OpenUX"):InvokeServer(unpack(args))
+
+           end
+		else
+		_G.Hatch1 = false
+           end
+		   print(Hatch)
+end)
 local tgls = serv:Channel("Battle") 
 tgls:Toggle("Auto Battle 1",false, function(Battle1)
         if Battle1 then
