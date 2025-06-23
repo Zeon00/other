@@ -48,6 +48,25 @@ tgls:Toggle("Hatch Egg",false, function(Hatch)
            end
 		   print(Hatch)
 end)
+tgls:Toggle("Merge Egg",false, function(Merge)
+        if Merge then
+		_G.Merge1 = true
+            while _G.Merge1 == true do
+                    task.wait(10)
+                    local args = {"Normal Tiny|Snow Dog",{6,0}}
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("CloseUX"):InvokeServer(unpack(args))
+					local args = {"Normal Tiny|Snow Dragon",{6,0}}
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("CloseUX"):InvokeServer(unpack(args))
+					local args = {"Normal Tiny|Snow Fox",{6,0}}
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("CloseUX"):InvokeServer(unpack(args))
+					local args = {"Normal Tiny|Snow Cat",{6,0}}
+					game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("GameGui"):WaitForChild("CloseUX"):InvokeServer(unpack(args))
+           end
+		else
+		_G.Merge1 = false
+           end
+		   print(Merge)
+end)
 local tgls = serv:Channel("Battle") 
 tgls:Toggle("Auto Battle 1",false, function(Battle1)
         if Battle1 then
