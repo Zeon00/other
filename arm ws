@@ -436,7 +436,8 @@ if Archeologist then
 	  		else
 		      _G.Archeologist1 = false
             end
-		
+		print(Archeologist)
+end)		
 local tgls = serv:Channel("Normal Stage") 
 tgls:Toggle("End Fight",false, function(fight)
 if fight then
