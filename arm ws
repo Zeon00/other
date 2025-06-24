@@ -30,8 +30,7 @@ btns:Button("Anti afk", function()
 loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
 DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
 end)
-btns:Seperator()
-local btns = serv:Channel("Machine")
+
 btns:Button("Pet Index", function()
 local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
 rootPart.CFrame = game:GetService("Workspace").Zones["1"].Interactables.Index.Display.CFrame
