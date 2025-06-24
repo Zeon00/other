@@ -89,10 +89,10 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		   print(egg)
 end)
-tgls:Toggle("Auto egg Summer kraken 2X luck",false, function(egg)
-if egg then
-        _G.egg1 = true
-	while _G.egg1 == true do
+tgls:Toggle("Auto egg Summer kraken 2X luck",false, function(egg0)
+if egg0 then
+        _G.egg01 = true
+	while _G.egg01 == true do
 		task.wait()
    	local args = {
 	"BeachKraken",
@@ -102,9 +102,9 @@ if egg then
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
            end
 		else
-		_G.egg1 = false
+		_G.egg01 = false
            end
-		   print(egg)
+		   print(egg0)
 end)
 tgls:Toggle("Auto egg Fossil",false, function(eggg)
 if eggg then
