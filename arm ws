@@ -89,6 +89,23 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		   print(egg)
 end)
+tgls:Toggle("Auto egg Summer kraken 2X luck",false, function(egg)
+if egg then
+        _G.egg1 = true
+	while _G.egg1 == true do
+		task.wait()
+   	local args = {
+	"BeachKraken",
+	[7] = true,
+	[4] = false
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
+           end
+		else
+		_G.egg1 = false
+           end
+		   print(egg)
+end)
 tgls:Toggle("Auto egg Summer",false, function(eggg)
 if eggg then
         _G.eggg1 = true
