@@ -34,14 +34,13 @@ btns:Seperator()
 
 local tgls = serv:Channel("Spin Summer Event") 
 
-tgls:Toggle("Auto egg Summer Luck 2x",false, function(egg)
+tgls:Toggle("Auto egg Summer kraken",false, function(egg)
 if egg then
         _G.egg1 = true
 	while _G.egg1 == true do
 		task.wait()
    	local args = {
-	"BeachFossil",
-	[7] = true,
+	"BeachKraken",
 	[4] = false
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
