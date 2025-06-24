@@ -2,14 +2,6 @@ local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/daw
 
 local win = DiscordLib:Window("discord library")
 local serv = win:Server("Event", "www.roblox.com/library/11759293347")
-local btns = serv:Channel("Machine")
-btns:Button("Pet Index", function()
-game:GetService("Workspace").Zones["1"].Interactables.Index.Display
-end)
-btns:Button("Gold Machine", function()
-game:GetService("Workspace").Zones["2"].Interactables.GoldMachine
-end
-btns:Seperator()
 local btns = serv:Channel("Summer Event")
 btns:Button("Auto Grips Summer", function()
 local args = {
@@ -39,6 +31,15 @@ loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScript
 DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
 end)
 btns:Seperator() 
+local btns = serv:Channel("Machine")
+btns:Button("Pet Index", function()
+game:GetService("Workspace").Zones["1"].Interactables.Index.Display
+end)
+btns:Button("Gold Machine", function()
+game:GetService("Workspace").Zones["2"].Interactables.GoldMachine
+end
+btns:Seperator()
+
 
 local tgls = serv:Channel("Spin Summer Event") 
 
