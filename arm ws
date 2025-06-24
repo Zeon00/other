@@ -106,7 +106,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		   print(egg)
 end)
-tgls:Toggle("Auto egg Summer",false, function(eggg)
+tgls:Toggle("Auto egg Fossil",false, function(eggg)
 if eggg then
         _G.eggg1 = true
 	while _G.eggg1 == true do
