@@ -31,7 +31,6 @@ loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScript
 DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
 end)
 
-local btns = serv:Channel("Machine")
 btns:Button("Pet Index", function()
 game:GetService("Workspace").Zones["1"].Interactables.Index.Display
 end)
