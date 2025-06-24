@@ -30,7 +30,44 @@ btns:Button("Anti afk", function()
 loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
 DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
 end)
-
+btns:Seperator()
+local btns = serv:Channel("Machine")
+btns:Button("Pet Index", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["1"].Interactables.Index.Display.CFrame
+end)
+btns:Button("Gold Machine", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["2"].Interactables.GoldMachine.CFrame
+end)
+btns:Button("Enchantment", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["2"].Interactables.Enchantment.CFrame
+end)
+btns:Button("Void Machine", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["3"].Interactables.VoidMachine.CFrame
+end)
+btns:Button("Goliath Machine", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["5"].Interactables.Goliath.CFrame
+end)
+btns:Button("Mutate Machine", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["4"].Interactables.MutateMachine.CFrame
+end)
+btns:Button("Cure Machine", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["4"].Interactables.CureMachine.CFrame
+end)
+btns:Button("Slime Machine", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["7"].Interactables.SlimeMachine.CFrame
+end)
+btns:Button("Forge Arm Machine", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["8"].Map.Decor.Anvil.CFrame
+end)
 btns:Seperator()
 
 
