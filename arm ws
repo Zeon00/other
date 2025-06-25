@@ -26,9 +26,18 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 task.wait()
 			end
 end)
+
 btns:Button("Anti afk", function()
 loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
 DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
+end)
+btns:Button("Buy Item", function()
+local run3 = true
+while run3 == true do
+local args = {"Hidden Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+task.wait(5)
+end
 end)
 btns:Seperator()
 local btns = serv:Channel("Machine")
