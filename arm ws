@@ -407,6 +407,8 @@ if Knuckle then
 			while _G.Knuckle1 == true do
      				task.wait()
 					local args = {true}
+					local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+					rootPart.CFrame = game:GetService("Workspace").Zones.SummerIsland.Interactables.Training.PunchBags.Tier5["Meshes/Punch_Cylinder.010 (1)"].CFrame
 					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onUnequipRequest"):FireServer(unpack(args))
 					local args = {"SummerIsland","Tier5"}
 					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PunchBagService"):WaitForChild("RE"):WaitForChild("onGiveStats"):FireServer(unpack(args))
