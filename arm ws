@@ -727,3 +727,16 @@ if mob20 then
             end
 		print(mob20)
 end)
+tgls:Toggle("Auto Spin rewind",false, function(spin)
+if spin then
+        _G.spin1 = true
+	while _G.spin1 == true do
+		task.wait(2)
+   	local args = {"Rewind","x25"}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+           end
+		else
+		_G.spin1 = false
+           end
+		   print(spin)
+end)
