@@ -198,7 +198,6 @@ local args = {
 	1
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("FishingEnd"):InvokeServer(unpack(args))
-shingService"):WaitForChild("RF"):WaitForChild("FishingEnd"):InvokeServer(1)
 		end
 		else
 		_G.Fish1 = false
