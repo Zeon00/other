@@ -206,6 +206,13 @@ end)
 btns:Seperator()
 local tgls = serv:Channel("Summer Fishing")
 tgls:Toggle("Go fossil",false, function()
+local args = {
+	true,
+	"Rod",
+	false
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(unpack(args))
+
 local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
 rootPart.CFrame = game:GetService("Workspace").Zones.SummerIsland.Interactables.Zones.FossilIsland.CFrame
 end)
