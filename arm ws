@@ -83,8 +83,7 @@ btns:Seperator()
 
 local btns = serv:Channel("Summer Event")
 btns:Button("Buy Item Summer Shop", function()
-local run3 = true
-while run3 == true do
+while true do
 local args = {"Pirate Merchant",1}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
 local args = {"Pirate Merchant",2}
@@ -210,34 +209,23 @@ local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
 rootPart.CFrame = game:GetService("Workspace").Zones.SummerIsland.Interactables.Zones.FossilIsland.CFrame
 end)
 tgls:Toggle("Auto Cast Rod",false, function(Rod)
-
 	while true do
-wait(15)
+task.wait(3)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
-end
-end)
-
-tgls:Toggle("Auto Get Fish",false, function(getfish)
-
-	while true do
-wait(18)
+task.wait(6)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CaughtFish"):InvokeServer()
-end
-end)
-
-tgls:Toggle("Auto end Fishing",false, function(Fishing)
-
-	while true do
-	wait(22)
+task.wait(12)
 local args = {
 	1
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("FishingEnd"):InvokeServer(unpack(args))
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("RetractRod"):InvokeServer()
+
 end
 end)
+
 local tgls = serv:Channel("Spin Summer Event") 
 tgls:Toggle("Auto egg Summer kraken",false, function(egg)
 if egg then
