@@ -191,7 +191,7 @@ tgls:Toggle("Auto get Fish",false, function(Fish)
 if Fish then
         _G.Fish1 = true
 	while _G.Fish1 == true do
-		task.wait()
+		task.wait(3)
    	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("FishingEnd"):InvokeServer(1)
 		end
 		else
