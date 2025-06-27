@@ -88,9 +88,10 @@ end)
 btns:Button("Auto Cast Rod", function()
         G.Fish1 = true
 	while _G.Fish1 == true do
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(true,"Rod")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
-    task.wait(20)
+    task.wait(12)
 end
 end)
 btns:Button("Auto Get Fish", function()
@@ -103,7 +104,7 @@ end)
 btns:Button("Auto end Fishing", function()
 G.Fish3 = true
 	while _G.Fish3 == true do
-	task.wait(15)
+	task.wait(10)
 local args = {
 	1
 }
