@@ -80,6 +80,37 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 DiscordLib:Notification("Notification", "Already Claim!", "Okay!")
 end)
 btns:Seperator()
+local btns = serv:Channel("Summer Fish")
+btns:Button("Go fossil", function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones.SummerIsland.Interactables.Zones.FossilIsland.CFrame
+end)
+btns:Button("Auto Cast Rod", function()
+        G.Fish1 = true
+	while _G.Fish1 == true do
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
+    task.wait(20)
+end
+end)
+btns:Button("Auto Get Fish", function()
+        _G.Fish2 = true
+	while _G.Fish2 == true do
+task.wait(1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CaughtFish"):InvokeServer()
+end
+end)
+btns:Button("Auto end Fishing", function()
+G.Fish3 = true
+	while _G.Fish3 == true do
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
+    task.wait(15)
+end
+end)
+btns:Seperator()
 local btns = serv:Channel("Summer Event")
 btns:Button("Auto Grips Summer", function()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Grips","EvilDuckfair12")
@@ -185,25 +216,7 @@ rootPart.CFrame = game:GetService("Workspace").Zones["8"].Map.Decor.Anvil.CFrame
 end)
 btns:Seperator()
 
-
 local tgls = serv:Channel("Spin Summer Event") 
-tgls:Toggle("Auto get Fish",false, function(Fish)
-if Fish then
-        _G.Fish1 = true
-	while _G.Fish1 == true do
-		task.wait(5)
-   	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CaughtFish"):InvokeServer()
-
-local args = {
-	1
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("FishingEnd"):InvokeServer(unpack(args))
-		end
-		else
-		_G.Fish1 = false
-           end
-		   print(Fish)
-end)
 tgls:Toggle("Auto egg Summer kraken",false, function(egg)
 if egg then
         _G.egg1 = true
