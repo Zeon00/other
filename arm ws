@@ -82,6 +82,7 @@ end)
 btns:Seperator()
 local btns = serv:Channel("Summer Event")
 btns:Button("Auto Grips Summer", function()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Grips","EvilDuckfair12")
 local args = {
 	"SummerIsland",
 	"Grips",
@@ -90,6 +91,7 @@ local args = {
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 end)
 btns:Button("Auto Dumbells Summer", function()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Dumbells","EvilDuckfair12")
 local args = {
 	"SummerIsland",
 	"Dumbells",
