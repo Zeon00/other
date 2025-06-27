@@ -779,9 +779,4 @@ if spin then
            end
 		   print(spin)
 end)
-~~local args = {
-	"Pirate Merchant",
-	1
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-~~
+
