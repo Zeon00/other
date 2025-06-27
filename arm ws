@@ -213,7 +213,7 @@ tgls:Toggle("Auto Cast Rod",false, function(Rod)
 if Rod then
         G.Rod1 = true
 	while _G.Rod1 == true do
-task.wait(12)
+task.wait(15)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
@@ -243,7 +243,7 @@ tgls:Toggle("Auto end Fishing",false, function(Fishing)
 if Fishing then
 G.Fishing1 = true
 	while _G.Fishing2 == true do
-	task.wait(22)
+	task.wait(25)
 local args = {
 	1
 }
