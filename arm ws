@@ -222,7 +222,7 @@ end)
 tgls:Toggle("Auto Get Fish",false, function(getfish)
 
 	while true do
-wait(2)
+wait(13)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CaughtFish"):InvokeServer()
 end
 end)
@@ -230,7 +230,7 @@ end)
 tgls:Toggle("Auto end Fishing",false, function(Fishing)
 
 	while true do
-	wait(12)
+	wait(18)
 local args = {
 	1
 }
