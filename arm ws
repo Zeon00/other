@@ -495,118 +495,6 @@ if spin then
            end
 	  print(spin)
 end)
-local serv = win:Server("Event Lost Island", "www.roblox.com/library/11759293347")
-local tgls = serv:Channel("Player")
-tgls:Toggle("Auto Grips Lost Island",false, function(Lost)
-local args = {
-	"LostIsland",
-	"Grips",
-	"LostIsland12"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-end)
-tgls:Toggle("Auto Dumbells Lost Island",false, function(Lost)
-local args = {
-	"LostIsland",
-	"Dumbells",
-	"LostIsland12"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-end)
-tgls:Toggle("Auto Tower Island",false, function(Rod)
-	while true do
-wait(5)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Island")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-end
-end)
-tgls:Toggle("Auto Battle Toogle",false, function(Rod)
-	while true do
-wait(0.000000000000000001)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer(true)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-end
-end)
-tgls:Toggle("Auto egg Lost Island",false, function(Lost)
-      if Lost then
-         -- Start the loop
-         _G.Lost1 = true
-         while _G.Lost1 do
-local args = {"Island",[4] = false}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
-task.wait(0.1) 
-         end
-      else
-         _G.Lost1 = false
-      end
-print(Lost)
-end)
-
-local tgls = serv:Channel("Personal Wrestle 1")
-tgls:Toggle("Upgrade Luck",false, function(Lost)
-local args = {"Summer1","Item Luck"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-tgls:Toggle("Upgrade Item Storage",false, function(Lost)
-local args = {"Summer1","Item Storage"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-tgls:Toggle("Upgrade Wrestling Speed",false, function(Lost)
-local args = {"Summer1","Wrestling Speed"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-tgls:Toggle("Upgrade Cash",false, function(Lost)
-local args = {"Summer1","Cash Upgrade"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-
-local tgls = serv:Channel("Personal Wrestle 2")
-tgls:Toggle("Upgrade Luck",false, function(Lost)
-local args = {"Summer2","Item Luck"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-tgls:Toggle("Upgrade Item Storage",false, function(Lost)
-local args = {"Summer2","Item Storage"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-tgls:Toggle("Upgrade Wrestling Speed",false, function(Lost)
-local args = {"Summer2","Wrestling Speed"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-tgls:Toggle("Upgrade Cash",false, function(Lost)
-local args = {"Summer2","Cash Upgrade"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-
-
-local tgls = serv:Channel("Personal Wrestle 3")
-tgls:Toggle("Upgrade Luck",false, function(Lost)
-local args = {"Summer3","Item Luck"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-tgls:Toggle("Upgrade Item Storage",false, function(Lost)
-local args = {"Summer3","Item Storage"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-tgls:Toggle("Upgrade Wrestling Speed",false, function(Lost)
-local args = {"Summer3","Wrestling Speed"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-tgls:Toggle("Upgrade Cash",false, function(Lost)
-local args = {"Summer3","Cash Upgrade"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
-end)
-
 local serv = win:Server("Battle", "www.roblox.com/library/11759293347")
 local tgls = serv:Channel("Summer Island") 
 tgls:Toggle("Auto Dummble summer fight",false, function(Dummble)
@@ -897,3 +785,60 @@ if mob20 then
             end
 		print(mob20)
 end)
+local serv = win:Server("Event Lost Island", "www.roblox.com/library/11759293347")
+local tgls = serv:Channel("Player")
+tgls:Toggle("Auto Grips Lost Island",false, function(Lost)
+local args = {
+	"LostIsland",
+	"Grips",
+	"LostIsland12"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+end)
+tgls:Toggle("Auto Dumbells Lost Island",false, function(Lost)
+local args = {
+	"LostIsland",
+	"Dumbells",
+	"LostIsland12"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+end)
+tgls:Toggle("Auto Tower Island",false, function(Rod)
+	while true do
+wait(5)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Island")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+end
+end)
+tgls:Toggle("Auto Battle Toogle",false, function(Rod)
+	while true do
+wait(0.000000000000000001)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer(true)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+end
+end)
+tgls:Toggle("Auto egg Lost Island",false, function(Lost)
+      if Lost then
+         -- Start the loop
+         _G.Lost1 = true
+         while _G.Lost1 do
+local args = {"Island",[4] = false}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
+task.wait(0.1) 
+         end
+      else
+         _G.Lost1 = false
+      end
+print(Lost)
+end)
+
