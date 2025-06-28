@@ -543,6 +543,70 @@ task.wait(0.1)
       end
 print(Lost)
 end)
+tgls:Toggle("Auto Upgrade Wrestle",false, function(Lost)
+local args = {
+	"Summer1",
+	"Item Luck"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer1",
+	"Item Storage"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer1",
+	"Wrestling Speed"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer1",
+	"Cash Upgrade"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+
+local args = {
+	"Summer2",
+	"Item Luck"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer2",
+	"Item Storage"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer2",
+	"Wrestling Speed"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer2",
+	"Cash Upgrade"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer3",
+	"Item Luck"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer3",
+	"Item Storage"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer3",
+	"Wrestling Speed"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+local args = {
+	"Summer3",
+	"Cash Upgrade"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Upgrade"):FireServer(unpack(args))
+
+end)
 local serv = win:Server("Battle", "www.roblox.com/library/11759293347")
 local tgls = serv:Channel("Summer Island") 
 tgls:Toggle("Auto Dummble summer fight",false, function(Dummble)
