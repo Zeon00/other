@@ -531,8 +531,8 @@ end
 end)
 tgls:Toggle("Auto Battle Toogle",false, function(Rod)
 	while true do
-wait(1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer(true)
 end
 end)
 tgls:Toggle("Auto egg Lost Island",false, function(Lost)
