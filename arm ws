@@ -529,6 +529,12 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
 end
 end)
+tgls:Toggle("Auto Battle Toogle",false, function(Rod)
+	while true do
+wait(1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+end
+end)
 tgls:Toggle("Auto egg Lost Island",false, function(Lost)
       if Lost then
          -- Start the loop
