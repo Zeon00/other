@@ -495,6 +495,28 @@ if spin then
            end
 	  print(spin)
 end)
+local tgls = serv:Channel("Lost Island")
+tgls:Toggle("Auto Tower Island",false, function(Rod)
+	while true do
+wait(5)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Island")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+end
+end)
+tgls:Toggle("Auto egg Lost Island",false, function(Lost)
+      if Lost then
+         -- Start the loop
+         _G.Lost1 = true
+         while _G.Lost1 do
+local args = {"Island",[4] = false}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
+task.wait(0.1) 
+         end
+      else
+         _G.Lost1 = false
+      end
+print(Lost)
+end)
 local serv = win:Server("Battle", "www.roblox.com/library/11759293347")
 local tgls = serv:Channel("Summer Island") 
 tgls:Toggle("Auto Dummble summer fight",false, function(Dummble)
