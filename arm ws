@@ -863,7 +863,3 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
       end
 		print(Leave)
 	end)
-btns:Button("Auto Click", function()
-getgenv().key = "Hostile"
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
-end)
