@@ -804,7 +804,11 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 end)
-tgls:Toggle("Auto Dumbells Lost Island",false, function(Lost)
+tgls:Toggle("Auto Dumbells Lost Island",false, function(Lostdumble)
+if Lostdumble then
+        _G.Lostdumble1 = true
+			while _G.Lostdumble1 == true do
+task.wait()
 local args = {
 	"LostIsland",
 	"Dumbells",
@@ -816,6 +820,11 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+ end
+	  		else
+		      _G.Lostdumble1 = false
+            end
+		print(Lostdumble)
 end)
 tgls:Toggle("Auto Tower Island",false, function(Rod)
 	while true do
