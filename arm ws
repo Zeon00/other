@@ -333,11 +333,6 @@ btns:Button("Auto Swing", function()
               	  	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 	        	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
 			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-local args = {
-	"IslandChest"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChestService"):WaitForChild("RF"):WaitForChild("Open"):InvokeServer(unpack(args))
-
 task.wait()
 		end
  end)
@@ -846,4 +841,21 @@ task.wait(0.1)
       end
 print(Lost)
 end)
+tgls:Toggle("Auto Open Chest",false, function(Leave)
+      if Leave then
+         -- Start the loop
+         _G.Leave1 = true
+			while _G.Leave1 do
+local args = {
+	"IslandChest"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChestService"):WaitForChild("RF"):WaitForChild("Open"):InvokeServer(unpack(args))
 
+				wait() -- Adjust the wait time as needed
+			end
+      else
+         -- Stop the loop
+         _G.Leave1 = false
+      end
+		print(Leave)
+	end)
