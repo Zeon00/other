@@ -6,6 +6,10 @@ local btns = serv:Channel("Rewind And Duck Event")
 btns:Button("LDS HUB", function()
        loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/49f02b0d8c1f60207c84ae76e12abc1e.lua'))()
 end)
+btns:Button("Auto Click", function()
+getgenv().key = "Hostile"
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
+end)
 btns:Button("Auto Collect ATM", function()
         local run1 = true
 			while run1 == true do     
@@ -859,11 +863,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
       end
 		print(Leave)
 	end)
-tgls:Toggle("Auto Click",false, function()
-
-while true do
+btns:Button("Auto Click", function()
 getgenv().key = "Hostile"
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
-end
-
 end)
