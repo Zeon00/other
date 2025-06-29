@@ -7,10 +7,6 @@ local btns = serv:Channel("Rewind And Duck Event")
 btns:Button("LDS HUB", function()
        loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/49f02b0d8c1f60207c84ae76e12abc1e.lua'))()
 end)
-btns:Button("Auto Click", function()
-getgenv().key = "Hostile"
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
-end)
 btns:Button("Auto Collect ATM", function()
         local run1 = true
 			while run1 == true do     
@@ -834,12 +830,6 @@ wait(0.1)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Island")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer()
-local args = {
-	workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("LostIsland"):WaitForChild("NPC"):WaitForChild("MayorTom")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
 
 end
 end)
@@ -882,3 +872,41 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
       end
 		print(Leave)
 	end)
+local tgls = serv:Channel("Battle")
+tgls:Toggle("Mayor Tom",false, function(Tom)
+if Tom then
+        _G.Tom1 = true
+			while _G.Tom1 == true do
+      task.wait()
+				local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("LostIsland"):WaitForChild("NPC"):WaitForChild("MayorTom")}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+local args = {true}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer()
+local args = {true}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+			end
+	  		else
+		      _G.Tom1 = false
+            end
+		print(Tom)
+end)
+
+tgls:Toggle("Balcksmith Bob",false, function(Bob)
+if Bob then
+        _G.Bob1 = true
+			while _G.Bob1 == true do
+      task.wait()
+local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("LostIsland"):WaitForChild("NPC"):WaitForChild("BalcksmithBob")}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+local args = {true}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer()
+local args = {true}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+			end
+	  		else
+		      _G.Bob1 = false
+            end
+		print(Bob)
+end)
