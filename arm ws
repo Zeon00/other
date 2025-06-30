@@ -729,7 +729,7 @@ tgls:Toggle("Auto Dumbells Lost Island",false, function(Lostdumble)
 if Lostdumble then
         _G.Lostdumble1 = true
 	while _G.Lostdumble1 == true do
-task.wait()
+task.wait(120)
 local args = {
 	"LostIsland",
 	"Dumbells",
