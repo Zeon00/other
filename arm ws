@@ -853,3 +853,16 @@ end
            end
 		   print(win)
 end)
+tgls:Toggle("Auto Spin Duck",false, function(evil)
+if evil then
+        _G.evil1 = true
+	while _G.evil1 == true do
+		task.wait(2)
+      local args = {"Ducky","x25"}
+	  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+          end
+		else
+		_G.evil1 = false
+           end
+		   print(evil)
+end)
