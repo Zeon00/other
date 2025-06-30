@@ -729,7 +729,7 @@ tgls:Toggle("Auto Dumbells Lost Island",false, function(Lostdumble)
 if Lostdumble then
         _G.Lostdumble1 = true
 	while _G.Lostdumble1 == true do
-task.wait(120)
+
 local args = {
 	"LostIsland",
 	"Dumbells",
@@ -737,7 +737,8 @@ local args = {
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
- end
+ task.wait(120)
+end
 else
   _G.Lostdumble1 = false
  end
