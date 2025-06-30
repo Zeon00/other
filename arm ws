@@ -140,79 +140,6 @@ btns:Button("Anti afk", function()
 loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
 end)
 btns:Seperator()
-local btns = serv:Channel("Machine")
-btns:Button("Pet Index", function()
-local args = {
-	workspace:WaitForChild("Zones"):WaitForChild("1"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["1"].Interactables.Index.Display.CFrame
-end)
-btns:Button("Gold Machine", function()
-local args = {
-	workspace:WaitForChild("Zones"):WaitForChild("2"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["2"].Interactables.GoldMachine.CFrame
-end)
-btns:Button("Enchantment", function()
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["2"].Interactables.Enchantment.CFrame
-end)
-btns:Button("Void Machine", function()
-local args = {
-	workspace:WaitForChild("Zones"):WaitForChild("3"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["3"].Interactables.VoidMachine.CFrame
-end)
-btns:Button("Goliath Machine", function()
-local args = {
-	workspace:WaitForChild("Zones"):WaitForChild("5"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["5"].Interactables.Goliath.CFrame
-end)
-btns:Button("Mutate Machine", function()
-local args = {
-	workspace:WaitForChild("Zones"):WaitForChild("4"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["4"].Interactables.MutateMachine.CFrame
-end)
-btns:Button("Cure Machine", function()
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["4"].Interactables.CureMachine.CFrame
-end)
-btns:Button("Slime Machine", function()
-local args = {
-	workspace:WaitForChild("Zones"):WaitForChild("7"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["7"].Interactables.SlimeMachine.CFrame
-end)
-btns:Button("Forge Arm Machine", function()
-local args = {
-	workspace:WaitForChild("Zones"):WaitForChild("8"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["8"].Map.Decor.Anvil.CFrame
-end)
-btns:Seperator()
 local tgls = serv:Channel("Summer Fishing")
 tgls:Toggle("Go fossil",false, function()
 local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
@@ -797,23 +724,10 @@ if mob20 then
 end)
 local serv = win:Server("Event Lost Island", "www.roblox.com/library/11759293347")
 local tgls = serv:Channel("Player")
-tgls:Toggle("Auto Grips Lost Island",false, function(Lost)
-local args = {
-	"LostIsland",
-	"Grips",
-	"LostIsland12"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-end)
 tgls:Toggle("Auto Dumbells Lost Island",false, function(Lostdumble)
 if Lostdumble then
         _G.Lostdumble1 = true
-			while _G.Lostdumble1 == true do
+	while _G.Lostdumble1 == true do
 task.wait()
 local args = {
 	"LostIsland",
@@ -822,15 +736,11 @@ local args = {
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
  end
-	  		else
-		      _G.Lostdumble1 = false
-            end
-		print(Lostdumble)
+else
+  _G.Lostdumble1 = false
+ end
+print(Lostdumble)
 end)
 tgls:Toggle("Auto Tower Island",false, function(Rod)
 	while true do
@@ -839,16 +749,8 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
 end
 end)
-tgls:Toggle("Auto Battle Toogle",false, function(Rod)
-	while true do
-wait(0.000000000000000001)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer(true)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-end
-end)
 tgls:Toggle("Auto egg Lost Island",false, function(Lost)
       if Lost then
-         -- Start the loop
          _G.Lost1 = true
          while _G.Lost1 do
 local args = {"Island",[4] = false}
