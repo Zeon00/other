@@ -1,17 +1,99 @@
-
 local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/dawid-scripts/UI-Libs/main/discord%20lib.txt")()
-
 local win = DiscordLib:Window("discord library")
-local serv = win:Server("Event", "www.roblox.com/library/11759293347")
-local btns = serv:Channel("Rewind And Duck Event")
-btns:Button("Auto Click", function()
-getgenv().key = "Hostile"
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
+local serv = win:Server("Arm Ordinary", "www.roblox.com/library/11759293347")
+local tgls = serv:Channel("Player") 
+tgls:Toggle("Auto Claim Online",false, function(claim)
+if claim then	
+	_G.claim1 = true
+	while _G.claim1 == true do
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("1")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("2")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("3")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("6")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("8")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("9")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("11")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("12")
+task.wait(200)
+end
+		else
+		_G.claim1 = false
+           end
+		   print(claim)
 end)
-
-btns:Button("Auto Upgrade Snack", function()
-        local run2 = true
-			while run2 == true do
+tgls:Toggle("Auto Win Battle Stage",false, function(stage)
+if stage then
+        _G.loop1 = true
+	while _G.loop1 == true do
+		task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
+           end
+		else
+		_G.loop1 = false
+           end
+		print(stage)
+end)
+tgls:Toggle("Auto Swing",false, function(swing)
+if swing then
+        _G.loop2 = true
+	while _G.loop2 == true do
+		task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+           end
+		else
+		_G.loop2 = false
+           end
+		print(swing)
+end)
+tgls:Toggle("Auto Roll Aura",false, function(Aura)
+if Aura then
+        _G.loop3 = true
+	while _G.loop3 == true do
+		task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
+           end
+		else
+		_G.loop3 = false
+           end
+		print(Aura)
+end)
+tgls:Toggle("Auto Trainer Open",false, function(trainer)
+if trainer then
+        _G.loop4 = true
+	while _G.loop4 == true do
+		task.wait(3)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Starter Crate")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Gold Crate")
+          end
+		else
+		_G.loop4 = false
+           end
+		print(trainer)
+end)
+tgls:Toggle("Auto Rebirth and Super",false, function(rebirth)
+if rebirth then
+        _G.rebirth1 = true
+			while _G.rebirth1 == true do
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onRebirthRequest"):FireServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
+local args = {"1","Dumbells","250Kg"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()		
+task.wait()
+                        end
+		else
+		_G.rebirth1 = false
+        end
+		print(rebirth)
+end)
+tgls:Toggle("Auto Upgrade Snack",false, function(snack)
+if snack then
+        _G.loop5 = true
+	while _G.loop5 == true do
+		task.wait(0.1)
 local args = {{Item="Banana",Tier=1}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
 local args = {{Item="Cookie",Tier=1}}
@@ -28,35 +110,134 @@ local args = {{Item="Starfruit",Tier=2}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
 local args = {{Item="Dragon Fruit",Tier=2}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-task.wait(0.1)
 end
+		else
+		_G.loop5 = false
+           end
+		print(snack)
 end)
-btns:Button("Buy Arm Rewind", function()
-local run3 = true
-while run3 == true do
+local tgls = serv:Channel("Battle Fight") 
+tgls:Toggle("End Fight",false, function(fight)
+if fight then
+        _G.fight1 = true
+			while _G.fight1 == true do
+      task.wait(1)
 local args = {
-	"Hidden Merchant",
-	4
+	"SkipEnd"
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {
-	"Island Merchant",
-	4
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {
-	"Island Merchant",
-	5
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-
-task.wait(5)
-end
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestEndFight"):InvokeServer(unpack(args))
+				end
+	  		else
+		      _G.fight1 = false
+            end
+		print(fight)
 end)
-btns:Button("Equip Duck", function()
+tgls:Toggle("Mutant King",false, function(Mutant)
+if Mutant then
+        _G.Mutant1 = true
+			while _G.Mutant1 == true do
+      task.wait()
+			local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("4"):WaitForChild("NPC"):WaitForChild("MutantKing")}
+            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+	        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+	        end
+	  		else
+		      _G.Mutant1 = false
+            end
+		print(Mutant)
+end)
+tgls:Toggle("Mammoth",false, function(Mammoth)
+if Mammoth then
+        _G.Mammoth1 = true
+			while _G.Mammoth1 == true do
+      task.wait()
+			local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("5"):WaitForChild("NPC"):WaitForChild("Mammoth")}
+            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+	        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+	        end
+	  		else
+		      _G.Mammoth1 = false
+            end
+		print(Mammoth)
+end)
+tgls:Toggle("Space Dog",false, function(Space)
+if Space then
+        _G.Space1 = true
+			while _G.Space1 == true do
+      task.wait()
+			  local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("7"):WaitForChild("NPC"):WaitForChild("SpaceDog")}
+              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+		      local args = {true}
+	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+	        end
+	  		else
+		      _G.Space1 = false
+            end
+		print(Space)
+end)
+tgls:Toggle("Stage 19",false, function(mob19)
+if mob19 then
+        _G.mob191 = true
+			while _G.mob191 == true do
+				task.wait()
+		        local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("19"):WaitForChild("NPC"):WaitForChild("FlamingReaper")}
+		        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+	            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+				end
+	  		else
+		      _G.mob191 = false
+            end
+		print(mob19)
+end)
+tgls:Toggle("Stage 20",false, function(mob20)
+if mob20 then
+        _G.mob201 = true
+			while _G.mob201 == true do
+      task.wait()
+				local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("20"):WaitForChild("NPC"):WaitForChild("GoldChampion","TempleGuardian")}
+				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
+				end
+	  		else
+		      _G.mob201 = false
+            end
+		print(mob20)
+end)
+local serv = win:Server("Rewind And Duck Event", "www.roblox.com/library/11759293347")
+local tgls = serv:Channel("Rewind And Duck Event") 
+tgls:Toggle("Buy arm Rewind",false, function(arm)
+if arm then
+        _G.loop6 = true
+	while _G.loop6 == true do
+local args = {"Hidden Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Island Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Island Merchant",5}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+task.wait(60)
+ end
+		else
+		_G.loop6 = false
+           end
+		print(arm)
+end)
+tgls:Toggle("Equip Duck",false, function(duck)
+if duck then
+        _G.loop7 = true
+	while _G.loop7 == true do
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Dumbells","EvilDuckfair12")
+task.wait(6)
+ end
+		else
+		_G.loop7 = false
+           end
+		print(duck)
 end)
-btns:Button("Auto Claim Event Ducky", function()
+tgls:Toggle("Claim Event Duck",false, function(event)
+if event then
+        _G.loop8 = true
+	while _G.loop8 == true do
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("Reset"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",1)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",2)
@@ -70,57 +251,88 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",10)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",11)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",12)
+task.wait(60)
+ end
+		else
+		_G.loop8 = false
+           end
+		print(event)
 end)
-btns:Seperator()
-
-local btns = serv:Channel("Summer Event")
-btns:Button("Buy Item Summer Shop", function()
-while true do
-local args = {"Pirate Merchant",1}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Pirate Merchant",2}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Pirate Merchant",3}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+tgls:Toggle("Auto Spin rewind",false, function(spin)
+if spin then
+        _G.spin1 = true
+	while _G.spin1 == true do
+		task.wait(2)
+   	local args = {"Rewind","x25"}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+           end
+		else
+		_G.spin1 = false
+           end
+	  print(spin)
+end)
+tgls:Toggle("Auto Collect ATM",false, function(atm)
+if atm then
+        _G.atm1 = true
+	while _G.atm1 == true do
+		task.wait()  
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM1")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM2")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM3")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM4")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM5")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM6")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM7")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind1")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind2")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind3")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind4")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind5")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind6")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind7")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Summer1")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Summer2")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Summer3")
+end
+		else
+		_G.atm1 = false
+           end
+		   print(atm)
+end)
+local serv = win:Server("Summer And Lost Island", "www.roblox.com/library/11759293347")
+local tgls = serv:Channel("Summer Island") 
+tgls:Toggle("Buy Shop Item",false, function(shopsummer)
+if shopsummer then
+        _G.shopsummer1 = true
+	while _G.shopsummer1 == true do
 local args = {"Pirate Merchant",4}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
 local args = {"Pirate Merchant",5}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Pirate Merchant",6}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-task.wait(15)
-end
+task.wait(60)
+ end
+		else
+		_G.shopsummer1 = false
+           end
+		print(shopsummer)
 end)
-
-btns:Button("Auto Grips Summer", function()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Grips","EvilDuckfair12")
+tgls:Toggle("Equip Grips Summer",false, function(gripsummer)
+if gripsummer then
+        _G.gripsummer1 = true
+	while _G.gripsummer1 == true do
 local args = {
 	"SummerIsland",
 	"Grips",
 	"SummerIsland12"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+task.wait(60)
+ end
+		else
+		_G.gripsummer1 = false
+           end
+		print(gripsummer)
 end)
-btns:Button("Auto Dumbells Summer", function()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Dumbells","EvilDuckfair12")
-local args = {
-	"SummerIsland",
-	"Dumbells",
-	"SummerIsland12"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-end)
-btns:Button("Auto Swing Summer", function()
-        local run = true
-			while run == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-task.wait()
-			end
-end)
-btns:Button("Anti afk", function()
-loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
-end)
-btns:Seperator()
 local tgls = serv:Channel("Summer Fishing")
 tgls:Toggle("Go fossil",false, function()
 local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
@@ -144,7 +356,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 end
 end)
 
-local tgls = serv:Channel("Spin Summer Event") 
+local tgls = serv:Channel("Egg Summer Event") 
 tgls:Toggle("Auto egg Summer kraken",false, function(egg)
 if egg then
         _G.egg1 = true
@@ -194,228 +406,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		   print(eggg)
 end)
-
-local serv = win:Server("Combat", "www.roblox.com/library/11759293347")
-local btns = serv:Channel("Player")
-btns:Button("Auto Win", function()
-	 local rune1 = true
-	while rune1 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-
-task.wait()
-end
-end)
-
-btns:Button("Auto Swing", function()
-		local rune2 = true
-		while rune2 == true do
-              	  	
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-	        	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-task.wait()
-		end
- end)
-btns:Button("Auto Trainer Open", function()
-		local rune3 = true
-		while rune3 == true do
-			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Starter Crate")
-			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Gold Crate")
-			task.wait(3) 
-		   end
-end)
-btns:Button("Auto Roll", function()
-		local rune4 = true
-		while rune4 == true do
-			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
-			task.wait(0.1)
-		end
-end)
-btns:Seperator() 
-
-local tgls = serv:Channel("Status") 
-tgls:Toggle("Auto Rebirth and Super",false, function(rebirth)
-if rebirth then
-        _G.rebirth1 = true
-			while _G.rebirth1 == true do
-     	      game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onRebirthRequest"):FireServer()
-              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
-			  game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-              local args = {
-	"1",
-	"Dumbells",
-	"250Kg"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
- game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()		
-task.wait()
-                        end
-		else
-		_G.rebirth1 = false
-        end
-		print(rebirth)
-end)
-tgls:Toggle("Add Streght",false, function(Streght)
-if Streght then
-        _G.Streght1 = true
-			while _G.Streght1 == true do
-local args = {"Fire","Earth Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Water Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Fire Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Animal Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Ice Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Skeleton Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Evil Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Godly Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-		    end
-		else
-		_G.Streght1 = false
-        end
-		print(Streght)
-end)
-tgls:Toggle("Add Lucky",false, function(Lucky)
-if Lucky then
-        _G.Lucky1 = true
-			while _G.Lucky1 == true do
-local args = {"Earth","Earth Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Water Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Fire Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Animal Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Ice Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Skeleton Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Evil Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Godly Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-		    end
-		else
-		_G.Lucky1 = false
-        end
-		print(Lucky)
-end)
-tgls:Toggle("Add Rift",false, function(Rift)
-if Rift then
-        _G.Rift1 = true
-			while _G.Rift1 == true do
-local args = {"Water","Earth Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Water Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Fire Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Animal Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Ice Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Skeleton Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Evil Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Godly Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-		    end
-		else
-		_G.Rift1 = false
-        end
-		print(Rift)
-end)
-tgls:Toggle("Add Training",false, function(Training)
-if Training then
-        _G.Training1 = true
-			while _G.Training1 == true do
-local args = {"Wind","Earth Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Water Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Fire Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Animal Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Ice Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Skeleton Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Evil Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Godly Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-		    end
-		else
-		_G.Training1 = false
-        end
-		print(Training)
-end)
-tgls:Toggle("Auto Spin rewind",false, function(spin)
-if spin then
-        _G.spin1 = true
-	while _G.spin1 == true do
-		task.wait(2)
-   	local args = {"Rewind","x25"}
-	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-           end
-		else
-		_G.spin1 = false
-           end
-	  print(spin)
-end)
-local serv = win:Server("Battle", "www.roblox.com/library/11759293347")
-local tgls = serv:Channel("Summer Island") 
+local tgls = serv:Channel("Battle Summer Island") 
 tgls:Toggle("Auto Dummble summer fight",false, function(Dummble)
 if Dummble then
         _G.Dummble1 = true
@@ -580,135 +571,6 @@ if Archeologist then
             end
 		print(Archeologist)
 end)		
-local tgls = serv:Channel("Normal Stage") 
-tgls:Toggle("End Fight",false, function(fight)
-if fight then
-        _G.fight1 = true
-			while _G.fight1 == true do
-      task.wait(1)
-local args = {
-	"SkipEnd"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestEndFight"):InvokeServer(unpack(args))
-				end
-	  		else
-		      _G.fight1 = false
-            end
-		print(fight)
-end)
-tgls:Toggle("Mutant King",false, function(Mutant)
-if Mutant then
-        _G.Mutant1 = true
-			while _G.Mutant1 == true do
-      task.wait()
-			local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("4"):WaitForChild("NPC"):WaitForChild("MutantKing")}
-            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-	        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-	        end
-	  		else
-		      _G.Mutant1 = false
-            end
-		print(Mutant)
-end)
-tgls:Toggle("Mammoth",false, function(Mammoth)
-if Mammoth then
-        _G.Mammoth1 = true
-			while _G.Mammoth1 == true do
-      task.wait()
-			local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("5"):WaitForChild("NPC"):WaitForChild("Mammoth")}
-            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-	        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-	        end
-	  		else
-		      _G.Mammoth1 = false
-            end
-		print(Mammoth)
-end)
-tgls:Toggle("Space Dog",false, function(Space)
-if Space then
-        _G.Space1 = true
-			while _G.Space1 == true do
-      task.wait()
-			  local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("7"):WaitForChild("NPC"):WaitForChild("SpaceDog")}
-              game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-		      local args = {true}
-	          game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-	        end
-	  		else
-		      _G.Space1 = false
-            end
-		print(Space)
-end)
-tgls:Toggle("Stage 19",false, function(mob19)
-if mob19 then
-        _G.mob191 = true
-			while _G.mob191 == true do
-				task.wait()
-		        local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("19"):WaitForChild("NPC"):WaitForChild("FlamingReaper")}
-		        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-	            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-			    game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer()
-				local args = {true}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-				local args = {true}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer(unpack(args))
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				end
-	  		else
-		      _G.mob191 = false
-            end
-		print(mob19)
-end)
-tgls:Toggle("Stage 20",false, function(mob20)
-if mob20 then
-        _G.mob201 = true
-			while _G.mob201 == true do
-      task.wait()
-				local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("20"):WaitForChild("NPC"):WaitForChild("GoldChampion","TempleGuardian")}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer()
-				local args = {true}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-				local args = {true}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer(unpack(args))
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-				end
-	  		else
-		      _G.mob201 = false
-            end
-		print(mob20)
-end)
 local serv = win:Server("Event Lost Island", "www.roblox.com/library/11759293347")
 local tgls = serv:Channel("Player")
 tgls:Toggle("Auto Dumbells Lost Island",false, function(Lostdumble)
@@ -787,34 +649,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
             end
 		print(Tom)
 end)
-tgls:Toggle("Auto Collect ATM",false, function(atm)
-if atm then
-        _G.atm1 = true
-	while _G.atm1 == true do
-		task.wait()  
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM1")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM2")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM3")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM4")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM5")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM6")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM7")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind1")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind2")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind3")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind4")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind5")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind6")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind7")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Summer1")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Summer2")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Summer3")
-end
-		else
-		_G.atm1 = false
-           end
-		   print(atm)
-end)
+
 
 tgls:Toggle("Auto Win Trial",false, function(win)
 if win then	
@@ -851,29 +686,125 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
 
-task.wait()
 end
 		else
 		_G.win1 = false
            end
 		   print(win)
 end)
-tgls:Toggle("Auto Claim Online",false, function(claim)
-if claim then	
-	_G.claim1 = true
-	while _G.claim1 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("1")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("2")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("3")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("6")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("8")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("9")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("11")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("12")
-task.wait(200)
-end
+local serv = win:Server("Misc", "www.roblox.com/library/11759293347")
+local btns = serv:Channel("Other")
+btns:Button("Auto Click", function()
+getgenv().key = "Hostile"
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
+end)
+
+btns:Button("Anti afk", function()
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
+end)
+btns:Seperator()
+local tgls = serv:Channel("Status") 
+tgls:Toggle("Add Streght",false, function(Streght)
+if Streght then
+        _G.Streght1 = true
+			while _G.Streght1 == true do
+local args = {"Fire","Earth Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Fire","Water Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Fire","Fire Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Fire","Animal Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Fire","Ice Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Fire","Skeleton Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Fire","Evil Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Fire","Godly Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+		    end
 		else
-		_G.claim1 = false
-           end
-		   print(claim)
+		_G.Streght1 = false
+        end
+		print(Streght)
+end)
+tgls:Toggle("Add Lucky",false, function(Lucky)
+if Lucky then
+        _G.Lucky1 = true
+			while _G.Lucky1 == true do
+local args = {"Earth","Earth Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Earth","Water Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Earth","Fire Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Earth","Animal Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Earth","Ice Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Earth","Skeleton Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Earth","Evil Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Earth","Godly Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.Lucky1 = false
+        end
+		print(Lucky)
+end)
+tgls:Toggle("Add Rift",false, function(Rift)
+if Rift then
+        _G.Rift1 = true
+			while _G.Rift1 == true do
+local args = {"Water","Earth Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Water","Water Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Water","Fire Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Water","Animal Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Water","Ice Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Water","Skeleton Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Water","Evil Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Water","Godly Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.Rift1 = false
+        end
+		print(Rift)
+end)
+tgls:Toggle("Add Training",false, function(Training)
+if Training then
+        _G.Training1 = true
+			while _G.Training1 == true do
+local args = {"Wind","Earth Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Wind","Water Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Wind","Fire Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Wind","Animal Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Wind","Ice Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Wind","Skeleton Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Wind","Evil Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+local args = {"Wind","Godly Spirit Fruit","All"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.Training1 = false
+        end
+		print(Training)
 end)
