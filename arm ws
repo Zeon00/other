@@ -50,7 +50,7 @@ tgls:Toggle("Auto Roll Aura",false, function(Aura)
 if Aura then
         _G.loop3 = true
 	while _G.loop3 == true do
-		task.wait()
+		task.wait(0.1)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
            end
 		else
@@ -65,7 +65,10 @@ if trainer then
 		task.wait(3)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Starter Crate")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Gold Crate")
-          end
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Mythic Crate")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Premium Crate")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Prism Crate")
+end
 		else
 		_G.loop4 = false
            end
