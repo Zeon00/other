@@ -1,8 +1,7 @@
-local DiscordLib = loadstring(game:HttpGet"https://raw.githubusercontent.com/dawid-scripts/UI-Libs/main/discord%20lib.txt")()
-local win = DiscordLib:Window("discord library")
-local serv = win:Server("Arm Ordinary", "www.roblox.com/library/11759293347")
-local tgls = serv:Channel("Player") 
-tgls:Toggle("Auto Claim Online",false, function(claim)
+local Library = loadstring(Game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wizard"))()
+local Window = Library:NewWindow("Arm Wrestle")
+local Tab = Window:NewSection("Player")
+Tab:CreateToggle("Auto Claim Online", function(claim)
 if claim then	
 	_G.claim1 = true
 	while _G.claim1 == true do
@@ -21,7 +20,7 @@ end
            end
 		   print(claim)
 end)
-tgls:Toggle("Auto Win Battle Stage",false, function(stage)
+Tab:CreateToggle("Auto Win Battle Stage", function(stage)
 if stage then
         _G.loop1 = true
 	while _G.loop1 == true do
@@ -34,7 +33,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		print(stage)
 end)
-tgls:Toggle("Auto Swing",false, function(swing)
+Tab:CreateToggle("Auto Swing", function(swing)
 if swing then
         _G.loop2 = true
 	while _G.loop2 == true do
@@ -46,7 +45,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		print(swing)
 end)
-tgls:Toggle("Auto Roll Aura",false, function(Aura)
+Tab:CreateToggle("Auto Roll Aura", function(Aura)
 if Aura then
         _G.loop3 = true
 	while _G.loop3 == true do
@@ -58,7 +57,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		print(Aura)
 end)
-tgls:Toggle("Auto Trainer Open",false, function(trainer)
+Tab:CreateToggle("Auto Trainer Open", function(trainer)
 if trainer then
         _G.loop4 = true
 	while _G.loop4 == true do
@@ -74,7 +73,7 @@ end
            end
 		print(trainer)
 end)
-tgls:Toggle("Auto Rebirth and Super",false, function(rebirth)
+Tab:CreateToggle("Auto Rebirth and Super", function(rebirth)
 if rebirth then
         _G.rebirth1 = true
 			while _G.rebirth1 == true do
@@ -92,7 +91,7 @@ task.wait()
         end
 		print(rebirth)
 end)
-tgls:Toggle("Auto Upgrade Snack",false, function(snack)
+Tab:CreateToggle("Auto Upgrade Snack", function(snack)
 if snack then
         _G.loop5 = true
 	while _G.loop5 == true do
@@ -119,8 +118,8 @@ end
            end
 		print(snack)
 end)
-local tgls = serv:Channel("Battle Fight") 
-tgls:Toggle("End Fight",false, function(fight)
+local Tab = Window:NewSection("Battle")
+Tab:CreateToggle("End Fight", function(fight)
 if fight then
         _G.fight1 = true
 			while _G.fight1 == true do
@@ -135,7 +134,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
             end
 		print(fight)
 end)
-tgls:Toggle("Mutant King",false, function(Mutant)
+Tab:CreateToggle("Mutant King", function(Mutant)
 if Mutant then
         _G.Mutant1 = true
 			while _G.Mutant1 == true do
@@ -149,7 +148,7 @@ if Mutant then
             end
 		print(Mutant)
 end)
-tgls:Toggle("Mammoth",false, function(Mammoth)
+Tab:CreateToggle("Mammoth", function(Mammoth)
 if Mammoth then
         _G.Mammoth1 = true
 			while _G.Mammoth1 == true do
@@ -163,7 +162,7 @@ if Mammoth then
             end
 		print(Mammoth)
 end)
-tgls:Toggle("Space Dog",false, function(Space)
+Tab:CreateToggle("Space Dog", function(Space)
 if Space then
         _G.Space1 = true
 			while _G.Space1 == true do
@@ -178,7 +177,7 @@ if Space then
             end
 		print(Space)
 end)
-tgls:Toggle("Stage 19",false, function(mob19)
+Tab:CreateToggle("Stage 19", function(mob19)
 if mob19 then
         _G.mob191 = true
 			while _G.mob191 == true do
@@ -192,7 +191,7 @@ if mob19 then
             end
 		print(mob19)
 end)
-tgls:Toggle("Stage 20",false, function(mob20)
+Tab:CreateToggle("Stage 20", function(mob20)
 if mob20 then
         _G.mob201 = true
 			while _G.mob201 == true do
@@ -206,9 +205,9 @@ if mob20 then
             end
 		print(mob20)
 end)
-local serv = win:Server("Rewind And Duck Event", "www.roblox.com/library/11759293347")
-local tgls = serv:Channel("Rewind And Duck Event") 
-tgls:Toggle("Buy arm Rewind",false, function(arm)
+
+local Tab = Window:NewSection("Rewind & Duck Event") 
+Tab:CreateToggle("Buy arm Rewind", function(arm)
 if arm then
         _G.loop6 = true
 	while _G.loop6 == true do
@@ -223,7 +222,7 @@ task.wait(60)
            end
 		print(arm)
 end)
-tgls:Toggle("Equip Duck",false, function(duck)
+Tab:CreateToggle("Equip Duck", function(duck)
 if duck then
         _G.loop7 = true
 	while _G.loop7 == true do
@@ -235,7 +234,7 @@ task.wait(6)
            end
 		print(duck)
 end)
-tgls:Toggle("Claim Event Duck",false, function(event)
+Tab:CreateToggle("Claim Event Duck", function(event)
 if event then
         _G.loop8 = true
 	while _G.loop8 == true do
@@ -259,7 +258,7 @@ task.wait(60)
            end
 		print(event)
 end)
-tgls:Toggle("Auto Spin rewind",false, function(spin)
+Tab:CreateToggle("Auto Spin rewind", function(spin)
 if spin then
         _G.spin1 = true
 	while _G.spin1 == true do
@@ -272,7 +271,7 @@ if spin then
            end
 	  print(spin)
 end)
-tgls:Toggle("Auto Collect ATM",false, function(atm)
+Tab:CreateToggle("Auto Collect ATM", function(atm)
 if atm then
         _G.atm1 = true
 	while _G.atm1 == true do
@@ -300,9 +299,9 @@ end
            end
 		   print(atm)
 end)
-local serv = win:Server("Summer And Lost Island", "www.roblox.com/library/11759293347")
-local tgls = serv:Channel("Summer Island") 
-tgls:Toggle("Buy Shop Item",false, function(shopsummer)
+local Window = Library:NewWindow("Summer Island")
+local Tab = Window:NewSection("Summer Island") 
+Tab:CreateToggle("Buy Shop Item", function(shopsummer)
 if shopsummer then
         _G.shopsummer1 = true
 	while _G.shopsummer1 == true do
@@ -317,7 +316,7 @@ task.wait(60)
            end
 		print(shopsummer)
 end)
-tgls:Toggle("Equip Grips Summer",false, function(gripsummer)
+Tab:CreateToggle("Equip Grips Summer", function(gripsummer)
 if gripsummer then
         _G.gripsummer1 = true
 	while _G.gripsummer1 == true do
@@ -334,12 +333,12 @@ task.wait(60)
            end
 		print(gripsummer)
 end)
-local tgls = serv:Channel("Summer Fishing")
-tgls:Toggle("Go fossil",false, function()
+local Tab = Window:NewSection("Summer Fishing") 
+Tab:CreateToggle("Go fossil", function()
 local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
 rootPart.CFrame = game:GetService("Workspace").Zones.SummerIsland.Interactables.Zones.FossilIsland.CFrame
 end)
-tgls:Toggle("Auto Cast Rod",false, function(Rod)
+Tab:CreateToggle("Auto Cast Rod", function(Rod)
 	while true do
 task.wait(3)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
@@ -357,8 +356,8 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 end
 end)
 
-local tgls = serv:Channel("Egg Summer Event") 
-tgls:Toggle("Auto egg Summer kraken",false, function(egg)
+local Tab = Window:NewSection("Egg Summer Event") 
+Tab:CreateToggle("Auto egg Summer kraken", function(egg)
 if egg then
         _G.egg1 = true
 	while _G.egg1 == true do
@@ -374,7 +373,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		   print(egg)
 end)
-tgls:Toggle("Auto egg Summer kraken 2X luck",false, function(egg0)
+Tab:CreateToggle("Auto egg Summer kraken 2X luck", function(egg0)
 if egg0 then
         _G.egg01 = true
 	while _G.egg01 == true do
@@ -391,7 +390,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		   print(egg0)
 end)
-tgls:Toggle("Auto egg Fossil",false, function(eggg)
+Tab:CreateToggle("Auto egg Fossil", function(eggg)
 if eggg then
         _G.eggg1 = true
 	while _G.eggg1 == true do
@@ -407,8 +406,8 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		   print(eggg)
 end)
-local tgls = serv:Channel("Battle Summer Island") 
-tgls:Toggle("Auto Dummble summer fight",false, function(Dummble)
+local Tab = Window:NewSection("Battle Summer Island") 
+Tab:CreateToggle("Auto Dummble summer fight", function(Dummble)
 if Dummble then
         _G.Dummble1 = true
 			while _G.Dummble1 == true do
@@ -448,7 +447,7 @@ end
 		print(Dummble)
 end)
 
-tgls:Toggle("Auto Grips summer fight",false, function(Grips)
+Tab:CreateToggle("Auto Grips summer fight", function(Grips)
 if Grips then
         _G.Grips1 = true
 			while _G.Grips1 == true do
@@ -466,7 +465,7 @@ if Grips then
             end
 		print(Grips)
 end)
-tgls:Toggle("Auto Knuckle summer fight",false, function(Knuckle)
+Tab:CreateToggle("Auto Knuckle summer fight", function(Knuckle)
 if Knuckle then
         _G.Knuckle1 = true
 			while _G.Knuckle1 == true do
@@ -488,7 +487,7 @@ if Knuckle then
             end
 		print(Knuckle)
 end)
-tgls:Toggle("Battle Tiki Trouble",false, function(Tiki)
+Tab:CreateToggle("Battle Tiki Trouble", function(Tiki)
 if Tiki then
         _G.Tiki1 = true
 			while _G.Tiki1 == true do
@@ -512,7 +511,7 @@ if Tiki then
             end
 		print(Tiki)
 end)
-tgls:Toggle("Battle Pirate King",false, function(pirate)
+Tab:CreateToggle("Battle Pirate King", function(pirate)
 if pirate then
         _G.pirate1 = true
 			while _G.pirate1 == true do
@@ -550,7 +549,7 @@ if pirate then
             end
 		print(pirate)
 end)
-tgls:Toggle("Battle Archeologist",false, function(Archeologist)
+Tab:CreateToggle("Battle Archeologist", function(Archeologist)
 if Archeologist then
         _G.Archeologist1 = true
 			while _G.Archeologist1 == true do
@@ -587,10 +586,10 @@ if Archeologist then
 		      _G.Archeologist1 = false
             end
 		print(Archeologist)
-end)		
-local serv = win:Server("Event Lost Island", "www.roblox.com/library/11759293347")
-local tgls = serv:Channel("Player")
-tgls:Toggle("Auto Dumbells Lost Island",false, function(Lostdumble)
+end)
+local Window = Library:NewWindow("Lost Island")
+local Tab = Window:NewSection("Lost Island")
+Tab:CreateToggle("Auto Dumbells", function(Lostdumble)
 if Lostdumble then
         _G.Lostdumble1 = true
 while _G.Lostdumble1 == true do
@@ -619,14 +618,14 @@ else
  end
 print(Lostdumble)
 end)
-tgls:Toggle("Auto Tower Island",false, function(Rod)
+Tab:CreateToggle("Auto Tower Island", function(Rod)
 	while true do
 wait(0.1)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Island")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
 end
 end)
-tgls:Toggle("Auto egg Lost Island",false, function(Lost)
+Tab:CreateToggle("Auto egg Lost Island", function(Lost)
       if Lost then
          _G.Lost1 = true
          while _G.Lost1 do
@@ -639,7 +638,7 @@ task.wait(0.1)
       end
 print(Lost)
 end)
-tgls:Toggle("Auto Open Chest",false, function(Leave)
+Tab:CreateToggle("Auto Open Chest", function(Leave)
       if Leave then
          -- Start the loop
          _G.Leave1 = true
@@ -657,8 +656,8 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
       end
 		print(Leave)
 	end)
-local tgls = serv:Channel("Battle")
-tgls:Toggle("Mayor Tom",false, function(Tom)
+local Tab = Window:NewSection("Battle Lost Island")
+Tab:CreateToggle("Mayor Tom", function(Tom)
 if Tom then
         _G.Tom1 = true
 			while _G.Tom1 == true do
@@ -676,7 +675,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
             end
 		print(Tom)
 end)
-tgls:Toggle("Auto Crit Hit",false, function(Crit)
+Tab:CreateToggle("Auto Crit Hit", function(Crit)
 if Crit then
         _G.Crit1 = true
 	while _G.Crit1 == true do
@@ -696,7 +695,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		print(Crit)
 end)
-tgls:Toggle("Auto Hit",false, function(Hit)
+Tab:CreateToggle("Auto Hit", function(Hit)
 if Hit then
         _G.Hit1 = true
 	while _G.Hit1 == true do
@@ -717,34 +716,34 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		print(Hit)
 end)
-local serv = win:Server("Misc", "www.roblox.com/library/11759293347")
-local btns = serv:Channel("Other")
-btns:Button("Auto Click", function()
+local Window = Library:NewWindow("Misc")
+local Tab = Window:NewSection("Misc") 
+Tab:CreateButton("Auto Click", function()
 getgenv().key = "Hostile"
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
 end)
 
-btns:Button("Anti afk", function()
+Tab:CreateButton("Anti afk", function()
 loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
 end)
-btns:Button("Goliath Machine", function()
+Tab:CreateButton("Goliath Machine", function()
 local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
 rootPart.CFrame = game:GetService("Workspace").Zones["5"].Interactables.Goliath.CFrame
 end)
-btns:Button("Map Dino", function()
+Tab:CreateButton("Map Dino", function()
 local args = {
 	workspace:WaitForChild("Zones"):WaitForChild("5"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
 end)
 
-btns:Button("Map Lost Island", function()
+Tab:CreateButton("Map Lost Island", function()
 local args = {
 	workspace:WaitForChild("Zones"):WaitForChild("LostIsland"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
 end)
-btns:Button("Redeem Code", function()
+Tab:CreateButton("Redeem Code", function()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("banker")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("sorryoops")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("timetravel")
@@ -794,9 +793,8 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("forging")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("noob")
 end)
-btns:Seperator()
-local tgls = serv:Channel("Status") 
-tgls:Toggle("Add Streght",false, function(Streght)
+local Tab = Window:NewSection("Status") 
+Tab:CreateToggle("Add Streght", function(Streght)
 if Streght then
         _G.Streght1 = true
 			while _G.Streght1 == true do
@@ -822,7 +820,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         end
 		print(Streght)
 end)
-tgls:Toggle("Add Lucky",false, function(Lucky)
+Tab:CreateToggle("Add Lucky", function(Lucky)
 if Lucky then
         _G.Lucky1 = true
 			while _G.Lucky1 == true do
@@ -848,7 +846,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         end
 		print(Lucky)
 end)
-tgls:Toggle("Add Rift",false, function(Rift)
+Tab:CreateToggle("Add Rift", function(Rift)
 if Rift then
         _G.Rift1 = true
 			while _G.Rift1 == true do
@@ -874,7 +872,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         end
 		print(Rift)
 end)
-tgls:Toggle("Add Training",false, function(Training)
+Tab:CreateToggle("Add Training", function(Training)
 if Training then
         _G.Training1 = true
 			while _G.Training1 == true do
@@ -900,7 +898,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         end
 		print(Training)
 end)
-tgls:Toggle("Sell All Duck",false, function(all)
+Tab:CreateToggle("Sell All Duck", function(all)
 if all then
         _G.all1 = true
 	while _G.all1 == true do
