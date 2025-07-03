@@ -482,7 +482,32 @@ task.wait(60)
 		print("Toggle state:", gripsummer)
     end
 })
+GUI:CreateSection({
+    parent = main, 
+    text = "Teleport"
+})
 
+GUI:CreateButton({
+    parent = main, 
+    text = "Fossil Island", 
+    callback = function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").GameObjects.SecondaryZoneTeleports["Fossil Island"].CFrame
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Pirate Island", 
+    callback = function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").GameObjects.SecondaryZoneTeleports["Pirate Island"].CFrame
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Summer Shop", 
+    callback = function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").GameObjects.SecondaryZoneTeleports["Summer Shop"].CFrame
+end})
 GUI:CreateSection({
     parent = main, 
     text = "Summer Fishing"
