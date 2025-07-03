@@ -178,40 +178,11 @@ local args = {{Item="Starfruit",Tier=2}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
 local args = {{Item="Dragon Fruit",Tier=2}}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Banana",Tier=3}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Cookie",Tier=3}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Starfruit",Tier=3}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Dragon Fruit",Tier=3}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-
 end
 		else
 		_G.loop5 = false
            end
 		print("Toggle state:", snack)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Upgrade Raspbery", 
-    default = false, 
-    callback = function(Raspbery)
-if Raspbery then
-        _G.Raspbery1 = true
-	while _G.Raspbery1 == true do
-		task.wait(0.1)
-local args = {{Item="Raspberry",Tier=3}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Raspberry",Tier=4}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-end
-		else
-		_G.Raspbery1 = false
-           end
-		print("Toggle state:", Raspbery)
     end
 })
 GUI:CreateSection({
@@ -429,7 +400,42 @@ if spin then
         print("Toggle state:", spin)
     end
 })
-
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Spin Sakura", 
+    default = false, 
+    callback = function(Sakura)
+if Sakura then
+        _G.Sakura1 = true
+	while _G.Sakura1 == true do
+		task.wait(2)
+   	local args = {"Sakura Fortune","x25"}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+           end
+		else
+		_G.Sakura1 = false
+           end
+        print("Toggle state:", Sakura)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Divine Fortune", 
+    default = false, 
+    callback = function(Divine)
+if Divine then
+        _G.Divine1 = true
+	while _G.Divine1 == true do
+		task.wait(2)
+   	local args = {"Divine Fortune","x25"}
+	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+           end
+		else
+		_G.Divine1 = false
+           end
+        print("Toggle state:", Divine)
+    end
+})
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Collect ATM", 
