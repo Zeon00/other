@@ -24,7 +24,7 @@ GUI:CreateMain({
     }
 })
 
-local main = GUI:CreateTab("Main", "home") -- You can use IconID we didnt impleemnt lucid or any external icons
+local main = GUI:CreateTab("Main", "user-round") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Player"
@@ -309,7 +309,7 @@ if mob20 then
 		print("Toggle state:", mob20)
     end
 })
-local main = GUI:CreateTab("Old Event", "home") -- You can use IconID we didnt impleemnt lucid or any external icons
+local main = GUI:CreateTab("Old Event", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Rewind and Duck Event"
@@ -435,7 +435,7 @@ end
         print("Toggle state:", atm)
     end
 })
-local main = GUI:CreateTab("Summer Island", "home") -- You can use IconID we didnt impleemnt lucid or any external icons
+local main = GUI:CreateTab("Summer Island", "sun") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Summer Island"
@@ -609,7 +609,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 		   print("Toggle state:", eggg)
     end
 })
-local main = GUI:CreateTab("Battle", "home") -- You can use IconID we didnt impleemnt lucid or any external icons
+local main = GUI:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Summer Island Battle"
@@ -666,15 +666,36 @@ if Tiki then
         _G.Tiki1 = true
 			while _G.Tiki1 == true do
      				task.wait()
-				local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("SummerIsland"):WaitForChild("NPC"):WaitForChild("TreasurePirate")}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-				local args = {true}
+				local args = {"TikiTrouble"}
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+					local args = {true}
 				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
 				end
 	  		else
 		      _G.Tiki1 = false
             end
 		print("Toggle state:", Tiki)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Fight Archeologist", 
+    default = false, 
+    callback = function(Archeologist)
+if Archeologist then
+        _G.Archeologist1 = true
+			while _G.Archeologist1 == true do
+     				task.wait()
+				local args = {"Archeologist"}
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+					local args = {true}
+				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+				end
+	  		else
+		      _G.Archeologist1 = false
+            end
+		print("Toggle state:", Archeologist)
     end
 })
 GUI:CreateToggle({
@@ -686,10 +707,10 @@ if pirate then
         _G.pirate1 = true
 			while _G.pirate1 == true do
      				task.wait()
-               			local args = {"GhostPirate"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+               		local args = {"GhostPirate"}
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+					local args = {true}
+					game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
 				end
 	  		else
 		      _G.pirate1 = false
@@ -697,28 +718,7 @@ local args = {true}
 		print("Toggle state:", pirate)
     end
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Fight Archeologist", 
-    default = false, 
-    callback = function(Archeologist)
-if Archeologist then
-        _G.Archeologist1 = true
-			while _G.Archeologist1 == true do
-     				task.wait()
-				local args = {workspace:WaitForChild("GameObjects"):WaitForChild("ArmWrestling"):WaitForChild("SummerIsland"):WaitForChild("NPC"):WaitForChild("Archeologist")}
-               			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-				local args = {true}
-				game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-				end
-	  		else
-		      _G.Archeologist1 = false
-            end
-		print("Toggle state:", Archeologist)
-    end
-})
-
-local main = GUI:CreateTab("Lost Island", "home") -- You can use IconID we didnt impleemnt lucid or any external icons
+local main = GUI:CreateTab("Lost Island", "tree-palm") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Main Lost Island "
@@ -887,7 +887,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 		print("Toggle state:", Hit)
     end
 })
-local main = GUI:CreateTab("Misc", "home") -- You can use IconID we didnt impleemnt lucid or any external icons
+local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Option"
