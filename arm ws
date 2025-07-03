@@ -968,6 +968,21 @@ loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScript
 end})
 GUI:CreateButton({
     parent = main, 
+    text = "Gold Machine", 
+    callback = function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["2"].Interactables.GoldMachine.CFrame
+end})
+
+GUI:CreateButton({
+    parent = main, 
+    text = "Forge Arm Machine", 
+    callback = function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["8"].Map.Decor.Anvil.CFrame
+end})
+GUI:CreateButton({
+    parent = main, 
     text = "Goliath Machine", 
     callback = function()
 local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
