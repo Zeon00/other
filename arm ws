@@ -845,7 +845,7 @@ GUI:CreateToggle({
       if Lost then
          _G.Lost1 = true
          while _G.Lost1 do
-local args = {"Island",[4] = false}
+local args = {"Island",[3] = true,[4] = false}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
 task.wait(0.1) 
          end
