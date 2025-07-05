@@ -438,6 +438,24 @@ if Divine then
 })
 GUI:CreateToggle({
     parent = main, 
+    text = "Spin EVENT independ", 
+    default = false, 
+    callback = function(independ)
+if independ then
+        _G.Sakura1 = true
+	while _G.independ1 == true do
+		task.wait(2)
+   	local args = {"4th Of July Wheel","x25"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+           end
+		else
+		_G.independ1 = false
+           end
+        print("Toggle state:", independ)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
     text = "Auto Collect ATM", 
     default = false, 
     callback = function(atm)
@@ -1069,6 +1087,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("forging")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("noob")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("fixingstuff")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("celebration")
 
 end})
 
@@ -1199,38 +1218,5 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 		_G.Training1 = false
         end
 		print("Toggle state:", Training)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Sell All Duck", 
-    default = false, 
-    callback = function(all)
-if all then
-        _G.all1 = true
-	while _G.all1 == true do
-		task.wait()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Diamond Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Volcano Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Evil Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Rainbow Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Swag Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Chocolate Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Zombie Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Wizard Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Unicorn Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Cash Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Slime Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Candy Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Crystal Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Regular Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Santa Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Robot Ducky","All")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("DuckService"):WaitForChild("RF"):WaitForChild("Sell"):InvokeServer("Toilet Ducky","All")
-           end
-		else
-		_G.all1 = false
-           end
-		print("Toggle state:", all)
     end
 })
