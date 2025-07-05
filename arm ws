@@ -456,6 +456,24 @@ if merdeka then
 })
 GUI:CreateToggle({
     parent = main, 
+    text = "Auto Pirate", 
+    default = false, 
+    callback = function(bajak)
+if bajak then
+        _G.bajak1 = true
+	while _G.bajak1 == true do
+		task.wait(2)
+   	local args = {"Pirate Fortune","x25"}
+    game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+       end
+		else
+		_G.bajak1 = false
+           end
+        print("Toggle state:", bajak)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
     text = "Auto Collect ATM", 
     default = false, 
     callback = function(atm)
