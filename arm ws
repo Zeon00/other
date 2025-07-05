@@ -438,20 +438,20 @@ if Divine then
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Spin EVENT independ", 
+    text = "Auto Spin merdeka", 
     default = false, 
-    callback = function(independ)
-if independ then
-        _G.Sakura1 = true
-	while _G.independ1 == true do
+    callback = function(merdeka)
+if merdeka then
+        _G.merdeka1 = true
+	while _G.merdeka1 == true do
 		task.wait(2)
    	local args = {"4th Of July Wheel","x25"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-           end
+    game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+       end
 		else
-		_G.independ1 = false
+		_G.merdeka1 = false
            end
-        print("Toggle state:", independ)
+        print("Toggle state:", merdeka)
     end
 })
 GUI:CreateToggle({
