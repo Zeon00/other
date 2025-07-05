@@ -1009,7 +1009,17 @@ GUI:CreateButton({
     parent = main, 
     text = "Anti AFK", 
     callback = function()
-loadstring(game:HttpGet(('https://raw.githubusercontent.com/Proxylol/OtherScripts/main/AntiAfk.lua'),true))()
+local VirtualUser = game:GetService('VirtualUser')
+game:GetService('Players').LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Anti AFK loaded!",
+    Text = "Made by Tuuguu936",
+    Button1 = "Okay",
+    Duration = 5
+})
 end})
 GUI:CreateButton({
     parent = main, 
