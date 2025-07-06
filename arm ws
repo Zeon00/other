@@ -828,15 +828,22 @@ else
 print("Toggle state:", Lostdumble)
     end
 })
-GUI:CreateButton({
+GUI:CreateToggle({
     parent = main, 
     text = "Auto Fight Tower", 
-    callback = function()
-	while true do
-wait(0.1)
+    default = false, 
+    callback = function(losttower)
+if losttower then
+        _G.losttower1 = true
+			while _G.losttower1 == true do
+      wait(1)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Island")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(true)
-end
+	end
+	  		else
+		      _G.losttower1 = false
+            end
+print("Toggle state:", losttower)
     end
 })
 GUI:CreateToggle({
