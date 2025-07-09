@@ -747,25 +747,6 @@ GUI:CreateSection({
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Equip Dumble Summer", 
-    default = false, 
-    callback = function(Dummble)
-if Dummble then
-        _G.Dummble1 = true
-			while _G.Dummble1 == true do
-     				task.wait()
-local args = {"LostIsland","Dumbells","LostIsland12"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-end
-	else
-	_G.Dummble1 = false
-         end
-		print("Toggle state:", Dummble)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
     text = "Equip Grips Summer", 
     default = false, 
     callback = function(Grips)
@@ -929,36 +910,23 @@ print("Toggle state:", losttower)
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Trial 13", 
+    text = "Auto Trial Event,13 n 15", 
     default = false, 
-    callback = function(Medieval)
-if Medieval then
-        _G.Medieval1 = true
-			while _G.Medieval1 == true do
-      task.wait()
+    callback = function(losttower)
+if losttower then
+        _G.losttower1 = true
+			while _G.losttower1 == true do
+task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Island")
+task.wait(300)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Medieval")
-	end
-	  		else
-		      _G.Medieval1 = false
-            end
-print("Toggle state:", Medieval)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Trial !5", 
-    default = false, 
-    callback = function(Angelic)
-if Angelic then
-        _G.Angelic1 = true
-			while _G.Angelic1 == true do
-      task.wait()
+task.wait(600)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Angelic")
-	end
+end
 	  		else
-		      _G.Angelic1 = false
+		      _G.losttower1 = false
             end
-print("Toggle state:", Angelic)
+print("Toggle state:", losttower)
     end
 })
 GUI:CreateToggle({
