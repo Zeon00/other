@@ -404,13 +404,15 @@ GUI:CreateToggle({
 if stage15 then
         _G.loop26 = true
 	while _G.loop26 == true do
-task.wait(5)
+task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+task.wait(25)
 local args = {"13","Dumbells","Kingdom12"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-task.wait(25)
+task.wait(50)
 local args = {"13","Grips","Kingdom12"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
- end
+end
 		else
 		_G.loop26 = false
            end
