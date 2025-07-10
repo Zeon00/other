@@ -388,12 +388,35 @@ local args = {"Island Merchant",4}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
 local args = {"Island Merchant",5}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Orc Merchant",3}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Orc Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+
 task.wait(60)
  end
 		else
 		_G.loop6 = false
            end
         print("Toggle state:", arm)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Open Kingdom Chest", 
+    default = false, 
+    callback = function(Kingdom)
+if Kingdom then
+        _G.loop33 = true
+	while _G.loop33 == true do
+		task.wait(0.1)
+local args = {"KingdomChest"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChestService"):WaitForChild("RF"):WaitForChild("Open"):InvokeServer(unpack(args))
+           end
+		else
+		_G.loop33 = false
+           end
+		print("Toggle state:", Kingdom)
     end
 })
 GUI:CreateToggle({
