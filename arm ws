@@ -834,7 +834,7 @@ if Grips then
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Gosht Pirate", 
+    text = "Ancient Fire", 
     default = false, 
     callback = function(pirate)
 if pirate then
@@ -843,10 +843,7 @@ if pirate then
      			task.wait()
 			local args = {"AncientFire"}
 			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-			task.wait()
-               		local args = {"GhostPirate"}
-			game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-			end
+               		end
 	  		else
 		      _G.pirate1 = false
             end
