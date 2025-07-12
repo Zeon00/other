@@ -796,8 +796,9 @@ if eggpentha then
 task.wait()
 local args = {
 	"Guard",
-	[5] = true,
-	[4] = false
+	[3] = true,
+	[4] = true,
+	[5] = true
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
 end
