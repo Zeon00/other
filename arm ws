@@ -652,37 +652,6 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
     end
 })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
@@ -786,3 +755,57 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("fixingstuff")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("celebration")
 end})
+
+
+local main = GUI:CreateTab("New Event", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Option"
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Equip Pethatlon", 
+    default = false, 
+    callback = function(Pethatlon)
+if Pethatlon then
+        _G.loop50 = true
+	while _G.loop50 == true do
+task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+task.wait(25)
+local args = {"Pentathlon","Dumbells","Pentathlon12"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+task.wait(50)
+local args = {"Pentathlon","Grips","Pentathlon12"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+end
+		else
+		_G.loop50 = false
+           end
+        print("Toggle state:", Pethatlon)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Purchase Egg Pethatlon", 
+    default = false, 
+    callback = function(eggpentha)
+if eggpentha then
+        _G.eggpentha1 = true
+	while _G.eggpentha1 == true do
+task.wait()
+local args = {
+	"Guard",
+	[5] = true,
+	[4] = false
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
+end
+		else
+		_G.eggpentha1 = false
+           end
+        print("Toggle state:", eggpentha)
+    end
+})
