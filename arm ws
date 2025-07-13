@@ -808,3 +808,84 @@ end
         print("Toggle state:", eggpentha)
     end
 })
+GUI:CreateToggle({
+    parent = main, 
+    text = " Spin Guard", 
+    default = false, 
+    callback = function(spinguard)
+if spinguard then
+        _G.spinguard1 = true
+	while _G.spinguard1 == true do
+task.wait()
+local args = {
+	"Guard Fortune",
+	"x25"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+
+
+end
+		else
+		_G.spinguard1 = false
+           end
+        print("Toggle state:", spinguard)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Squid Merchant", 
+    default = false, 
+    callback = function(squid)
+if squid then
+        _G.squid1 = true
+	while _G.squid1 == true do
+task.wait()
+local args = {"Hidden Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Hidden Merchant",5}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+end
+		else
+		_G.squid1 = false
+           end
+        print("Toggle state:", squid)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = " Fight FrontmanMonster", 
+    default = false, 
+    callback = function(fronmonster)
+if fronmonster then
+        _G.fronmonster1 = true
+	while _G.fronmonster1 == true do
+task.wait()
+local args = {"FrontmanMonster"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+end
+		else
+		_G.fronmonster1 = false
+           end
+        print("Toggle state:", fronmonster)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = " Fight MegaGuard", 
+    default = false, 
+    callback = function(MegaGuard)
+if MegaGuard then
+        _G.MegaGuard1 = true
+	while _G.MegaGuard1 == true do
+task.wait()
+local args = {"MegaGuard"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+end
+		else
+		_G.MegaGuard1 = false
+           end
+        print("Toggle state:", MegaGuard)
+    end
+})
