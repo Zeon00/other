@@ -839,7 +839,7 @@ GUI:CreateToggle({
 if squid then
         _G.squid1 = true
 	while _G.squid1 == true do
-task.wait()
+task.wait(200)
 local args = {"Hidden Merchant",4}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
 local args = {"Hidden Merchant",5}
