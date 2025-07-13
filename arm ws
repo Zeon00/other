@@ -754,8 +754,36 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("celebration")
 end})
 
+local main = GUI:CreateTab("Teleport", "cannabis") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Shortcut"
+})
 
-local main = GUI:CreateTab("New Event", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateButton({
+    parent = main, 
+    text = "Dino World", 
+    callback = function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = workspace.Zones["5"].Interactables.Teleports.Locations.Spawn.CFrame
+end})
+
+GUI:CreateButton({
+    parent = main, 
+    text = "World 19", 
+    callback = function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = workspace.Zones["19"].Interactables.Teleports.Locations.Spawn.CFrame
+end})
+
+GUI:CreateButton({
+    parent = main, 
+    text = "Goliath Machine", 
+    callback = function()
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["5"].Interactables.Goliath.CFrame
+end})
+local main = GUI:CreateTab("New Event", "squircle") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Option"
@@ -889,3 +917,5 @@ end
         print("Toggle state:", MegaGuard)
     end
 })
+
+
