@@ -932,8 +932,11 @@ if boos2 then
         _G.boos21 = true
 			while _G.boos21 == true do
 task.wait(0.1)
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["1"].Interactables.Goliath.CFrame
+local args = {
+	workspace:WaitForChild("Zones"):WaitForChild("1"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+
 local args = {"Champion"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 		    end
@@ -954,8 +957,11 @@ if boos3 then
         _G.boos31 = true
 			while _G.boos31 == true do
 task.wait(0.1)
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["2"].Interactables.Goliath.CFrame
+local args = {
+	workspace:WaitForChild("Zones"):WaitForChild("2"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+
 local args = {"RogueAi"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 		    end
@@ -976,8 +982,11 @@ if boos4 then
         _G.boos41 = true
 			while _G.boos41 == true do
 task.wait(0.1)
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["3"].Interactables.Goliath.CFrame
+local args = {
+	workspace:WaitForChild("Zones"):WaitForChild("3"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+
 local args = {"KrakenBoss"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 		    end
@@ -997,8 +1006,11 @@ if boos5 then
         _G.boos51 = true
 			while _G.boos51 == true do
 task.wait(0.1)
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["4"].Interactables.Goliath.CFrame
+local args = {
+	workspace:WaitForChild("Zones"):WaitForChild("4"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+
 local args = {"MutantKing"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 		    end
@@ -1018,8 +1030,11 @@ if boos6 then
         _G.boos61 = true
 			while _G.boos61 == true do
 task.wait(0.1)
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["5"].Interactables.Goliath.CFrame
+local args = {
+	workspace:WaitForChild("Zones"):WaitForChild("5"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+
 local args = {"Mammoth"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 		    end
@@ -1039,8 +1054,11 @@ if boos7 then
         _G.boos71 = true
 			while _G.boos71 == true do
 task.wait(0.1)
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["6"].Interactables.Goliath.CFrame
+local args = {
+	workspace:WaitForChild("Zones"):WaitForChild("6"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+
 local args = {"Udzal"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 		    end
@@ -1060,8 +1078,11 @@ if boss8 then
         _G.boss81 = true
 			while _G.boss81 == true do
 task.wait(0.1)
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["7"].Interactables.Goliath.CFrame
+local args = {
+	workspace:WaitForChild("Zones"):WaitForChild("7"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+
 local args = {"SpaceDog"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 		    end
