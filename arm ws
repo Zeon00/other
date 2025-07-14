@@ -918,4 +918,193 @@ end
     end
 })
 
+local main = GUI:CreateTab("Rebirth", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Shortcut"
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss World 2", 
+    default = false, 
+    callback = function(boos2)
+if boos2 then
+        _G.boos21 = true
+			while _G.boos21 == true do
+task.wait(0.1)
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["1"].Interactables.Goliath.CFrame
+local args = {"Champion"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.boos21 = false
+        end
+		print("Toggle state:", boos2)
+    end
+})
 
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss World 3", 
+    default = false, 
+    callback = function(boos3)
+if boos3 then
+        _G.boos31 = true
+			while _G.boos31 == true do
+task.wait(0.1)
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["2"].Interactables.Goliath.CFrame
+local args = {"RogueAi"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.boos31 = false
+        end
+		print("Toggle state:", boos3)
+    end
+})
+
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss World 4", 
+    default = false, 
+    callback = function(boos4)
+if boos4 then
+        _G.boos41 = true
+			while _G.boos41 == true do
+task.wait(0.1)
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["3"].Interactables.Goliath.CFrame
+local args = {"KrakenBoss"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.boos41 = false
+        end
+		print("Toggle state:", boos4)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss World 5", 
+    default = false, 
+    callback = function(boos5)
+if boos5 then
+        _G.boos51 = true
+			while _G.boos51 == true do
+task.wait(0.1)
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["4"].Interactables.Goliath.CFrame
+local args = {"MutantKing"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.boos51 = false
+        end
+		print("Toggle state:", boos5)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss World 6", 
+    default = false, 
+    callback = function(boos6)
+if boos6 then
+        _G.boos61 = true
+			while _G.boos61 == true do
+task.wait(0.1)
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["5"].Interactables.Goliath.CFrame
+local args = {"Mammoth"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.boos61 = false
+        end
+		print("Toggle state:", boos6)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss World 7", 
+    default = false, 
+    callback = function(boos7)
+if boos7 then
+        _G.boos71 = true
+			while _G.boos71 == true do
+task.wait(0.1)
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["6"].Interactables.Goliath.CFrame
+local args = {"Udzal"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.boos71 = false
+        end
+		print("Toggle state:", boos7)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss World 8", 
+    default = false, 
+    callback = function(boss8)
+if boss8 then
+        _G.boss81 = true
+			while _G.boss81 == true do
+task.wait(0.1)
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+rootPart.CFrame = game:GetService("Workspace").Zones["7"].Interactables.Goliath.CFrame
+local args = {"SpaceDog"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+		    end
+		else
+		_G.boss81 = false
+        end
+		print("Toggle state:", boss8)
+    end
+})
+
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Rebirth", 
+    default = false, 
+    callback = function(boss87)
+if boss87 then
+        _G.boss871 = true
+			while _G.boss871 == true do
+task.wait(0.1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onRebirthRequest"):FireServer()
+		    end
+		else
+		_G.boss871 = false
+        end
+		print("Toggle state:", boss87)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Super Rebirth", 
+    default = false, 
+    callback = function(boss871)
+if boss871 then
+        _G.boss8711 = true
+			while _G.boss8711 == true do
+task.wait(0.1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
+		    end
+		else
+		_G.boss8711 = false
+        end
+		print("Toggle state:", boss871)
+    end
+})
