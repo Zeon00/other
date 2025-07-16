@@ -469,7 +469,7 @@ GUI:CreateToggle({
 if losttower then
         _G.losttower1 = true
 	while _G.losttower1 == true do
-task.wait(10)
+task.wait(0.1)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Medieval")
 end
 	  		else
