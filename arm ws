@@ -29,29 +29,7 @@ GUI:CreateSection({
     parent = main, 
     text = "Player"
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Rebirth and Super", 
-    default = false, 
-    callback = function(rebirth)
-if rebirth then
-        _G.rebirth1 = true
-			while _G.rebirth1 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onRebirthRequest"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
-local args = {"1","Dumbells","250Kg"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()		
-task.wait()
-                        end
-		else
-		_G.rebirth1 = false
-        end
-		print("Toggle state:", rebirth)
-    end
-})
+
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Claim Online", 
@@ -983,15 +961,21 @@ task.wait()
 })
 
 
+GUI:CreateButton({
+    parent = main, 
+    text = "Super Rebirth", 
+    callback = function()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
+end
+})
 GUI:CreateToggle({
     parent = main, 
-    text = "Auto Super Rebirth", 
+    text = "Boss 1", 
     default = false, 
     callback = function(srebirth)
 if srebirth then
         _G.srebirth1 = true
 			while _G.srebirth1 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onRebirthRequest"):FireServer()
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
 local args = {"1","Dumbells","250Kg"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
