@@ -463,16 +463,14 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Auto Trial Event,13 n 15", 
+    text = "Auto Trial 13", 
     default = false, 
     callback = function(losttower)
 if losttower then
         _G.losttower1 = true
 			while _G.losttower1 == true do
-task.wait(50)
+task.wait(10)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Medieval")
-task.wait(150)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Angelic")
 end
 	  		else
 		      _G.losttower1 = false
