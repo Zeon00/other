@@ -858,7 +858,7 @@ GUI:CreateToggle({
 if Dumbleocto then
         _G.Dumbleocto1 = true
 	while _G.Dumbleocto1 == true do
-		task.wait(62)
+		task.wait(10)
    	local args = {
 	"GlassBridge",
 	"Dumbells",
@@ -872,6 +872,29 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         print("Toggle state:", Dumbleocto)
     end
 })
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Octo Egg", 
+    default = false, 
+    callback = function(octoegg)
+if octoegg then
+        _G.octoegg1 = true
+	while _G.octoegg1 == true do
+		task.wait()
+local args = {
+	"Octo",
+	[5] = true,
+	[4] = false
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
+end
+		else
+		_G.octoegg1 = false
+           end
+        print("Toggle state:", octoegg)
+    end
+})
+
 GUI:CreateToggle({
     parent = main, 
     text = "Equip Pethatlon", 
