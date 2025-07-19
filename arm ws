@@ -897,19 +897,20 @@ end
 
 GUI:CreateToggle({
     parent = main, 
-    text = "Equip Pethatlon", 
+    text = "Fight Glass Creator", 
     default = false, 
     callback = function(Pethatlon)
 if Pethatlon then
         _G.loop50 = true
 	while _G.loop50 == true do
-task.wait()
+local args = {"GlassCreator"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-task.wait(25)
-local args = {"Pentathlon","Dumbells","Pentathlon12"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-task.wait(50)
-local args = {"Pentathlon","Grips","Pentathlon12"}
+local args = {
+	"GlassBridge",
+	"Dumbells",
+	"GlassBridge12"
+}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 end
 		else
