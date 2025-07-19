@@ -850,7 +850,28 @@ GUI:CreateSection({
     parent = main, 
     text = "Option"
 })
-
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Dumble Octo", 
+    default = false, 
+    callback = function(Dumbleocto)
+if Dumbleocto then
+        _G.Dumbleocto1 = true
+	while _G.Dumbleocto1 == true do
+		task.wait(62)
+   	local args = {
+	"GlassBridge",
+	"Dumbells",
+	"GlassBridge12"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+       end
+		else
+		_G.Dumbleocto1 = false
+           end
+        print("Toggle state:", Dumbleocto)
+    end
+})
 GUI:CreateToggle({
     parent = main, 
     text = "Equip Pethatlon", 
