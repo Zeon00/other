@@ -465,16 +465,19 @@ if Divine then
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Auto Spin 4th July", 
+    text = "Auto Glass Fotrtune", 
     default = false, 
     callback = function(merdeka)
 if merdeka then
         _G.merdeka1 = true
 	while _G.merdeka1 == true do
 		task.wait(2)
-   	local args = {"4th Of July Wheel","x25"}
-    game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-       end
+   	local args = {
+	"Glass Fortune",
+	"x25"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+     end
 		else
 		_G.merdeka1 = false
            end
