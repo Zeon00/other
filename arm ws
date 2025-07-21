@@ -559,7 +559,22 @@ end
 print("Toggle state:", losttower)
     end
 })
-
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Trial 15", 
+    default = false, 
+    callback = function(losttower)
+if losttower then
+        _G.losttower1 = true
+	while _G.losttower1 == true do
+task.wait(0.1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Angelic")end
+	  		else
+		      _G.losttower1 = false
+            end
+print("Toggle state:", losttower)
+    end
+})
 GUI:CreateButton({
     parent = main, 
     text = "Auto Cast Rod", 
