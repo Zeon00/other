@@ -1232,6 +1232,19 @@ GUI:CreateButton({
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
 end
 })
+GUI:CreateButton({
+parent = main, 
+text = "Map 8", 
+callback = function()
+local oldcframe = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+for _,v in pairs(game:GetService("Workspace").Zones:GetChildren()) do
+game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+task.wait(0.1)
+end
+task.wait(0.1)
+game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = oldcframe
+end
+})
 GUI:CreateToggle({
     parent = main, 
     text = "Boss 1", 
@@ -1621,6 +1634,24 @@ task.wait()
 		_G.boss101 = false
         end
 		print("Toggle state:", boss10)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Map 15", 
+    default = false, 
+    callback = function(msp15)
+if msp15 then
+        _G.msp151 = true
+			while _G.msp201 == true do
+local args = {workspace:WaitForChild("Zones"):WaitForChild("20"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+task.wait(600)
+end
+		else
+		_G.msp151 = false
+        end
+		print("Toggle state:", msp15)
     end
 })
 GUI:CreateToggle({
