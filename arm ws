@@ -29,6 +29,304 @@ GUI:CreateSection({
     parent = main, 
     text = "Player"
 })
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Claim Online", 
+    default = true, 
+    callback = function(claim)
+	if claim then	
+	_G.claim1 = true
+	while _G.claim1 == true do
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("1")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("2")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("3")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("6")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("8")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("9")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("11")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("12")
+task.wait(200)
+end
+		else
+		_G.claim1 = false
+           end
+        print("Toggle state:", claim)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Claim Event Duck", 
+    default = true, 
+    callback = function(event)
+if event then
+        _G.loop8 = true
+	while _G.loop8 == true do
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("Reset"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",2)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",3)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",4)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",5)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",6)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",7)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",8)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",9)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",10)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",11)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",12)
+task.wait(60)
+ end
+		else
+		_G.loop8 = false
+           end
+        print("Toggle state:", event)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Swing", 
+    default = true, 
+    callback = function(swing)
+if swing then
+        _G.loop2 = true
+	while _G.loop2 == true do
+		task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+
+ end
+		else
+		_G.loop2 = false
+           end
+		print("Toggle state:", swing)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Roll Aura", 
+    default = true, 
+    callback = function(Aura)
+if Aura then
+        _G.loop3 = true
+	while _G.loop3 == true do
+		task.wait(0.1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
+           end
+		else
+		_G.loop3 = false
+           end
+		print("Toggle state:", Aura)
+    end
+})
+
+local main = GUI:CreateTab("Spin and Shop", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Shop"
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Buy Arm Rewind", 
+    default = true, 
+    callback = function(arm)
+if arm then
+        _G.loop6 = true
+	while _G.loop6 == true do
+local args = {"Frosty Merchant",3}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Island Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Island Merchant",5}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Orc Merchant",3}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Orc Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+
+task.wait(60)
+ end
+		else
+		_G.loop6 = false
+           end
+        print("Toggle state:", arm)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Squid Merchant", 
+    default = true, 
+    callback = function(squid)
+if squid then
+        _G.squid1 = true
+	while _G.squid1 == true do
+task.wait(200)
+local args = {"Hidden Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Hidden Merchant",5}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Frontman Merchant",5}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"BrainrotMarket",9}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("UniversalShopService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
+local args = {"Frozen Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Frozen Merchant",5}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+
+end
+		else
+		_G.squid1 = false
+           end
+        print("Toggle state:", squid)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Buy Shop Summer", 
+    default = true, 
+    callback = function(shopsummer)
+if shopsummer then
+        _G.shopsummer1 = true
+	while _G.shopsummer1 == true do
+local args = {"Pirate Merchant",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local args = {"Pirate Merchant",5}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+task.wait(60)
+ end
+		else
+		_G.shopsummer1 = false
+           end
+		 print("Toggle state:", shopsummer)
+    end
+})
+
+
+local main = GUI:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Support Battle"
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Crit Hit", 
+    default = true, 
+    callback = function(Crit)
+if Crit then
+        _G.Crit1 = true
+	while _G.Crit1 == true do
+task.wait(0.1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
+task.wait()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
+ end
+		else
+		_G.Crit1 = false
+           end
+print("Toggle state:", Crit)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Normal Hit", 
+    default = true, 
+    callback = function(Hit)
+if Hit then
+        _G.Hit1 = true
+	while _G.Hit1 == true do
+		task.wait(0.1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
+ end
+		else
+		_G.Hit1 = false
+           end
+		print("Toggle state:", Hit)
+    end
+})
+
+
+local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Option"
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto CLick", 
+    callback = function()
+getgenv().key = "Hostile"
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Lds hub", 
+    callback = function()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/SenhorLDS/ProjectLDSHUB/refs/heads/main/Loader%20LDS%20HUB'))()
+    end
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Lds Mutate", 
+    callback = function()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/yadielsantoss/full-script/refs/heads/main/MUTATE%20aws'))()
+    end
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Use Item", 
+    callback = function()
+local args = {
+	"Cookie",
+	"3"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
+local args = {
+	"Donut",
+	"3"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
+local args = {
+	"Banana",
+	"2"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
+local args = {
+	"Dragon Fruit",
+	"2"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
+
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Anti AFK", 
+    default = true, 
+    callback = function()
+local VirtualUser = game:GetService('VirtualUser')
+game:GetService('Players').LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Anti AFK loaded!",
+    Text = "Made by Tuuguu936",
+    Button1 = "Okay",
+    Duration = 5
+})
+    end
+})
+
+
+
 GUI:CreateButton({
     parent = main, 
     text = "Buy Medal", 
@@ -111,774 +409,73 @@ local args = {"Guard Medal"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
 end
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Claim Online", 
-    default = false, 
-    callback = function(claim)
-	if claim then	
-	_G.claim1 = true
-	while _G.claim1 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("1")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("2")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("3")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("6")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("8")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("9")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("11")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("12")
-task.wait(200)
-end
-		else
-		_G.claim1 = false
-           end
-        print("Toggle state:", claim)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Claim Event Duck", 
-    default = false, 
-    callback = function(event)
-if event then
-        _G.loop8 = true
-	while _G.loop8 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("Reset"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",2)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",3)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",4)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",5)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",6)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",7)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",8)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",9)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",10)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",11)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",12)
-task.wait(60)
- end
-		else
-		_G.loop8 = false
-           end
-        print("Toggle state:", event)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Swing", 
-    default = false, 
-    callback = function(swing)
-if swing then
-        _G.loop2 = true
-	while _G.loop2 == true do
-		task.wait()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-           end
-		else
-		_G.loop2 = false
-           end
-		print("Toggle state:", swing)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Roll Aura", 
-    default = false, 
-    callback = function(Aura)
-if Aura then
-        _G.loop3 = true
-	while _G.loop3 == true do
-		task.wait(0.1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("AuraService"):WaitForChild("RF"):WaitForChild("Roll"):InvokeServer()
-           end
-		else
-		_G.loop3 = false
-           end
-		print("Toggle state:", Aura)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Open Trainer", 
-    default = false, 
-    callback = function(trainer)
-if trainer then
-        _G.loop4 = true
-	while _G.loop4 == true do
-		task.wait(3)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Starter Crate")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Gold Crate")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Mythic Crate")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Premium Crate")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Prism Crate")
-end
-		else
-		_G.loop4 = false
-           end
-		print("Toggle state:", trainer)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Upgrade Snack", 
-    default = false, 
-    callback = function(snack)
-if snack then
-        _G.loop5 = true
-	while _G.loop5 == true do
-		task.wait(0.1)
-local args = {{Item="Banana",Tier=1}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Cookie",Tier=1}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Starfruit",Tier=1}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Dragon Fruit",Tier=1}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Banana",Tier=2}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Cookie",Tier=2}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Starfruit",Tier=2}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item="Dragon Fruit",Tier=2}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-end
-		else
-		_G.loop5 = false
-           end
-		print("Toggle state:", snack)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Equip Stage 20", 
-    default = false, 
-    callback = function(stage15)
-if stage15 then
-        _G.loop26 = true
-	while _G.loop26 == true do
-task.wait()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-task.wait(25)
-local args = {"20","Dumbells","SakuraTemple12"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-task.wait(50)
-local args = {"20","Grips","SakuraTemple12"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-end
-		else
-		_G.loop26 = false
-           end
-        print("Toggle state:", stage15)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Equip Duck", 
-    default = false, 
-    callback = function(duck)
-if duck then
-        _G.loop7 = true
-	while _G.loop7 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer("EvilDuckfair","Dumbells","EvilDuckfair12")
-local args = {"EvilDuckfair","Dumbells","EvilDuckfair12"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-
-task.wait(6)
- end
-		else
-		_G.loop7 = false
-           end
-        print("Toggle state:", duck)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Collect ATM", 
-    default = false, 
-    callback = function(atm)
-if atm then
-        _G.atm1 = true
-	while _G.atm1 == true do
-		task.wait()  
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM1")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM2")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM3")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM4")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM5")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM6")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalTycoonService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("RewindATM7")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind1")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind2")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind3")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind4")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind5")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind6")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Rewind7")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Summer1")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Summer2")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PersonalWrestleService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer("Summer3")
-end
-		else
-		_G.atm1 = false
-           end
-        print("Toggle state:", atm)
-    end
-})
-local main = GUI:CreateTab("Spin and Shop", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
-GUI:CreateSection({
-    parent = main, 
-    text = "Shop"
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Buy Arm Rewind", 
-    default = false, 
-    callback = function(arm)
-if arm then
-        _G.loop6 = true
-	while _G.loop6 == true do
-local args = {"Frosty Merchant",3}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Island Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Island Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Orc Merchant",3}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Orc Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-
-task.wait(60)
- end
-		else
-		_G.loop6 = false
-           end
-        print("Toggle state:", arm)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Buy Shop Summer", 
-    default = false, 
-    callback = function(shopsummer)
-if shopsummer then
-        _G.shopsummer1 = true
-	while _G.shopsummer1 == true do
-local args = {"Pirate Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Pirate Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-task.wait(60)
- end
-		else
-		_G.shopsummer1 = false
-           end
-		 print("Toggle state:", shopsummer)
-    end
-})
-GUI:CreateSection({
-    parent = main, 
-    text = "Spin Game"
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Open Kingdom Chest", 
-    default = false, 
-    callback = function(Kingdom)
-if Kingdom then
-        _G.loop33 = true
-	while _G.loop33 == true do
-		task.wait(0.1)
-local args = {"KingdomChest"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChestService"):WaitForChild("RF"):WaitForChild("Open"):InvokeServer(unpack(args))
-           end
-		else
-		_G.loop33 = false
-           end
-		print("Toggle state:", Kingdom)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Spin Rewind", 
-    default = false, 
-    callback = function(spin)
-if spin then
-        _G.spin1 = true
-	while _G.spin1 == true do
-		task.wait(2)
-   	local args = {"Rewind","x25"}
-	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-           end
-		else
-		_G.spin1 = false
-           end
-        print("Toggle state:", spin)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Spin Sakura", 
-    default = false, 
-    callback = function(Sakura)
-if Sakura then
-        _G.Sakura1 = true
-	while _G.Sakura1 == true do
-		task.wait(2)
-   	local args = {"Sakura Fortune","x25"}
-	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-           end
-		else
-		_G.Sakura1 = false
-           end
-        print("Toggle state:", Sakura)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Divine Fortune", 
-    default = false, 
-    callback = function(Divine)
-if Divine then
-        _G.Divine1 = true
-	while _G.Divine1 == true do
-		task.wait(2)
-   	local args = {"Divine Fortune","x25"}
-	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-           end
-		else
-		_G.Divine1 = false
-           end
-        print("Toggle state:", Divine)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Glass Fortune", 
-    default = false, 
-    callback = function(merdeka)
-if merdeka then
-        _G.merdeka1 = true
-	while _G.merdeka1 == true do
-		task.wait(2)
-   	local args = {
-	"Glass Fortune",
-	"x25"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-     end
-		else
-		_G.merdeka1 = false
-           end
-        print("Toggle state:", merdeka)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Frontman Fortune", 
-    default = false, 
-    callback = function(Spinfrontman)
-if Spinfrontman then
-        _G.Spinfrontman1 = true
-	while _G.Spinfrontman1 == true do
-		task.wait()
-local args = {
-	"Frontman Fortune",
-	"x25"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-end
-		else
-		_G.Spinfrontman1 = false
-           end
-        print("Toggle state:", Spinfrontman)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Claim Egg 15 minute", 
-    default = false, 
-    callback = function(claimegg)
-if claimegg then
-        _G.claimegg1 = true
-	while _G.claimegg1 == true do
-		task.wait(500)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventEggService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer()
-end
-		else
-		_G.claimegg1 = false
-           end
-        print("Toggle state:", claimegg)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Create Octo Chest", 
-    default = false, 
-    callback = function(allboss)
-if allboss then
-        _G.roll = true
-	while _G.roll == true do
-task.wait()
-local args = {
-	"Octo Chest"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TreasureChestService"):WaitForChild("RF"):WaitForChild("Craft"):InvokeServer(unpack(args))
-end
-		else
-		_G.roll = false
-           end
-        print("Toggle state:", allboss)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Use Chest", 
-    default = false, 
-    callback = function(usechest)
-if usechest then
-        _G.usechest1 = true
-	while _G.usechest1 == true do
-task.wait()
-local args = {
-	{
-		Item = "Octo Chest",
-		Tier = "1"
-	},
-	1
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseChest"):InvokeServer(unpack(args))
-end
-		else
-		_G.usechest1 = false
-           end
-        print("Toggle state:", usechest)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Dalgona Cookie", 
-    default = false, 
-    callback = function(Dalgona)
-if Dalgona then
-        _G.Dalgona1 = true
-	while _G.Dalgona1 == true do
-		task.wait()
-local args = {
-	"Dalgona Cookie",
-	"1"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
-end
-		else
-		_G.Dalgona1 = false
-           end
-        print("Toggle state:", Dalgona)
-    end
-})
-local main = GUI:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
-GUI:CreateSection({
-    parent = main, 
-    text = "Summer Island Battle"
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Crit Hit", 
-    default = false, 
-    callback = function(Crit)
-if Crit then
-        _G.Crit1 = true
-	while _G.Crit1 == true do
-task.wait(0.1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-task.wait(0.2)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-task.wait(0.4)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-           end
-		else
-		_G.Crit1 = false
-           end
-print("Toggle state:", Crit)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Normal Hit", 
-    default = false, 
-    callback = function(Hit)
-if Hit then
-        _G.Hit1 = true
-	while _G.Hit1 == true do
-		task.wait(0.1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-task.wait(0.2)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-task.wait(0.4)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
-           end
-		else
-		_G.Hit1 = false
-           end
-		print("Toggle state:", Hit)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Trial 13", 
-    default = false, 
-    callback = function(losttower)
-if losttower then
-        _G.losttower1 = true
-	while _G.losttower1 == true do
-task.wait(0.1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Medieval")
-end
-	  		else
-		      _G.losttower1 = false
-            end
-print("Toggle state:", losttower)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Trial 15", 
-    default = false, 
-    callback = function(losttower)
-if losttower then
-        _G.losttower1 = true
-	while _G.losttower1 == true do
-task.wait(0.1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Angelic")end
-	  		else
-		      _G.losttower1 = false
-            end
-print("Toggle state:", losttower)
-    end
-})
 GUI:CreateButton({
     parent = main, 
-    text = "Auto Cast Rod", 
+    text = "Reedem Gamepass", 
     callback = function()
-	while true do
-task.wait(3)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastStart"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CastRod"):InvokeServer()
-task.wait(6)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("CaughtFish"):InvokeServer()
-task.wait(12)
-local args = {
-	1
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("FishingEnd"):InvokeServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("RetractRod"):InvokeServer()
+	local args = {"Regular",1}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",2}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",3}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",4}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",5}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",6}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",7}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",8}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",9}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",10}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",11}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",12}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",13}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",14}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",15}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",16}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",17}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",18}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",19}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",20}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",21}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",22}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",23}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",24}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",25}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",26}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",27}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",28}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",29}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+local args = {"Regular",30}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+
 end
-    end
 })
-GUI:CreateSection({
-    parent = main, 
-    text = "Upgrade Status"
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Add Strenght", 
-    default = false, 
-    callback = function(Streght)
-if Streght then
-        _G.Streght1 = true
-			while _G.Streght1 == true do
-local args = {"Fire","Earth Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Water Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Fire Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Animal Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Ice Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Skeleton Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Evil Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Fire","Godly Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-		    end
-		else
-		_G.Streght1 = false
-        end
-		print("Toggle state:", Streght)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Add Lucky", 
-    default = false, 
-    callback = function(Lucky)
-if Lucky then
-        _G.Lucky1 = true
-			while _G.Lucky1 == true do
-local args = {"Earth","Earth Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Water Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Fire Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Animal Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Ice Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Skeleton Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Evil Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Earth","Godly Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-		    end
-		else
-		_G.Lucky1 = false
-        end
-		print("Toggle state:", Lucky)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Add Rift", 
-    default = false, 
-    callback = function(Rift)
-if Rift then
-        _G.Rift1 = true
-			while _G.Rift1 == true do
-local args = {"Water","Earth Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Water Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Fire Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Animal Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Ice Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Skeleton Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Evil Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Water","Godly Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-		    end
-		else
-		_G.Rift1 = false
-        end
-		print("Toggle state:", Rift)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Add Training", 
-    default = false, 
-    callback = function(Training)
-if Training then
-        _G.Training1 = true
-			while _G.Training1 == true do
-local args = {"Wind","Earth Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Water Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Fire Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Animal Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Ice Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Skeleton Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Evil Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-local args = {"Wind","Godly Spirit Fruit","All"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ElementAlchemistService"):WaitForChild("RF"):WaitForChild("Offer"):InvokeServer(unpack(args))
-		    end
-		else
-		_G.Training1 = false
-        end
-		print("Toggle state:", Training)
-    end
-})
-
-local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
-GUI:CreateSection({
-    parent = main, 
-    text = "Option"
-})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Auto CLick", 
-    callback = function()
-getgenv().key = "Hostile"
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
-end})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Anti AFK", 
-    callback = function()
-local VirtualUser = game:GetService('VirtualUser')
-game:GetService('Players').LocalPlayer.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
-end)
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Anti AFK loaded!",
-    Text = "Made by Tuuguu936",
-    Button1 = "Okay",
-    Duration = 5
-})
-end})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Set Rod On", 
-    callback = function()
-local args = {true,"Rod",false}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RF"):WaitForChild("SetFishRod"):InvokeServer(unpack(args))
-end})
-GUI:CreateButton({
-    parent = main, 
-    text = "Set Rod Off", 
-    callback = function()
-local args = {
-	0
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("FishingEnd"):InvokeServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("FishingService"):WaitForChild("RF"):WaitForChild("RetractRod"):InvokeServer()
-end})
 GUI:CreateButton({
     parent = main, 
     text = "Reedem Code", 
@@ -935,230 +532,181 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("celebration")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("glassbridge")
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("octogames")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("brainrot")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("21iscoming")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("welovemining")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("sorryfordelay")
 
 end})
 
-local main = GUI:CreateTab("Teleport", "cannabis") -- You can use IconID we didnt impleemnt lucid or any external icons
-GUI:CreateSection({
-    parent = main, 
-    text = "Shortcut"
-})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Dino World", 
-    callback = function()
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = workspace.Zones["5"].Interactables.Teleports.Locations.Spawn.CFrame
-end})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "World 19", 
-    callback = function()
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = workspace.Zones["19"].Interactables.Teleports.Locations.Spawn.CFrame
-end})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Goliath Machine", 
-    callback = function()
-local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-rootPart.CFrame = game:GetService("Workspace").Zones["5"].Interactables.Goliath.CFrame
-end})
 local main = GUI:CreateTab("New Event", "squircle") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Option"
 })
+
 GUI:CreateToggle({
     parent = main, 
-    text = "Auto Dumble Frontman", 
+    text = "Equip Mining", 
     default = false, 
-    callback = function(Dumbleocto)
-if Dumbleocto then
-        _G.Dumbleocto1 = true
-	while _G.Dumbleocto1 == true do
-		task.wait(10)
-   	local args = {
-	"FrontmanAttack",
+    callback = function(duck)
+if duck then
+        _G.loop7 = true
+	while _G.loop7 == true do
+
+local args = {
+	"MinersDreamland",
 	"Dumbells",
-	"FrontmanAttack12"
+	"MiningEvent12"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-       end
+task.wait(100)
+local args = {
+	"MinersDreamland",
+	"Grips",
+	"MiningEvent12"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
+	task.wait(100)
+ end
 		else
-		_G.Dumbleocto1 = false
+		_G.loop7 = false
            end
-        print("Toggle state:", Dumbleocto)
+        print("Toggle state:", duck)
     end
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Auto Corrupt Octo Egg", 
+    text = "Equip Knuckle", 
     default = false, 
-    callback = function(octoegg)
-if octoegg then
-        _G.octoegg1 = true
-	while _G.octoegg1 == true do
-		task.wait()
+    callback = function(knuckle)
+if knuckle then
+        _G.knuckle1 = true
+	while _G.knuckle1 == true do
+task.wait()
 local args = {
-	"CorruptOcto",
-	[5] = true,
-	[4] = false
+	"MinersDreamland",
+	"Tier5"
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PunchBagService"):WaitForChild("RE"):WaitForChild("onGiveStats"):FireServer(unpack(args))
+local args = {
+	"MinersDreamland",
+	"Tier5"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PunchBagService"):WaitForChild("RE"):WaitForChild("onGiveStats"):FireServer(unpack(args))
+
+ end
+		else
+		_G.knuckle1 = false
+           end
+        print("Toggle state:", knuckle)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Trial Ice Lake", 
+    default = false, 
+    callback = function(Trialice)
+if Trialice then
+        _G.Trialice1 = true
+			while _G.Trialice1 == true do
+task.wait()			
+local args = {"Icy"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer(unpack(args))
 end
 		else
-		_G.octoegg1 = false
-           end
-        print("Toggle state:", octoegg)
+		_G.Trialice1 = false
+        end
+		print("Toggle state:", Trialice)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Trial 13", 
+    default = false, 
+    callback = function(losttower)
+if losttower then
+        _G.losttower1 = true
+	while _G.losttower1 == true do
+task.wait(0.1)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Medieval")
+end
+	  		else
+		      _G.losttower1 = false
+            end
+print("Toggle state:", losttower)
     end
 })
 
 GUI:CreateToggle({
     parent = main, 
-    text = "Fight Glass Creator", 
+    text = "Auto Space Center", 
     default = false, 
-    callback = function(Pethatlon)
-if Pethatlon then
-        _G.loop50 = true
-	while _G.loop50 == true do
-local args = {"GlassCreator"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+    callback = function(stage)
+if stage then
+        _G.stage1 = true
+	while _G.stage1 == true do
+task.wait()
 local args = {
-	"GlassBridge",
-	"Dumbells",
-	"GlassBridge12"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-end
-		else
-		_G.loop50 = false
-           end
-        print("Toggle state:", Pethatlon)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Fight Golden VIP", 
-    default = false, 
-    callback = function(Pethatlon)
-if Pethatlon then
-        _G.loop50 = true
-	while _G.loop50 == true do
-	task.wait()
-local args = {
-	"GoldenVIP"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {
-	"LastGuard"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {
+	"SpaceTower",
 	true
 }
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TowerService"):WaitForChild("RF"):WaitForChild("EnterTower"):InvokeServer(unpack(args))
+
+end
+	  		else
+		      _G.stage1 = false
+            end
+print("Toggle state:", stage)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss Mole King", 
+    default = false, 
+    callback = function(boss20)
+if boss20 then
+        _G.boss201 = true
+			while _G.boss201 == true do
+task.wait()		
+local args = {"MoleKing"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+local args = {true}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+local args = {false}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+end
+		else
+		_G.boss201 = false
+        end
+		print("Toggle state:", boss20)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss Skeleton", 
+    default = false, 
+    callback = function(boss23)
+if boss23 then
+        _G.boss231 = true
+			while _G.boss231 == true do
+task.wait()			
+local args = {"SkeletonMiner"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
+local args = {true}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+local args = {false}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
 
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-local args = {
-	"FrontmanAttack",
-	"Dumbells",
-	"FrontmanAttack12"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 end
 		else
-		_G.loop50 = false
-           end
-        print("Toggle state:", Pethatlon)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = " Spin Guard", 
-    default = false, 
-    callback = function(spinguard)
-if spinguard then
-        _G.spinguard1 = true
-	while _G.spinguard1 == true do
-task.wait()
-local args = {
-	"Guard Fortune",
-	"x25"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-
-
-end
-		else
-		_G.spinguard1 = false
-           end
-        print("Toggle state:", spinguard)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Squid Merchant", 
-    default = false, 
-    callback = function(squid)
-if squid then
-        _G.squid1 = true
-	while _G.squid1 == true do
-task.wait(200)
-local args = {"Hidden Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Hidden Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-end
-		else
-		_G.squid1 = false
-           end
-        print("Toggle state:", squid)
+		_G.boss231 = false
+        end
+		print("Toggle state:", boss23)
     end
 })
 
-GUI:CreateToggle({
-    parent = main, 
-    text = " Fight FrontmanMonster", 
-    default = false, 
-    callback = function(fronmonster)
-if fronmonster then
-        _G.fronmonster1 = true
-	while _G.fronmonster1 == true do
-task.wait()
-local args = {"FrontmanMonster"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-end
-		else
-		_G.fronmonster1 = false
-           end
-        print("Toggle state:", fronmonster)
-    end
-})
 
-GUI:CreateToggle({
-    parent = main, 
-    text = " Fight MegaGuard", 
-    default = false, 
-    callback = function(MegaGuard)
-if MegaGuard then
-        _G.MegaGuard1 = true
-	while _G.MegaGuard1 == true do
-task.wait()
-local args = {"MegaGuard"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-end
-		else
-		_G.MegaGuard1 = false
-           end
-        print("Toggle state:", MegaGuard)
-    end
-})
 
 local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
@@ -1168,7 +716,7 @@ GUI:CreateSection({
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Daily Login", 
-    default = false, 
+    default = true, 
     callback = function(dailylogin)
 if dailylogin then
         _G.dailylogin1 = true
@@ -1185,515 +733,274 @@ task.wait(20)
 
 GUI:CreateToggle({
     parent = main, 
-    text = "Auto Claim Rift Machine", 
-    default = false, 
-    callback = function(riftmachine)
-if riftmachine then
-        _G.riftmachine1 = true
-			while _G.riftmachine1 == true do
-local args = {"1"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RiftMachineService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"2"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RiftMachineService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"3"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RiftMachineService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-task.wait()
-                        end
-		else
-		_G.riftmachine1 = false
-        end
-		print("Toggle state:", riftmachine)
-    end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Rebirth", 
-    default = false, 
-    callback = function(rebirth)
-if rebirth then
-        _G.rebirth1 = true
-			while _G.rebirth1 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onRebirthRequest"):FireServer()
-task.wait()
-                        end
-		else
-		_G.rebirth1 = false
-        end
-		print("Toggle state:", rebirth)
-    end
-})
-
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Super Rebirth", 
-    callback = function()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
-end
-})
-GUI:CreateButton({
-parent = main, 
-text = "Map 8", 
-callback = function()
-local oldcframe = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
-for _,v in pairs(game:GetService("Workspace").Zones:GetChildren()) do
-game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-task.wait(0.1)
-end
-task.wait(0.1)
-game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = oldcframe
-end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Boss 1", 
-    default = false, 
-    callback = function(srebirth)
-if srebirth then
-        _G.srebirth1 = true
-			while _G.srebirth1 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("RebirthService"):WaitForChild("RE"):WaitForChild("onSuperRebirth"):FireServer()
-local args = {"1","Dumbells","250Kg"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-local args = {"Champion"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-task.wait()
-                        end
-		else
-		_G.srebirth1 = false
-        end
-		print("Toggle state:", srebirth)
-    end
-})
-
-
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Map 2", 
-    callback = function()
-local args = {workspace:WaitForChild("Zones"):WaitForChild("2"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-end
-})
-
-GUI:CreateToggle({
-    parent = main, 
-    text = "Boss 2", 
-    default = false, 
-    callback = function(boss2)
-if boss2 then
-        _G.boss21 = true
-			while _G.boss21 == true do
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"RogueAi"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+    text = "Auto Spin Tralalero", 
+    default = true, 
+    callback = function(Spinfrontman)
+if Spinfrontman then
+        _G.Spinfrontman1 = true
+	while _G.Spinfrontman1 == true do
+		task.wait()
 local args = {
-	"2",
-	"Dumbells",
-	"4000Kg"
+	"Tralalero Fortune",
+	"x25"
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-
-task.wait()
-                        end
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+end
 		else
-		_G.boss21 = false
-        end
-		print("Toggle state:", boss2)
+		_G.Spinfrontman1 = false
+           end
+        print("Toggle state:", Spinfrontman)
     end
 })
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Map 3", 
-    callback = function()
-local args = {workspace:WaitForChild("Zones"):WaitForChild("3"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-end
-})
-
 GUI:CreateToggle({
     parent = main, 
-    text = "Boss 3", 
+    text = "Spin Space", 
     default = false, 
-    callback = function(boss3)
-if boss3 then
-        _G.boss31 = true
-			while _G.boss31 == true do
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"KrakenBoss"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+    callback = function(Space)
+if Space then
+        _G.Space1 = true
+	while _G.Space1 == true do
+		task.wait()
 local args = {
-	"3",
-	"Dumbells",
-	"45000Kg"
+	"Space Fortune",
+	"x25"
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-
-task.wait()
-                        end
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+end
 		else
-		_G.boss31 = false
-        end
-		print("Toggle state:", boss3)
+		_G.Space1 = false
+           end
+        print("Toggle state:", Space)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Open Trainer", 
+    default = true, 
+    callback = function(trainer)
+if trainer then
+        _G.loop4 = true
+	while _G.loop4 == true do
+		task.wait(3)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Starter Crate")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Gold Crate")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Mythic Crate")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Premium Crate")
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TrainerService"):WaitForChild("RF"):WaitForChild("OpenCrate"):InvokeServer("Prism Crate")
+end
+		else
+		_G.loop4 = false
+           end
+		print("Toggle state:", trainer)
     end
 })
 
 
-GUI:CreateButton({
-    parent = main, 
-    text = "Map 4", 
-    callback = function()
-local args = {workspace:WaitForChild("Zones"):WaitForChild("4"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-end
-})
-
 GUI:CreateToggle({
     parent = main, 
-    text = "Boss 4", 
+    text = "Auto Open Kingdom Chest", 
     default = false, 
-    callback = function(boss4)
-if boss4 then
-        _G.boss41 = true
-			while _G.boss41 == true do
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"MutantKing"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+    callback = function(Kingdom)
+if Kingdom then
+        _G.loop33 = true
+	while _G.loop33 == true do
+		task.wait(0.1)
+local args = {"KingdomChest"}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChestService"):WaitForChild("RF"):WaitForChild("Open"):InvokeServer(unpack(args))
+           end
+		else
+		_G.loop33 = false
+           end
+		print("Toggle state:", Kingdom)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Open Ice Chest", 
+    default = false, 
+    callback = function(ice)
+if ice then
+        _G.ice1 = true
+	while _G.ice1 == true do
+		task.wait(0.1)
 local args = {
-	"4",
-	"Dumbells",
-	"300000Kg"
+	"IcyChest"
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-
-task.wait()
-                        end
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChestService"):WaitForChild("RF"):WaitForChild("Open"):InvokeServer(unpack(args))
+           end
 		else
-		_G.boss41 = false
-        end
-		print("Toggle state:", boss4)
+		_G.ice1 = false
+           end
+		print("Toggle state:", ice)
     end
-})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Map 5", 
-    callback = function()
-local args = {workspace:WaitForChild("Zones"):WaitForChild("5"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-end
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Boss 5", 
+    text = "Auto Use Raspbery", 
     default = false, 
-    callback = function(boss5)
-if boss5 then
-        _G.boss51 = true
-			while _G.boss51 == true do
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"Mammoth"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+    callback = function(Dalgona)
+if Dalgona then
+        _G.Dalgona1 = true
+	while _G.Dalgona1 == true do
+		task.wait()
 local args = {
-	"5",
-	"Dumbells",
-	"Archeology12"
+	"Raspberry",
+	"2"
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-
-task.wait()
-                        end
-		else
-		_G.boss51 = false
-        end
-		print("Toggle state:", boss5)
-    end
-})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Map 6", 
-    callback = function()
-local args = {workspace:WaitForChild("Zones"):WaitForChild("6"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
 end
+		else
+		_G.Dalgona1 = false
+           end
+        print("Toggle state:", Dalgona)
+    end
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Boss 6", 
+    text = "Auto Upgrade Snack", 
     default = false, 
-    callback = function(boss6)
-if boss6 then
-        _G.boss61 = true
-			while _G.boss61 == true do
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"Udzal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+    callback = function(upgrade)
+if upgrade then
+        _G.upgrade1 = true
+	while _G.upgrade1 == true do
+task.wait()
+local args = {{Item = "Raspberry",Tier = 1}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item = "Cookie",Tier = 1}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item = "Cookie",Tier = 2}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item = "Dragon Fruit",Tier = 1}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item = "Dragon Fruit",Tier = 2}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item = "Donut",Tier = 1}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item = "Donut",Tier = 2}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item = "Starfruit",Tier = 1}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+local args = {{Item = "Starfruit",Tier = 2}}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+end
+		else
+		_G.upgrade1 = false
+           end
+        print("Toggle state:", upgrade)
+    end
+})
+local main = GUI:CreateTab("misc", "egg") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Egg Hatch"
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Saturno Egg", 
+    default = false, 
+    callback = function(Saturno)
+if Saturno then
+        _G.Saturno1 = true
+	while _G.Saturno1 == true do
+		task.wait(0.1)
 local args = {
-	"6",
-	"Dumbells",
-	"625000Kg"
+	"Saturno",
+	[5] = true,
+	[4] = false
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-
-task.wait()
-                        end
-		else
-		_G.boss61 = false
-        end
-		print("Toggle state:", boss6)
-    end
-})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Map 7", 
-    callback = function()
-local args = {workspace:WaitForChild("Zones"):WaitForChild("7"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
 end
+		else
+		_G.Saturno1 = false
+           end
+        print("Toggle state:", Saturno)
+    end
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Boss 7", 
+    text = "Auto Brainrot Forest Egg", 
     default = false, 
-    callback = function(boss7)
-if boss7 then
-        _G.boss71 = true
-			while _G.boss71 == true do
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"SpaceDog"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+    callback = function(BrainrotForest)
+if BrainrotForest then
+        _G.BrainrotForest1 = true
+	while _G.BrainrotForest1 == true do
+		task.wait(0.1)
 local args = {
-	"7",
-	"Grips",
-	"1150000Kg"
+	"BrainrotForest",
+	[5] = true,
+	[4] = false
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-
-task.wait()
-                        end
-		else
-		_G.boss71 = false
-        end
-		print("Toggle state:", boss7)
-    end
-})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Map 8", 
-    callback = function()
-local args = {workspace:WaitForChild("Zones"):WaitForChild("8"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
 end
+		else
+		_G.BrainrotForest1 = false
+           end
+        print("Toggle state:", BrainrotForest)
+    end
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Boss 8", 
+    text = "Auto Brainrot Food Egg", 
     default = false, 
-    callback = function(boss8)
-if boss8 then
-        _G.boss81 = true
-			while _G.boss81 == true do
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"UndeadSparta"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+    callback = function(BrainrotFood)
+if BrainrotFood then
+        _G.BrainrotFood1 = true
+	while _G.BrainrotFood1 == true do
+		task.wait(0.1)
 local args = {
-	"8",
-	"Grips",
-	"1150000Kg"
+	"BrainrotFood",
+	[5] = true,
+	[4] = false
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-
-task.wait()
-                        end
-		else
-		_G.boss81 = false
-        end
-		print("Toggle state:", boss8)
-    end
-})
-
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Map 9", 
-    callback = function()
-local args = {workspace:WaitForChild("Zones"):WaitForChild("9"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
 end
+		else
+		_G.BrainrotFood1 = false
+           end
+        print("Toggle state:", BrainrotFood)
+    end
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Boss 9", 
+    text = "Auto Cold Brainrot Egg", 
     default = false, 
-    callback = function(boss9)
-if boss9 then
-        _G.boss91 = true
-			while _G.boss91 == true do
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"EvilOverseer"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+    callback = function(ColdBrainrot)
+if ColdBrainrot then
+        _G.ColdBrainrot1 = true
+	while _G.ColdBrainrot1 == true do
+		task.wait(0.1)
 local args = {
-	"9",
-	"Grips",
-	"1150000Kg"
+	"ColdBrainrot",
+	[5] = true,
+	[4] = false
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-
-task.wait()
-                        end
-		else
-		_G.boss91 = false
-        end
-		print("Toggle state:", boss9)
-    end
-})
-
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Map 10", 
-    callback = function()
-local args = {workspace:WaitForChild("Zones"):WaitForChild("10"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
 end
+		else
+		_G.ColdBrainrot1 = false
+           end
+        print("Toggle state:", ColdBrainrot)
+    end
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Boss 10", 
+    text = "Auto Lucky Brainrot Egg", 
     default = false, 
-    callback = function(boss10)
-if boss10 then
-        _G.boss101 = true
-while _G.boss101 == true do
-local args = {"BruteHunter"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"BruteHunter"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer(unpack(args))
+    callback = function(LuckyBrainrot)
+if LuckyBrainrot then
+        _G.LuckyBrainrot1 = true
+	while _G.LuckyBrainrot1 == true do
+		task.wait(0.1)
 local args = {
-	"10",
-	"Grips",
-	"1150000Kg"
+	"LuckyBrainrot",
+	[5] = true,
+	[4] = false
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onEquipRequest"):FireServer(unpack(args))
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-
-task.wait()
-                        end
-		else
-		_G.boss101 = false
-        end
-		print("Toggle state:", boss10)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Map 15", 
-    default = false, 
-    callback = function(msp15)
-if msp15 then
-        _G.msp151 = true
-			while _G.msp201 == true do
-local args = {workspace:WaitForChild("Zones"):WaitForChild("20"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-task.wait(600)
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
 end
 		else
-		_G.msp151 = false
-        end
-		print("Toggle state:", msp15)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Boss 20", 
-    default = false, 
-    callback = function(boss20)
-if boss20 then
-        _G.boss201 = true
-			while _G.boss201 == true do
-task.wait()			
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {"TempleGuardian"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-end
-		else
-		_G.boss201 = false
-        end
-		print("Toggle state:", boss20)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Map 20", 
-    default = false, 
-    callback = function(msp20)
-if msp20 then
-        _G.msp201 = true
-			while _G.msp201 == true do
-local args = {workspace:WaitForChild("Zones"):WaitForChild("20"):WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ZoneService"):WaitForChild("RE"):WaitForChild("teleport"):FireServer(unpack(args))
-task.wait(600)
-end
-		else
-		_G.msp201 = false
-        end
-		print("Toggle state:", msp20)
+		_G.LuckyBrainrot1 = false
+           end
+        print("Toggle state:", LuckyBrainrot)
     end
 })
