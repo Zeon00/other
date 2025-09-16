@@ -668,6 +668,28 @@ print("Toggle state:", stage)
 })
 GUI:CreateToggle({
     parent = main, 
+    text = "Auto Mining Tower", 
+    default = false, 
+    callback = function(mining)
+if mining then
+        _G.mining1 = true
+	while _G.mining1 == true do
+task.wait()
+local args = {
+	"MiningTower",
+	true
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TowerService"):WaitForChild("RF"):WaitForChild("EnterTower"):InvokeServer(unpack(args))
+
+end
+	  		else
+		      _G.mining1 = false
+            end
+print("Toggle state:", mining)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
     text = "Boss Mole King", 
     default = false, 
     callback = function(boss20)
