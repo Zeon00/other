@@ -266,6 +266,25 @@ GUI:CreateSection({
 })
 GUI:CreateButton({
     parent = main, 
+    text = "Map La Vaca", 
+    callback = function()
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Target CFrame (Spawn location)
+local target = workspace:WaitForChild("Zones")
+    :WaitForChild("LaVacasFrozenLake")
+    :WaitForChild("Interactables")
+    :WaitForChild("Teleports")
+    :WaitForChild("Locations")
+    :WaitForChild("Spawn")
+
+-- Teleport player slightly above the Spawn
+humanoidRootPart.CFrame = target.CFrame + Vector3.new(0, 5, 0)
+end})
+GUI:CreateButton({
+    parent = main, 
     text = "Auto CLick", 
     callback = function()
 getgenv().key = "Hostile"
