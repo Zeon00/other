@@ -732,7 +732,7 @@ end
 GUI:CreateToggle({
     parent = main, 
     text = "Boss Skeleton", 
-    default = false, 
+    default = true, 
     callback = function(boss23)
 if boss23 then
         _G.boss231 = true
@@ -781,7 +781,7 @@ task.wait(20)
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Spin Tralalero", 
-    default = true, 
+    default = false, 
     callback = function(Spinfrontman)
 if Spinfrontman then
         _G.Spinfrontman1 = true
