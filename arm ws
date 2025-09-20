@@ -580,16 +580,16 @@ if duck then
 	while _G.loop7 == true do
 
 local args = {
-	"MinersDreamland",
+	"DesertMines",
 	"Dumbells",
-	"MiningEvent12"
+	"DesertMines12"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 task.wait(100)
 local args = {
-	"MinersDreamland",
+	"DesertMines",
 	"Grips",
-	"MiningEvent12"
+	"DesertMines12"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
 	task.wait(100)
@@ -610,12 +610,12 @@ if knuckle then
 	while _G.knuckle1 == true do
 task.wait()
 local args = {
-	"MinersDreamland",
+	"DesertMines",
 	"Tier5"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PunchBagService"):WaitForChild("RE"):WaitForChild("onGiveStats"):FireServer(unpack(args))
 local args = {
-	"MinersDreamland",
+	"DesertMines",
 	"Tier5"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PunchBagService"):WaitForChild("RE"):WaitForChild("onGiveStats"):FireServer(unpack(args))
@@ -625,6 +625,31 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 		_G.knuckle1 = false
            end
         print("Toggle state:", knuckle)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Mining Tower", 
+    default = false, 
+    callback = function(trialmining)
+if trialmining then
+        _G.trialmining1 = true
+			while _G.trialmining1 == true do
+task.wait()			
+local args = {
+	true
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+local args = {
+	"MiningTower",
+	true
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TowerService"):WaitForChild("RF"):WaitForChild("EnterTower"):InvokeServer(unpack(args))
+end
+		else
+		_G.trialmining1 = false
+        end
+		print("Toggle state:", trialmining)
     end
 })
 GUI:CreateToggle({
@@ -732,7 +757,7 @@ end
 GUI:CreateToggle({
     parent = main, 
     text = "Boss Skeleton", 
-    default = true, 
+    default = false, 
     callback = function(boss23)
 if boss23 then
         _G.boss231 = true
@@ -781,7 +806,7 @@ task.wait(20)
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Spin Tralalero", 
-    default = false, 
+    default = true, 
     callback = function(Spinfrontman)
 if Spinfrontman then
         _G.Spinfrontman1 = true
