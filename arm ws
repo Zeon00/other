@@ -806,7 +806,7 @@ task.wait(20)
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Spin Tralalero", 
-    default = true, 
+    default = false, 
     callback = function(Spinfrontman)
 if Spinfrontman then
         _G.Spinfrontman1 = true
