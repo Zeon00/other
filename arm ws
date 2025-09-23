@@ -1097,3 +1097,37 @@ end
         print("Toggle state:", LuckyBrainrot)
     end
 })
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto mining stone", 
+    default = false, 
+    callback = function(mine)
+if mine then
+ _G.loop200 = true
+while _G.loop200 == true do
+task.wait()
+local args = {
+	workspace:WaitForChild("GameObjects"):WaitForChild("Mining"):WaitForChild("Mining"):WaitForChild("Blocks"):WaitForChild("Coal Ore")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MiningService"):WaitForChild("RF"):WaitForChild("MineBlock"):InvokeServer(unpack(args))
+local args = {
+	workspace:WaitForChild("GameObjects"):WaitForChild("Mining"):WaitForChild("Mining"):WaitForChild("Blocks"):WaitForChild("Sandstone")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MiningService"):WaitForChild("RF"):WaitForChild("MineBlock"):InvokeServer(unpack(args))
+local args = {
+	workspace:WaitForChild("GameObjects"):WaitForChild("Mining"):WaitForChild("Mining"):WaitForChild("Blocks"):WaitForChild("Red Sandstone")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MiningService"):WaitForChild("RF"):WaitForChild("MineBlock"):InvokeServer(unpack(args))
+local args = {
+	workspace:WaitForChild("GameObjects"):WaitForChild("Mining"):WaitForChild("Mining"):WaitForChild("Blocks"):WaitForChild("Malachite Ore")
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MiningService"):WaitForChild("RF"):WaitForChild("MineBlock"):InvokeServer(unpack(args))
+
+end
+		else
+		_G.loop200 = false
+           end
+        print("Toggle state:", mine)
+    end
+})
