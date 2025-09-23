@@ -734,14 +734,14 @@ print("Toggle state:", mining)
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Boss Mole King", 
-    default = false, 
+    text = "Boss Egyptian miner", 
+    default = true, 
     callback = function(boss20)
 if boss20 then
         _G.boss201 = true
 			while _G.boss201 == true do
 task.wait()		
-local args = {"MoleKing"}
+local args = {"EgyptianMiner"}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
 local args = {true}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
@@ -843,6 +843,27 @@ end
 		_G.Space1 = false
            end
         print("Toggle state:", Space)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Spin Miner Fortune", 
+    default = false, 
+    callback = function(minerfortune)
+if minerfortune then
+        _G.minerfortune1 = true
+	while _G.minerfortune1 == true do
+		task.wait()
+local args = {
+	"Miners Fortune",
+	"x25"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+end
+		else
+		_G.minerfortune1 = false
+           end
+        print("Toggle state:", minerfortune)
     end
 })
 GUI:CreateToggle({
