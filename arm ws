@@ -325,7 +325,12 @@ local args = {
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
 local args = {
 	"Dragon Fruit",
-	"2"
+	"3"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
+local args = {
+	"Starfruit",
+	"3"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
 
@@ -735,7 +740,7 @@ print("Toggle state:", mining)
 GUI:CreateToggle({
     parent = main, 
     text = "Boss Egyptian miner", 
-    default = true, 
+    default = false, 
     callback = function(boss20)
 if boss20 then
         _G.boss201 = true
@@ -1106,24 +1111,9 @@ GUI:CreateToggle({
 if mine then
  _G.loop200 = true
 while _G.loop200 == true do
-task.wait()
-local args = {
-	workspace:WaitForChild("GameObjects"):WaitForChild("Mining"):WaitForChild("Mining"):WaitForChild("Blocks"):WaitForChild("Coal Ore")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MiningService"):WaitForChild("RF"):WaitForChild("MineBlock"):InvokeServer(unpack(args))
-local args = {
-	workspace:WaitForChild("GameObjects"):WaitForChild("Mining"):WaitForChild("Mining"):WaitForChild("Blocks"):WaitForChild("Sandstone")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MiningService"):WaitForChild("RF"):WaitForChild("MineBlock"):InvokeServer(unpack(args))
-local args = {
-	workspace:WaitForChild("GameObjects"):WaitForChild("Mining"):WaitForChild("Mining"):WaitForChild("Blocks"):WaitForChild("Red Sandstone")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MiningService"):WaitForChild("RF"):WaitForChild("MineBlock"):InvokeServer(unpack(args))
-local args = {
-	workspace:WaitForChild("GameObjects"):WaitForChild("Mining"):WaitForChild("Mining"):WaitForChild("Blocks"):WaitForChild("Malachite Ore")
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MiningService"):WaitForChild("RF"):WaitForChild("MineBlock"):InvokeServer(unpack(args))
 
+game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1220.394775390625, 27.6346435546875, -931.5318603515625)
+task.wait(500)
 end
 		else
 		_G.loop200 = false
