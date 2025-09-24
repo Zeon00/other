@@ -1103,21 +1103,3 @@ end
     end
 })
 
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto mining stone", 
-    default = false, 
-    callback = function(mine)
-if mine then
- _G.loop200 = true
-while _G.loop200 == true do
-
-game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1220.394775390625, 27.6346435546875, -931.5318603515625)
-task.wait(500)
-end
-		else
-		_G.loop200 = false
-           end
-        print("Toggle state:", mine)
-    end
-})
