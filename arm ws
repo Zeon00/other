@@ -29,7 +29,6 @@ GUI:CreateSection({
     parent = main, 
     text = "Player"
 })
-
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Claim Online", 
@@ -54,7 +53,6 @@ end
         print("Toggle state:", claim)
     end
 })
-
 GUI:CreateToggle({
     parent = main, 
     text = "Claim Event Duck", 
@@ -84,7 +82,6 @@ task.wait(60)
         print("Toggle state:", event)
     end
 })
-
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Swing", 
@@ -105,7 +102,6 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 		print("Toggle state:", swing)
     end
 })
-
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Roll Aura", 
@@ -154,7 +150,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 local args = {"Mining Merchant",5}
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
 
-task.wait(60)
+task.wait(120)
  end
 		else
 		_G.loop6 = false
@@ -212,13 +208,11 @@ task.wait(60)
     end
 })
 
-
 local main = GUI:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Support Battle"
 })
-
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Crit Hit", 
@@ -227,13 +221,15 @@ GUI:CreateToggle({
 if Crit then
         _G.Crit1 = true
 	while _G.Crit1 == true do
-task.wait(0.1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
 task.wait()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestCritHit"):InvokeServer()
- end
+    local result = game:GetService("ReplicatedStorage")
+        :WaitForChild("Packages")
+        :WaitForChild("Knit")
+        :WaitForChild("Services")
+        :WaitForChild("ArmWrestleService")
+        :WaitForChild("RF")
+        :WaitForChild("RequestCritHit")
+        :InvokeServer() end
 		else
 		_G.Crit1 = false
            end
@@ -248,9 +244,16 @@ GUI:CreateToggle({
 if Hit then
         _G.Hit1 = true
 	while _G.Hit1 == true do
-		task.wait(0.1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestClick"):InvokeServer()
- end
+		task.wait()
+game:GetService("ReplicatedStorage")
+        :WaitForChild("Packages")
+        :WaitForChild("Knit")
+        :WaitForChild("Services")
+        :WaitForChild("ArmWrestleService")
+        :WaitForChild("RF")
+        :WaitForChild("RequestClick")
+        :InvokeServer() 
+		end
 		else
 		_G.Hit1 = false
            end
@@ -258,31 +261,11 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
     end
 })
 
-
 local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Option"
 })
-GUI:CreateButton({
-    parent = main, 
-    text = "Map La Vaca", 
-    callback = function()
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
--- Target CFrame (Spawn location)
-local target = workspace:WaitForChild("Zones")
-    :WaitForChild("DesertMines")
-    :WaitForChild("Interactables")
-    :WaitForChild("Teleports")
-    :WaitForChild("Locations")
-    :WaitForChild("Spawn")
-
--- Teleport player slightly above the Spawn
-humanoidRootPart.CFrame = target.CFrame + Vector3.new(0, 5, 0)
-end})
 GUI:CreateButton({
     parent = main, 
     text = "Auto CLick", 
@@ -306,33 +289,50 @@ loadstring(game:HttpGet('https://raw.githubusercontent.com/yadielsantoss/full-sc
 })
 GUI:CreateButton({
     parent = main, 
+    text = "Use Mining Cereal", 
+    callback = function()
+-- List of items and their values
+local x = 0
+while x < 3500 do
+    print("x is:", x)
+    x = x + 1
+    task.wait() -- Important for preventing crashes in infinite loops
+	local args = {
+	"Gemstone Cereal",
+	"1"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
+
+end
+    end
+})
+GUI:CreateButton({
+    parent = main, 
     text = "Use Item", 
     callback = function()
-local args = {
-	"Cookie",
-	"3"
+-- List of items and their values
+local items = {
+    {"Cookie", "3"},
+    {"Donut", "3"},
+    {"Banana", "2"},
+    {"Dragon Fruit", "3"},
+    {"Starfruit", "3"}
 }
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
-local args = {
-	"Donut",
-	"3"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
-local args = {
-	"Banana",
-	"2"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
-local args = {
-	"Dragon Fruit",
-	"3"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
-local args = {
-	"Starfruit",
-	"3"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
+
+-- Reference to UseItem RemoteFunction
+local useItem = game:GetService("ReplicatedStorage")
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ItemService")
+    :WaitForChild("RF")
+    :WaitForChild("UseItem")
+
+-- Loop through all items and use them
+for _, args in ipairs(items) do
+    useItem:InvokeServer(unpack(args))
+    task.wait(0.1) -- small delay to avoid lag
+end
 
     end
 })
@@ -354,155 +354,100 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
 })
     end
 })
-
-
-
 GUI:CreateButton({
     parent = main, 
     text = "Buy Medal", 
     callback = function()
-local args = {"Rune Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Firework Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Feel Good Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Easter Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Soulfire Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Godly Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Thunder Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Bulk Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Temple Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Curler 3"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Villain Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Captain Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Beach Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Trident Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Yin Yang Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Bandit Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Holly Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Volcano Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Spooky Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Endless Grips 1"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Hallo Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Ninja Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Snowman Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Intruder Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Criminal Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Endless Summer 1"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Prisoner Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Twilight Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Hacker Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Noob Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Haunted Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Fire Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Athlete Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Skull Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Gripper 3"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Boombox Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Lucky 1 Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Guard Medal"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("MedalMerchantService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
+local buyMedal = game:GetService("ReplicatedStorage")
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("MedalMerchantService")
+    :WaitForChild("RF")
+    :WaitForChild("Buy")
+
+buyMedal:InvokeServer("Rune Medal")
+buyMedal:InvokeServer("Firework Medal")
+buyMedal:InvokeServer("Feel Good Medal")
+buyMedal:InvokeServer("Easter Medal")
+buyMedal:InvokeServer("Soulfire Medal")
+buyMedal:InvokeServer("Godly Medal")
+buyMedal:InvokeServer("Thunder Medal")
+buyMedal:InvokeServer("Bulk Medal")
+buyMedal:InvokeServer("Temple Medal")
+buyMedal:InvokeServer("Curler 3")
+buyMedal:InvokeServer("Villain Medal")
+buyMedal:InvokeServer("Captain Medal")
+buyMedal:InvokeServer("Beach Medal")
+buyMedal:InvokeServer("Trident Medal")
+buyMedal:InvokeServer("Yin Yang Medal")
+buyMedal:InvokeServer("Bandit Medal")
+buyMedal:InvokeServer("Holly Medal")
+buyMedal:InvokeServer("Volcano Medal")
+buyMedal:InvokeServer("Spooky Medal")
+buyMedal:InvokeServer("Endless Grips 1")
+buyMedal:InvokeServer("Hallo Medal")
+buyMedal:InvokeServer("Ninja Medal")
+buyMedal:InvokeServer("Snowman Medal")
+buyMedal:InvokeServer("Intruder Medal")
+buyMedal:InvokeServer("Criminal Medal")
+buyMedal:InvokeServer("Endless Summer 1")
+buyMedal:InvokeServer("Prisoner Medal")
+buyMedal:InvokeServer("Twilight Medal")
+buyMedal:InvokeServer("Hacker Medal")
+buyMedal:InvokeServer("Noob Medal")
+buyMedal:InvokeServer("Haunted Medal")
+buyMedal:InvokeServer("Fire Medal")
+buyMedal:InvokeServer("Athlete Medal")
+buyMedal:InvokeServer("Skull Medal")
+buyMedal:InvokeServer("Gripper 3")
+buyMedal:InvokeServer("Boombox Medal")
+buyMedal:InvokeServer("Lucky 1 Medal")
+buyMedal:InvokeServer("Guard Medal")
 end
 })
 GUI:CreateButton({
     parent = main, 
     text = "Reedem Gamepass", 
     callback = function()
-	local args = {"Regular",1}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",2}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",3}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",6}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",7}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",8}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",9}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",10}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",11}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",12}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",13}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",14}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",15}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",16}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",17}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",18}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",19}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",20}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",21}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",22}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",23}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",24}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",25}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",26}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",27}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",28}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",29}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
-local args = {"Regular",30}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SeasonPassService"):WaitForChild("RF"):WaitForChild("Claim"):InvokeServer(unpack(args))
+	local claim = game:GetService("ReplicatedStorage")
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("SeasonPassService")
+    :WaitForChild("RF")
+    :WaitForChild("Claim")
+
+claim:InvokeServer("Regular",1)
+claim:InvokeServer("Regular",2)
+claim:InvokeServer("Regular",3)
+claim:InvokeServer("Regular",4)
+claim:InvokeServer("Regular",5)
+claim:InvokeServer("Regular",6)
+claim:InvokeServer("Regular",7)
+claim:InvokeServer("Regular",8)
+claim:InvokeServer("Regular",9)
+claim:InvokeServer("Regular",10)
+claim:InvokeServer("Regular",11)
+claim:InvokeServer("Regular",12)
+claim:InvokeServer("Regular",13)
+claim:InvokeServer("Regular",14)
+claim:InvokeServer("Regular",15)
+claim:InvokeServer("Regular",16)
+claim:InvokeServer("Regular",17)
+claim:InvokeServer("Regular",18)
+claim:InvokeServer("Regular",19)
+claim:InvokeServer("Regular",20)
+claim:InvokeServer("Regular",21)
+claim:InvokeServer("Regular",22)
+claim:InvokeServer("Regular",23)
+claim:InvokeServer("Regular",24)
+claim:InvokeServer("Regular",25)
+claim:InvokeServer("Regular",26)
+claim:InvokeServer("Regular",27)
+claim:InvokeServer("Regular",28)
+claim:InvokeServer("Regular",29)
+claim:InvokeServer("Regular",30)
 
 end
 })
@@ -510,62 +455,70 @@ GUI:CreateButton({
     parent = main, 
     text = "Reedem Code", 
     callback = function()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("banker")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("sorryoops")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("timetravel")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("world19")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("bulk")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("superhero")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("tokenstore")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("captain")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("skullbeard")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("pirate")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("athlete")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("tradingback")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("blossom")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("ninja")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("snowops")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("hideout")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("cosmic")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("stocking")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("frostlands")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("polar")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("shiny")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("Christmas")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("hacker")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("classic")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("clans")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("rifted")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("hauntedmanor")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("trainers")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("ghosthunting")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("spooky")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("soon")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("hatching")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("billion")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("Heavenly")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("rework")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("paradise")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("wasteland")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("apocalypse")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("energy")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("royalty")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("performance")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("charms")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("wizard")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("atlantis")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("800mvisits")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("icecold")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("forging")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("noob")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("fixingstuff")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("celebration")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("glassbridge")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("octogames")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("brainrot")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("21iscoming")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("welovemining")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("CodeRedemptionService"):WaitForChild("RE"):WaitForChild("onRedeem"):FireServer("sorryfordelay")
+local redeem = game:GetService("ReplicatedStorage")
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("CodeRedemptionService")
+    :WaitForChild("RE")
+    :WaitForChild("onRedeem")
+
+redeem:FireServer("banker")
+redeem:FireServer("sorryoops")
+redeem:FireServer("timetravel")
+redeem:FireServer("world19")
+redeem:FireServer("bulk")
+redeem:FireServer("superhero")
+redeem:FireServer("tokenstore")
+redeem:FireServer("captain")
+redeem:FireServer("skullbeard")
+redeem:FireServer("pirate")
+redeem:FireServer("athlete")
+redeem:FireServer("tradingback")
+redeem:FireServer("blossom")
+redeem:FireServer("ninja")
+redeem:FireServer("snowops")
+redeem:FireServer("hideout")
+redeem:FireServer("cosmic")
+redeem:FireServer("stocking")
+redeem:FireServer("frostlands")
+redeem:FireServer("polar")
+redeem:FireServer("shiny")
+redeem:FireServer("Christmas")
+redeem:FireServer("hacker")
+redeem:FireServer("classic")
+redeem:FireServer("clans")
+redeem:FireServer("rifted")
+redeem:FireServer("hauntedmanor")
+redeem:FireServer("trainers")
+redeem:FireServer("ghosthunting")
+redeem:FireServer("spooky")
+redeem:FireServer("soon")
+redeem:FireServer("hatching")
+redeem:FireServer("billion")
+redeem:FireServer("Heavenly")
+redeem:FireServer("rework")
+redeem:FireServer("paradise")
+redeem:FireServer("wasteland")
+redeem:FireServer("apocalypse")
+redeem:FireServer("energy")
+redeem:FireServer("royalty")
+redeem:FireServer("performance")
+redeem:FireServer("charms")
+redeem:FireServer("wizard")
+redeem:FireServer("atlantis")
+redeem:FireServer("800mvisits")
+redeem:FireServer("icecold")
+redeem:FireServer("forging")
+redeem:FireServer("noob")
+redeem:FireServer("fixingstuff")
+redeem:FireServer("celebration")
+redeem:FireServer("glassbridge")
+redeem:FireServer("octogames")
+redeem:FireServer("brainrot")
+redeem:FireServer("21iscoming")
+redeem:FireServer("welovemining")
+redeem:FireServer("sorryfordelay")
 
 end})
 
@@ -574,31 +527,30 @@ GUI:CreateSection({
     parent = main, 
     text = "Option"
 })
-
 GUI:CreateToggle({
     parent = main, 
     text = "Equip Mining", 
     default = false, 
     callback = function(duck)
 if duck then
-        _G.loop7 = true
-	while _G.loop7 == true do
+local toolService = game:GetService("ReplicatedStorage")
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ToolService")
+    :WaitForChild("RE")
+    :WaitForChild("onGuiEquipRequest")
 
-local args = {
-	"DesertMines",
-	"Dumbells",
-	"DesertMines12"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-task.wait(100)
-local args = {
-	"DesertMines",
-	"Grips",
-	"DesertMines12"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onGuiEquipRequest"):FireServer(unpack(args))
-	task.wait(100)
- end
+    _G.loop7 = true
+	while _G.loop7 == true do
+    -- Equip Dumbells
+    toolService:FireServer("DesertMines", "Dumbells", "DesertMines12")
+    task.wait(60) -- wait 1 minute
+
+    -- Equip Grips
+    toolService:FireServer("DesertMines", "Grips", "DesertMines12")
+    task.wait(60) -- wait 1 minute
+end
 		else
 		_G.loop7 = false
            end
@@ -692,7 +644,6 @@ end
 print("Toggle state:", losttower)
     end
 })
-
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Space Center", 
@@ -746,12 +697,21 @@ if boss20 then
         _G.boss201 = true
 			while _G.boss201 == true do
 task.wait()		
-local args = {"EgyptianMiner"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {false}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
+local ArmWrestleService = game:GetService("ReplicatedStorage")
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ArmWrestleService")
+    :WaitForChild("RF")
+
+-- Start fight
+ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("EgyptianMiner")
+
+-- Enable auto
+ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
+
+-- Disable auto
+ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(false)
 end
 		else
 		_G.boss201 = false
@@ -759,31 +719,6 @@ end
 		print("Toggle state:", boss20)
     end
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Boss Skeleton", 
-    default = false, 
-    callback = function(boss23)
-if boss23 then
-        _G.boss231 = true
-			while _G.boss231 == true do
-task.wait()			
-local args = {"SkeletonMiner"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("RequestStartFight"):InvokeServer(unpack(args))
-local args = {true}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {false}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-
-end
-		else
-		_G.boss231 = false
-        end
-		print("Toggle state:", boss23)
-    end
-})
-
-
 
 local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
@@ -807,7 +742,6 @@ task.wait(20)
 		print("Toggle state:", dailylogin)
     end
 })
-
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Spin Tralalero", 
@@ -892,8 +826,6 @@ end
 		print("Toggle state:", trainer)
     end
 })
-
-
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Open Kingdom Chest", 
@@ -987,6 +919,7 @@ end
         print("Toggle state:", upgrade)
     end
 })
+
 local main = GUI:CreateTab("misc", "egg") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
@@ -1016,7 +949,7 @@ end
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Auto Brainrot Forest Egg", 
+    text = "Auto Mine Desert Egg", 
     default = false, 
     callback = function(BrainrotForest)
 if BrainrotForest then
@@ -1024,7 +957,7 @@ if BrainrotForest then
 	while _G.BrainrotForest1 == true do
 		task.wait(0.1)
 local args = {
-	"BrainrotForest",
+	"OrangeSpikedCrystal",
 	[5] = true,
 	[4] = false
 }
