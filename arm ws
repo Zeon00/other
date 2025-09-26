@@ -716,7 +716,7 @@ local ArmWrestleService = game:GetService("ReplicatedStorage")
     :WaitForChild("RF")
 
 -- Start fight
-ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("EgyptianMiner")
+ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("ZombieMiner")
 
 -- Enable auto
 ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
