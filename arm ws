@@ -274,7 +274,7 @@ local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
 -- Target CFrame (Spawn location)
 local target = workspace:WaitForChild("Zones")
-    :WaitForChild("4")
+    :WaitForChild("DesertMines")
     :WaitForChild("Interactables")
     :WaitForChild("Teleports")
     :WaitForChild("Locations")
