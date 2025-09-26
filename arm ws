@@ -88,12 +88,23 @@ GUI:CreateToggle({
     default = true, 
     callback = function(swing)
 if swing then
-        _G.loop2 = true
+
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local onClick = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ToolService")
+    :WaitForChild("RE")
+    :WaitForChild("onClick")
+
+-- Loop every 1 second (you can change the delay)
+     _G.loop2 = true
 	while _G.loop2 == true do
-		task.wait()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick"):FireServer()
+    onClick:FireServer() -- Send the remote event
+    task.wait() -- wait 1 second before repeating
+end
 
  end
 		else
