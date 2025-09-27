@@ -106,7 +106,7 @@ local onClick = ReplicatedStorage:WaitForChild("Packages")
     task.wait() -- wait 1 second before repeating
 end
 
- 
+ end
 		else
 		_G.loop2 = false
            end
@@ -240,7 +240,8 @@ task.wait()
         :WaitForChild("ArmWrestleService")
         :WaitForChild("RF")
         :WaitForChild("RequestCritHit")
-        :InvokeServer() end
+        :InvokeServer() 
+		end
 		else
 		_G.Crit1 = false
            end
@@ -283,6 +284,64 @@ GUI:CreateButton({
     callback = function()
 getgenv().key = "Hostile"
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Critical and Hit", 
+    callback = function()
+--// Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+--// Remotes
+local RF = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ArmWrestleService")
+    :WaitForChild("RF")
+
+--// Settings
+local running = true -- auto on by default
+local delayTime = 0.1 -- how fast it clicks
+
+--// GUI
+local player = Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+screenGui.ResetOnSpawn = false
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 80, 0, 30) -- smaller size
+toggleBtn.Position = UDim2.new(0.05, 0, 0.1, 0) -- top left
+toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.TextScaled = true
+toggleBtn.Text = "ON"
+toggleBtn.Parent = screenGui
+toggleBtn.BorderSizePixel = 0
+toggleBtn.AutoButtonColor = true
+toggleBtn.BackgroundTransparency = 0.1
+toggleBtn.ZIndex = 5
+
+--// Button logic
+toggleBtn.MouseButton1Click:Connect(function()
+    running = not running
+    toggleBtn.Text = running and "ON" or "OFF"
+    toggleBtn.BackgroundColor3 = running and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+end)
+
+--// Main Loop
+task.spawn(function()
+    while true do
+        task.wait(delayTime)
+        if running then
+            pcall(function()
+                RF.RequestClick:InvokeServer()
+                RF.RequestCritHit:InvokeServer()
+            end)
+        end
+    end
+end)
+
 end})
 GUI:CreateButton({
     parent = main, 
@@ -716,7 +775,7 @@ local ArmWrestleService = game:GetService("ReplicatedStorage")
     :WaitForChild("RF")
 
 -- Start fight
-ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("ZombieMiner")
+ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("EgyptianMiner")
 
 -- Enable auto
 ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
