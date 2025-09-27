@@ -106,7 +106,7 @@ local onClick = ReplicatedStorage:WaitForChild("Packages")
     task.wait() -- wait 1 second before repeating
 end
 
- end
+
 		else
 		_G.loop2 = false
            end
