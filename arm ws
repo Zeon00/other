@@ -614,11 +614,11 @@ local toolService = game:GetService("ReplicatedStorage")
     _G.loop7 = true
 	while _G.loop7 == true do
     -- Equip Dumbells
-    toolService:FireServer("DesertMines", "Dumbells", "DesertMines12")
+    toolService:FireServer("PlayfulMines", "Dumbells", "PlayfulMines12")
     task.wait(60) -- wait 1 minute
 
     -- Equip Grips
-    toolService:FireServer("DesertMines", "Grips", "DesertMines12")
+    toolService:FireServer("PlayfulMines", "Grips", "PlayfulMines12")
     task.wait(60) -- wait 1 minute
 end
 		else
