@@ -789,7 +789,68 @@ end
 		print("Toggle state:", boss20)
     end
 })
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss Penguin Miner", 
+    default = false, 
+    callback = function(boss23)
+if boss23 then
+        _G.boss231 = true
+			while _G.boss231 == true do
+task.wait()		
+local ArmWrestleService = game:GetService("ReplicatedStorage")
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ArmWrestleService")
+    :WaitForChild("RF")
 
+-- Start fight
+ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("PenguinMiner")
+
+-- Enable auto
+ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
+
+-- Disable auto
+ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(false)
+end
+		else
+		_G.boss231 = false
+        end
+		print("Toggle state:", boss23)
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Boss Egyptian Skeleton", 
+    default = false, 
+    callback = function(boss22)
+if boss22 then
+        _G.boss221 = true
+			while _G.boss221 == true do
+task.wait()		
+local ArmWrestleService = game:GetService("ReplicatedStorage")
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ArmWrestleService")
+    :WaitForChild("RF")
+
+-- Start fight
+ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("EgyptianSkeleton")
+
+-- Enable auto
+ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
+
+-- Disable auto
+ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(false)
+end
+		else
+		_G.boss221 = false
+        end
+		print("Toggle state:", boss22)
+    end
+})
 local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
