@@ -220,10 +220,6 @@ task.wait(60)
 })
 
 local main = GUI:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
-GUI:CreateSection({
-    parent = main, 
-    text = "Support Battle"
-})
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Crit Hit", 
@@ -233,14 +229,15 @@ if Crit then
         _G.Crit1 = true
 	while _G.Crit1 == true do
 task.wait()
-    local result = game:GetService("ReplicatedStorage")
-        :WaitForChild("Packages")
-        :WaitForChild("Knit")
-        :WaitForChild("Services")
-        :WaitForChild("ArmWrestleService")
-        :WaitForChild("RF")
-        :WaitForChild("RequestCritHit")
-        :InvokeServer() 
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Cache path once
+local RequestCritHit = ReplicatedStorage.Packages
+    .Knit.Services.ArmWrestleService.RF
+    .RequestCritHit
+
+-- Fast call
+local result = RequestCritHit:InvokeServer()
 		end
 		else
 		_G.Crit1 = false
@@ -257,14 +254,15 @@ if Hit then
         _G.Hit1 = true
 	while _G.Hit1 == true do
 		task.wait()
-game:GetService("ReplicatedStorage")
-        :WaitForChild("Packages")
-        :WaitForChild("Knit")
-        :WaitForChild("Services")
-        :WaitForChild("ArmWrestleService")
-        :WaitForChild("RF")
-        :WaitForChild("RequestClick")
-        :InvokeServer() 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Cache path once
+local RequestClick = ReplicatedStorage.Packages
+    .Knit.Services.ArmWrestleService.RF
+    .RequestClick
+
+-- Fast call
+local result = RequestClick:InvokeServer()
 		end
 		else
 		_G.Hit1 = false
@@ -272,6 +270,7 @@ game:GetService("ReplicatedStorage")
 		print("Toggle state:", Hit)
     end
 })
+
 
 local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
