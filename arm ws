@@ -31,21 +31,36 @@ GUI:CreateSection({
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Auto Claim Online", 
+    text = "Auto Claim", 
     default = true, 
     callback = function(claim)
 	if claim then	
 	_G.claim1 = true
 	while _G.claim1 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("1")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("2")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("3")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("6")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("8")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("9")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("11")
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TimedRewardService"):WaitForChild("RE"):WaitForChild("onClaim"):FireServer("12")
-task.wait(200)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local KnitServices = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services")
+
+-- EventPassService Remotes
+local EventPassRF = KnitServices:WaitForChild("EventPassService"):WaitForChild("RF")
+
+-- TimedRewardService Remotes
+local TimedRewardRE = KnitServices:WaitForChild("TimedRewardService"):WaitForChild("RE")
+
+-- Reset Event Pass
+EventPassRF:WaitForChild("Reset"):InvokeServer()
+
+-- Claim all Free Event Pass rewards (1–12)
+for i = 1, 12 do
+	EventPassRF:WaitForChild("ClaimReward"):InvokeServer("Free", i)
+end
+
+-- Claim selected Timed Rewards
+local timedRewards = {"1","2","3","6","8","9","11","12"}
+
+for _, id in ipairs(timedRewards) do
+	TimedRewardRE:WaitForChild("onClaim"):FireServer(id)
+end
+task.wait(120)
 end
 		else
 		_G.claim1 = false
@@ -53,59 +68,27 @@ end
         print("Toggle state:", claim)
     end
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Claim Event Duck", 
-    default = true, 
-    callback = function(event)
-if event then
-        _G.loop8 = true
-	while _G.loop8 == true do
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("Reset"):InvokeServer()
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",2)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",3)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",4)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",5)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",6)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",7)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",8)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",9)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",10)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",11)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EventPassService"):WaitForChild("RF"):WaitForChild("ClaimReward"):InvokeServer("Free",12)
-task.wait(60)
- end
-		else
-		_G.loop8 = false
-           end
-        print("Toggle state:", event)
-    end
-})
+
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Swing", 
     default = true, 
     callback = function(swing)
 if swing then
-
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local onClick = ReplicatedStorage:WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ToolService")
-    :WaitForChild("RE")
-    :WaitForChild("onClick")
-
--- Loop every 1 second (you can change the delay)
-     _G.loop2 = true
+    _G.loop2 = true
 	while _G.loop2 == true do
-    onClick:FireServer() -- Send the remote event
-    task.wait() -- wait 1 second before repeating
-end
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
+-- Cache the remote once
+local onClick = ReplicatedStorage.Packages
+    .Knit.Services.ToolService.RE.onClick
+
+-- Fast loop (fires every Heartbeat frame)
+RunService.Heartbeat:Connect(function()
+    onClick:FireServer()
+end)
+end
 
 		else
 		_G.loop2 = false
@@ -136,39 +119,7 @@ GUI:CreateSection({
     parent = main, 
     text = "Shop"
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Buy Arm Rewind", 
-    default = true, 
-    callback = function(arm)
-if arm then
-        _G.loop6 = true
-	while _G.loop6 == true do
-local args = {"Frosty Merchant",3}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Island Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Island Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Orc Merchant",3}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Orc Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Mining Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Mining Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Mining Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
 
-task.wait(120)
- end
-		else
-		_G.loop6 = false
-           end
-        print("Toggle state:", arm)
-    end
-})
 GUI:CreateToggle({
     parent = main, 
     text = "Squid Merchant", 
@@ -178,96 +129,36 @@ if squid then
         _G.squid1 = true
 	while _G.squid1 == true do
 task.wait(200)
-local args = {"Hidden Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Hidden Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Frontman Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"BrainrotMarket",9}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("UniversalShopService"):WaitForChild("RF"):WaitForChild("Buy"):InvokeServer(unpack(args))
-local args = {"Frozen Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Frozen Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local KnitServices = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services")
+
+-- Cache remotes
+local LimitedMerchantRF = KnitServices.LimitedMerchantService.RF.BuyItem
+local UniversalShopRF = KnitServices.UniversalShopService.RF.Buy
+
+-- Items to buy
+local buys = {
+    {"Hidden Merchant", 4, LimitedMerchantRF},
+    {"Hidden Merchant", 5, LimitedMerchantRF},
+    {"Frontman Merchant", 5, LimitedMerchantRF},
+    {"BrainrotMarket", 9, UniversalShopRF},
+    {"Frozen Merchant", 4, LimitedMerchantRF},
+    {"Frozen Merchant", 5, LimitedMerchantRF},
+    {"Pirate Merchant", 4, LimitedMerchantRF},
+    {"Pirate Merchant", 5, LimitedMerchantRF},
+}
+
+-- Loop through all buys
+for _, data in ipairs(buys) do
+    local merchant, id, remote = data[1], data[2], data[3]
+    remote:InvokeServer(merchant, id)
+end
 
 end
 		else
 		_G.squid1 = false
            end
         print("Toggle state:", squid)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Buy Shop Summer", 
-    default = true, 
-    callback = function(shopsummer)
-if shopsummer then
-        _G.shopsummer1 = true
-	while _G.shopsummer1 == true do
-local args = {"Pirate Merchant",4}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-local args = {"Pirate Merchant",5}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("LimitedMerchantService"):WaitForChild("RF"):WaitForChild("BuyItem"):InvokeServer(unpack(args))
-task.wait(60)
- end
-		else
-		_G.shopsummer1 = false
-           end
-		 print("Toggle state:", shopsummer)
-    end
-})
-
-local main = GUI:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Crit Hit", 
-    default = true, 
-    callback = function(Crit)
-if Crit then
-        _G.Crit1 = true
-	while _G.Crit1 == true do
-task.wait()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Cache path once
-local RequestCritHit = ReplicatedStorage.Packages
-    .Knit.Services.ArmWrestleService.RF
-    .RequestCritHit
-
--- Fast call
-local result = RequestCritHit:InvokeServer()
-		end
-		else
-		_G.Crit1 = false
-           end
-print("Toggle state:", Crit)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Normal Hit", 
-    default = true, 
-    callback = function(Hit)
-if Hit then
-        _G.Hit1 = true
-	while _G.Hit1 == true do
-		task.wait()
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Cache path once
-local RequestClick = ReplicatedStorage.Packages
-    .Knit.Services.ArmWrestleService.RF
-    .RequestClick
-
--- Fast call
-local result = RequestClick:InvokeServer()
-		end
-		else
-		_G.Hit1 = false
-           end
-		print("Toggle state:", Hit)
     end
 })
 
@@ -277,6 +168,7 @@ GUI:CreateSection({
     parent = main, 
     text = "Option"
 })
+
 GUI:CreateButton({
     parent = main, 
     text = "Auto CLick", 
@@ -284,64 +176,7 @@ GUI:CreateButton({
 getgenv().key = "Hostile"
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
 end})
-GUI:CreateButton({
-    parent = main, 
-    text = "Auto Critical and Hit", 
-    callback = function()
---// Services
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
 
---// Remotes
-local RF = ReplicatedStorage:WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ArmWrestleService")
-    :WaitForChild("RF")
-
---// Settings
-local running = true -- auto on by default
-local delayTime = 0.1 -- how fast it clicks
-
---// GUI
-local player = Players.LocalPlayer
-local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-screenGui.ResetOnSpawn = false
-
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 80, 0, 30) -- smaller size
-toggleBtn.Position = UDim2.new(0.05, 0, 0.1, 0) -- top left
-toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.TextScaled = true
-toggleBtn.Text = "ON"
-toggleBtn.Parent = screenGui
-toggleBtn.BorderSizePixel = 0
-toggleBtn.AutoButtonColor = true
-toggleBtn.BackgroundTransparency = 0.1
-toggleBtn.ZIndex = 5
-
---// Button logic
-toggleBtn.MouseButton1Click:Connect(function()
-    running = not running
-    toggleBtn.Text = running and "ON" or "OFF"
-    toggleBtn.BackgroundColor3 = running and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
-end)
-
---// Main Loop
-task.spawn(function()
-    while true do
-        task.wait(delayTime)
-        if running then
-            pcall(function()
-                RF.RequestClick:InvokeServer()
-                RF.RequestCritHit:InvokeServer()
-            end)
-        end
-    end
-end)
-
-end})
 GUI:CreateButton({
     parent = main, 
     text = "Lds hub", 
@@ -362,7 +197,7 @@ GUI:CreateButton({
     callback = function()
 -- List of items and their values
 local x = 0
-while x < 3500 do
+while x < 3000 do
     print("x is:", x)
     x = x + 1
     task.wait() -- Important for preventing crashes in infinite loops
@@ -380,28 +215,27 @@ GUI:CreateButton({
     text = "Use Item", 
     callback = function()
 -- List of items and their values
+--// Items to use
 local items = {
     {"Cookie", "3"},
     {"Donut", "3"},
     {"Banana", "2"},
     {"Dragon Fruit", "3"},
-    {"Starfruit", "3"}
+    {"Starfruit", "3"},
 }
 
--- Reference to UseItem RemoteFunction
+--// Remote reference
 local useItem = game:GetService("ReplicatedStorage")
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ItemService")
-    :WaitForChild("RF")
-    :WaitForChild("UseItem")
+    .Packages.Knit.Services.ItemService.RF.UseItem
 
--- Loop through all items and use them
+--// Loop through items and use each 25x
 for _, args in ipairs(items) do
-    useItem:InvokeServer(unpack(args))
-    task.wait(0.1) -- small delay to avoid lag
+    for i = 1, 25 do
+        useItem:InvokeServer(unpack(args))
+        task.wait(0.00001) -- small delay (adjust if needed)
+    end
 end
+
 
     end
 })
@@ -588,9 +422,366 @@ redeem:FireServer("brainrot")
 redeem:FireServer("21iscoming")
 redeem:FireServer("welovemining")
 redeem:FireServer("sorryfordelay")
+redeem:FireServer("playfulmines")
+redeem:FireServer("desertmines")
+
+end})
+local main = GUI:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Support Battle"
+})
+
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Fight Enemy Bot", 
+    callback = function()
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+--// Remotes
+local ArmWrestleService = ReplicatedStorage
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ArmWrestleService")
+    :WaitForChild("RF")
+
+local RequestClick = ArmWrestleService:WaitForChild("RequestClick")
+local RequestCritHit = ArmWrestleService:WaitForChild("RequestCritHit")
+
+--// GUI Setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ArmWrestleUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
+
+-- Main Frame
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 240, 0, 200)
+frame.Position = UDim2.new(0.5, -120, 0.5, -100)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Visible = true
+
+-- Title Bar
+local titleBar = Instance.new("Frame", frame)
+titleBar.Size = UDim2.new(1, 0, 0, 20)
+titleBar.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+local title = Instance.new("TextLabel", titleBar)
+title.Size = UDim2.new(1, -40, 1, 0)
+title.Position = UDim2.new(0, 5, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Arm Wrestle Bot"
+title.TextColor3 = Color3.new(1,1,1)
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Minimize button
+local minimize = Instance.new("TextButton", titleBar)
+minimize.Size = UDim2.new(0, 20, 1, 0)
+minimize.Position = UDim2.new(1, -40, 0, 0)
+minimize.Text = "-"
+minimize.TextColor3 = Color3.new(1,1,1)
+minimize.BackgroundTransparency = 1
+
+-- Close button
+local close = Instance.new("TextButton", titleBar)
+close.Size = UDim2.new(0, 20, 1, 0)
+close.Position = UDim2.new(1, -20, 0, 0)
+close.Text = "X"
+close.TextColor3 = Color3.new(1,0.3,0.3)
+close.BackgroundTransparency = 1
+
+-- Anime face icon (reopen button when minimized)
+local reopen = Instance.new("ImageButton", screenGui)
+reopen.Size = UDim2.new(0, 50, 0, 50)
+reopen.Position = UDim2.new(0, 20, 0.5, -25)
+reopen.BackgroundTransparency = 1
+reopen.Visible = false
+-- 👇 Anime face decal
+reopen.Image = "rbxassetid://6031075938"
+reopen.Active = true
+
+-- Dragging for anime icon
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+    local delta = input.Position - dragStart
+    reopen.Position = UDim2.new(
+        startPos.X.Scale, startPos.X.Offset + delta.X,
+        startPos.Y.Scale, startPos.Y.Offset + delta.Y
+    )
+end
+
+reopen.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = reopen.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+reopen.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- Scrollable container
+local scroll = Instance.new("ScrollingFrame", frame)
+scroll.Size = UDim2.new(1, 0, 1, -20)
+scroll.Position = UDim2.new(0, 0, 0, 20)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 300)
+scroll.ScrollBarThickness = 6
+scroll.BackgroundTransparency = 1
+
+-- Utility function for toggles
+local function makeToggle(name, order)
+    local button = Instance.new("TextButton", scroll)
+    button.Size = UDim2.new(1, -20, 0, 35)
+    button.Position = UDim2.new(0, 10, 0, (order-1) * 40)
+    button.Text = "Start " .. name
+    button.TextColor3 = Color3.new(1,1,1)
+    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    return button
+end
+
+-- Enemy input box
+local textBox = Instance.new("TextBox", scroll)
+textBox.Size = UDim2.new(1, -20, 0, 35)
+textBox.Position = UDim2.new(0, 10, 0, 0)
+textBox.PlaceholderText = "Enter Enemy Name"
+textBox.TextColor3 = Color3.new(1,1,1)
+textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+-- Toggles
+local fightToggle = makeToggle("Fight Loop", 2)
+local clickToggle = makeToggle("Click Spam", 3)
+local critToggle = makeToggle("Crit Spam", 4)
+
+-- Logic
+local runningFight, runningClick, runningCrit = false, false, false
+local lastEnemy = ""
+
+-- Save last enemy
+textBox.FocusLost:Connect(function()
+    if textBox.Text ~= "" then
+        lastEnemy = textBox.Text
+    end
+end)
+
+-- Fight toggle
+fightToggle.MouseButton1Click:Connect(function()
+    runningFight = not runningFight
+    fightToggle.Text = runningFight and "Stop Fight Loop" or "Start Fight Loop"
+    fightToggle.BackgroundColor3 = runningFight and Color3.fromRGB(0,100,0) or Color3.fromRGB(60,60,60)
+
+    if runningFight then
+        task.spawn(function()
+            while runningFight do
+                local enemy = textBox.Text ~= "" and textBox.Text or lastEnemy
+                if enemy ~= "" then
+                    lastEnemy = enemy
+                    pcall(function()
+                        ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer(enemy)
+                        ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
+                    end)
+                end
+                task.wait()
+            end
+        end)
+    end
+end)
+
+-- Click spam toggle
+clickToggle.MouseButton1Click:Connect(function()
+    runningClick = not runningClick
+    clickToggle.Text = runningClick and "Stop Click Spam" or "Start Click Spam"
+    clickToggle.BackgroundColor3 = runningClick and Color3.fromRGB(0,100,0) or Color3.fromRGB(60,60,60)
+
+    if runningClick then
+        task.spawn(function()
+            while runningClick do
+                pcall(function()
+                    RequestClick:InvokeServer()
+                end)
+                task.wait()
+            end
+        end)
+    end
+end)
+
+-- Crit spam toggle
+critToggle.MouseButton1Click:Connect(function()
+    runningCrit = not runningCrit
+    critToggle.Text = runningCrit and "Stop Crit Spam" or "Start Crit Spam"
+    critToggle.BackgroundColor3 = runningCrit and Color3.fromRGB(0,100,0) or Color3.fromRGB(60,60,60)
+
+    if runningCrit then
+        task.spawn(function()
+            while runningCrit do
+                pcall(function()
+                    RequestCritHit:InvokeServer()
+                end)
+                task.wait()
+            end
+        end)
+    end
+end)
+
+-- Minimize
+minimize.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    reopen.Visible = true
+end)
+
+-- Close
+close.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    reopen.Visible = false
+end)
+
+-- Reopen
+reopen.MouseButton1Click:Connect(function()
+    frame.Visible = true
+    reopen.Visible = false
+end)
 
 end})
 
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Tower ", 
+    callback = function()
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local KnitServices = ReplicatedStorage.Packages.Knit.Services
+
+--// Remotes
+local ArmWrestleRF = KnitServices.ArmWrestleService.RF.SetAuto
+local TowerRF = KnitServices.TowerService.RF.EnterTower
+
+--// GUI Setup
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+screenGui.ResetOnSpawn = false
+
+-- Toggle icon (to hide/show main GUI)
+local toggleIcon = Instance.new("TextButton")
+toggleIcon.Size = UDim2.new(0, 40, 0, 40)
+toggleIcon.Position = UDim2.new(0, 10, 0.5, -20)
+toggleIcon.Text = "≡"
+toggleIcon.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleIcon.Parent = screenGui
+
+-- Main frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 220, 0, 120)
+frame.Position = UDim2.new(0.5, -110, 0.5, -60)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.Visible = false
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+-- TextBox
+local textBox = Instance.new("TextBox")
+textBox.Size = UDim2.new(0, 200, 0, 30)
+textBox.Position = UDim2.new(0, 10, 0, 10)
+textBox.PlaceholderText = "Type dungeon name..."
+textBox.Text = ""
+textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.Parent = frame
+
+-- Toggle button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 200, 0, 30)
+toggleButton.Position = UDim2.new(0, 10, 0, 50)
+toggleButton.Text = "Start (OFF)"
+toggleButton.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Parent = frame
+
+-- Variables
+local running = false
+
+-- Toggle icon click → show/hide main GUI
+toggleIcon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- Toggle loop
+toggleButton.MouseButton1Click:Connect(function()
+    running = not running
+    if running then
+        toggleButton.Text = "Stop (ON)"
+        task.spawn(function()
+            while running do
+                local dungeonName = textBox.Text
+                if dungeonName ~= "" then
+                    ArmWrestleRF:InvokeServer(true)
+                    TowerRF:InvokeServer(dungeonName, true)
+                end
+                task.wait(2) -- delay between runs
+            end
+        end)
+    else
+        toggleButton.Text = "Start (OFF)"
+    end
+end)
+
+-- Make draggable for PC & Mobile
+local dragging, dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement 
+    or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+    end
+})
 local main = GUI:CreateTab("New Event", "squircle") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
@@ -626,58 +817,8 @@ end
         print("Toggle state:", duck)
     end
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Equip Knuckle", 
-    default = false, 
-    callback = function(knuckle)
-if knuckle then
-        _G.knuckle1 = true
-	while _G.knuckle1 == true do
-task.wait()
-local args = {
-	"DesertMines",
-	"Tier5"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PunchBagService"):WaitForChild("RE"):WaitForChild("onGiveStats"):FireServer(unpack(args))
-local args = {
-	"DesertMines",
-	"Tier5"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("PunchBagService"):WaitForChild("RE"):WaitForChild("onGiveStats"):FireServer(unpack(args))
 
- end
-		else
-		_G.knuckle1 = false
-           end
-        print("Toggle state:", knuckle)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Mining Tower", 
-    default = false, 
-    callback = function(trialmining)
-if trialmining then
-        _G.trialmining1 = true
-			while _G.trialmining1 == true do
-task.wait()			
-local args = {
-	true
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {
-	"MiningTower",
-	true
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TowerService"):WaitForChild("RF"):WaitForChild("EnterTower"):InvokeServer(unpack(args))
-end
-		else
-		_G.trialmining1 = false
-        end
-		print("Toggle state:", trialmining)
-    end
-})
+
 GUI:CreateToggle({
     parent = main, 
     text = "Trial Ice Lake", 
@@ -687,8 +828,7 @@ if Trialice then
         _G.Trialice1 = true
 			while _G.Trialice1 == true do
 task.wait()			
-local args = {"Icy"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer(unpack(args))
+game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Icy")
 end
 		else
 		_G.Trialice1 = false
@@ -706,6 +846,7 @@ if losttower then
 	while _G.losttower1 == true do
 task.wait(0.1)
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Medieval")
+
 end
 	  		else
 		      _G.losttower1 = false
@@ -713,211 +854,178 @@ end
 print("Toggle state:", losttower)
     end
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Space Center", 
-    default = false, 
-    callback = function(stage)
-if stage then
-        _G.stage1 = true
-	while _G.stage1 == true do
-task.wait()
-local args = {
-	"SpaceTower",
-	true
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TowerService"):WaitForChild("RF"):WaitForChild("EnterTower"):InvokeServer(unpack(args))
 
-end
-	  		else
-		      _G.stage1 = false
-            end
-print("Toggle state:", stage)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Mining Tower", 
-    default = false, 
-    callback = function(mining)
-if mining then
-        _G.mining1 = true
-	while _G.mining1 == true do
-task.wait()
-local args = {
-	"MiningTower",
-	true
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TowerService"):WaitForChild("RF"):WaitForChild("EnterTower"):InvokeServer(unpack(args))
-
-end
-	  		else
-		      _G.mining1 = false
-            end
-print("Toggle state:", mining)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Boss Egyptian miner", 
-    default = false, 
-    callback = function(boss20)
-if boss20 then
-        _G.boss201 = true
-			while _G.boss201 == true do
-task.wait()		
-local ArmWrestleService = game:GetService("ReplicatedStorage")
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ArmWrestleService")
-    :WaitForChild("RF")
-
--- Start fight
-ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("EgyptianMiner")
-
--- Enable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
-
--- Disable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(false)
-end
-		else
-		_G.boss201 = false
-        end
-		print("Toggle state:", boss20)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Boss Penguin Miner", 
-    default = false, 
-    callback = function(boss23)
-if boss23 then
-        _G.boss231 = true
-			while _G.boss231 == true do
-task.wait()		
-local ArmWrestleService = game:GetService("ReplicatedStorage")
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ArmWrestleService")
-    :WaitForChild("RF")
-
--- Start fight
-ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("PenguinMiner")
-
--- Enable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
-
--- Disable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(false)
-end
-		else
-		_G.boss231 = false
-        end
-		print("Toggle state:", boss23)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Boss Toy Cat", 
-    default = false, 
-    callback = function(boss22)
-if boss22 then
-        _G.boss221 = true
-			while _G.boss221 == true do
-task.wait()		
-local ArmWrestleService = game:GetService("ReplicatedStorage")
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ArmWrestleService")
-    :WaitForChild("RF")
-
--- Start fight
-ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("ToyCat")
-
--- Enable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
-
--- Disable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(false)
-end
-		else
-		_G.boss221 = false
-        end
-		print("Toggle state:", boss22)
-    end
-})
-local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
-GUI:CreateToggle({
-    parent = main, 
-    text = "Boss Toy Dog", 
-    default = false, 
-    callback = function(boss24)
-if boss24 then
-        _G.boss241 = true
-			while _G.boss241 == true do
-task.wait()		
-local ArmWrestleService = game:GetService("ReplicatedStorage")
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ArmWrestleService")
-    :WaitForChild("RF")
-
--- Start fight
-ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("ToyDog")
-
--- Enable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
-
--- Disable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(false)
-end
-		else
-		_G.boss241 = false
-        end
-		print("Toggle state:", boss24)
-    end
-})
-local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
-GUI:CreateToggle({
-    parent = main, 
-    text = "Boss Toy Banana", 
-    default = false, 
-    callback = function(boss23)
-if boss23 then
-        _G.boss231 = true
-			while _G.boss231 == true do
-task.wait()		
-local ArmWrestleService = game:GetService("ReplicatedStorage")
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ArmWrestleService")
-    :WaitForChild("RF")
-
--- Start fight
-ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer("ToyBananaMonkey")
-
--- Enable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
-
--- Disable auto
-ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(false)
-end
-		else
-		_G.boss231 = false
-        end
-		print("Toggle state:", boss23)
-    end
-})
 local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Shortcut"
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Spin Fortune", 
+    callback = function()
+-- LocalScript (StarterGui)
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-- Remote path
+local spinRemote = ReplicatedStorage
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("SpinnerService")
+    :WaitForChild("RF")
+    :WaitForChild("Spin")
+
+-- Known fortunes
+local fortunes = {
+    "Miners Fortune",
+    "Space Fortune",
+    "Tralalero Fortune"
+}
+
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SpinGui"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 230, 0, 160)
+frame.Position = UDim2.new(0.4, 0, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BorderSizePixel = 2
+frame.Active = true
+frame.Draggable = true
+frame.Visible = false
+frame.Parent = screenGui
+
+-- Title bar
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -50, 0, 20)
+title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+title.Text = "🎰 Spinner"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 14
+title.Font = Enum.Font.SourceSansBold
+title.Parent = frame
+
+-- Minimize button
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 25, 0, 20)
+minimizeBtn.Position = UDim2.new(1, -50, 0, 0)
+minimizeBtn.Text = "_"
+minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+minimizeBtn.Parent = frame
+
+-- Close button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 25, 0, 20)
+closeBtn.Position = UDim2.new(1, -25, 0, 0)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.BackgroundColor3 = Color3.fromRGB(100, 40, 40)
+closeBtn.Parent = frame
+
+-- TextBox
+local textBox = Instance.new("TextBox")
+textBox.Size = UDim2.new(0.9, 0, 0.2, 0)
+textBox.Position = UDim2.new(0.05, 0, 0.2, 0)
+textBox.PlaceholderText = "Enter Fortune..."
+textBox.ClearTextOnFocus = false
+textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.Parent = frame
+
+-- Dropdown button
+local dropdownButton = Instance.new("TextButton")
+dropdownButton.Size = UDim2.new(0.9, 0, 0.2, 0)
+dropdownButton.Position = UDim2.new(0.05, 0, 0.45, 0)
+dropdownButton.Text = "▼ Choose Fortune"
+dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+dropdownButton.Parent = frame
+
+-- Dropdown frame
+local dropdownFrame = Instance.new("Frame")
+dropdownFrame.Size = UDim2.new(0.9, 0, 0.5, 0)
+dropdownFrame.Position = UDim2.new(0.05, 0, 0.65, 0)
+dropdownFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+dropdownFrame.Visible = false
+dropdownFrame.Parent = frame
+
+for i, fortuneName in ipairs(fortunes) do
+    local option = Instance.new("TextButton")
+    option.Size = UDim2.new(1, 0, 0.3, 0)
+    option.Position = UDim2.new(0, 0, (i-1)*0.33, 0)
+    option.Text = fortuneName
+    option.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    option.TextColor3 = Color3.fromRGB(255, 255, 255)
+    option.Parent = dropdownFrame
+
+    option.MouseButton1Click:Connect(function()
+        textBox.Text = fortuneName
+        dropdownFrame.Visible = false
+    end)
+end
+
+dropdownButton.MouseButton1Click:Connect(function()
+    dropdownFrame.Visible = not dropdownFrame.Visible
+end)
+
+-- Spin button
+local spinButton = Instance.new("TextButton")
+spinButton.Size = UDim2.new(0.9, 0, 0.2, 0)
+spinButton.Position = UDim2.new(0.05, 0, 0.75, 0)
+spinButton.Text = "Spin x25"
+spinButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+spinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+spinButton.Parent = frame
+
+-- Toggle icon (always visible)
+local toggleIcon = Instance.new("TextButton")
+toggleIcon.Size = UDim2.new(0, 40, 0, 40)
+toggleIcon.Position = UDim2.new(0, 10, 0.8, 0)
+toggleIcon.Text = "🎰"
+toggleIcon.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleIcon.TextSize = 20
+toggleIcon.TextColor3 = Color3.fromRGB(255, 255, 0)
+toggleIcon.Parent = screenGui
+
+-- Button actions
+spinButton.MouseButton1Click:Connect(function()
+    local fortuneName = textBox.Text
+    if fortuneName and fortuneName ~= "" then
+        local args = {fortuneName, "x25"}
+        print("Trying to spin:", args[1], args[2])
+        spinRemote:InvokeServer(unpack(args))
+    else
+        warn("Type or pick a fortune first!")
+    end
+end)
+
+minimizeBtn.MouseButton1Click:Connect(function()
+    for _, child in ipairs(frame:GetChildren()) do
+        if child ~= title and child ~= minimizeBtn and child ~= closeBtn then
+            child.Visible = not child.Visible
+        end
+    end
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    frame.Visible = false
+end)
+
+toggleIcon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+    end
 })
 GUI:CreateToggle({
     parent = main, 
@@ -936,69 +1044,7 @@ task.wait(20)
 		print("Toggle state:", dailylogin)
     end
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Spin Tralalero", 
-    default = false, 
-    callback = function(Spinfrontman)
-if Spinfrontman then
-        _G.Spinfrontman1 = true
-	while _G.Spinfrontman1 == true do
-		task.wait()
-local args = {
-	"Tralalero Fortune",
-	"x25"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-end
-		else
-		_G.Spinfrontman1 = false
-           end
-        print("Toggle state:", Spinfrontman)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Spin Space", 
-    default = false, 
-    callback = function(Space)
-if Space then
-        _G.Space1 = true
-	while _G.Space1 == true do
-		task.wait()
-local args = {
-	"Space Fortune",
-	"x25"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-end
-		else
-		_G.Space1 = false
-           end
-        print("Toggle state:", Space)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Spin Miner Fortune", 
-    default = false, 
-    callback = function(minerfortune)
-if minerfortune then
-        _G.minerfortune1 = true
-	while _G.minerfortune1 == true do
-		task.wait()
-local args = {
-	"Miners Fortune",
-	"x25"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-end
-		else
-		_G.minerfortune1 = false
-           end
-        print("Toggle state:", minerfortune)
-    end
-})
+
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Open Trainer", 
@@ -1088,24 +1134,37 @@ if upgrade then
         _G.upgrade1 = true
 	while _G.upgrade1 == true do
 task.wait()
-local args = {{Item = "Raspberry",Tier = 1}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item = "Cookie",Tier = 1}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item = "Cookie",Tier = 2}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item = "Dragon Fruit",Tier = 1}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item = "Dragon Fruit",Tier = 2}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item = "Donut",Tier = 1}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item = "Donut",Tier = 2}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item = "Starfruit",Tier = 1}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
-local args = {{Item = "Starfruit",Tier = 2}}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemCraftingService"):WaitForChild("RF"):WaitForChild("UpgradeSnack"):InvokeServer(unpack(args))
+-- LocalScript (StarterGui or StarterPlayerScripts)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local upgradeRemote = ReplicatedStorage
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ItemCraftingService")
+    :WaitForChild("RF")
+    :WaitForChild("UpgradeSnack")
+
+-- List of items and tiers
+local itemsToUpgrade = {
+    {Item = "Raspberry", Tier = 1},
+    {Item = "Cookie", Tier = 1},
+    {Item = "Cookie", Tier = 2},
+    {Item = "Dragon Fruit", Tier = 1},
+    {Item = "Dragon Fruit", Tier = 2},
+    {Item = "Donut", Tier = 1},
+    {Item = "Donut", Tier = 2},
+    {Item = "Starfruit", Tier = 1},
+    {Item = "Starfruit", Tier = 2},
+}
+
+-- Loop through each and upgrade
+for _, snack in ipairs(itemsToUpgrade) do
+    local args = {snack}
+    print("Upgrading:", snack.Item, "Tier", snack.Tier)
+    upgradeRemote:InvokeServer(unpack(args))
+end
 end
 		else
 		_G.upgrade1 = false
@@ -1229,3 +1288,4 @@ end
         print("Toggle state:", LuckyBrainrot)
     end
 })
+
