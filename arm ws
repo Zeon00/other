@@ -148,23 +148,34 @@ GUI:CreateSection({
     parent = main, 
     text = "Support Battle"
 })
-GUI:CreateButton({
-    parent = main, 
-    text = "Auto swing", 
-    callback = function()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local onClick = ReplicatedStorage.Packages
     .Knit.Services.ToolService.RE
     .onClick
 
--- Infinite loop, no delay
-while true do
-    onClick:FireServer()
-end
+local autoSwing = false -- toggle state
 
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Swing", 
+    callback = function()
+        autoSwing = not autoSwing -- toggle on/off
+        if autoSwing then
+            -- Connect to Heartbeat for smooth looping
+            autoSwingConnection = RunService.Heartbeat:Connect(function()
+                onClick:FireServer()
+            end)
+        else
+            if autoSwingConnection then
+                autoSwingConnection:Disconnect()
+                autoSwingConnection = nil
+            end
+        end
     end
 })
+
 GUI:CreateButton({
     parent = main, 
     text = "Auto  Rebirth and superRebirth", 
