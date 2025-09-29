@@ -152,172 +152,80 @@ GUI:CreateButton({
     parent = main, 
     text = "Auto Swing", 
     callback = function()
-        -- Locals scoped to this GUI script
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local RunService = game:GetService("RunService")
-
-        local onClick = ReplicatedStorage.Packages
-            .Knit.Services.ToolService.RE
-            .onClick
-
-        -- State toggle
-        if not _G.autoSwing then
-            _G.autoSwing = true
-            _G.autoSwingConnection = RunService.Heartbeat:Connect(function()
-                onClick:FireServer()
-            end)
-        else
-            _G.autoSwing = false
-            if _G.autoSwingConnection then
-                _G.autoSwingConnection:Disconnect()
-                _G.autoSwingConnection = nil
-            end
-        end
-    end
-})
-
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Auto  Rebirth and superRebirth", 
-    callback = function()
---// Basic setup
-local player = game.Players.LocalPlayer
+  --// Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 
---// GUI container
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "HelperGUI"
+local Knit = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
+local ToolService = Knit.Services:WaitForChild("ToolService")
+local ZoneService = Knit.Services:WaitForChild("ZoneService")
+local ArmWrestleService = Knit.Services:WaitForChild("ArmWrestleService")
+local RebirthService = Knit.Services:WaitForChild("RebirthService")
+
+local RE = ToolService:WaitForChild("RE")
+local player = Players.LocalPlayer
+
+--// Config
+local bicepsThreshold = 2.7399858925901514e+26
+local fightPlan = {
+    {1, "Spawn", "Champion", 1},
+    {2, "Spawn", "RogueAi", 1},
+    {3, "Spawn", "KrakenBoss", 2},
+    {4, "Spawn", "MutantKing", 2},
+    {5, "Spawn", "Mammoth", 3},
+    {6, "Spawn", "Udzal", 3},
+    {7, "Spawn", "SpaceDog", 4},
+    {8, "Spawn", "UndeadSparta", 4},
+    {9, "Spawn", "EvilOverseer", 5},
+    {10, "Spawn", "BruteHunter", 6},
+    {11, "Spawn", "Glaciator", 8},
+    {12, "Spawn", "MrLizard", 15},
+    {13, "Spawn", "ShinyKnight", 20},
+    {14, "Spawn", "WealthyOrc", 30},
+    {15, "Spawn", "Empyrean", 50},
+}
+
+--// State
+local autoFarmEnabled = false
+local critSpamEnabled = false
+local autoEquipEnabled = true
+local fighting = false
+local rebirthing = false
+local stopFight = false
+local waitingForBiceps = false
+local status = "Idle..."
+local equipped = false
+local lastEquipAttempt = 0
+local equipRetryDelay = 2
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
-ScreenGui.Enabled = true
+ScreenGui.Name = "AutoFarmGUI"
 
---// Main frame
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 200, 0, 140)
-Frame.Position = UDim2.new(0.5, -100, 0.5, -70) -- centered
+-- Main Frame
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 200, 0, 170)
+Frame.Position = UDim2.new(0.35, 0, 0.1, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Parent = ScreenGui
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+Frame.Active = true
+Frame.Draggable = false
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 
---// Title bar
-local TitleBar = Instance.new("Frame", Frame)
-TitleBar.Size = UDim2.new(1, 0, 0, 28)
-TitleBar.BackgroundTransparency = 1
-
-local TitleLabel = Instance.new("TextLabel", TitleBar)
-TitleLabel.Text = "ArmWrestle Helper"
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 12
-TitleLabel.TextColor3 = Color3.fromRGB(255,255,255)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Position = UDim2.new(0, 8, 0, 4)
-TitleLabel.Size = UDim2.new(0.7, 0, 1, 0)
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Minimize button
-local MinButton = Instance.new("TextButton", TitleBar)
-MinButton.Text = "—"
-MinButton.Font = Enum.Font.GothamBold
-MinButton.TextSize = 14
-MinButton.Size = UDim2.new(0, 24, 0, 20)
-MinButton.Position = UDim2.new(1, -56, 0, 4)
-MinButton.BackgroundColor3 = Color3.fromRGB(60,60,60)
-MinButton.TextColor3 = Color3.fromRGB(255,255,255)
-Instance.new("UICorner", MinButton).CornerRadius = UDim.new(0,6)
-
--- Close button
-local CloseButton = Instance.new("TextButton", TitleBar)
-CloseButton.Text = "✕"
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.TextSize = 12
-CloseButton.Size = UDim2.new(0, 24, 0, 20)
-CloseButton.Position = UDim2.new(1, -28, 0, 4)
-CloseButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
-CloseButton.TextColor3 = Color3.fromRGB(255,255,255)
-Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0,6)
-
--- Content frame (for buttons + status)
-local Content = Instance.new("Frame", Frame)
-Content.Position = UDim2.new(0, 0, 0, 28)
-Content.Size = UDim2.new(1, 0, 1, -28)
-Content.BackgroundTransparency = 1
-
--- Helper to make buttons
-local function makeButton(name, y, text, bg)
-    local b = Instance.new("TextButton", Content)
-    b.Name = name
-    b.Size = UDim2.new(1, -20, 0, 26)
-    b.Position = UDim2.new(0, 10, 0, y)
-    b.Text = text
-    b.BackgroundColor3 = bg
-    b.TextColor3 = Color3.fromRGB(255,255,255)
-    b.Font = Enum.Font.GothamBold
-    b.TextSize = 12
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
-    return b
+-- Dragging (PC + Mobile)
+local dragging, dragStart, startPos
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    Frame.Position = UDim2.new(
+        startPos.X.Scale, startPos.X.Offset + delta.X,
+        startPos.Y.Scale, startPos.Y.Offset + delta.Y
+    )
 end
-
--- Example buttons (hook up your logic later)
-local FarmButton = makeButton("FarmButton", 6, "AutoFarm: OFF", Color3.fromRGB(200,50,50))
-local CritButton = makeButton("CritButton", 38, "CritSpam: OFF", Color3.fromRGB(200,50,50))
-local EquipButton = makeButton("EquipButton", 70, "AutoEquip: ON", Color3.fromRGB(50,200,50))
-
--- Status label
-local StatusLabel = Instance.new("TextLabel", Content)
-StatusLabel.Size = UDim2.new(1, -20, 0, 18)
-StatusLabel.Position = UDim2.new(0, 10, 1, -24)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "Status: Idle..."
-StatusLabel.TextColor3 = Color3.fromRGB(255,255,255)
-StatusLabel.Font = Enum.Font.Gotham
-StatusLabel.TextSize = 12
-StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Restore icon (hidden until closed)
-local IconButton = Instance.new("ImageButton", ScreenGui)
-IconButton.Size = UDim2.new(0, 36, 0, 36)
-IconButton.Position = UDim2.new(0, 8, 1, -44)
-IconButton.AnchorPoint = Vector2.new(0,1)
-IconButton.Image = "rbxassetid://6023426915" -- swap this id if you want
-IconButton.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Instance.new("UICorner", IconButton).CornerRadius = UDim.new(0,8)
-IconButton.Visible = false
-
---// Behavior
-local minimized = false
-
--- Minimize
-MinButton.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        TweenService:Create(Frame, TweenInfo.new(0.15), {Size = UDim2.new(0,200,0,28)}):Play()
-        Content.Visible = false
-    else
-        TweenService:Create(Frame, TweenInfo.new(0.15), {Size = UDim2.new(0,200,0,140)}):Play()
-        task.delay(0.15, function() if Content then Content.Visible = true end end)
-    end
-end)
-
--- Close
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui.Enabled = false
-    IconButton.Visible = true
-end)
-
--- Restore
-IconButton.MouseButton1Click:Connect(function()
-    ScreenGui.Enabled = true
-    IconButton.Visible = false
-end)
-
--- Draggable (works on PC + touch)
-local dragging = false
-local dragStart, startPos
-
-TitleBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+Frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or
+       input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = Frame.Position
@@ -328,15 +236,275 @@ TitleBar.InputBegan:Connect(function(input)
         end)
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or
+                     input.UserInputType == Enum.UserInputType.Touch) then
+        updateDrag(input)
     end
 end)
 
-warn("✅ Full GUI Loaded")
+-- Close Button
+local CloseButton = Instance.new("TextButton", Frame)
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -30, 0, 5)
+CloseButton.Text = "X"
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 14
+Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 6)
+
+-- Minimize Button
+local MinimizeButton = Instance.new("TextButton", Frame)
+MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+MinimizeButton.Position = UDim2.new(1, -60, 0, 5)
+MinimizeButton.Text = "-"
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 14
+Instance.new("UICorner", MinimizeButton).CornerRadius = UDim.new(0, 6)
+
+-- Icon Button
+local IconButton = Instance.new("TextButton", ScreenGui)
+IconButton.Size = UDim2.new(0, 50, 0, 50)
+IconButton.Position = UDim2.new(0, 10, 1, -60)
+IconButton.Text = "⚡"
+IconButton.BackgroundColor3 = Color3.fromRGB(50, 150, 250)
+IconButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+IconButton.Font = Enum.Font.GothamBold
+IconButton.TextSize = 20
+Instance.new("UICorner", IconButton).CornerRadius = UDim.new(1, 0)
+IconButton.Visible = false
+
+-- Minimize / Restore
+local minimized = false
+MinimizeButton.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    Frame.Visible = not minimized
+    IconButton.Visible = minimized
+end)
+IconButton.MouseButton1Click:Connect(function()
+    minimized = false
+    Frame.Visible = true
+    IconButton.Visible = false
+end)
+
+-- Destroy GUI
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Buttons
+local FarmButton = Instance.new("TextButton", Frame)
+FarmButton.Size = UDim2.new(1, -20, 0, 30)
+FarmButton.Position = UDim2.new(0, 10, 0, 40)
+FarmButton.Text = "AutoFarm: OFF"
+FarmButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+FarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FarmButton.Font = Enum.Font.GothamBold
+FarmButton.TextSize = 14
+Instance.new("UICorner", FarmButton).CornerRadius = UDim.new(0, 8)
+
+FarmButton.MouseButton1Click:Connect(function()
+    autoFarmEnabled = not autoFarmEnabled
+    if autoFarmEnabled then
+        FarmButton.Text = "AutoFarm: ON"
+        FarmButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        status = "Idle..."
+    else
+        FarmButton.Text = "AutoFarm: OFF"
+        FarmButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        status = "Idle..."
+    end
+end)
+
+local CritButton = Instance.new("TextButton", Frame)
+CritButton.Size = UDim2.new(1, -20, 0, 30)
+CritButton.Position = UDim2.new(0, 10, 0, 75)
+CritButton.Text = "CritSpam: OFF"
+CritButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CritButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CritButton.Font = Enum.Font.GothamBold
+CritButton.TextSize = 14
+Instance.new("UICorner", CritButton).CornerRadius = UDim.new(0, 8)
+
+CritButton.MouseButton1Click:Connect(function()
+    critSpamEnabled = not critSpamEnabled
+    if critSpamEnabled then
+        CritButton.Text = "CritSpam: ON"
+        CritButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+    else
+        CritButton.Text = "CritSpam: OFF"
+        CritButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    end
+end)
+
+local EquipButton = Instance.new("TextButton", Frame)
+EquipButton.Size = UDim2.new(1, -20, 0, 30)
+EquipButton.Position = UDim2.new(0, 10, 0, 110)
+EquipButton.Text = "AutoEquip: ON"
+EquipButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+EquipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+EquipButton.Font = Enum.Font.GothamBold
+EquipButton.TextSize = 14
+Instance.new("UICorner", EquipButton).CornerRadius = UDim.new(0, 8)
+
+EquipButton.MouseButton1Click:Connect(function()
+    autoEquipEnabled = not autoEquipEnabled
+    if autoEquipEnabled then
+        EquipButton.Text = "AutoEquip: ON"
+        EquipButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+    else
+        EquipButton.Text = "AutoEquip: OFF"
+        EquipButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    end
+end)
+
+local StatusLabel = Instance.new("TextLabel", Frame)
+StatusLabel.Size = UDim2.new(1, -20, 0, 20)
+StatusLabel.Position = UDim2.new(0, 10, 0, 145)
+StatusLabel.Text = "Status: Idle..."
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 14
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local function updateStatus(newStatus)
+    status = newStatus
+    StatusLabel.Text = "Status: " .. newStatus
+end
+
+--// Equip Logic
+local function getEquipArgs()
+    if player:FindFirstChild("Zone") and player.Zone.Value == 1 then
+        return {"1", "Dumbells", "250Kg"}
+    end
+    return {"21", "Dumbells", "ThePyramids12"}
+end
+local function tryEquip()
+    local args = getEquipArgs()
+    local success = pcall(function()
+        RE.onEquipRequest:FireServer(unpack(args))
+    end)
+    if success then
+        equipped = true
+    else
+        equipped = false
+        updateStatus("Equip failed, retrying...")
+    end
+end
+local function isToolEquipped()
+    local char = player.Character
+    if not char then return false end
+    for _, item in ipairs(char:GetChildren()) do
+        if item:IsA("Tool") and item.Name == getEquipArgs()[3] then
+            return true
+        end
+    end
+    return false
+end
+local function ensureEquipped()
+    if not autoEquipEnabled then return end
+    if not equipped or not isToolEquipped() then
+        local now = tick()
+        if now - lastEquipAttempt >= equipRetryDelay then
+            lastEquipAttempt = now
+            tryEquip()
+        end
+    end
+end
+
+--// Fight + Rebirth
+local function teleportAndFight(zoneNumber, spawnName, enemyName, fightCount)
+    if stopFight or not autoFarmEnabled then return end
+    updateStatus("Zone " .. zoneNumber .. ": " .. enemyName)
+
+    local teleportArgs = {
+        workspace.Zones[tostring(zoneNumber)].Interactables.Teleports.Locations[spawnName]
+    }
+    ZoneService.RE.teleport:FireServer(unpack(teleportArgs))
+    task.wait(1)
+
+    ArmWrestleService.RF.SetAuto:InvokeServer(true)
+    for i = 1, fightCount do
+        if stopFight or not autoFarmEnabled then break end
+        local success = pcall(function()
+            return ArmWrestleService.RF.RequestStartFight:InvokeServer(enemyName)
+        end)
+        if success then
+            task.wait(1)
+        else
+            task.wait(0.5)
+        end
+    end
+    ArmWrestleService.RF.SetAuto:InvokeServer(false)
+end
+
+local function fightAllZones()
+    fighting = true
+    for _, plan in ipairs(fightPlan) do
+        if stopFight or not autoFarmEnabled then break end
+        teleportAndFight(plan[1], plan[2], plan[3], plan[4])
+    end
+    fighting = false
+end
+
+local function rebirthCycle()
+    rebirthing = true
+    stopFight = true
+    updateStatus("Rebirthing...")
+
+    local rebirthRE = RebirthService:WaitForChild("RE")
+    local onRebirth = rebirthRE:WaitForChild("onRebirthRequest")
+    local onSuperRebirth = rebirthRE:WaitForChild("onSuperRebirth")
+
+    onRebirth:FireServer()
+    onSuperRebirth:FireServer()
+    task.wait(0.2)
+
+    updateStatus("Waiting for Biceps...")
+    waitingForBiceps = true
+    stopFight = false
+    rebirthing = false
+end
+
+--// Heartbeat
+RunService.Heartbeat:Connect(function()
+    ensureEquipped()
+    if autoFarmEnabled then
+        RE.onClick:FireServer()
+    end
+    if critSpamEnabled then
+        ArmWrestleService.RF.RequestCritHit:InvokeServer()
+        ArmWrestleService.RF.RequestClick:InvokeServer()
+    end
+end)
+
+--// Main Loop
+task.spawn(function()
+    while true do
+        if autoFarmEnabled and not fighting and not rebirthing then
+            if waitingForBiceps then
+                local bicepsStat = player.leaderstats.Biceps.Value
+                if bicepsStat > bicepsThreshold then
+                    waitingForBiceps = false
+                    fightAllZones()
+                    rebirthCycle()
+                end
+            else
+                fightAllZones()
+                rebirthCycle()
+            end
+        end
+        if not autoFarmEnabled and not critSpamEnabled then
+            updateStatus("Idle...")
+        end
+        task.wait(2)
+    end
+end)
+
 
 end})
 GUI:CreateButton({
