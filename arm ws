@@ -150,6 +150,295 @@ GUI:CreateSection({
 })
 GUI:CreateButton({
     parent = main, 
+    text = "Auto  Rebirth and superRebirth", 
+    callback = function()
+--// Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local Knit = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
+local ToolService = Knit.Services:WaitForChild("ToolService")
+local ZoneService = Knit.Services:WaitForChild("ZoneService")
+local ArmWrestleService = Knit.Services:WaitForChild("ArmWrestleService")
+local RebirthService = Knit.Services:WaitForChild("RebirthService")
+
+local RE = ToolService:WaitForChild("RE")
+local player = Players.LocalPlayer
+
+--// Config
+local bicepsThreshold = 2.7399858925901514e+26
+
+local fightPlan = {
+    {1, "Spawn", "Champion", 1},
+    {2, "Spawn", "RogueAi", 1},
+    {3, "Spawn", "KrakenBoss", 2},
+    {4, "Spawn", "MutantKing", 2},
+    {5, "Spawn", "Mammoth", 3},
+    {6, "Spawn", "Udzal", 3},
+    {7, "Spawn", "SpaceDog", 4},
+    {8, "Spawn", "UndeadSparta", 4},
+    {9, "Spawn", "EvilOverseer", 5},
+    {10, "Spawn", "BruteHunter", 6},
+    {11, "Spawn", "Glaciator", 8},
+    {12, "Spawn", "MrLizard", 10},
+}
+
+-- State
+local autoFarmEnabled = false
+local critSpamEnabled = false
+local autoEquipEnabled = true
+local fighting = false
+local rebirthing = false
+local stopFight = false
+local waitingForBiceps = false
+local status = "Idle..."
+local equipped = false
+local lastEquipAttempt = 0
+local equipRetryDelay = 2
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
+ScreenGui.ResetOnSpawn = false
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 200, 0, 120)
+Frame.Position = UDim2.new(0.35, 0, 0.1, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.Active = true
+Frame.Draggable = true
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
+
+-- AutoFarm Button
+local FarmButton = Instance.new("TextButton", Frame)
+FarmButton.Size = UDim2.new(1, -20, 0, 30)
+FarmButton.Position = UDim2.new(0, 10, 0, 10)
+FarmButton.Text = "AutoFarm: OFF"
+FarmButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+FarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FarmButton.Font = Enum.Font.GothamBold
+FarmButton.TextSize = 14
+Instance.new("UICorner", FarmButton).CornerRadius = UDim.new(0, 8)
+
+FarmButton.MouseButton1Click:Connect(function()
+    autoFarmEnabled = not autoFarmEnabled
+    if autoFarmEnabled then
+        FarmButton.Text = "AutoFarm: ON"
+        FarmButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        status = "Idle..."
+    else
+        FarmButton.Text = "AutoFarm: OFF"
+        FarmButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        status = "Idle..."
+    end
+end)
+
+-- CritSpam Button
+local CritButton = Instance.new("TextButton", Frame)
+CritButton.Size = UDim2.new(1, -20, 0, 30)
+CritButton.Position = UDim2.new(0, 10, 0, 45)
+CritButton.Text = "CritSpam: OFF"
+CritButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CritButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CritButton.Font = Enum.Font.GothamBold
+CritButton.TextSize = 14
+Instance.new("UICorner", CritButton).CornerRadius = UDim.new(0, 8)
+
+CritButton.MouseButton1Click:Connect(function()
+    critSpamEnabled = not critSpamEnabled
+    if critSpamEnabled then
+        CritButton.Text = "CritSpam: ON"
+        CritButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+    else
+        CritButton.Text = "CritSpam: OFF"
+        CritButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    end
+end)
+
+-- AutoEquip Button
+local EquipButton = Instance.new("TextButton", Frame)
+EquipButton.Size = UDim2.new(1, -20, 0, 30)
+EquipButton.Position = UDim2.new(0, 10, 0, 80)
+EquipButton.Text = "AutoEquip: ON"
+EquipButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+EquipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+EquipButton.Font = Enum.Font.GothamBold
+EquipButton.TextSize = 14
+Instance.new("UICorner", EquipButton).CornerRadius = UDim.new(0, 8)
+
+EquipButton.MouseButton1Click:Connect(function()
+    autoEquipEnabled = not autoEquipEnabled
+    if autoEquipEnabled then
+        EquipButton.Text = "AutoEquip: ON"
+        EquipButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        status = "Idle..."
+    else
+        EquipButton.Text = "AutoEquip: OFF"
+        EquipButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        status = "Idle..."
+    end
+end)
+
+-- Status Label
+local StatusLabel = Instance.new("TextLabel", Frame)
+StatusLabel.Size = UDim2.new(1, -20, 0, 20)
+StatusLabel.Position = UDim2.new(0, 10, 0, 115)
+StatusLabel.Text = "Status: Idle..."
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 14
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Update Status GUI
+local function updateStatus(newStatus)
+    status = newStatus
+    StatusLabel.Text = "Status: " .. newStatus
+end
+
+--// Zone-based Equip Args
+local function getEquipArgs()
+    if player:FindFirstChild("Zone") and player.Zone.Value == 1 then
+        return { "1", "Dumbells", "250Kg" }
+    end
+    return { "21", "Dumbells", "ThePyramids12" }
+end
+
+local function tryEquip()
+    local args = getEquipArgs()
+    local success = pcall(function()
+        RE.onEquipRequest:FireServer(unpack(args))
+    end)
+    if success then
+        equipped = true
+    else
+        equipped = false
+        updateStatus("Equip failed, retrying...")
+    end
+end
+
+local function isToolEquipped()
+    local char = player.Character
+    if not char then return false end
+    for _, item in ipairs(char:GetChildren()) do
+        if item:IsA("Tool") and item.Name == getEquipArgs()[3] then
+            return true
+        end
+    end
+    return false
+end
+
+local function ensureEquipped()
+    if not autoEquipEnabled then return end
+    if not equipped or not isToolEquipped() then
+        local now = tick()
+        if now - lastEquipAttempt >= equipRetryDelay then
+            lastEquipAttempt = now
+            tryEquip()
+        end
+    end
+end
+
+--// Fight / Rebirth Functions (⚡ Faster)
+local function teleportAndFight(zoneNumber, spawnName, enemyName, fightCount)
+    if stopFight or not autoFarmEnabled then return end
+    updateStatus("Teleporting to Zone " .. zoneNumber)
+
+    local teleportArgs = {
+        workspace.Zones[tostring(zoneNumber)].Interactables.Teleports.Locations[spawnName]
+    }
+    ZoneService.RE.teleport:FireServer(unpack(teleportArgs))
+    task.wait(1) -- faster teleport
+
+    ArmWrestleService.RF.SetAuto:InvokeServer(true)
+    for i = 1, fightCount do
+        if stopFight or not autoFarmEnabled then break end
+        updateStatus("Fighting " .. enemyName .. " (Zone " .. zoneNumber .. ")")
+
+        local success = pcall(function()
+            return ArmWrestleService.RF.RequestStartFight:InvokeServer(enemyName)
+        end)
+
+        if success then
+            task.wait(1) -- was 3.5, now much faster
+        else
+            warn("Fight failed: " .. enemyName .. " — retrying quickly")
+            task.wait(0.5) -- quick retry
+            i = i - 1 -- retry same fight
+        end
+    end
+    ArmWrestleService.RF.SetAuto:InvokeServer(false)
+    task.wait(0.3)
+end
+
+local function fightAllZones()
+    fighting = true
+    for _, plan in ipairs(fightPlan) do
+        if stopFight or not autoFarmEnabled then break end
+        teleportAndFight(plan[1], plan[2], plan[3], plan[4])
+    end
+    fighting = false
+end
+
+local function rebirthCycle()
+    rebirthing = true
+    stopFight = true
+    updateStatus("Rebirthing...")
+
+    local rebirthRE = RebirthService:WaitForChild("RE")
+    local onRebirth = rebirthRE:WaitForChild("onRebirthRequest")
+    local onSuperRebirth = rebirthRE:WaitForChild("onSuperRebirth")
+
+    for i = 1, 100 do
+        onRebirth:FireServer()
+    end
+    onSuperRebirth:FireServer()
+    task.wait(0.2)
+
+    updateStatus("Waiting for Biceps...")
+    waitingForBiceps = true
+    stopFight = false
+    rebirthing = false
+end
+
+--// Heartbeat (AutoEquip + Click + CritSpam)
+RunService.Heartbeat:Connect(function()
+    ensureEquipped()
+    if autoFarmEnabled then
+        RE.onClick:FireServer()
+    end
+    if critSpamEnabled then
+        ArmWrestleService.RF.RequestCritHit:InvokeServer()
+        ArmWrestleService.RF.RequestClick:InvokeServer()
+    end
+end)
+
+--// Main Loop
+task.spawn(function()
+    while true do
+        if autoFarmEnabled and not fighting and not rebirthing then
+            if waitingForBiceps then
+                local bicepsStat = player.leaderstats.Biceps.Value
+                if bicepsStat > bicepsThreshold then
+                    waitingForBiceps = false
+                    fightAllZones()
+                    rebirthCycle()
+                end
+            else
+                fightAllZones()
+                rebirthCycle()
+            end
+        end
+        if not autoFarmEnabled and not critSpamEnabled then
+            updateStatus("Idle...")
+        end
+        task.wait(2)
+    end
+end)
+
+end})
+GUI:CreateButton({
+    parent = main, 
     text = "Auto Battle toogle", 
     callback = function()
 --// Services
