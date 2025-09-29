@@ -148,33 +148,34 @@ GUI:CreateSection({
     parent = main, 
     text = "Support Battle"
 })
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-
-local onClick = ReplicatedStorage.Packages
-    .Knit.Services.ToolService.RE
-    .onClick
-
-local autoSwing = false -- toggle state
-
 GUI:CreateButton({
     parent = main, 
     text = "Auto Swing", 
     callback = function()
-        autoSwing = not autoSwing -- toggle on/off
-        if autoSwing then
-            -- Connect to Heartbeat for smooth looping
-            autoSwingConnection = RunService.Heartbeat:Connect(function()
+        -- Locals scoped to this GUI script
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local RunService = game:GetService("RunService")
+
+        local onClick = ReplicatedStorage.Packages
+            .Knit.Services.ToolService.RE
+            .onClick
+
+        -- State toggle
+        if not _G.autoSwing then
+            _G.autoSwing = true
+            _G.autoSwingConnection = RunService.Heartbeat:Connect(function()
                 onClick:FireServer()
             end)
         else
-            if autoSwingConnection then
-                autoSwingConnection:Disconnect()
-                autoSwingConnection = nil
+            _G.autoSwing = false
+            if _G.autoSwingConnection then
+                _G.autoSwingConnection:Disconnect()
+                _G.autoSwingConnection = nil
             end
         end
     end
 })
+
 
 GUI:CreateButton({
     parent = main, 
