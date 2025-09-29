@@ -149,8 +149,36 @@ GUI:CreateSection({
     text = "Support Battle"
 })
 GUI:CreateButton({
+    parent = main,
+    text = "Auto Swing",
+    callback = function()
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+        local onClick = ReplicatedStorage.Packages
+            .Knit.Services.ToolService.RE
+            .onClick
+
+        -- Toggle system
+        local enabled = not _G.AutoSwingEnabled
+        _G.AutoSwingEnabled = enabled
+
+        if enabled then
+            print("⚡ Auto Swing ON")
+            task.spawn(function()
+                while _G.AutoSwingEnabled do
+                    onClick:FireServer()
+                    task.wait() -- tiny delay to avoid freezing
+                end
+            end)
+        else
+            print("🛑 Auto Swing OFF")
+        end
+    end
+})
+
+GUI:CreateButton({
     parent = main, 
-    text = "Auto Swing", 
+    text = "Auto  Rebirth and superRebirth", 
     callback = function()
   --// Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
