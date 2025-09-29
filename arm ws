@@ -150,6 +150,23 @@ GUI:CreateSection({
 })
 GUI:CreateButton({
     parent = main, 
+    text = "Auto swing", 
+    callback = function()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local onClick = ReplicatedStorage.Packages
+    .Knit.Services.ToolService.RE
+    .onClick
+
+-- Infinite loop, no delay
+while true do
+    onClick:FireServer()
+end
+
+    end
+})
+GUI:CreateButton({
+    parent = main, 
     text = "Auto  Rebirth and superRebirth", 
     callback = function()
 --// Services
