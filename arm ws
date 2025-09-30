@@ -87,7 +87,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
     end
 })
 
-local main = GUI:CreateTab("Spin and Shop", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
+local main = GUI:CreateTab("Machine and Shop", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
     text = "Shop"
@@ -142,7 +142,66 @@ task.wait(60)
 		 print("Toggle state:", shopsummer)
     end
 })
+GUI:CreateButton({
+    parent = main, 
+    text = "Goliath Machine", 
+    callback = function()
+-- Knit approach: calls the controller methods used in the decompiled code.
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local player = Players.LocalPlayer
+local Knit = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
+local KnitLib = require(Knit)
+
+-- Wait until Knit has started and the controller exists
+task.spawn(function()
+    -- try until controller is ready
+    local controller
+    while not controller do
+        if KnitLib.GetController then
+            pcall(function()
+                controller = KnitLib.GetController("GoliathController")
+            end)
+        end
+        if not controller then
+            task.wait(0.2)
+        end
+    end
+
+    -- Ensure FrameController exists on the controller (set in KnitInit in your decompiled script)
+    while not controller.FrameController do
+        task.wait(0.1)
+    end
+
+    -- FUNCTIONS you can call:
+    local function openGoliath()
+        controller.FrameController:Open()
+        -- show slot page by default
+        controller.SelectionEnabled = false
+    end
+
+    local function closeGoliath()
+        controller.FrameController:Close()
+    end
+
+    local function enableSelection(slotName)
+        -- opens the selection view for a particular slot (mimics enableSelection usage)
+        controller:enableSelection(slotName)
+    end
+
+    -- Example usage:
+    openGoliath()
+    -- wait 0.5 then enable selection for a slot named "1" (adjust to a real slot name)
+    task.delay(0.5, function()
+        enableSelection("1")
+    end)
+
+    -- if you want to close later:
+    -- task.delay(3, closeGoliath)
+end)
+
+end})
 GUI:CreateButton({
     parent = main, 
     text = "Machine Pristine", 
