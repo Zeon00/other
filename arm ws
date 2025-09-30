@@ -143,6 +143,103 @@ task.wait(60)
     end
 })
 
+GUI:CreateButton({
+    parent = main, 
+    text = "Machine Pristine", 
+    callback = function()
+--// LocalScript inside StarterPlayerScripts (or executor if testing)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Knit = require(ReplicatedStorage.Packages.Knit)
+
+-- Wait for Knit to start up fully
+task.wait(3)
+
+-- Get controller
+local PristineController = Knit.GetController("PristineController")
+
+-- Force open the machine menu
+PristineController:UpdatePetList()
+PristineController.FrameController:Open()
+PristineController:UpdateDisplay()
+end})
+
+GUI:CreateButton({
+    parent = main, 
+    text = "Medal Shop", 
+    callback = function()
+--// LocalScript inside StarterPlayerScripts (or executor)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Knit = require(ReplicatedStorage.Packages.Knit)
+
+-- wait for Knit startup
+task.wait(3)
+
+-- Get the controller
+local MedalMerchantController = Knit.GetController("MedalMerchantController")
+
+-- Force open the Medal Merchant Shop
+if MedalMerchantController and MedalMerchantController.FrameController then
+    MedalMerchantController.FrameController:Open()
+end
+end})
+
+GUI:CreateButton({
+    parent = main, 
+    text = "Forge Machine", 
+    callback = function()
+-- ⚡ Execution script to open Forge Machine UI
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Knit = require(ReplicatedStorage.Packages.Knit)
+local FrameController = require(ReplicatedStorage.Vendor.FrameController)
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+local GameUI = PlayerGui:WaitForChild("GameUI")
+
+-- Target: Forge UI
+local ForgeUI = GameUI.Menus:WaitForChild("Forge")
+local ForgeFrame = FrameController.new(ForgeUI)
+
+-- 🔥 Open the Forge UI instantly
+ForgeFrame:Open()
+print("⚙️ Forge Machine UI opened successfully!")
+end})
+
+GUI:CreateButton({
+    parent = main, 
+    text = "Rift Machine", 
+    callback = function()
+--⚡ Force open Rift Machine UI
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Knit = require(ReplicatedStorage.Packages.Knit)
+local FrameController = require(ReplicatedStorage.Vendor.FrameController)
+
+local player = Players.LocalPlayer
+local RiftUI = player:WaitForChild("PlayerGui"):WaitForChild("GameUI"):WaitForChild("Menus"):WaitForChild("RiftMachine")
+
+-- Create FrameController for Rift UI
+local RiftFrame = FrameController.new(RiftUI)
+
+-- Function: open Rift Machine
+local function openRiftMachine()
+    RiftFrame:Open()
+    print("⚙️ Rift Machine UI opened!")
+end
+
+-- Function: close Rift Machine
+local function closeRiftMachine()
+    RiftFrame:Close()
+    print("❌ Rift Machine UI closed!")
+end
+
+-- Example: auto-open on script run
+openRiftMachine()
+end})
+
 local main = GUI:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
@@ -180,11 +277,11 @@ GUI:CreateButton({
     parent = main, 
     text = "Auto  Rebirth and superRebirth", 
     callback = function()
-  --// Services
+--// Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
 
 local Knit = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
 local ToolService = Knit.Services:WaitForChild("ToolService")
@@ -197,6 +294,7 @@ local player = Players.LocalPlayer
 
 --// Config
 local bicepsThreshold = 2.7399858925901514e+26
+
 local fightPlan = {
     {1, "Spawn", "Champion", 1},
     {2, "Spawn", "RogueAi", 1},
@@ -207,265 +305,186 @@ local fightPlan = {
     {7, "Spawn", "SpaceDog", 4},
     {8, "Spawn", "UndeadSparta", 4},
     {9, "Spawn", "EvilOverseer", 5},
-    {10, "Spawn", "BruteHunter", 6},
-    {11, "Spawn", "Glaciator", 8},
-    {12, "Spawn", "MrLizard", 15},
-    {13, "Spawn", "ShinyKnight", 20},
-    {14, "Spawn", "WealthyOrc", 30},
-    {15, "Spawn", "Empyrean", 50},
+    {10, "Spawn", "BruteHunter", 16},
+    {11, "Spawn", "Glaciator", 20},
+    {12, "Spawn", "MrLizard", 25},
 }
 
 --// State
 local autoFarmEnabled = false
 local critSpamEnabled = false
 local autoEquipEnabled = true
-local fighting = false
-local rebirthing = false
-local stopFight = false
-local waitingForBiceps = false
-local status = "Idle..."
+local fighting, rebirthing, stopFight, waitingForBiceps = false, false, false, false
+local status = "IDLE..."
 local equipped = false
 local lastEquipAttempt = 0
 local equipRetryDelay = 2
 
 --// GUI
-local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Name = "AutoFarmGUI"
+local gui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+gui.Name = "dark_auto_gui"
+gui.ResetOnSpawn = false
 
--- Main Frame
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 200, 0, 170)
-Frame.Position = UDim2.new(0.35, 0, 0.1, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Active = true
-Frame.Draggable = false
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 220, 0, 200) -- increased to fit status lower
+frame.Position = UDim2.new(0.35, 0, 0.2, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.Active = true
+frame.Draggable = true
 
--- Dragging (PC + Mobile)
-local dragging, dragStart, startPos
-local function updateDrag(input)
-    local delta = input.Position - dragStart
-    Frame.Position = UDim2.new(
-        startPos.X.Scale, startPos.X.Offset + delta.X,
-        startPos.Y.Scale, startPos.Y.Offset + delta.Y
-    )
-end
-Frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or
-       input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = Frame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or
-                     input.UserInputType == Enum.UserInputType.Touch) then
-        updateDrag(input)
-    end
-end)
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, -40, 0, 25)
+title.Position = UDim2.new(0, 5, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Auto Rebirth Bot"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.Code
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Close Button
-local CloseButton = Instance.new("TextButton", Frame)
-CloseButton.Size = UDim2.new(0, 25, 0, 25)
-CloseButton.Position = UDim2.new(1, -30, 0, 5)
-CloseButton.Text = "X"
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.TextSize = 14
-Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 6)
+-- Minimize
+local minBtn = Instance.new("TextButton", frame)
+minBtn.Size = UDim2.new(0,20,0,20)
+minBtn.Position = UDim2.new(1,-40,0,2)
+minBtn.BackgroundTransparency = 1
+minBtn.Text = "-"
+minBtn.TextColor3 = Color3.fromRGB(200,200,200)
+minBtn.Font = Enum.Font.Code
+minBtn.TextSize = 14
 
--- Minimize Button
-local MinimizeButton = Instance.new("TextButton", Frame)
-MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
-MinimizeButton.Position = UDim2.new(1, -60, 0, 5)
-MinimizeButton.Text = "-"
-MinimizeButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeButton.Font = Enum.Font.GothamBold
-MinimizeButton.TextSize = 14
-Instance.new("UICorner", MinimizeButton).CornerRadius = UDim.new(0, 6)
+-- Destroy
+local closeBtn = Instance.new("TextButton", frame)
+closeBtn.Size = UDim2.new(0,20,0,20)
+closeBtn.Position = UDim2.new(1,-20,0,2)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Text = "x"
+closeBtn.TextColor3 = Color3.fromRGB(200,100,100)
+closeBtn.Font = Enum.Font.Code
+closeBtn.TextSize = 14
 
--- Icon Button
-local IconButton = Instance.new("TextButton", ScreenGui)
-IconButton.Size = UDim2.new(0, 50, 0, 50)
-IconButton.Position = UDim2.new(0, 10, 1, -60)
-IconButton.Text = "⚡"
-IconButton.BackgroundColor3 = Color3.fromRGB(50, 150, 250)
-IconButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-IconButton.Font = Enum.Font.GothamBold
-IconButton.TextSize = 20
-Instance.new("UICorner", IconButton).CornerRadius = UDim.new(1, 0)
-IconButton.Visible = false
+-- Body
+local body = Instance.new("Frame", frame)
+body.Size = UDim2.new(1,0,0,175)
+body.Position = UDim2.new(0,0,0,25)
+body.BackgroundTransparency = 1
 
--- Minimize / Restore
-local minimized = false
-MinimizeButton.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    Frame.Visible = not minimized
-    IconButton.Visible = minimized
-end)
-IconButton.MouseButton1Click:Connect(function()
-    minimized = false
-    Frame.Visible = true
-    IconButton.Visible = false
-end)
-
--- Destroy GUI
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
--- Buttons
-local FarmButton = Instance.new("TextButton", Frame)
-FarmButton.Size = UDim2.new(1, -20, 0, 30)
-FarmButton.Position = UDim2.new(0, 10, 0, 40)
-FarmButton.Text = "AutoFarm: OFF"
-FarmButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-FarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FarmButton.Font = Enum.Font.GothamBold
+-- AutoFarm toggle
+local FarmButton = Instance.new("TextButton", body)
+FarmButton.Size = UDim2.new(1,-20,0,30)
+FarmButton.Position = UDim2.new(0,10,0,10)
+FarmButton.Text = "autofarm: off"
+FarmButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
+FarmButton.TextColor3 = Color3.fromRGB(255,255,255)
+FarmButton.Font = Enum.Font.Code
 FarmButton.TextSize = 14
-Instance.new("UICorner", FarmButton).CornerRadius = UDim.new(0, 8)
 
+-- CritSpam toggle
+local CritButton = Instance.new("TextButton", body)
+CritButton.Size = UDim2.new(1,-20,0,30)
+CritButton.Position = UDim2.new(0,10,0,45)
+CritButton.Text = "critspam: off"
+CritButton.BackgroundColor3 = Color3.fromRGB(200,50,50)
+CritButton.TextColor3 = Color3.fromRGB(255,255,255)
+CritButton.Font = Enum.Font.Code
+CritButton.TextSize = 14
+
+-- AutoEquip toggle
+local EquipButton = Instance.new("TextButton", body)
+EquipButton.Size = UDim2.new(1,-20,0,30)
+EquipButton.Position = UDim2.new(0,10,0,80)
+EquipButton.Text = "autoequip: on"
+EquipButton.BackgroundColor3 = Color3.fromRGB(50,200,50)
+EquipButton.TextColor3 = Color3.fromRGB(255,255,255)
+EquipButton.Font = Enum.Font.Code
+EquipButton.TextSize = 14
+
+-- Status (Centered, Bigger, White, Lower)
+local StatusLabel = Instance.new("TextLabel", body)
+StatusLabel.Size = UDim2.new(1,-20,0,40)       -- taller
+StatusLabel.Position = UDim2.new(0,10,0,135)   -- pushed lower inside body (fits exactly)
+StatusLabel.Text = "STATUS: IDLE..."
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.TextColor3 = Color3.fromRGB(255,255,255) -- WHITE
+StatusLabel.Font = Enum.Font.SourceSansBold
+StatusLabel.TextSize = 22 -- bigger
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Center
+StatusLabel.TextYAlignment = Enum.TextYAlignment.Center
+
+-- Buttons logic
 FarmButton.MouseButton1Click:Connect(function()
     autoFarmEnabled = not autoFarmEnabled
-    if autoFarmEnabled then
-        FarmButton.Text = "AutoFarm: ON"
-        FarmButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        status = "Idle..."
-    else
-        FarmButton.Text = "AutoFarm: OFF"
-        FarmButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        status = "Idle..."
-    end
+    FarmButton.Text = "autofarm: " .. (autoFarmEnabled and "on" or "off")
+    FarmButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
 end)
-
-local CritButton = Instance.new("TextButton", Frame)
-CritButton.Size = UDim2.new(1, -20, 0, 30)
-CritButton.Position = UDim2.new(0, 10, 0, 75)
-CritButton.Text = "CritSpam: OFF"
-CritButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CritButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CritButton.Font = Enum.Font.GothamBold
-CritButton.TextSize = 14
-Instance.new("UICorner", CritButton).CornerRadius = UDim.new(0, 8)
 
 CritButton.MouseButton1Click:Connect(function()
     critSpamEnabled = not critSpamEnabled
-    if critSpamEnabled then
-        CritButton.Text = "CritSpam: ON"
-        CritButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-    else
-        CritButton.Text = "CritSpam: OFF"
-        CritButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    end
+    CritButton.Text = "critspam: " .. (critSpamEnabled and "on" or "off")
+    CritButton.BackgroundColor3 = critSpamEnabled and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
 end)
-
-local EquipButton = Instance.new("TextButton", Frame)
-EquipButton.Size = UDim2.new(1, -20, 0, 30)
-EquipButton.Position = UDim2.new(0, 10, 0, 110)
-EquipButton.Text = "AutoEquip: ON"
-EquipButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-EquipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-EquipButton.Font = Enum.Font.GothamBold
-EquipButton.TextSize = 14
-Instance.new("UICorner", EquipButton).CornerRadius = UDim.new(0, 8)
 
 EquipButton.MouseButton1Click:Connect(function()
     autoEquipEnabled = not autoEquipEnabled
-    if autoEquipEnabled then
-        EquipButton.Text = "AutoEquip: ON"
-        EquipButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+    EquipButton.Text = "autoequip: " .. (autoEquipEnabled and "on" or "off")
+    EquipButton.BackgroundColor3 = autoEquipEnabled and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
+end)
+
+minBtn.MouseButton1Click:Connect(function()
+    body.Visible = not body.Visible
+    if body.Visible then
+        frame.Size = UDim2.new(0,220,0,200)
     else
-        EquipButton.Text = "AutoEquip: OFF"
-        EquipButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        frame.Size = UDim2.new(0,220,0,25)
     end
 end)
 
-local StatusLabel = Instance.new("TextLabel", Frame)
-StatusLabel.Size = UDim2.new(1, -20, 0, 20)
-StatusLabel.Position = UDim2.new(0, 10, 0, 145)
-StatusLabel.Text = "Status: Idle..."
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-StatusLabel.Font = Enum.Font.Gotham
-StatusLabel.TextSize = 14
-StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+closeBtn.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
 
-local function updateStatus(newStatus)
-    status = newStatus
-    StatusLabel.Text = "Status: " .. newStatus
+-- Update status (always CAPS)
+local function updateStatus(txt)
+    status = txt
+    StatusLabel.Text = "STATUS: " .. string.upper(tostring(txt))
 end
 
---// Equip Logic
+--// Functions
 local function getEquipArgs()
     if player:FindFirstChild("Zone") and player.Zone.Value == 1 then
-        return {"1", "Dumbells", "250Kg"}
+        return {"1","Dumbells","250Kg"}
     end
-    return {"21", "Dumbells", "ThePyramids12"}
+    return {"21","Dumbells","ThePyramids12"}
 end
+
 local function tryEquip()
     local args = getEquipArgs()
-    local success = pcall(function()
-        RE.onEquipRequest:FireServer(unpack(args))
-    end)
-    if success then
-        equipped = true
-    else
-        equipped = false
-        updateStatus("Equip failed, retrying...")
-    end
+    pcall(function() RE.onEquipRequest:FireServer(unpack(args)) end)
 end
-local function isToolEquipped()
-    local char = player.Character
-    if not char then return false end
-    for _, item in ipairs(char:GetChildren()) do
-        if item:IsA("Tool") and item.Name == getEquipArgs()[3] then
-            return true
-        end
-    end
-    return false
-end
+
 local function ensureEquipped()
     if not autoEquipEnabled then return end
-    if not equipped or not isToolEquipped() then
-        local now = tick()
-        if now - lastEquipAttempt >= equipRetryDelay then
-            lastEquipAttempt = now
-            tryEquip()
-        end
+    local now = tick()
+    if now - lastEquipAttempt >= equipRetryDelay then
+        lastEquipAttempt = now
+        tryEquip()
     end
 end
 
---// Fight + Rebirth
 local function teleportAndFight(zoneNumber, spawnName, enemyName, fightCount)
     if stopFight or not autoFarmEnabled then return end
-    updateStatus("Zone " .. zoneNumber .. ": " .. enemyName)
+    updateStatus("TELEPORTING Z"..zoneNumber)
 
-    local teleportArgs = {
-        workspace.Zones[tostring(zoneNumber)].Interactables.Teleports.Locations[spawnName]
-    }
-    ZoneService.RE.teleport:FireServer(unpack(teleportArgs))
+    ZoneService.RE.teleport:FireServer(workspace.Zones[tostring(zoneNumber)].Interactables.Teleports.Locations[spawnName])
     task.wait(1)
 
     ArmWrestleService.RF.SetAuto:InvokeServer(true)
     for i = 1, fightCount do
         if stopFight or not autoFarmEnabled then break end
+        updateStatus("FIGHTING "..string.upper(tostring(enemyName)))
         local success = pcall(function()
             return ArmWrestleService.RF.RequestStartFight:InvokeServer(enemyName)
         end)
-        if success then
-            task.wait(1)
-        else
-            task.wait(0.5)
-        end
+        task.wait(success and 1 or 0.5)
     end
     ArmWrestleService.RF.SetAuto:InvokeServer(false)
 end
@@ -482,23 +501,23 @@ end
 local function rebirthCycle()
     rebirthing = true
     stopFight = true
-    updateStatus("Rebirthing...")
+    updateStatus("REBIRTHING...")
 
     local rebirthRE = RebirthService:WaitForChild("RE")
     local onRebirth = rebirthRE:WaitForChild("onRebirthRequest")
     local onSuperRebirth = rebirthRE:WaitForChild("onSuperRebirth")
 
-    onRebirth:FireServer()
+    for i = 1, 100 do
+        onRebirth:FireServer()
+    end
     onSuperRebirth:FireServer()
-    task.wait(0.2)
 
-    updateStatus("Waiting for Biceps...")
+    updateStatus("WAITING BICEPS...")
     waitingForBiceps = true
-    stopFight = false
-    rebirthing = false
+    stopFight, rebirthing = false, false
 end
 
---// Heartbeat
+-- Heartbeat loop
 RunService.Heartbeat:Connect(function()
     ensureEquipped()
     if autoFarmEnabled then
@@ -510,13 +529,12 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
---// Main Loop
+-- Main cycle
 task.spawn(function()
     while true do
         if autoFarmEnabled and not fighting and not rebirthing then
             if waitingForBiceps then
-                local bicepsStat = player.leaderstats.Biceps.Value
-                if bicepsStat > bicepsThreshold then
+                if player.leaderstats and player.leaderstats.Biceps and player.leaderstats.Biceps.Value > bicepsThreshold then
                     waitingForBiceps = false
                     fightAllZones()
                     rebirthCycle()
@@ -527,13 +545,11 @@ task.spawn(function()
             end
         end
         if not autoFarmEnabled and not critSpamEnabled then
-            updateStatus("Idle...")
+            updateStatus("IDLE...")
         end
-        task.wait(2)
+        task.wait(1)
     end
 end)
-
-
 end})
 GUI:CreateButton({
     parent = main, 
