@@ -86,6 +86,92 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 		print("Toggle state:", Aura)
     end
 })
+-- ⚙️ Services (load once)
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
+
+local Knit = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
+local player = Players.LocalPlayer
+
+repeat task.wait() until Knit.GetController and Knit.GetService
+
+local GoliathController = Knit.GetController("GoliathController")
+local PetService        = Knit.GetService("PetService")
+local GoliathService    = Knit.GetService("PetGoliathService")
+local ItemController    = Knit.GetController("ItemController")
+
+-- ⚙️ Settings
+local BOLTS_COST = 100
+
+-- 🔧 Helper
+local function hasBolts()
+    return ItemController:GetItemAmount("Bolts") >= BOLTS_COST
+end
+
+-- 🟢 GUI Toggle: Auto Claim Goliath
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Claim Goliath",
+    default = false,
+    callback = function(state)
+        getgenv().AUTO_CLAIM_GOLIATH = state
+
+        if state then
+            task.spawn(function()
+                while getgenv().AUTO_CLAIM_GOLIATH do
+                    if GoliathController.PetsInMachine then
+                        for _, slot in ipairs(CollectionService:GetTagged("GoliathSlot")) do
+                            local slotPet = GoliathController.PetsInMachine[slot.Name]
+                            if slotPet then
+                                local guid = slotPet.Guid
+                                local timer = GoliathController.PetMachineTimer[guid]
+                                if timer and timer - require(ReplicatedStorage.Vendor.RealTime)() <= 0 then
+                                    print("[AUTO] Claiming pet from slot:", slot.Name)
+                                    GoliathService.onClaim:Fire(guid, slot.Name)
+                                end
+                            end
+                        end
+                    end
+                    task.wait(3)
+                end
+            end)
+        end
+    end
+})
+
+-- 🟢 GUI Toggle: Auto Insert Goliath
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Insert Goliath",
+    default = false,
+    callback = function(state)
+        getgenv().AUTO_INSERT_GOLIATH = state
+
+        if state then
+            task.spawn(function()
+                while getgenv().AUTO_INSERT_GOLIATH do
+                    if hasBolts() and GoliathController.PetsInMachine then
+                        for _, slot in ipairs(CollectionService:GetTagged("GoliathSlot")) do
+                            if not slot:GetAttribute("Taken") then
+                                PetService:getOwned(player):andThen(function(pets)
+                                    for guid, petData in pairs(pets) do
+                                        if petData.CraftType == require(ReplicatedStorage.Data.PetCraftTypes).Huge then
+                                            print("[AUTO] Adding pet to slot:", slot.Name, petData.Key)
+                                            GoliathService.onPurchase:Fire(guid, slot.Name)
+                                            return
+                                        end
+                                    end
+                                end)
+                            end
+                        end
+                    end
+                    task.wait(3)
+                end
+            end)
+        end
+    end
+})
 
 local main = GUI:CreateTab("Machine and Shop", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
