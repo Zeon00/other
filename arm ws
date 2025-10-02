@@ -714,7 +714,6 @@ GUI:CreateButton({
 --// Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
@@ -728,169 +727,156 @@ local ArmWrestleService = ReplicatedStorage
 
 local RequestClick = ArmWrestleService:WaitForChild("RequestClick")
 local RequestCritHit = ArmWrestleService:WaitForChild("RequestCritHit")
+local RequestStartFight = ArmWrestleService:WaitForChild("RequestStartFight")
+local SetAuto = ArmWrestleService:WaitForChild("SetAuto")
 
---// GUI Setup
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ArmWrestleUI"
-screenGui.Parent = player:WaitForChild("PlayerGui")
-screenGui.ResetOnSpawn = false
+--// GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ArmWrestleBotUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
 
 -- Main Frame
-local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 240, 0, 200)
-frame.Position = UDim2.new(0.5, -120, 0.5, -100)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-frame.Visible = true
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 240)
+Frame.Position = UDim2.new(0.35, 0, 0.35, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+Instance.new("UICorner", Frame)
+local Stroke = Instance.new("UIStroke", Frame)
+Stroke.Thickness = 2
+Stroke.Color = Color3.fromRGB(80, 80, 80)
 
--- Title Bar
-local titleBar = Instance.new("Frame", frame)
-titleBar.Size = UDim2.new(1, 0, 0, 20)
-titleBar.BackgroundColor3 = Color3.fromRGB(40,40,40)
+-- Title bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+TitleBar.Parent = Frame
+Instance.new("UICorner", TitleBar)
 
-local title = Instance.new("TextLabel", titleBar)
-title.Size = UDim2.new(1, -40, 1, 0)
-title.Position = UDim2.new(0, 5, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "Arm Wrestle Bot"
-title.TextColor3 = Color3.new(1,1,1)
-title.TextXAlignment = Enum.TextXAlignment.Left
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "💪 Arm Wrestle Bot"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
 
--- Minimize button
-local minimize = Instance.new("TextButton", titleBar)
-minimize.Size = UDim2.new(0, 20, 1, 0)
-minimize.Position = UDim2.new(1, -40, 0, 0)
-minimize.Text = "-"
-minimize.TextColor3 = Color3.new(1,1,1)
-minimize.BackgroundTransparency = 1
+-- Minimize Button
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 25, 0, 25)
+MinBtn.Position = UDim2.new(1, -55, 0.5, -12)
+MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextSize = 18
+MinBtn.Parent = TitleBar
+Instance.new("UICorner", MinBtn)
 
--- Close button
-local close = Instance.new("TextButton", titleBar)
-close.Size = UDim2.new(0, 20, 1, 0)
-close.Position = UDim2.new(1, -20, 0, 0)
-close.Text = "X"
-close.TextColor3 = Color3.new(1,0.3,0.3)
-close.BackgroundTransparency = 1
+-- Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -28, 0.5, -12)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+CloseBtn.Text = "X"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 16
+CloseBtn.Parent = TitleBar
+Instance.new("UICorner", CloseBtn)
 
--- Anime face icon (reopen button when minimized)
-local reopen = Instance.new("ImageButton", screenGui)
-reopen.Size = UDim2.new(0, 50, 0, 50)
-reopen.Position = UDim2.new(0, 20, 0.5, -25)
-reopen.BackgroundTransparency = 1
-reopen.Visible = false
--- 👇 Anime face decal
-reopen.Image = "rbxassetid://6031075938"
-reopen.Active = true
-
--- Dragging for anime icon
-local dragging, dragInput, dragStart, startPos
-local function update(input)
-    local delta = input.Position - dragStart
-    reopen.Position = UDim2.new(
-        startPos.X.Scale, startPos.X.Offset + delta.X,
-        startPos.Y.Scale, startPos.Y.Offset + delta.Y
-    )
-end
-
-reopen.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = reopen.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-reopen.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
-
--- Scrollable container
-local scroll = Instance.new("ScrollingFrame", frame)
-scroll.Size = UDim2.new(1, 0, 1, -20)
-scroll.Position = UDim2.new(0, 0, 0, 20)
-scroll.CanvasSize = UDim2.new(0, 0, 0, 300)
-scroll.ScrollBarThickness = 6
-scroll.BackgroundTransparency = 1
-
--- Utility function for toggles
-local function makeToggle(name, order)
-    local button = Instance.new("TextButton", scroll)
-    button.Size = UDim2.new(1, -20, 0, 35)
-    button.Position = UDim2.new(0, 10, 0, (order-1) * 40)
-    button.Text = "Start " .. name
-    button.TextColor3 = Color3.new(1,1,1)
-    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    return button
-end
+-- Minimized Icon
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Size = UDim2.new(0, 120, 0, 35)
+MiniIcon.Position = UDim2.new(0, 20, 0, 200)
+MiniIcon.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MiniIcon.Text = "💪 Arm Wrestle Bot"
+MiniIcon.Visible = false
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniIcon.TextSize = 14
+MiniIcon.Parent = ScreenGui
+Instance.new("UICorner", MiniIcon)
 
 -- Enemy input box
-local textBox = Instance.new("TextBox", scroll)
-textBox.Size = UDim2.new(1, -20, 0, 35)
-textBox.Position = UDim2.new(0, 10, 0, 0)
-textBox.PlaceholderText = "Enter Enemy Name"
-textBox.TextColor3 = Color3.new(1,1,1)
-textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+local NameBox = Instance.new("TextBox")
+NameBox.Size = UDim2.new(0.9, 0, 0, 30)
+NameBox.Position = UDim2.new(0.05, 0, 0.2, 0)
+NameBox.PlaceholderText = "Enter Enemy Name"
+NameBox.Text = ""
+NameBox.ClearTextOnFocus = false
+NameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameBox.Font = Enum.Font.Gotham
+NameBox.TextSize = 14
+NameBox.Parent = Frame
+Instance.new("UICorner", NameBox)
 
--- Toggles
-local fightToggle = makeToggle("Fight Loop", 2)
-local clickToggle = makeToggle("Click Spam", 3)
-local critToggle = makeToggle("Crit Spam", 4)
+-- Helper function to create toggle buttons
+local function createToggle(yPos, text)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.Position = UDim2.new(0.05, 0, yPos, 0)
+    btn.Text = "▶ Start " .. text
+    btn.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.Parent = Frame
+    Instance.new("UICorner", btn)
+    return btn
+end
+
+-- Create toggles
+local FightToggle = createToggle(0.45, "Fight Loop")
+local ClickToggle = createToggle(0.65, "Click Spam")
+local CritToggle = createToggle(0.85, "Crit Spam")
 
 -- Logic
 local runningFight, runningClick, runningCrit = false, false, false
 local lastEnemy = ""
 
--- Save last enemy
-textBox.FocusLost:Connect(function()
-    if textBox.Text ~= "" then
-        lastEnemy = textBox.Text
+-- Save last enemy when leaving box
+NameBox.FocusLost:Connect(function()
+    if NameBox.Text ~= "" then
+        lastEnemy = NameBox.Text
     end
 end)
 
 -- Fight toggle
-fightToggle.MouseButton1Click:Connect(function()
+FightToggle.MouseButton1Click:Connect(function()
     runningFight = not runningFight
-    fightToggle.Text = runningFight and "Stop Fight Loop" or "Start Fight Loop"
-    fightToggle.BackgroundColor3 = runningFight and Color3.fromRGB(0,100,0) or Color3.fromRGB(60,60,60)
+    FightToggle.Text = runningFight and "■ Stop Fight Loop" or "▶ Start Fight Loop"
+    FightToggle.BackgroundColor3 = runningFight and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(60, 100, 60)
 
     if runningFight then
         task.spawn(function()
             while runningFight do
-                local enemy = textBox.Text ~= "" and textBox.Text or lastEnemy
+                local enemy = NameBox.Text ~= "" and NameBox.Text or lastEnemy
                 if enemy ~= "" then
                     lastEnemy = enemy
                     pcall(function()
-                        ArmWrestleService:WaitForChild("RequestStartFight"):InvokeServer(enemy)
-                        ArmWrestleService:WaitForChild("SetAuto"):InvokeServer(true)
+                        RequestStartFight:InvokeServer(enemy)
+                        SetAuto:InvokeServer(true)
                     end)
                 end
-                task.wait()
+                task.wait(0.3)
             end
         end)
     end
 end)
 
 -- Click spam toggle
-clickToggle.MouseButton1Click:Connect(function()
+ClickToggle.MouseButton1Click:Connect(function()
     runningClick = not runningClick
-    clickToggle.Text = runningClick and "Stop Click Spam" or "Start Click Spam"
-    clickToggle.BackgroundColor3 = runningClick and Color3.fromRGB(0,100,0) or Color3.fromRGB(60,60,60)
+    ClickToggle.Text = runningClick and "■ Stop Click Spam" or "▶ Start Click Spam"
+    ClickToggle.BackgroundColor3 = runningClick and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(60, 100, 60)
 
     if runningClick then
         task.spawn(function()
@@ -898,17 +884,17 @@ clickToggle.MouseButton1Click:Connect(function()
                 pcall(function()
                     RequestClick:InvokeServer()
                 end)
-                task.wait()
+                task.wait(0.05)
             end
         end)
     end
 end)
 
 -- Crit spam toggle
-critToggle.MouseButton1Click:Connect(function()
+CritToggle.MouseButton1Click:Connect(function()
     runningCrit = not runningCrit
-    critToggle.Text = runningCrit and "Stop Crit Spam" or "Start Crit Spam"
-    critToggle.BackgroundColor3 = runningCrit and Color3.fromRGB(0,100,0) or Color3.fromRGB(60,60,60)
+    CritToggle.Text = runningCrit and "■ Stop Crit Spam" or "▶ Start Crit Spam"
+    CritToggle.BackgroundColor3 = runningCrit and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(60, 100, 60)
 
     if runningCrit then
         task.spawn(function()
@@ -916,31 +902,27 @@ critToggle.MouseButton1Click:Connect(function()
                 pcall(function()
                     RequestCritHit:InvokeServer()
                 end)
-                task.wait()
+                task.wait(0.05)
             end
         end)
     end
 end)
 
--- Minimize
-minimize.MouseButton1Click:Connect(function()
-    frame.Visible = false
-    reopen.Visible = true
+-- Minimize / Restore
+MinBtn.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    MiniIcon.Visible = true
 end)
 
--- Close
-close.MouseButton1Click:Connect(function()
-    frame.Visible = false
-    reopen.Visible = false
+MiniIcon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    MiniIcon.Visible = false
 end)
 
--- Reopen
-reopen.MouseButton1Click:Connect(function()
-    frame.Visible = true
-    reopen.Visible = false
+-- Close GUI
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
-	
-	
 end})
 
 local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
@@ -1579,5 +1561,848 @@ GUI:CreateSection({
     parent = main, 
     text = "Egg Hatch"
 })
+GUI:CreateButton({
+    parent = main, 
+    text = "ato Hatch Egg", 
+    callback = function()
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local player = Players.LocalPlayer
 
+--// Variables
+local loopRunning = false
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "EggGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+-- Main Frame
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 280, 0, 160)
+Frame.Position = UDim2.new(0.35, 0, 0.35, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+-- UI Corner + Stroke
+Instance.new("UICorner", Frame)
+local Stroke = Instance.new("UIStroke", Frame)
+Stroke.Thickness = 2
+Stroke.Color = Color3.fromRGB(80, 80, 80)
+
+-- Title bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+TitleBar.Parent = Frame
+Instance.new("UICorner", TitleBar)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🥚 Egg Opener"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+-- Minimize Button
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 25, 0, 25)
+MinBtn.Position = UDim2.new(1, -55, 0.5, -12)
+MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextSize = 18
+MinBtn.Parent = TitleBar
+Instance.new("UICorner", MinBtn)
+
+-- Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -28, 0.5, -12)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+CloseBtn.Text = "X"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 16
+CloseBtn.Parent = TitleBar
+Instance.new("UICorner", CloseBtn)
+
+-- Egg Input
+local EggBox = Instance.new("TextBox")
+EggBox.Size = UDim2.new(0.9, 0, 0, 30)
+EggBox.Position = UDim2.new(0.05, 0, 0.35, 0)
+EggBox.PlaceholderText = "Enter Egg Name (e.g. ToyBeachBall)"
+EggBox.Text = ""
+EggBox.ClearTextOnFocus = false
+EggBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+EggBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+EggBox.Font = Enum.Font.Gotham
+EggBox.TextSize = 14
+EggBox.Parent = Frame
+Instance.new("UICorner", EggBox)
+
+-- Toggle button
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.new(0.9, 0, 0, 35)
+Toggle.Position = UDim2.new(0.05, 0, 0.7, 0)
+Toggle.Text = "▶ Start Loop"
+Toggle.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextSize = 16
+Toggle.Parent = Frame
+Instance.new("UICorner", Toggle)
+
+-- Minimized Icon
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Size = UDim2.new(0, 120, 0, 35)
+MiniIcon.Position = UDim2.new(0, 20, 0, 200)
+MiniIcon.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MiniIcon.Text = "🥚 Egg Opener"
+MiniIcon.Visible = false
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniIcon.TextSize = 14
+MiniIcon.Parent = ScreenGui
+Instance.new("UICorner", MiniIcon)
+
+--// Remote reference
+local EggRemote = ReplicatedStorage
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("EggService")
+    :WaitForChild("RF")
+    :WaitForChild("purchaseEgg")
+
+local ItemRemote = ReplicatedStorage
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ItemService")
+    :WaitForChild("RF")
+    :WaitForChild("UseItem")
+
+-- Auto-use potions before loop
+local function usePotions()
+    local potions = {"Golden Potion","Luck Potion","Void Potion"}
+    for _,p in ipairs(potions) do
+        local args = {p,"1"}
+        pcall(function()
+            ItemRemote:InvokeServer(unpack(args))
+        end)
+    end
+end
+
+-- Function to buy egg
+local function openEgg(name)
+    if name and name ~= "" then
+        local args = {name,[5] = true,[4] = false}
+        pcall(function()
+            EggRemote:InvokeServer(unpack(args))
+        end)
+    end
+end
+
+-- Button toggle logic
+Toggle.MouseButton1Click:Connect(function()
+    if loopRunning then
+        loopRunning = false
+        Toggle.Text = "▶ Start Loop"
+        Toggle.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+    else
+        if EggBox.Text == "" then
+            warn("⚠️ Enter an Egg Name first!")
+            return
+        end
+        loopRunning = true
+        Toggle.Text = "■ Stop Loop"
+        Toggle.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+
+        -- Use potions before loop
+        usePotions()
+
+        -- Start loop
+        task.spawn(function()
+            while loopRunning do
+                openEgg(EggBox.Text)
+                task.wait() -- ⚡ spam fast, adjust if needed
+            end
+        end)
+    end
+end)
+
+-- Minimize / Restore
+MinBtn.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    MiniIcon.Visible = true
+end)
+
+MiniIcon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    MiniIcon.Visible = false
+end)
+
+-- Close GUI
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+    end
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Spinner", 
+    callback = function()
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+--// Variables
+local loopRunning = false
+local spinName = ""
+local spinAmount = ""
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SpinGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+-- Main Frame
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 180)
+Frame.Position = UDim2.new(0.35, 0, 0.35, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+-- UI Corner + Stroke
+Instance.new("UICorner", Frame)
+local Stroke = Instance.new("UIStroke", Frame)
+Stroke.Thickness = 2
+Stroke.Color = Color3.fromRGB(80, 80, 80)
+
+-- Title bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+TitleBar.Parent = Frame
+Instance.new("UICorner", TitleBar)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🎰 Auto Spin"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+-- Minimize Button
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 25, 0, 25)
+MinBtn.Position = UDim2.new(1, -55, 0.5, -12)
+MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextSize = 18
+MinBtn.Parent = TitleBar
+Instance.new("UICorner", MinBtn)
+
+-- Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -28, 0.5, -12)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+CloseBtn.Text = "X"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 16
+CloseBtn.Parent = TitleBar
+Instance.new("UICorner", CloseBtn)
+
+-- TextBox for Spin Name
+local NameBox = Instance.new("TextBox")
+NameBox.Size = UDim2.new(0.9, 0, 0, 30)
+NameBox.Position = UDim2.new(0.05, 0, 0.3, 0)
+NameBox.PlaceholderText = "Enter Spin Name (e.g. Miners Fortune)"
+NameBox.Text = ""
+NameBox.ClearTextOnFocus = false
+NameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameBox.Font = Enum.Font.Gotham
+NameBox.TextSize = 14
+NameBox.Parent = Frame
+Instance.new("UICorner", NameBox)
+
+-- TextBox for Spin Amount
+local AmountBox = Instance.new("TextBox")
+AmountBox.Size = UDim2.new(0.9, 0, 0, 30)
+AmountBox.Position = UDim2.new(0.05, 0, 0.5, 0)
+AmountBox.PlaceholderText = "Enter Amount (e.g. x25)"
+AmountBox.Text = ""
+AmountBox.ClearTextOnFocus = false
+AmountBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+AmountBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+AmountBox.Font = Enum.Font.Gotham
+AmountBox.TextSize = 14
+AmountBox.Parent = Frame
+Instance.new("UICorner", AmountBox)
+
+-- Toggle button
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.new(0.9, 0, 0, 35)
+Toggle.Position = UDim2.new(0.05, 0, 0.75, 0)
+Toggle.Text = "▶ Start Auto Spin"
+Toggle.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextSize = 16
+Toggle.Parent = Frame
+Instance.new("UICorner", Toggle)
+
+-- Minimized Icon
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Size = UDim2.new(0, 100, 0, 35)
+MiniIcon.Position = UDim2.new(0, 20, 0, 200)
+MiniIcon.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MiniIcon.Text = "🎰 Auto Spin"
+MiniIcon.Visible = false
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniIcon.TextSize = 14
+MiniIcon.Parent = ScreenGui
+Instance.new("UICorner", MiniIcon)
+
+--// Remote reference
+local SpinRemote = ReplicatedStorage
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("SpinnerService")
+    :WaitForChild("RF")
+    :WaitForChild("Spin")
+
+-- Function to spin
+local function doSpin(name, amount)
+    if name ~= "" and amount ~= "" then
+        local args = { name, amount }
+        local success, result = pcall(function()
+            return SpinRemote:InvokeServer(unpack(args))
+        end)
+        if success then
+            print("Spun:", name, amount, "Result:", result)
+        else
+            warn("❌ Failed to spin:", name, amount)
+        end
+    end
+end
+
+-- Button toggle logic
+Toggle.MouseButton1Click:Connect(function()
+    if loopRunning then
+        loopRunning = false
+        Toggle.Text = "▶ Start Auto Spin"
+        Toggle.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+    else
+        spinName = NameBox.Text
+        spinAmount = AmountBox.Text
+        if spinName == "" or spinAmount == "" then
+            warn("⚠️ Please enter spin name & amount first!")
+            return
+        end
+        loopRunning = true
+        Toggle.Text = "■ Stop Auto Spin"
+        Toggle.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+
+        -- Start loop
+        task.spawn(function()
+            while loopRunning do
+                doSpin(spinName, spinAmount)
+                task.wait(0.2) -- small delay
+            end
+        end)
+    end
+end)
+
+-- Minimize / Restore
+MinBtn.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    MiniIcon.Visible = true
+end)
+
+MiniIcon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    MiniIcon.Visible = false
+end)
+
+-- Close GUI
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Open Chest", 
+    callback = function()
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+--// Variables
+local loopRunning = false
+local chestName = ""
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ChestGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+-- Main Frame
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 280, 0, 150)
+Frame.Position = UDim2.new(0.35, 0, 0.35, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+-- UI Corner + Stroke
+Instance.new("UICorner", Frame)
+local Stroke = Instance.new("UIStroke", Frame)
+Stroke.Thickness = 2
+Stroke.Color = Color3.fromRGB(80, 80, 80)
+
+-- Title bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+TitleBar.Parent = Frame
+Instance.new("UICorner", TitleBar)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "⚒️ Chest Opener"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+-- Minimize Button
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 25, 0, 25)
+MinBtn.Position = UDim2.new(1, -55, 0.5, -12)
+MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextSize = 18
+MinBtn.Parent = TitleBar
+Instance.new("UICorner", MinBtn)
+
+-- Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -28, 0.5, -12)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+CloseBtn.Text = "X"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 16
+CloseBtn.Parent = TitleBar
+Instance.new("UICorner", CloseBtn)
+
+-- TextBox for chest name
+local TextBox = Instance.new("TextBox")
+TextBox.Size = UDim2.new(0.9, 0, 0, 30)
+TextBox.Position = UDim2.new(0.05, 0, 0.35, 0)
+TextBox.PlaceholderText = "Enter chest name (e.g. MiningVault)"
+TextBox.Text = ""
+TextBox.ClearTextOnFocus = false
+TextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.Font = Enum.Font.Gotham
+TextBox.TextSize = 14
+TextBox.Parent = Frame
+Instance.new("UICorner", TextBox)
+
+-- Toggle button
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.new(0.9, 0, 0, 35)
+Toggle.Position = UDim2.new(0.05, 0, 0.7, 0)
+Toggle.Text = "▶ Start Loop"
+Toggle.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextSize = 16
+Toggle.Parent = Frame
+Instance.new("UICorner", Toggle)
+
+-- Minimized Icon
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Size = UDim2.new(0, 100, 0, 35)
+MiniIcon.Position = UDim2.new(0, 20, 0, 200)
+MiniIcon.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MiniIcon.Text = "Chest Opener"
+MiniIcon.Visible = false
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniIcon.TextSize = 14
+MiniIcon.Parent = ScreenGui
+Instance.new("UICorner", MiniIcon)
+
+--// Remote reference
+local ChestRemote = ReplicatedStorage
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ChestService")
+    :WaitForChild("RF")
+    :WaitForChild("Open")
+
+-- Function to invoke chest
+local function openChest(name)
+    if name and name ~= "" then
+        local success, result = pcall(function()
+            return ChestRemote:InvokeServer(name)
+        end)
+        if success then
+            print("Opened chest:", name, "Result:", result)
+        else
+            warn("Failed to open chest:", name)
+        end
+    end
+end
+
+-- Button toggle logic
+Toggle.MouseButton1Click:Connect(function()
+    if loopRunning then
+        loopRunning = false
+        Toggle.Text = "▶ Start Loop"
+        Toggle.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+    else
+        chestName = TextBox.Text
+        if chestName == "" then
+            warn("⚠️ Please enter a chest name first!")
+            return
+        end
+        loopRunning = true
+        Toggle.Text = "■ Stop Loop"
+        Toggle.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+
+        -- Start loop
+        task.spawn(function()
+            while loopRunning do
+                openChest(chestName)
+                task.wait(0.3) -- delay
+            end
+        end)
+    end
+end)
+
+-- Minimize / Restore
+MinBtn.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    MiniIcon.Visible = true
+end)
+
+MiniIcon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    MiniIcon.Visible = false
+end)
+
+-- Close GUI
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Mining", 
+    callback = function()
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+--// Remotes
+local mineRemote = ReplicatedStorage.Packages.Knit.Services.MiningService.RF.MineBlock
+local smeltAddRemote = ReplicatedStorage.Packages.Knit.Services.OreSmeltingService.RF.AddAllOres
+local smeltClaimRemote = ReplicatedStorage.Packages.Knit.Services.OreSmeltingService.RF.ClaimSmelting
+
+-- Assets
+local templateFolder = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("MiningBlocks")
+local miningRoot = Workspace.GameObjects.Mining
+
+-- Settings
+local LOOP_DELAY = 0.2
+_G.mineUnderFeet = false
+_G.masterMineAll = false
+_G.autoSmelt = false
+_G.returnLastSpot = false
+_G.autoCheckpoint = false
+
+-- Variables
+local lastSafePos = nil
+local lastCheckpoint = nil
+local lastAction = tick()
+
+--// GUI Setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MiningHelperGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 260, 0, 280)
+mainFrame.Position = UDim2.new(0.65, 0, 0.25, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+
+-- Title
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, -30, 0, 28)
+titleBar.Position = UDim2.new(0, 5, 0, 5)
+titleBar.BackgroundTransparency = 1
+titleBar.Text = "⛏ Mining Helper"
+titleBar.Font = Enum.Font.GothamBold
+titleBar.TextSize = 18
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.TextXAlignment = Enum.TextXAlignment.Left
+titleBar.Parent = mainFrame
+
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 28, 0, 28)
+closeBtn.Position = UDim2.new(1, -30, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(100, 40, 40)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Parent = mainFrame
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+
+-- Status Label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -10, 0, 25)
+statusLabel.Position = UDim2.new(0, 5, 1, -30)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Status: Idle"
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 14
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = mainFrame
+
+-- Restore Icon (hidden when GUI visible)
+local iconButton = Instance.new("ImageButton")
+iconButton.Size = UDim2.new(0, 40, 0, 40)
+iconButton.Position = UDim2.new(0.9, 0, 0.85, 0)
+iconButton.BackgroundTransparency = 1
+iconButton.Image = "rbxassetid://6023426923" -- Pickaxe icon
+iconButton.Visible = false
+iconButton.Parent = screenGui
+
+closeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    iconButton.Visible = true
+end)
+iconButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = true
+    iconButton.Visible = false
+end)
+
+-- Helper: toggle button builder
+local function setToggleState(btn, state, text)
+    if state then
+        btn.Text = "[ON] " .. text
+        btn.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
+    else
+        btn.Text = "[OFF] " .. text
+        btn.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+    end
+end
+
+local function createToggle(yPos, text, toggleVarName)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -10, 0, 30)
+    btn.Position = UDim2.new(0, 5, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.Text = "[OFF] " .. text
+    btn.Parent = mainFrame
+
+    btn.MouseButton1Click:Connect(function()
+        _G[toggleVarName] = not _G[toggleVarName]
+        setToggleState(btn, _G[toggleVarName], text)
+    end)
+
+    return btn
+end
+
+-- Toggles
+createToggle(40,  "Mine Under Feet",   "mineUnderFeet")
+createToggle(80,  "Mine Ores + Specials", "masterMineAll")
+createToggle(120, "Auto Smelt Ores",   "autoSmelt")
+createToggle(160, "Return Last Spot",  "returnLastSpot")
+createToggle(200, "Auto Checkpoint",   "autoCheckpoint")
+
+--// Functions
+local function markAction()
+    lastAction = tick()
+end
+
+-- Save safe pos
+task.spawn(function()
+    while task.wait(1) do
+        local char = player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp and hrp.Position.Y > 0 then
+            lastSafePos = hrp.Position
+        end
+    end
+end)
+
+-- Auto checkpoint
+task.spawn(function()
+    while task.wait(20) do
+        if _G.autoCheckpoint then
+            local char = player.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                lastCheckpoint = hrp.Position
+                statusLabel.Text = "Status: Saved Checkpoint"
+            end
+        end
+    end
+end)
+
+-- Mine under feet
+task.spawn(function()
+    while task.wait(0.05) do
+        if _G.mineUnderFeet then
+            local char = player.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local ray = Ray.new(hrp.Position, Vector3.new(0, -10, 0))
+                local part = Workspace:FindPartOnRay(ray, char)
+                if part and part.Parent and part.Parent:IsA("Model") and part.Parent.PrimaryPart then
+                    pcall(function()
+                        mineRemote:InvokeServer(part.Parent)
+                    end)
+                    markAction()
+                    statusLabel.Text = "Status: Mining Under Feet..."
+                end
+            end
+        end
+    end
+end)
+
+-- Main mining & smelting loop
+task.spawn(function()
+    while task.wait(LOOP_DELAY) do
+        local didSomething = false
+        character = player.Character or player.CharacterAdded:Wait()
+        humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+        -- Mine all ores & specials
+        for _, zone in ipairs(miningRoot:GetChildren()) do
+            if zone:FindFirstChild("Blocks") then
+                for _, block in ipairs(zone.Blocks:GetChildren()) do
+                    if block:IsA("Model") and block.PrimaryPart then
+                        if _G.masterMineAll and (
+                            string.find(block.Name, "Ore")
+                            or string.find(block.Name, "Mega")
+                            or string.find(block.Name, "Giga")
+                            or string.find(block.Name, "Medal")
+                            or string.find(block.Name, "Potion")
+                            or string.find(block.Name, "Mining")
+                        ) then
+                            pcall(function()
+                                mineRemote:InvokeServer(block)
+                            end)
+                            markAction()
+                            statusLabel.Text = "Status: Mining " .. block.Name .. "..."
+                            didSomething = true
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Auto smelt
+        if _G.autoSmelt then
+            for _, block in ipairs(templateFolder:GetChildren()) do
+                if string.find(block.Name, "Ore") then
+                    pcall(function()
+                        smeltAddRemote:InvokeServer(block.Name, 1)
+                    end)
+                end
+            end
+            pcall(function()
+                smeltClaimRemote:InvokeServer()
+            end)
+            markAction()
+            statusLabel.Text = "Status: Smelting Ores..."
+            didSomething = true
+        end
+
+        -- Idle
+        if not didSomething and not _G.mineUnderFeet then
+            statusLabel.Text = "Status: Idle"
+        end
+    end
+end)
+
+-- Idle return
+task.spawn(function()
+    while task.wait(1) do
+        if _G.returnLastSpot and lastSafePos then
+            if (tick() - lastAction) > 3 then
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.CFrame = CFrame.new(lastSafePos + Vector3.new(0, 5, 0))
+                    statusLabel.Text = "Status: Auto-Returned (Idle)"
+                    markAction()
+                end
+            end
+        end
+    end
+end)
+end})
