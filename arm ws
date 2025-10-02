@@ -709,222 +709,425 @@ end)
 end})
 GUI:CreateButton({
     parent = main, 
-    text = "Auto Battle toogle", 
+    text = "Auto Battle Bot", 
     callback = function()
---// Services
+-- ⚡ AutoFight + CritSpam + HitSpam Modern GUI
+-- Features: Draggable, Minimize/Unminimize, X Close
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-
 local player = Players.LocalPlayer
 
--- Knit Service
-local ArmWrestleService = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService
-local RF = ArmWrestleService:WaitForChild("RF")
+-- Knit
+local Knit = require(ReplicatedStorage.Packages.Knit)
+local ArmWrestleService = Knit.GetService("ArmWrestleService")
+local ArmWrestleController = Knit.GetController("ArmWrestleController")
 
--- Remotes
-local RequestClick = RF:WaitForChild("RequestClick")
-local RequestCritHit = RF:WaitForChild("RequestCritHit")
-local RequestStartFight = RF:WaitForChild("RequestStartFight")
-local SetAuto = RF:WaitForChild("SetAuto")
+-- RF references
+local CritRF = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService.RF.RequestCritHit
+local ClickRF = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService.RF.RequestClick
 
---// GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ArmWrestleBotUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game.CoreGui
+-- States
+local AutoFight, CritSpam, HitSpam = false, false, false
+local npcName = "ToyBananaMonkey"
+local fightLoop, critLoop, hitLoop
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "ModernAutoFightGui"
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
 
 -- Main Frame
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 300, 0, 250)
-Frame.Position = UDim2.new(0.35, 0, 0.35, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-Frame.Active = true
-Frame.Draggable = true
-Frame.Parent = ScreenGui
-Instance.new("UICorner", Frame)
-local Stroke = Instance.new("UIStroke", Frame)
-Stroke.Thickness = 2
-Stroke.Color = Color3.fromRGB(80, 80, 80)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 220)
+frame.Position = UDim2.new(0.5, -150, 0.25, -110)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
 
--- Title Bar
-local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 30)
-TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-TitleBar.Parent = Frame
-Instance.new("UICorner", TitleBar)
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0,12)
+UICorner.Parent = frame
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -60, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "💪 Arm Wrestle Bot"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = TitleBar
+-- TitleBar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1,0,0,35)
+titleBar.BackgroundColor3 = Color3.fromRGB(45,45,45)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+local titleCorner = Instance.new("UICorner", titleBar)
+titleCorner.CornerRadius = UDim.new(0,12)
 
--- Minimize Button
-local MinBtn = Instance.new("TextButton")
-MinBtn.Size = UDim2.new(0, 25, 0, 25)
-MinBtn.Position = UDim2.new(1, -55, 0.5, -12)
-MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-MinBtn.Text = "-"
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinBtn.TextSize = 18
-MinBtn.Parent = TitleBar
-Instance.new("UICorner", MinBtn)
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,-70,1,0)
+title.Position = UDim2.new(0,10,0,0)
+title.BackgroundTransparency = 1
+title.Text = "⚡ Auto Fight Bot"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
 
 -- Close Button
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 25, 0, 25)
-CloseBtn.Position = UDim2.new(1, -28, 0.5, -12)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
-CloseBtn.Text = "X"
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 16
-CloseBtn.Parent = TitleBar
-Instance.new("UICorner", CloseBtn)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0,35,1,0)
+closeBtn.Position = UDim2.new(1,-35,0,0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(180,50,50)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.Parent = titleBar
+Instance.new("UICorner", closeBtn)
 
--- Minimized Icon
-local MiniIcon = Instance.new("TextButton")
-MiniIcon.Size = UDim2.new(0, 120, 0, 35)
-MiniIcon.Position = UDim2.new(0, 20, 0, 200)
-MiniIcon.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MiniIcon.Text = "💪 Arm Wrestle Bot"
-MiniIcon.Visible = false
-MiniIcon.Font = Enum.Font.GothamBold
-MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-MiniIcon.TextSize = 14
-MiniIcon.Parent = ScreenGui
-Instance.new("UICorner", MiniIcon)
+-- Minimize Button
+local miniBtn = Instance.new("TextButton")
+miniBtn.Size = UDim2.new(0,35,1,0)
+miniBtn.Position = UDim2.new(1,-70,0,0)
+miniBtn.BackgroundColor3 = Color3.fromRGB(70,120,200)
+miniBtn.Text = "-"
+miniBtn.Font = Enum.Font.GothamBold
+miniBtn.TextSize = 16
+miniBtn.TextColor3 = Color3.fromRGB(255,255,255)
+miniBtn.Parent = titleBar
+Instance.new("UICorner", miniBtn)
 
--- Enemy Name Box
-local NameBox = Instance.new("TextBox")
-NameBox.Size = UDim2.new(0.9, 0, 0, 30)
-NameBox.Position = UDim2.new(0.05, 0, 0.18, 0)
-NameBox.PlaceholderText = "Enter Enemy Name"
-NameBox.Text = getgenv().LastEnemyName or ""
-NameBox.ClearTextOnFocus = false
-NameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-NameBox.Font = Enum.Font.Gotham
-NameBox.TextSize = 14
-NameBox.Parent = Frame
-Instance.new("UICorner", NameBox)
+-- Content Frame
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1,-20,1,-45)
+content.Position = UDim2.new(0,10,0,40)
+content.BackgroundTransparency = 1
+content.Parent = frame
 
--- Save name input
-NameBox.FocusLost:Connect(function()
-    if NameBox.Text ~= "" then
-        getgenv().LastEnemyName = NameBox.Text
-    end
-end)
+-- NPC Input
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(1,0,0,35)
+inputBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+inputBox.PlaceholderText = "Enter NPC name..."
+inputBox.Text = npcName
+inputBox.Font = Enum.Font.Gotham
+inputBox.TextSize = 16
+inputBox.TextColor3 = Color3.fromRGB(255,255,255)
+inputBox.Parent = content
+Instance.new("UICorner", inputBox)
 
--- Toggle button factory
-local function createToggle(yPos, text)
+-- Button Factory
+local function CreateButton(text, posY)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.9, 0, 0, 35)
-    btn.Position = UDim2.new(0.05, 0, yPos, 0)
-    btn.Text = "▶ Start " .. text
-    btn.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Size = UDim2.new(1,0,0,40)
+    btn.Position = UDim2.new(0,0,0,posY)
+    btn.BackgroundColor3 = Color3.fromRGB(70,0,0)
+    btn.Text = text
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 16
-    btn.Parent = Frame
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
     Instance.new("UICorner", btn)
+    btn.Parent = content
     return btn
 end
 
--- Create toggles
-local FightToggle = createToggle(0.40, "Fight Loop")
-local ClickToggle = createToggle(0.60, "Auto Click")
-local CritToggle = createToggle(0.80, "Auto Crit")
+local fightBtn = CreateButton("Start AutoFight Loop", 45)
+local critBtn = CreateButton("Start Crit Spam", 90)
+local hitBtn = CreateButton("Start Hit Spam", 135)
+
+-- Logic
+local function StartFightLoop()
+    if AutoFight then return end
+    AutoFight = true
+    fightBtn.Text = "Stop AutoFight Loop"
+    fightBtn.BackgroundColor3 = Color3.fromRGB(0,120,0)
+
+    npcName = inputBox.Text ~= "" and inputBox.Text or npcName
+    fightLoop = task.spawn(function()
+        while AutoFight do
+            ArmWrestleController.RequestStartFight(npcName)
+            ArmWrestleService:SetAuto(true)
+            repeat task.wait(0.1) until not ArmWrestleController.Fighting or not AutoFight
+            ArmWrestleService:SetAuto(false)
+            task.wait(0.2)
+        end
+    end)
+end
+local function StopFightLoop()
+    AutoFight = false
+    fightBtn.Text = "Start AutoFight Loop"
+    fightBtn.BackgroundColor3 = Color3.fromRGB(70,0,0)
+end
+
+local function StartCritSpam()
+    if CritSpam then return end
+    CritSpam = true
+    critBtn.Text = "Stop Crit Spam"
+    critBtn.BackgroundColor3 = Color3.fromRGB(0,120,0)
+
+    critLoop = task.spawn(function()
+        while CritSpam do
+            for i = 1,5 do CritRF:InvokeServer() end
+            task.wait()
+        end
+    end)
+end
+local function StopCritSpam()
+    CritSpam = false
+    critBtn.Text = "Start Crit Spam"
+    critBtn.BackgroundColor3 = Color3.fromRGB(70,0,0)
+end
+
+local function StartHitSpam()
+    if HitSpam then return end
+    HitSpam = true
+    hitBtn.Text = "Stop Hit Spam"
+    hitBtn.BackgroundColor3 = Color3.fromRGB(0,120,0)
+
+    hitLoop = task.spawn(function()
+        while HitSpam do
+            for i = 1,5 do ClickRF:InvokeServer() end
+            task.wait()
+        end
+    end)
+end
+local function StopHitSpam()
+    HitSpam = false
+    hitBtn.Text = "Start Hit Spam"
+    hitBtn.BackgroundColor3 = Color3.fromRGB(70,0,0)
+end
+
+-- Connections
+fightBtn.MouseButton1Click:Connect(function()
+    if AutoFight then StopFightLoop() else StartFightLoop() end
+end)
+critBtn.MouseButton1Click:Connect(function()
+    if CritSpam then StopCritSpam() else StartCritSpam() end
+end)
+hitBtn.MouseButton1Click:Connect(function()
+    if HitSpam then StopHitSpam() else StartHitSpam() end
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    StopFightLoop(); StopCritSpam(); StopHitSpam()
+    gui:Destroy()
+end)
+
+-- Minimize/Unminimize
+local minimized = false
+
+local miniFrame = Instance.new("TextButton")
+miniFrame.Size = UDim2.new(0,180,0,35)
+miniFrame.Position = UDim2.new(0,10,1,-50)
+miniFrame.BackgroundColor3 = Color3.fromRGB(45,45,45)
+miniFrame.Text = "⚡ AutoFight"
+miniFrame.TextColor3 = Color3.fromRGB(255,255,255)
+miniFrame.Font = Enum.Font.GothamBold
+miniFrame.TextSize = 14
+miniFrame.Visible = false
+miniFrame.Active = true
+miniFrame.Draggable = true
+Instance.new("UICorner", miniFrame)
+miniFrame.Parent = gui
+
+miniBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    frame.Visible = not minimized
+    miniFrame.Visible = minimized
+end)
+
+miniFrame.MouseButton1Click:Connect(function()
+    minimized = false
+    frame.Visible = true
+    miniFrame.Visible = false
+end)
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Tower Bot", 
+    callback = function()
+-- ⚡ Auto Tower Loop + Spam Click with Modern GUI (Minimize / Unminimize)
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+-- Knit services
+local Knit = require(ReplicatedStorage.Packages.Knit)
+local ArmWrestleService = Knit.GetService("ArmWrestleService")
+local ArmWrestleController = Knit.GetController("ArmWrestleController")
+
+-- TowerService
+local TowerService = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("TowerService")
+    :WaitForChild("RF")
+    :WaitForChild("EnterTower")
 
 -- State
-local runningFight, runningClick, runningCrit = false, false, false
-local lastEnemy = getgenv().LastEnemyName or ""
+local AutoTower = false
+local towerName = "MiningTower"
+local loopTask
+local clickSpam
+local Minimized = false
 
--- Fight Loop
-FightToggle.MouseButton1Click:Connect(function()
-    runningFight = not runningFight
-    FightToggle.Text = runningFight and "■ Stop Fight Loop" or "▶ Start Fight Loop"
-    FightToggle.BackgroundColor3 = runningFight and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(60, 100, 60)
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "AutoTowerLoopGui"
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
 
-    if runningFight then
-        task.spawn(function()
-            while runningFight do
-                local enemy = NameBox.Text ~= "" and NameBox.Text or lastEnemy
-                if enemy ~= "" then
-                    lastEnemy = enemy
-                    getgenv().LastEnemyName = enemy
-                    pcall(function()
-                        RequestStartFight:InvokeServer(enemy)
-                        SetAuto:InvokeServer(true)
-                    end)
-                end
-                task.wait(0.5)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 260, 0, 160)
+frame.Position = UDim2.new(0.35, 0, 0.25, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+
+-- Title bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1,0,0,35)
+titleBar.BackgroundColor3 = Color3.fromRGB(45,45,45)
+titleBar.Parent = frame
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0,10)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,-60,1,0)
+title.Position = UDim2.new(0,10,0,0)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Text = "⚡ Auto Tower + Spam Click"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+-- Minimize button
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0,30,0,30)
+minimizeBtn.Position = UDim2.new(1,-60,0,3)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(90,90,90)
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 20
+minimizeBtn.Parent = titleBar
+Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0,6)
+
+-- Close button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0,30,0,30)
+closeBtn.Position = UDim2.new(1,-30,0,3)
+closeBtn.BackgroundColor3 = Color3.fromRGB(150,0,0)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 18
+closeBtn.Parent = titleBar
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
+
+-- Input box
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(1,-20,0,30)
+inputBox.Position = UDim2.new(0,10,0,50)
+inputBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+inputBox.TextColor3 = Color3.fromRGB(255,255,255)
+inputBox.PlaceholderText = "Enter Tower name..."
+inputBox.Text = towerName
+inputBox.Font = Enum.Font.Gotham
+inputBox.TextSize = 16
+inputBox.Parent = frame
+Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0,6)
+
+-- Start/Stop button
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1,-20,0,35)
+button.Position = UDim2.new(0,10,0,95)
+button.BackgroundColor3 = Color3.fromRGB(80,0,0)
+button.TextColor3 = Color3.fromRGB(255,255,255)
+button.Text = "Start Loop"
+button.Font = Enum.Font.GothamBold
+button.TextSize = 18
+button.Parent = frame
+Instance.new("UICorner", button).CornerRadius = UDim.new(0,8)
+
+-- Functions
+local function StartLoop()
+    if AutoTower then return end
+    AutoTower = true
+    button.Text = "Stop Loop"
+    button.BackgroundColor3 = Color3.fromRGB(0,120,0)
+
+    towerName = inputBox.Text ~= "" and inputBox.Text or towerName
+
+    loopTask = task.spawn(function()
+        while AutoTower do
+            local args = {towerName, false}
+            TowerService:InvokeServer(unpack(args))
+
+            clickSpam = RunService.Heartbeat:Connect(function()
+                ArmWrestleController.MouseClick(Enum.UserInputType.MouseButton1, false)
+            end)
+
+            task.wait(15) -- adjust duration
+            if clickSpam then
+                clickSpam:Disconnect()
+                clickSpam = nil
             end
-        end)
+            task.wait(1)
+        end
+    end)
+end
+
+local function StopLoop()
+    if not AutoTower then return end
+    AutoTower = false
+    button.Text = "Start Loop"
+    button.BackgroundColor3 = Color3.fromRGB(80,0,0)
+    if clickSpam then
+        clickSpam:Disconnect()
+        clickSpam = nil
+    end
+end
+
+-- Button toggle
+button.MouseButton1Click:Connect(function()
+    if AutoTower then
+        StopLoop()
+    else
+        StartLoop()
     end
 end)
 
--- Auto Click
-ClickToggle.MouseButton1Click:Connect(function()
-    runningClick = not runningClick
-    ClickToggle.Text = runningClick and "■ Stop Auto Click" or "▶ Start Auto Click"
-    ClickToggle.BackgroundColor3 = runningClick and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(60, 100, 60)
+-- Close button
+closeBtn.MouseButton1Click:Connect(function()
+    StopLoop()
+    gui:Destroy()
+end)
 
-    if runningClick then
-        task.spawn(function()
-            while runningClick do
-                pcall(function()
-                    RequestClick:InvokeServer()
-                end)
-                task.wait(0.05)
+-- Minimize / Unminimize
+minimizeBtn.MouseButton1Click:Connect(function()
+    Minimized = not Minimized
+    if Minimized then
+        for _, child in ipairs(frame:GetChildren()) do
+            if child ~= titleBar then
+                child.Visible = false
             end
-        end)
+        end
+        frame.Size = UDim2.new(0,200,0,35)
+        minimizeBtn.Text = "+"
+    else
+        for _, child in ipairs(frame:GetChildren()) do
+            child.Visible = true
+        end
+        frame.Size = UDim2.new(0,260,0,160)
+        minimizeBtn.Text = "-"
     end
 end)
-
--- Auto Crit
-CritToggle.MouseButton1Click:Connect(function()
-    runningCrit = not runningCrit
-    CritToggle.Text = runningCrit and "■ Stop Auto Crit" or "▶ Start Auto Crit"
-    CritToggle.BackgroundColor3 = runningCrit and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(60, 100, 60)
-
-    if runningCrit then
-        task.spawn(function()
-            while runningCrit do
-                pcall(function()
-                    RequestCritHit:InvokeServer()
-                end)
-                task.wait(0.05)
-            end
-        end)
-    end
-end)
-
--- Minimize / Restore
-MinBtn.MouseButton1Click:Connect(function()
-    Frame.Visible = false
-    MiniIcon.Visible = true
-end)
-
-MiniIcon.MouseButton1Click:Connect(function()
-    Frame.Visible = true
-    MiniIcon.Visible = false
-end)
-
--- Close GUI
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
 end})
-
 local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
