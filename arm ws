@@ -714,21 +714,19 @@ GUI:CreateButton({
 --// Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
---// Remotes
-local ArmWrestleService = ReplicatedStorage
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ArmWrestleService")
-    :WaitForChild("RF")
+-- Knit Service
+local ArmWrestleService = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService
+local RF = ArmWrestleService:WaitForChild("RF")
 
-local RequestClick = ArmWrestleService:WaitForChild("RequestClick")
-local RequestCritHit = ArmWrestleService:WaitForChild("RequestCritHit")
-local RequestStartFight = ArmWrestleService:WaitForChild("RequestStartFight")
-local SetAuto = ArmWrestleService:WaitForChild("SetAuto")
+-- Remotes
+local RequestClick = RF:WaitForChild("RequestClick")
+local RequestCritHit = RF:WaitForChild("RequestCritHit")
+local RequestStartFight = RF:WaitForChild("RequestStartFight")
+local SetAuto = RF:WaitForChild("SetAuto")
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -738,7 +736,7 @@ ScreenGui.Parent = game.CoreGui
 
 -- Main Frame
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 300, 0, 240)
+Frame.Size = UDim2.new(0, 300, 0, 250)
 Frame.Position = UDim2.new(0.35, 0, 0.35, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 Frame.Active = true
@@ -749,7 +747,7 @@ local Stroke = Instance.new("UIStroke", Frame)
 Stroke.Thickness = 2
 Stroke.Color = Color3.fromRGB(80, 80, 80)
 
--- Title bar
+-- Title Bar
 local TitleBar = Instance.new("Frame")
 TitleBar.Size = UDim2.new(1, 0, 0, 30)
 TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
@@ -804,12 +802,12 @@ MiniIcon.TextSize = 14
 MiniIcon.Parent = ScreenGui
 Instance.new("UICorner", MiniIcon)
 
--- Enemy input box
+-- Enemy Name Box
 local NameBox = Instance.new("TextBox")
 NameBox.Size = UDim2.new(0.9, 0, 0, 30)
-NameBox.Position = UDim2.new(0.05, 0, 0.2, 0)
+NameBox.Position = UDim2.new(0.05, 0, 0.18, 0)
 NameBox.PlaceholderText = "Enter Enemy Name"
-NameBox.Text = ""
+NameBox.Text = getgenv().LastEnemyName or ""
 NameBox.ClearTextOnFocus = false
 NameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -818,7 +816,14 @@ NameBox.TextSize = 14
 NameBox.Parent = Frame
 Instance.new("UICorner", NameBox)
 
--- Helper function to create toggle buttons
+-- Save name input
+NameBox.FocusLost:Connect(function()
+    if NameBox.Text ~= "" then
+        getgenv().LastEnemyName = NameBox.Text
+    end
+end)
+
+-- Toggle button factory
 local function createToggle(yPos, text)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.9, 0, 0, 35)
@@ -834,22 +839,15 @@ local function createToggle(yPos, text)
 end
 
 -- Create toggles
-local FightToggle = createToggle(0.45, "Fight Loop")
-local ClickToggle = createToggle(0.65, "Click Spam")
-local CritToggle = createToggle(0.85, "Crit Spam")
+local FightToggle = createToggle(0.40, "Fight Loop")
+local ClickToggle = createToggle(0.60, "Auto Click")
+local CritToggle = createToggle(0.80, "Auto Crit")
 
--- Logic
+-- State
 local runningFight, runningClick, runningCrit = false, false, false
-local lastEnemy = ""
+local lastEnemy = getgenv().LastEnemyName or ""
 
--- Save last enemy when leaving box
-NameBox.FocusLost:Connect(function()
-    if NameBox.Text ~= "" then
-        lastEnemy = NameBox.Text
-    end
-end)
-
--- Fight toggle
+-- Fight Loop
 FightToggle.MouseButton1Click:Connect(function()
     runningFight = not runningFight
     FightToggle.Text = runningFight and "■ Stop Fight Loop" or "▶ Start Fight Loop"
@@ -861,21 +859,22 @@ FightToggle.MouseButton1Click:Connect(function()
                 local enemy = NameBox.Text ~= "" and NameBox.Text or lastEnemy
                 if enemy ~= "" then
                     lastEnemy = enemy
+                    getgenv().LastEnemyName = enemy
                     pcall(function()
                         RequestStartFight:InvokeServer(enemy)
                         SetAuto:InvokeServer(true)
                     end)
                 end
-                task.wait(0.3)
+                task.wait(0.5)
             end
         end)
     end
 end)
 
--- Click spam toggle
+-- Auto Click
 ClickToggle.MouseButton1Click:Connect(function()
     runningClick = not runningClick
-    ClickToggle.Text = runningClick and "■ Stop Click Spam" or "▶ Start Click Spam"
+    ClickToggle.Text = runningClick and "■ Stop Auto Click" or "▶ Start Auto Click"
     ClickToggle.BackgroundColor3 = runningClick and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(60, 100, 60)
 
     if runningClick then
@@ -890,10 +889,10 @@ ClickToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- Crit spam toggle
+-- Auto Crit
 CritToggle.MouseButton1Click:Connect(function()
     runningCrit = not runningCrit
-    CritToggle.Text = runningCrit and "■ Stop Crit Spam" or "▶ Start Crit Spam"
+    CritToggle.Text = runningCrit and "■ Stop Auto Crit" or "▶ Start Auto Crit"
     CritToggle.BackgroundColor3 = runningCrit and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(60, 100, 60)
 
     if runningCrit then
@@ -923,6 +922,7 @@ end)
 CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
+
 end})
 
 local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
