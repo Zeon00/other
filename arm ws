@@ -2175,107 +2175,123 @@ local lastCheckpoint = nil
 local lastAction = tick()
 
 --// GUI Setup
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MiningHelperGUI"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild("PlayerGui")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MiningHelperGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
 
 -- Main Frame
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 260, 0, 280)
-mainFrame.Position = UDim2.new(0.65, 0, 0.25, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true
-mainFrame.Parent = screenGui
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 320)
+Frame.Position = UDim2.new(0.35, 0, 0.25, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+Instance.new("UICorner", Frame)
+local Stroke = Instance.new("UIStroke", Frame)
+Stroke.Thickness = 2
+Stroke.Color = Color3.fromRGB(80, 80, 80)
 
--- Title
-local titleBar = Instance.new("TextLabel")
-titleBar.Size = UDim2.new(1, -30, 0, 28)
-titleBar.Position = UDim2.new(0, 5, 0, 5)
-titleBar.BackgroundTransparency = 1
-titleBar.Text = "⛏ Mining Helper"
-titleBar.Font = Enum.Font.GothamBold
-titleBar.TextSize = 18
-titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleBar.TextXAlignment = Enum.TextXAlignment.Left
-titleBar.Parent = mainFrame
+-- Title bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+TitleBar.Parent = Frame
+Instance.new("UICorner", TitleBar)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "⛏ Mining Helper"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+-- Minimize Button
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 25, 0, 25)
+MinBtn.Position = UDim2.new(1, -55, 0.5, -12)
+MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextSize = 18
+MinBtn.Parent = TitleBar
+Instance.new("UICorner", MinBtn)
 
 -- Close Button
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 28, 0, 28)
-closeBtn.Position = UDim2.new(1, -30, 0, 5)
-closeBtn.BackgroundColor3 = Color3.fromRGB(100, 40, 40)
-closeBtn.Text = "X"
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 16
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.Parent = mainFrame
-Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -28, 0.5, -12)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+CloseBtn.Text = "X"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 16
+CloseBtn.Parent = TitleBar
+Instance.new("UICorner", CloseBtn)
 
 -- Status Label
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, -10, 0, 25)
-statusLabel.Position = UDim2.new(0, 5, 1, -30)
-statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Status: Idle"
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 14
-statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = mainFrame
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, -10, 0, 25)
+StatusLabel.Position = UDim2.new(0, 5, 1, -30)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Status: Idle"
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 14
+StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.Parent = Frame
 
--- Restore Icon (hidden when GUI visible)
-local iconButton = Instance.new("ImageButton")
-iconButton.Size = UDim2.new(0, 40, 0, 40)
-iconButton.Position = UDim2.new(0.9, 0, 0.85, 0)
-iconButton.BackgroundTransparency = 1
-iconButton.Image = "rbxassetid://6023426923" -- Pickaxe icon
-iconButton.Visible = false
-iconButton.Parent = screenGui
+-- Restore Button
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Size = UDim2.new(0, 120, 0, 35)
+MiniIcon.Position = UDim2.new(0, 20, 0, 200)
+MiniIcon.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MiniIcon.Text = "⛏ Mining Helper"
+MiniIcon.Visible = false
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniIcon.TextSize = 14
+MiniIcon.Parent = ScreenGui
+Instance.new("UICorner", MiniIcon)
 
-closeBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = false
-    iconButton.Visible = true
-end)
-iconButton.MouseButton1Click:Connect(function()
-    mainFrame.Visible = true
-    iconButton.Visible = false
-end)
-
--- Helper: toggle button builder
+-- Helper: toggle style
 local function setToggleState(btn, state, text)
-    if state then
-        btn.Text = "[ON] " .. text
-        btn.BackgroundColor3 = Color3.fromRGB(50, 120, 50)
-    else
-        btn.Text = "[OFF] " .. text
-        btn.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
-    end
+	if state then
+		btn.Text = "■ " .. text .. " (ON)"
+		btn.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+	else
+		btn.Text = "▶ " .. text .. " (OFF)"
+		btn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+	end
 end
 
 local function createToggle(yPos, text, toggleVarName)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 30)
-    btn.Position = UDim2.new(0, 5, 0, yPos)
-    btn.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
-    btn.Text = "[OFF] " .. text
-    btn.Parent = mainFrame
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.9, 0, 0, 35)
+	btn.Position = UDim2.new(0.05, 0, 0, yPos)
+	btn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	btn.Text = "▶ " .. text .. " (OFF)"
+	btn.Parent = Frame
+	Instance.new("UICorner", btn)
 
-    btn.MouseButton1Click:Connect(function()
-        _G[toggleVarName] = not _G[toggleVarName]
-        setToggleState(btn, _G[toggleVarName], text)
-    end)
+	btn.MouseButton1Click:Connect(function()
+		_G[toggleVarName] = not _G[toggleVarName]
+		setToggleState(btn, _G[toggleVarName], text)
+	end)
 
-    return btn
+	return btn
 end
 
--- Toggles
+-- 5 Toggles
 createToggle(40,  "Mine Under Feet",   "mineUnderFeet")
 createToggle(80,  "Mine Ores + Specials", "masterMineAll")
 createToggle(120, "Auto Smelt Ores",   "autoSmelt")
@@ -2284,125 +2300,141 @@ createToggle(200, "Auto Checkpoint",   "autoCheckpoint")
 
 --// Functions
 local function markAction()
-    lastAction = tick()
+	lastAction = tick()
 end
 
 -- Save safe pos
 task.spawn(function()
-    while task.wait(1) do
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if hrp and hrp.Position.Y > 0 then
-            lastSafePos = hrp.Position
-        end
-    end
+	while task.wait(1) do
+		local char = player.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if hrp and hrp.Position.Y > 0 then
+			lastSafePos = hrp.Position
+		end
+	end
 end)
 
 -- Auto checkpoint
 task.spawn(function()
-    while task.wait(20) do
-        if _G.autoCheckpoint then
-            local char = player.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                lastCheckpoint = hrp.Position
-                statusLabel.Text = "Status: Saved Checkpoint"
-            end
-        end
-    end
+	while task.wait(20) do
+		if _G.autoCheckpoint then
+			local char = player.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				lastCheckpoint = hrp.Position
+				StatusLabel.Text = "Status: Saved Checkpoint"
+			end
+		end
+	end
 end)
 
 -- Mine under feet
 task.spawn(function()
-    while task.wait(0.05) do
-        if _G.mineUnderFeet then
-            local char = player.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                local ray = Ray.new(hrp.Position, Vector3.new(0, -10, 0))
-                local part = Workspace:FindPartOnRay(ray, char)
-                if part and part.Parent and part.Parent:IsA("Model") and part.Parent.PrimaryPart then
-                    pcall(function()
-                        mineRemote:InvokeServer(part.Parent)
-                    end)
-                    markAction()
-                    statusLabel.Text = "Status: Mining Under Feet..."
-                end
-            end
-        end
-    end
+	while task.wait(0.05) do
+		if _G.mineUnderFeet then
+			local char = player.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				local ray = Ray.new(hrp.Position, Vector3.new(0, -10, 0))
+				local part = Workspace:FindPartOnRay(ray, char)
+				if part and part.Parent and part.Parent:IsA("Model") and part.Parent.PrimaryPart then
+					pcall(function()
+						mineRemote:InvokeServer(part.Parent)
+					end)
+					markAction()
+					StatusLabel.Text = "Status: Mining Under Feet..."
+				end
+			end
+		end
+	end
 end)
 
 -- Main mining & smelting loop
 task.spawn(function()
-    while task.wait(LOOP_DELAY) do
-        local didSomething = false
-        character = player.Character or player.CharacterAdded:Wait()
-        humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+	while task.wait(LOOP_DELAY) do
+		local didSomething = false
+		character = player.Character or player.CharacterAdded:Wait()
+		humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-        -- Mine all ores & specials
-        for _, zone in ipairs(miningRoot:GetChildren()) do
-            if zone:FindFirstChild("Blocks") then
-                for _, block in ipairs(zone.Blocks:GetChildren()) do
-                    if block:IsA("Model") and block.PrimaryPart then
-                        if _G.masterMineAll and (
-                            string.find(block.Name, "Ore")
-                            or string.find(block.Name, "Mega")
-                            or string.find(block.Name, "Giga")
-                            or string.find(block.Name, "Medal")
-                            or string.find(block.Name, "Potion")
-                            or string.find(block.Name, "Mining")
-                        ) then
-                            pcall(function()
-                                mineRemote:InvokeServer(block)
-                            end)
-                            markAction()
-                            statusLabel.Text = "Status: Mining " .. block.Name .. "..."
-                            didSomething = true
-                        end
-                    end
-                end
-            end
-        end
+		-- Mine all ores & specials
+		for _, zone in ipairs(miningRoot:GetChildren()) do
+			if zone:FindFirstChild("Blocks") then
+				for _, block in ipairs(zone.Blocks:GetChildren()) do
+					if block:IsA("Model") and block.PrimaryPart then
+						if _G.masterMineAll and (
+							string.find(block.Name, "Ore")
+							or string.find(block.Name, "Mega")
+							or string.find(block.Name, "Giga")
+							or string.find(block.Name, "Medal")
+							or string.find(block.Name, "Potion")
+							or string.find(block.Name, "Mining")
+						) then
+							pcall(function()
+								mineRemote:InvokeServer(block)
+							end)
+							markAction()
+							StatusLabel.Text = "Status: Mining " .. block.Name .. "..."
+							didSomething = true
+						end
+					end
+				end
+			end
+		end
 
-        -- Auto smelt
-        if _G.autoSmelt then
-            for _, block in ipairs(templateFolder:GetChildren()) do
-                if string.find(block.Name, "Ore") then
-                    pcall(function()
-                        smeltAddRemote:InvokeServer(block.Name, 1)
-                    end)
-                end
-            end
-            pcall(function()
-                smeltClaimRemote:InvokeServer()
-            end)
-            markAction()
-            statusLabel.Text = "Status: Smelting Ores..."
-            didSomething = true
-        end
+		-- Auto smelt
+		if _G.autoSmelt then
+			for _, block in ipairs(templateFolder:GetChildren()) do
+				if string.find(block.Name, "Ore") then
+					pcall(function()
+						smeltAddRemote:InvokeServer(block.Name, 1)
+					end)
+				end
+			end
+			pcall(function()
+				smeltClaimRemote:InvokeServer()
+			end)
+			markAction()
+			StatusLabel.Text = "Status: Smelting Ores..."
+			didSomething = true
+		end
 
-        -- Idle
-        if not didSomething and not _G.mineUnderFeet then
-            statusLabel.Text = "Status: Idle"
-        end
-    end
+		-- Idle
+		if not didSomething and not _G.mineUnderFeet then
+			StatusLabel.Text = "Status: Idle"
+		end
+	end
 end)
 
 -- Idle return
 task.spawn(function()
-    while task.wait(1) do
-        if _G.returnLastSpot and lastSafePos then
-            if (tick() - lastAction) > 3 then
-                local char = player.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    hrp.CFrame = CFrame.new(lastSafePos + Vector3.new(0, 5, 0))
-                    statusLabel.Text = "Status: Auto-Returned (Idle)"
-                    markAction()
-                end
-            end
-        end
-    end
+	while task.wait(1) do
+		if _G.returnLastSpot and lastSafePos then
+			if (tick() - lastAction) > 3 then
+				local char = player.Character
+				local hrp = char and char:FindFirstChild("HumanoidRootPart")
+				if hrp then
+					hrp.CFrame = CFrame.new(lastSafePos + Vector3.new(0, 5, 0))
+					StatusLabel.Text = "Status: Auto-Returned (Idle)"
+					markAction()
+				end
+			end
+		end
+	end
+end)
+
+-- Minimize / Restore
+MinBtn.MouseButton1Click:Connect(function()
+	Frame.Visible = false
+	MiniIcon.Visible = true
+end)
+
+MiniIcon.MouseButton1Click:Connect(function()
+	Frame.Visible = true
+	MiniIcon.Visible = false
+end)
+
+-- Close GUI
+CloseBtn.MouseButton1Click:Connect(function()
+	ScreenGui:Destroy()
 end)
 end})
