@@ -1065,7 +1065,7 @@ local function StartLoop()
 
     loopTask = task.spawn(function()
         while AutoTower do
-            local args = {towerName, false}
+            local args = {towerName, true}
             TowerService:InvokeServer(unpack(args))
 
             clickSpam = RunService.Heartbeat:Connect(function()
