@@ -945,20 +945,21 @@ GUI:CreateButton({
     parent = main, 
     text = "Auto Tower Bot", 
     callback = function()
--- ⚡ Auto Tower Loop + Spam Click with Modern GUI (Minimize / Unminimize)
+-- ⚡ Auto Tower + Spam Click Modern GUI
+-- Features: Draggable, Minimize/Unminimize with Floating Button, X Close, Loop + SpamClick
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
--- Knit services
+-- Knit
 local Knit = require(ReplicatedStorage.Packages.Knit)
-local ArmWrestleService = Knit.GetService("ArmWrestleService")
 local ArmWrestleController = Knit.GetController("ArmWrestleController")
 
 -- TowerService
-local TowerService = ReplicatedStorage:WaitForChild("Packages")
+local TowerService = ReplicatedStorage
+    :WaitForChild("Packages")
     :WaitForChild("Knit")
     :WaitForChild("Services")
     :WaitForChild("TowerService")
@@ -978,6 +979,7 @@ gui.Name = "AutoTowerLoopGui"
 gui.Parent = player:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
 
+-- Main Frame
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 260, 0, 160)
 frame.Position = UDim2.new(0.35, 0, 0.25, 0)
@@ -999,7 +1001,7 @@ title.Size = UDim2.new(1,-60,1,0)
 title.Position = UDim2.new(0,10,0,0)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.fromRGB(255,255,255)
-title.Text = "⚡ Auto Tower + Spam Click"
+title.Text = "⚡ Auto Tower"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -1054,6 +1056,21 @@ button.TextSize = 18
 button.Parent = frame
 Instance.new("UICorner", button).CornerRadius = UDim.new(0,8)
 
+-- Floating mini button (⚡)
+local miniButton = Instance.new("TextButton")
+miniButton.Size = UDim2.new(0,120,0,35)
+miniButton.Position = UDim2.new(0,10,1,-50)
+miniButton.BackgroundColor3 = Color3.fromRGB(45,45,45)
+miniButton.Text = "⚡ Auto Tower"
+miniButton.TextColor3 = Color3.fromRGB(255,255,255)
+miniButton.Font = Enum.Font.GothamBold
+miniButton.TextSize = 14
+miniButton.Visible = false
+miniButton.Active = true
+miniButton.Draggable = true
+Instance.new("UICorner", miniButton).CornerRadius = UDim.new(0,8)
+miniButton.Parent = gui
+
 -- Functions
 local function StartLoop()
     if AutoTower then return end
@@ -1065,8 +1082,7 @@ local function StartLoop()
 
     loopTask = task.spawn(function()
         while AutoTower do
-            local args = {towerName, true}
-            TowerService:InvokeServer(unpack(args))
+            TowerService:InvokeServer(towerName, true)
 
             clickSpam = RunService.Heartbeat:Connect(function()
                 ArmWrestleController.MouseClick(Enum.UserInputType.MouseButton1, false)
@@ -1095,11 +1111,7 @@ end
 
 -- Button toggle
 button.MouseButton1Click:Connect(function()
-    if AutoTower then
-        StopLoop()
-    else
-        StartLoop()
-    end
+    if AutoTower then StopLoop() else StartLoop() end
 end)
 
 -- Close button
@@ -1110,22 +1122,15 @@ end)
 
 -- Minimize / Unminimize
 minimizeBtn.MouseButton1Click:Connect(function()
-    Minimized = not Minimized
-    if Minimized then
-        for _, child in ipairs(frame:GetChildren()) do
-            if child ~= titleBar then
-                child.Visible = false
-            end
-        end
-        frame.Size = UDim2.new(0,200,0,35)
-        minimizeBtn.Text = "+"
-    else
-        for _, child in ipairs(frame:GetChildren()) do
-            child.Visible = true
-        end
-        frame.Size = UDim2.new(0,260,0,160)
-        minimizeBtn.Text = "-"
-    end
+    Minimized = true
+    frame.Visible = false
+    miniButton.Visible = true
+end)
+
+miniButton.MouseButton1Click:Connect(function()
+    Minimized = false
+    frame.Visible = true
+    miniButton.Visible = false
 end)
 end})
 local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
