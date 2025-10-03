@@ -1298,156 +1298,11 @@ end})
 
 GUI:CreateButton({
     parent = main, 
-    text = "Lds hub", 
+    text = "Lds Mutate", 
     callback = function()
-loadstring(game:HttpGet('https://raw.githubusercontent.com/SenhorLDS/ProjectLDSHUB/refs/heads/main/Loader%20LDS%20HUB'))()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/yadielsantoss/full-script/refs/heads/main/MUTATE%20aws'))()
     end
 })
--- Modern Compact GUI with Loop & Color State
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Knit Service Remote
-local RequestJoin = ReplicatedStorage
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ChampionshipService")
-    :WaitForChild("RF")
-    :WaitForChild("RequestJoin")
-
--- ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ChampionshipGui"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-
--- Main Frame
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 280, 0, 130)
-mainFrame.Position = UDim2.new(0.35, 0, 0.35, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true
-mainFrame.Parent = screenGui
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
-
--- Top Bar
-local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1, 0, 0, 28)
-topBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-topBar.BorderSizePixel = 0
-topBar.Parent = mainFrame
-Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 10)
-
--- Title
-local title = Instance.new("TextLabel")
-title.Text = "Championship"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 13
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.BackgroundTransparency = 1
-title.Size = UDim2.new(1, -60, 1, 0)
-title.Position = UDim2.new(0, 10, 0, 0)
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = topBar
-
--- Close Button (X)
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 28, 1, 0)
-closeButton.Position = UDim2.new(1, -28, 0, 0)
-closeButton.Text = "X"
-closeButton.Font = Enum.Font.GothamBold
-closeButton.TextSize = 14
-closeButton.TextColor3 = Color3.fromRGB(255, 80, 80)
-closeButton.BackgroundTransparency = 1
-closeButton.Parent = topBar
-
--- Minimize Button (-)
-local minimizeButton = Instance.new("TextButton")
-minimizeButton.Size = UDim2.new(0, 28, 1, 0)
-minimizeButton.Position = UDim2.new(1, -56, 0, 0)
-minimizeButton.Text = "-"
-minimizeButton.Font = Enum.Font.GothamBold
-minimizeButton.TextSize = 16
-minimizeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-minimizeButton.BackgroundTransparency = 1
-minimizeButton.Parent = topBar
-
--- Text Box
-local textBox = Instance.new("TextBox")
-textBox.PlaceholderText = "Enter name (e.g. Medieval)"
-textBox.Font = Enum.Font.Gotham
-textBox.TextSize = 13
-textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-textBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-textBox.Size = UDim2.new(1, -40, 0, 32)
-textBox.Position = UDim2.new(0, 20, 0, 40)
-textBox.ClearTextOnFocus = false
-textBox.Parent = mainFrame
-Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 8)
-
--- Start/Stop Button
-local joinButton = Instance.new("TextButton")
-joinButton.Text = "Start"
-joinButton.Font = Enum.Font.GothamBold
-joinButton.TextSize = 15
-joinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-joinButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- green for start
-joinButton.Size = UDim2.new(0, 100, 0, 35)
-joinButton.Position = UDim2.new(0.5, -50, 1, -45)
-joinButton.Parent = mainFrame
-Instance.new("UICorner", joinButton).CornerRadius = UDim.new(0, 8)
-
--- Loop state
-local looping = false
-local minimized = false
-
--- Minimize
-minimizeButton.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        mainFrame.Size = UDim2.new(0, 280, 0, 28)
-    else
-        mainFrame.Size = UDim2.new(0, 280, 0, 130)
-    end
-end)
-
--- Close
-closeButton.MouseButton1Click:Connect(function()
-    looping = false
-    screenGui:Destroy()
-end)
-
--- Toggle loop
-joinButton.MouseButton1Click:Connect(function()
-    if looping then
-        looping = false
-        joinButton.Text = "Start"
-        joinButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- green
-    else
-        local input = textBox.Text
-        if input ~= "" then
-            looping = true
-            joinButton.Text = "Stop"
-            joinButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- red
-            task.spawn(function()
-                while looping do
-                    local success, result = pcall(function()
-                        return RequestJoin:InvokeServer(input)
-                    end)
-                    if success then
-                        warn("Joined championship: " .. tostring(input))
-                    else
-                        warn("Failed: " .. tostring(result))
-                    end
-                    task.wait(5)
-                end
-            end)
-        end
-    end
-end)
 
 GUI:CreateToggle({
     parent = main, 
@@ -1967,7 +1822,7 @@ GUI:CreateSection({
 })
 GUI:CreateButton({
     parent = main, 
-    text = "ato Hatch Egg", 
+    text = "Auto Hatch Egg", 
     callback = function()
 --// Services
 local Players = game:GetService("Players")
