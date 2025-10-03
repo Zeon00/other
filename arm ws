@@ -1865,201 +1865,333 @@ GUI:CreateButton({
     parent = main, 
     text = "Auto Hatch Egg", 
     callback = function()
---// Services
+-- 🥚 Egg Opener GUI
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
 
-local player = Players.LocalPlayer
-
---// Variables
-local loopRunning = false
-
---// GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "EggGui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game.CoreGui
-
--- Main Frame
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 280, 0, 160)
-Frame.Position = UDim2.new(0.35, 0, 0.35, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-Frame.Active = true
-Frame.Draggable = true
-Frame.Parent = ScreenGui
-
--- UI Corner + Stroke
-Instance.new("UICorner", Frame)
-local Stroke = Instance.new("UIStroke", Frame)
-Stroke.Thickness = 2
-Stroke.Color = Color3.fromRGB(80, 80, 80)
-
--- Title bar
-local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 30)
-TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-TitleBar.Parent = Frame
-Instance.new("UICorner", TitleBar)
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -60, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "🥚 Egg Opener"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = TitleBar
-
--- Minimize Button
-local MinBtn = Instance.new("TextButton")
-MinBtn.Size = UDim2.new(0, 25, 0, 25)
-MinBtn.Position = UDim2.new(1, -55, 0.5, -12)
-MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-MinBtn.Text = "-"
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinBtn.TextSize = 18
-MinBtn.Parent = TitleBar
-Instance.new("UICorner", MinBtn)
-
--- Close Button
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 25, 0, 25)
-CloseBtn.Position = UDim2.new(1, -28, 0.5, -12)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
-CloseBtn.Text = "X"
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 16
-CloseBtn.Parent = TitleBar
-Instance.new("UICorner", CloseBtn)
-
--- Egg Input
-local EggBox = Instance.new("TextBox")
-EggBox.Size = UDim2.new(0.9, 0, 0, 30)
-EggBox.Position = UDim2.new(0.05, 0, 0.35, 0)
-EggBox.PlaceholderText = "Enter Egg Name (e.g. ToyBeachBall)"
-EggBox.Text = ""
-EggBox.ClearTextOnFocus = false
-EggBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-EggBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-EggBox.Font = Enum.Font.Gotham
-EggBox.TextSize = 14
-EggBox.Parent = Frame
-Instance.new("UICorner", EggBox)
-
--- Toggle button
-local Toggle = Instance.new("TextButton")
-Toggle.Size = UDim2.new(0.9, 0, 0, 35)
-Toggle.Position = UDim2.new(0.05, 0, 0.7, 0)
-Toggle.Text = "▶ Start Loop"
-Toggle.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
-Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-Toggle.Font = Enum.Font.GothamBold
-Toggle.TextSize = 16
-Toggle.Parent = Frame
-Instance.new("UICorner", Toggle)
-
--- Minimized Icon
-local MiniIcon = Instance.new("TextButton")
-MiniIcon.Size = UDim2.new(0, 120, 0, 35)
-MiniIcon.Position = UDim2.new(0, 20, 0, 200)
-MiniIcon.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MiniIcon.Text = "🥚 Egg Opener"
-MiniIcon.Visible = false
-MiniIcon.Font = Enum.Font.GothamBold
-MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-MiniIcon.TextSize = 14
-MiniIcon.Parent = ScreenGui
-Instance.new("UICorner", MiniIcon)
-
---// Remote reference
-local EggRemote = ReplicatedStorage
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("EggService")
-    :WaitForChild("RF")
+-- Knit EggService
+local EggService = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("Knit"):WaitForChild("Services")
+    :WaitForChild("EggService"):WaitForChild("RF")
     :WaitForChild("purchaseEgg")
 
-local ItemRemote = ReplicatedStorage
-    :WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ItemService")
-    :WaitForChild("RF")
-    :WaitForChild("UseItem")
+-- 📌 Create ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "EggOpenerGui"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
 
--- Auto-use potions before loop
-local function usePotions()
-    local potions = {"Golden Potion","Luck Potion","Void Potion"}
-    for _,p in ipairs(potions) do
-        local args = {p,"1"}
-        pcall(function()
-            ItemRemote:InvokeServer(unpack(args))
-        end)
-    end
-end
+-- 📌 Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 500, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
 
--- Function to buy egg
-local function openEgg(name)
-    if name and name ~= "" then
-        local args = {name,[5] = true,[4] = false}
-        pcall(function()
-            EggRemote:InvokeServer(unpack(args))
-        end)
-    end
-end
+-- 🥚 Title Bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
 
--- Button toggle logic
-Toggle.MouseButton1Click:Connect(function()
-    if loopRunning then
-        loopRunning = false
-        Toggle.Text = "▶ Start Loop"
-        Toggle.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
-    else
-        if EggBox.Text == "" then
-            warn("⚠️ Enter an Egg Name first!")
-            return
-        end
-        loopRunning = true
-        Toggle.Text = "■ Stop Loop"
-        Toggle.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -60, 1, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "🥚 Egg Opener"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextScaled = true
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Center
+TitleLabel.Parent = TitleBar
 
-        -- Use potions before loop
-        usePotions()
-
-        -- Start loop
-        task.spawn(function()
-            while loopRunning do
-                openEgg(EggBox.Text)
-                task.wait() -- ⚡ spam fast, adjust if needed
-            end
-        end)
-    end
-end)
-
--- Minimize / Restore
-MinBtn.MouseButton1Click:Connect(function()
-    Frame.Visible = false
-    MiniIcon.Visible = true
-end)
-
-MiniIcon.MouseButton1Click:Connect(function()
-    Frame.Visible = true
-    MiniIcon.Visible = false
-end)
-
--- Close GUI
+-- ❌ Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 1, 0)
+CloseBtn.Position = UDim2.new(1, -30, 0, 0)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextScaled = true
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TitleBar
 CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
+-- ➖ Minimize Button
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 30, 1, 0)
+MinBtn.Position = UDim2.new(1, -60, 0, 0)
+MinBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+MinBtn.Text = "-"
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextScaled = true
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.Parent = TitleBar
+
+local Minimized = false
+MinBtn.MouseButton1Click:Connect(function()
+    Minimized = not Minimized
+    if Minimized then
+        for _, child in ipairs(MainFrame:GetChildren()) do
+            if child ~= TitleBar then
+                child.Visible = false
+            end
+        end
+        MainFrame.Size = UDim2.new(0, 500, 0, 30)
+    else
+        for _, child in ipairs(MainFrame:GetChildren()) do
+            if child ~= TitleBar then
+                child.Visible = true
+            end
+        end
+        MainFrame.Size = UDim2.new(0, 500, 0, 350)
     end
-})
+end)
+
+-- 🖱 Dragging MainFrame
+local dragging, dragInput, dragStart, startPos
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- ✨ Zone Title
+local ZoneTitle = Instance.new("TextLabel")
+ZoneTitle.Size = UDim2.new(1, -20, 0, 40)
+ZoneTitle.Position = UDim2.new(0, 10, 0, 40)
+ZoneTitle.BackgroundTransparency = 1
+ZoneTitle.Text = "Zone: Unknown"
+ZoneTitle.TextColor3 = Color3.fromRGB(255, 215, 0) -- gold
+ZoneTitle.TextScaled = true
+ZoneTitle.Font = Enum.Font.GothamBold
+ZoneTitle.TextXAlignment = Enum.TextXAlignment.Center
+ZoneTitle.Parent = MainFrame
+
+-- 📜 Zone & Egg Lists
+local ZoneList = Instance.new("ScrollingFrame")
+ZoneList.Size = UDim2.new(0.45, -10, 0.65, 0)
+ZoneList.Position = UDim2.new(0, 10, 0, 90)
+ZoneList.CanvasSize = UDim2.new(0,0,0,0)
+ZoneList.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+ZoneList.ScrollBarThickness = 6
+ZoneList.Parent = MainFrame
+
+local EggList = Instance.new("ScrollingFrame")
+EggList.Size = UDim2.new(0.45, -10, 0.65, 0)
+EggList.Position = UDim2.new(0.55, 0, 0, 90)
+EggList.CanvasSize = UDim2.new(0,0,0,0)
+EggList.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+EggList.ScrollBarThickness = 6
+EggList.Parent = MainFrame
+
+-- 🖼 Egg Popup
+local function createEggPopup(eggName)
+    local Popup = Instance.new("Frame")
+    Popup.Size = UDim2.new(0, 250, 0, 150)
+    Popup.Position = UDim2.new(0.5, -125, 0.5, -75)
+    Popup.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Popup.BorderSizePixel = 0
+    Popup.Active = true
+    Popup.Draggable = false -- we'll make TitleBar draggable
+    Popup.Parent = ScreenGui
+
+    -- Title Bar
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Size = UDim2.new(1, 0, 0, 30)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Parent = Popup
+
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, -60, 1, 0)
+    Title.Position = UDim2.new(0, 5, 0, 0)
+    Title.Text = "🥚 " .. eggName
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.Font = Enum.Font.GothamBold
+    Title.TextScaled = true
+    Title.BackgroundTransparency = 1
+    Title.Parent = TitleBar
+
+    -- Minimize Button
+    local MinBtn = Instance.new("TextButton")
+    MinBtn.Size = UDim2.new(0, 30, 1, 0)
+    MinBtn.Position = UDim2.new(1, -60, 0, 0)
+    MinBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    MinBtn.Text = "-"
+    MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinBtn.TextScaled = true
+    MinBtn.Font = Enum.Font.GothamBold
+    MinBtn.Parent = TitleBar
+
+    -- Close Button
+    local Close = Instance.new("TextButton")
+    Close.Size = UDim2.new(0, 30, 1, 0)
+    Close.Position = UDim2.new(1, -30, 0, 0)
+    Close.Text = "X"
+    Close.TextColor3 = Color3.fromRGB(255,255,255)
+    Close.Font = Enum.Font.GothamBold
+    Close.TextScaled = true
+    Close.BackgroundColor3 = Color3.fromRGB(200,50,50)
+    Close.Parent = TitleBar
+    Close.MouseButton1Click:Connect(function()
+        Popup:Destroy()
+    end)
+
+    -- Content Frame
+    local Content = Instance.new("Frame")
+    Content.Size = UDim2.new(1, 0, 1, -30)
+    Content.Position = UDim2.new(0, 0, 0, 30)
+    Content.BackgroundTransparency = 1
+    Content.Parent = Popup
+
+    local Toggle = Instance.new("TextButton")
+    Toggle.Size = UDim2.new(0.8, 0, 0.4, 0)
+    Toggle.Position = UDim2.new(0.1, 0, 0.3, 0)
+    Toggle.Text = "▶ Start"
+    Toggle.TextColor3 = Color3.fromRGB(255,255,255)
+    Toggle.TextScaled = true
+    Toggle.Font = Enum.Font.GothamBold
+    Toggle.BackgroundColor3 = Color3.fromRGB(50,200,50)
+    Toggle.Parent = Content
+
+    -- Toggle Hatch Loop
+    local running = false
+    local loop
+    Toggle.MouseButton1Click:Connect(function()
+        running = not running
+        if running then
+            Toggle.Text = "■ Stop"
+            Toggle.BackgroundColor3 = Color3.fromRGB(200,50,50)
+            loop = true
+            task.spawn(function()
+                while loop and running do
+                    local args = {eggName, [5] = true, [4] = false}
+                    EggService:InvokeServer(unpack(args))
+                    task.wait(1)
+                end
+            end)
+        else
+            Toggle.Text = "▶ Start"
+            Toggle.BackgroundColor3 = Color3.fromRGB(50,200,50)
+            loop = false
+        end
+    end)
+
+    -- 🖱 Dragging Popup
+    local dragging, dragInput, dragStart, startPos
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = Popup.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    TitleBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            Popup.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- ➖ Minimize logic
+    local Minimized = false
+    MinBtn.MouseButton1Click:Connect(function()
+        Minimized = not Minimized
+        Content.Visible = not Minimized
+        if Minimized then
+            Popup.Size = UDim2.new(0, 250, 0, 30)
+        else
+            Popup.Size = UDim2.new(0, 250, 0, 150)
+        end
+    end)
+end
+
+
+-- 📌 Populate GUI
+local function refreshGUI()
+    ZoneList:ClearAllChildren()
+    EggList:ClearAllChildren()
+    local y = 0
+    for _, zone in ipairs(Workspace.Zones:GetChildren()) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -5, 0, 30)
+        btn.Position = UDim2.new(0,0,0,y)
+        btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+        btn.Text = zone.Name
+        btn.TextColor3 = Color3.fromRGB(255,255,255)
+        btn.TextScaled = true
+        btn.Font = Enum.Font.Gotham
+        btn.Parent = ZoneList
+
+        btn.MouseButton1Click:Connect(function()
+            ZoneTitle.Text = "Zone: "..zone.Name
+            EggList:ClearAllChildren()
+            local ey = 0
+            local eggsFolder = zone:FindFirstChild("Interactables") and zone.Interactables:FindFirstChild("Eggs")
+            if eggsFolder then
+                for _, egg in ipairs(eggsFolder:GetChildren()) do
+                    local ebtn = Instance.new("TextButton")
+                    ebtn.Size = UDim2.new(1, -5, 0, 30)
+                    ebtn.Position = UDim2.new(0,0,0,ey)
+                    ebtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+                    ebtn.Text = egg.Name
+                    ebtn.TextColor3 = Color3.fromRGB(255,255,255)
+                    ebtn.TextScaled = true
+                    ebtn.Font = Enum.Font.Gotham
+                    ebtn.Parent = EggList
+
+                    ebtn.MouseButton1Click:Connect(function()
+                        createEggPopup(egg.Name)
+                    end)
+
+                    ey = ey + 35
+                end
+                EggList.CanvasSize = UDim2.new(0,0,0,ey)
+            end
+        end)
+        y = y + 35
+    end
+    ZoneList.CanvasSize = UDim2.new(0,0,0,y)
+end
+
+refreshGUI()
+    end})
 GUI:CreateButton({
     parent = main, 
     text = "Auto Spinner", 
