@@ -1133,6 +1133,156 @@ miniButton.MouseButton1Click:Connect(function()
     miniButton.Visible = false
 end)
 end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Trial", 
+    callback = function()
+-- Modern Compact GUI with Loop & Color State
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Knit Service Remote
+local RequestJoin = ReplicatedStorage
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ChampionshipService")
+    :WaitForChild("RF")
+    :WaitForChild("RequestJoin")
+
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ChampionshipGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 280, 0, 130)
+mainFrame.Position = UDim2.new(0.35, 0, 0.35, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
+
+-- Top Bar
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1, 0, 0, 28)
+topBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 10)
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Text = "Trial Bot"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 13
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, -60, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = topBar
+
+-- Close Button (X)
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 28, 1, 0)
+closeButton.Position = UDim2.new(1, -28, 0, 0)
+closeButton.Text = "X"
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 14
+closeButton.TextColor3 = Color3.fromRGB(255, 80, 80)
+closeButton.BackgroundTransparency = 1
+closeButton.Parent = topBar
+
+-- Minimize Button (-)
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 28, 1, 0)
+minimizeButton.Position = UDim2.new(1, -56, 0, 0)
+minimizeButton.Text = "-"
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.TextSize = 16
+minimizeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+minimizeButton.BackgroundTransparency = 1
+minimizeButton.Parent = topBar
+
+-- Text Box
+local textBox = Instance.new("TextBox")
+textBox.PlaceholderText = "Enter name (e.g. Medieval)"
+textBox.Font = Enum.Font.Gotham
+textBox.TextSize = 13
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+textBox.Size = UDim2.new(1, -40, 0, 32)
+textBox.Position = UDim2.new(0, 20, 0, 40)
+textBox.ClearTextOnFocus = false
+textBox.Parent = mainFrame
+Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 8)
+
+-- Start/Stop Button
+local joinButton = Instance.new("TextButton")
+joinButton.Text = "Start"
+joinButton.Font = Enum.Font.GothamBold
+joinButton.TextSize = 15
+joinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+joinButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- green for start
+joinButton.Size = UDim2.new(0, 100, 0, 35)
+joinButton.Position = UDim2.new(0.5, -50, 1, -45)
+joinButton.Parent = mainFrame
+Instance.new("UICorner", joinButton).CornerRadius = UDim.new(0, 8)
+
+-- Loop state
+local looping = false
+local minimized = false
+
+-- Minimize
+minimizeButton.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        mainFrame.Size = UDim2.new(0, 280, 0, 28)
+    else
+        mainFrame.Size = UDim2.new(0, 280, 0, 130)
+    end
+end)
+
+-- Close
+closeButton.MouseButton1Click:Connect(function()
+    looping = false
+    screenGui:Destroy()
+end)
+
+-- Toggle loop
+joinButton.MouseButton1Click:Connect(function()
+    if looping then
+        looping = false
+        joinButton.Text = "Start"
+        joinButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- green
+    else
+        local input = textBox.Text
+        if input ~= "" then
+            looping = true
+            joinButton.Text = "Stop"
+            joinButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- red
+            task.spawn(function()
+                while looping do
+                    local success, result = pcall(function()
+                        return RequestJoin:InvokeServer(input)
+                    end)
+                    if success then
+                        warn("Joined championship: " .. tostring(input))
+                    else
+                        warn("Failed: " .. tostring(result))
+                    end
+                    task.wait(5)
+                end
+            end)
+        end
+    end
+end)
+end})
 local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
@@ -1153,84 +1303,152 @@ GUI:CreateButton({
 loadstring(game:HttpGet('https://raw.githubusercontent.com/SenhorLDS/ProjectLDSHUB/refs/heads/main/Loader%20LDS%20HUB'))()
     end
 })
-GUI:CreateButton({
-    parent = main, 
-    text = "Lds Mutate", 
-    callback = function()
-loadstring(game:HttpGet('https://raw.githubusercontent.com/yadielsantoss/full-script/refs/heads/main/MUTATE%20aws'))()
-    end
-})
-GUI:CreateButton({
-    parent = main, 
-    text = "Use Mining Cereal", 
-    callback = function()
--- List of items and their values
-local x = 0
-while x < 3500 do
-    print("x is:", x)
-    x = x + 1
-    task.wait() -- Important for preventing crashes in infinite loops
-	local args = {
-	"Gemstone Cereal",
-	"1"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
+-- Modern Compact GUI with Loop & Color State
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-end
-    end
-})
-GUI:CreateButton({
-    parent = main, 
-    text = "Use Raspberry", 
-    callback = function()
--- List of items and their values
-local x = 0
-while x < 2500 do
-    print("x is:", x)
-    x = x + 1
-    task.wait() -- Important for preventing crashes in infinite loops
-	local args = {
-	"Raspberry",
-	"2"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ItemService"):WaitForChild("RF"):WaitForChild("UseItem"):InvokeServer(unpack(args))
-
-end
-    end
-})
-
-GUI:CreateButton({
-    parent = main, 
-    text = "Use Item", 
-    callback = function()
--- List of items and their values
-local items = {
-    {"Cookie", "3"},
-    {"Donut", "3"},
-    {"Banana", "2"},
-    {"Dragon Fruit", "3"},
-    {"Starfruit", "3"}
-}
-
--- Reference to UseItem RemoteFunction
-local useItem = game:GetService("ReplicatedStorage")
+-- Knit Service Remote
+local RequestJoin = ReplicatedStorage
     :WaitForChild("Packages")
     :WaitForChild("Knit")
     :WaitForChild("Services")
-    :WaitForChild("ItemService")
+    :WaitForChild("ChampionshipService")
     :WaitForChild("RF")
-    :WaitForChild("UseItem")
+    :WaitForChild("RequestJoin")
 
--- Loop through all items, and use each one 25 times
-for _, args in ipairs(items) do
-    for i = 1, 25 do
-        useItem:InvokeServer(unpack(args))
-        task.wait(0.1) -- delay for stability
-    end
-end
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ChampionshipGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 280, 0, 130)
+mainFrame.Position = UDim2.new(0.35, 0, 0.35, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
+
+-- Top Bar
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1, 0, 0, 28)
+topBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 10)
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Text = "Championship"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 13
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, -60, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = topBar
+
+-- Close Button (X)
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 28, 1, 0)
+closeButton.Position = UDim2.new(1, -28, 0, 0)
+closeButton.Text = "X"
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 14
+closeButton.TextColor3 = Color3.fromRGB(255, 80, 80)
+closeButton.BackgroundTransparency = 1
+closeButton.Parent = topBar
+
+-- Minimize Button (-)
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 28, 1, 0)
+minimizeButton.Position = UDim2.new(1, -56, 0, 0)
+minimizeButton.Text = "-"
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.TextSize = 16
+minimizeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+minimizeButton.BackgroundTransparency = 1
+minimizeButton.Parent = topBar
+
+-- Text Box
+local textBox = Instance.new("TextBox")
+textBox.PlaceholderText = "Enter name (e.g. Medieval)"
+textBox.Font = Enum.Font.Gotham
+textBox.TextSize = 13
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+textBox.Size = UDim2.new(1, -40, 0, 32)
+textBox.Position = UDim2.new(0, 20, 0, 40)
+textBox.ClearTextOnFocus = false
+textBox.Parent = mainFrame
+Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 8)
+
+-- Start/Stop Button
+local joinButton = Instance.new("TextButton")
+joinButton.Text = "Start"
+joinButton.Font = Enum.Font.GothamBold
+joinButton.TextSize = 15
+joinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+joinButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- green for start
+joinButton.Size = UDim2.new(0, 100, 0, 35)
+joinButton.Position = UDim2.new(0.5, -50, 1, -45)
+joinButton.Parent = mainFrame
+Instance.new("UICorner", joinButton).CornerRadius = UDim.new(0, 8)
+
+-- Loop state
+local looping = false
+local minimized = false
+
+-- Minimize
+minimizeButton.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        mainFrame.Size = UDim2.new(0, 280, 0, 28)
+    else
+        mainFrame.Size = UDim2.new(0, 280, 0, 130)
     end
-})
+end)
+
+-- Close
+closeButton.MouseButton1Click:Connect(function()
+    looping = false
+    screenGui:Destroy()
+end)
+
+-- Toggle loop
+joinButton.MouseButton1Click:Connect(function()
+    if looping then
+        looping = false
+        joinButton.Text = "Start"
+        joinButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- green
+    else
+        local input = textBox.Text
+        if input ~= "" then
+            looping = true
+            joinButton.Text = "Stop"
+            joinButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- red
+            task.spawn(function()
+                while looping do
+                    local success, result = pcall(function()
+                        return RequestJoin:InvokeServer(input)
+                    end)
+                    if success then
+                        warn("Joined championship: " .. tostring(input))
+                    else
+                        warn("Failed: " .. tostring(result))
+                    end
+                    task.wait(5)
+                end
+            end)
+        end
+    end
+end)
+
 GUI:CreateToggle({
     parent = main, 
     text = "Anti AFK", 
@@ -1249,6 +1467,191 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
 })
     end
 })
+GUI:CreateButton({
+    parent = main, 
+    text = "Use Item", 
+    callback = function()
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+--// RemoteFunction reference
+local useItem = ReplicatedStorage
+    :WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ItemService")
+    :WaitForChild("RF")
+    :WaitForChild("UseItem")
+
+--// Items list
+local items = {
+    {"Cookie", "3"},
+    {"Donut", "3"},
+    {"Banana", "2"},
+    {"Dragon Fruit", "3"},
+    {"Starfruit", "3"},
+    {"Raspberry", "2"},
+    {"Gemstone Cereal", "1"}
+}
+
+--// GUI Setup
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "ItemGUI"
+gui.ResetOnSpawn = false
+
+local mainFrame = Instance.new("Frame", gui)
+mainFrame.Size = UDim2.new(0, 320, 0, 420)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -210)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+local corner = Instance.new("UICorner", mainFrame)
+corner.CornerRadius = UDim.new(0, 12)
+
+-- Title Bar
+local titleBar = Instance.new("Frame", mainFrame)
+titleBar.Size = UDim2.new(1, 0, 0, 35)
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
+
+local title = Instance.new("TextLabel", titleBar)
+title.Size = UDim2.new(1, -70, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Item Spammer"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+
+-- Minimize + Close buttons
+local minimizeBtn = Instance.new("TextButton", titleBar)
+minimizeBtn.Size = UDim2.new(0, 30, 0, 25)
+minimizeBtn.Position = UDim2.new(1, -65, 0.5, -12)
+minimizeBtn.Text = "_"
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
+minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 6)
+
+local closeBtn = Instance.new("TextButton", titleBar)
+closeBtn.Size = UDim2.new(0, 30, 0, 25)
+closeBtn.Position = UDim2.new(1, -35, 0.5, -12)
+closeBtn.Text = "X"
+closeBtn.BackgroundColor3 = Color3.fromRGB(100, 60, 60)
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+
+-- Container for items
+local contentFrame = Instance.new("Frame", mainFrame)
+contentFrame.Size = UDim2.new(1, -20, 1, -80)
+contentFrame.Position = UDim2.new(0, 10, 0, 45)
+contentFrame.BackgroundTransparency = 1
+
+local scroll = Instance.new("ScrollingFrame", contentFrame)
+scroll.Size = UDim2.new(1, 0, 1, -40)
+scroll.CanvasSize = UDim2.new(0, 0, 0, #items * 40)
+scroll.ScrollBarThickness = 6
+scroll.BackgroundTransparency = 1
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0, 5)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Store item widgets
+local itemWidgets = {}
+
+for _, data in ipairs(items) do
+    local name, value = data[1], data[2]
+
+    local container = Instance.new("Frame", scroll)
+    container.Size = UDim2.new(1, -5, 0, 35)
+    container.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    Instance.new("UICorner", container).CornerRadius = UDim.new(0, 8)
+
+    local checkbox = Instance.new("TextButton", container)
+    checkbox.Size = UDim2.new(0, 30, 1, 0)
+    checkbox.Text = "☐"
+    checkbox.TextScaled = true
+    checkbox.BackgroundTransparency = 1
+    checkbox.TextColor3 = Color3.fromRGB(200, 200, 200)
+
+    local label = Instance.new("TextLabel", container)
+    label.Size = UDim2.new(0.5, -40, 1, 0)
+    label.Position = UDim2.new(0, 40, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = name
+    label.TextColor3 = Color3.new(1,1,1)
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextSize = 14
+
+    local input = Instance.new("TextBox", container)
+    input.Size = UDim2.new(0.4, -10, 0.8, 0)
+    input.Position = UDim2.new(0.6, 0, 0.1, 0)
+    input.PlaceholderText = "Times"
+    input.Text = "25"
+    input.Font = Enum.Font.Gotham
+    input.TextSize = 14
+    input.BackgroundColor3 = Color3.fromRGB(70, 70, 85)
+    input.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", input).CornerRadius = UDim.new(0, 6)
+
+    -- State
+    local checked = false
+    checkbox.MouseButton1Click:Connect(function()
+        checked = not checked
+        checkbox.Text = checked and "☑" or "☐"
+    end)
+
+    table.insert(itemWidgets, {
+        name = name,
+        value = value,
+        input = input,
+        getChecked = function() return checked end
+    })
+end
+
+-- Run button
+local runBtn = Instance.new("TextButton", contentFrame)
+runBtn.Size = UDim2.new(1, 0, 0, 35)
+runBtn.Position = UDim2.new(0, 0, 1, -35)
+runBtn.Text = "Use Selected"
+runBtn.Font = Enum.Font.GothamBold
+runBtn.TextSize = 14
+runBtn.BackgroundColor3 = Color3.fromRGB(70, 120, 70)
+runBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", runBtn).CornerRadius = UDim.new(0, 8)
+
+-- Run logic
+runBtn.MouseButton1Click:Connect(function()
+    for _, widget in ipairs(itemWidgets) do
+        if widget.getChecked() then
+            local times = tonumber(widget.input.Text) or 1
+            for i = 1, times do
+                useItem:InvokeServer(widget.name, widget.value)
+                task.wait(0.1)
+            end
+        end
+    end
+end)
+
+-- Minimize toggle
+local minimized = false
+minimizeBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    contentFrame.Visible = not minimized
+    runBtn.Visible = not minimized
+end)
+
+-- Close button
+closeBtn.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+end})
 GUI:CreateButton({
     parent = main, 
     text = "Buy Medal", 
@@ -1479,111 +1882,6 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         print("Toggle state:", knuckle)
     end
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Mining Tower", 
-    default = false, 
-    callback = function(trialmining)
-if trialmining then
-        _G.trialmining1 = true
-			while _G.trialmining1 == true do
-task.wait()			
-local args = {
-	true
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF"):WaitForChild("SetAuto"):InvokeServer(unpack(args))
-local args = {
-	"MiningTower",
-	true
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TowerService"):WaitForChild("RF"):WaitForChild("EnterTower"):InvokeServer(unpack(args))
-end
-		else
-		_G.trialmining1 = false
-        end
-		print("Toggle state:", trialmining)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Trial Ice Lake", 
-    default = false, 
-    callback = function(Trialice)
-if Trialice then
-        _G.Trialice1 = true
-			while _G.Trialice1 == true do
-task.wait()			
-local args = {"Icy"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer(unpack(args))
-end
-		else
-		_G.Trialice1 = false
-        end
-		print("Toggle state:", Trialice)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Trial 13", 
-    default = false, 
-    callback = function(losttower)
-if losttower then
-        _G.losttower1 = true
-	while _G.losttower1 == true do
-task.wait(0.1)
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChampionshipService"):WaitForChild("RF"):WaitForChild("RequestJoin"):InvokeServer("Medieval")
-end
-	  		else
-		      _G.losttower1 = false
-            end
-print("Toggle state:", losttower)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Space Center", 
-    default = false, 
-    callback = function(stage)
-if stage then
-        _G.stage1 = true
-	while _G.stage1 == true do
-task.wait()
-local args = {
-	"SpaceTower",
-	true
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TowerService"):WaitForChild("RF"):WaitForChild("EnterTower"):InvokeServer(unpack(args))
-
-end
-	  		else
-		      _G.stage1 = false
-            end
-print("Toggle state:", stage)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Mining Tower", 
-    default = false, 
-    callback = function(mining)
-if mining then
-        _G.mining1 = true
-	while _G.mining1 == true do
-task.wait()
-local args = {
-	"MiningTower",
-	true
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TowerService"):WaitForChild("RF"):WaitForChild("EnterTower"):InvokeServer(unpack(args))
-
-end
-	  		else
-		      _G.mining1 = false
-            end
-print("Toggle state:", mining)
-    end
-})
-
 local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
@@ -1608,69 +1906,6 @@ task.wait(20)
 })
 GUI:CreateToggle({
     parent = main, 
-    text = "Auto Spin Tralalero", 
-    default = false, 
-    callback = function(Spinfrontman)
-if Spinfrontman then
-        _G.Spinfrontman1 = true
-	while _G.Spinfrontman1 == true do
-		task.wait()
-local args = {
-	"Tralalero Fortune",
-	"x25"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-end
-		else
-		_G.Spinfrontman1 = false
-           end
-        print("Toggle state:", Spinfrontman)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Spin Space", 
-    default = false, 
-    callback = function(Space)
-if Space then
-        _G.Space1 = true
-	while _G.Space1 == true do
-		task.wait()
-local args = {
-	"Space Fortune",
-	"x25"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-end
-		else
-		_G.Space1 = false
-           end
-        print("Toggle state:", Space)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Spin Miner Fortune", 
-    default = false, 
-    callback = function(minerfortune)
-if minerfortune then
-        _G.minerfortune1 = true
-	while _G.minerfortune1 == true do
-		task.wait()
-local args = {
-	"Miners Fortune",
-	"x25"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
-end
-		else
-		_G.minerfortune1 = false
-           end
-        print("Toggle state:", minerfortune)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
     text = "Auto Open Trainer", 
     default = true, 
     callback = function(trainer)
@@ -1690,45 +1925,6 @@ end
 		print("Toggle state:", trainer)
     end
 })
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Open Kingdom Chest", 
-    default = false, 
-    callback = function(Kingdom)
-if Kingdom then
-        _G.loop33 = true
-	while _G.loop33 == true do
-		task.wait(0.1)
-local args = {"KingdomChest"}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChestService"):WaitForChild("RF"):WaitForChild("Open"):InvokeServer(unpack(args))
-           end
-		else
-		_G.loop33 = false
-           end
-		print("Toggle state:", Kingdom)
-    end
-})
-GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Open Ice Chest", 
-    default = false, 
-    callback = function(ice)
-if ice then
-        _G.ice1 = true
-	while _G.ice1 == true do
-		task.wait(0.1)
-local args = {
-	"IcyChest"
-}
-game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ChestService"):WaitForChild("RF"):WaitForChild("Open"):InvokeServer(unpack(args))
-           end
-		else
-		_G.ice1 = false
-           end
-		print("Toggle state:", ice)
-    end
-})
-
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Upgrade Snack", 
