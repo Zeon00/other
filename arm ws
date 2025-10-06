@@ -848,13 +848,26 @@ Instance.new("UICorner", minimizeButton)
 
 minimizeButton.MouseButton1Click:Connect(function()
 	guiMinimized = not guiMinimized
-	for _, child in pairs(mainFrame:GetChildren()) do
-		if child ~= minimizeButton and child ~= destroyButton then
-			child.Visible = not guiMinimized
+
+	if guiMinimized then
+		-- Hide everything except top buttons
+		for _, child in pairs(mainFrame:GetChildren()) do
+			if not (child == minimizeButton or child == destroyButton or child:IsA("UICorner") or child:IsA("UIStroke")) then
+				child.Visible = false
+			end
 		end
+
+		mainFrame:TweenSize(UDim2.new(0, 120, 0, 35), "Out", "Quad", 0.25, true)
+	else
+		-- Show everything again
+		for _, child in pairs(mainFrame:GetChildren()) do
+			child.Visible = true
+		end
+
+		mainFrame:TweenSize(UDim2.new(0, 250, 0, 180), "Out", "Quad", 0.25, true)
 	end
-	mainFrame.Size = guiMinimized and UDim2.new(0, 60, 0, 35) or UDim2.new(0, 250, 0, 180)
 end)
+
 
 -- Function to create modern toggle buttons
 local function createToggle(name, position, callback)
