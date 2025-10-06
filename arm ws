@@ -767,114 +767,166 @@ local fastClickEnabled = false
 local critHitEnabled = false
 local guiMinimized = false
 
--- GUI setup
+-- GUI Setup
 local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-screenGui.Name = "ArmWrestleGUI"
+screenGui.Name = "ModernArmWrestleGUI"
 
 -- Main Frame
 local mainFrame = Instance.new("Frame", screenGui)
-mainFrame.Size = UDim2.new(0, 220, 0, 150)
+mainFrame.Size = UDim2.new(0, 250, 0, 180)
 mainFrame.Position = UDim2.new(0, 50, 0, 50)
-mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 0
+mainFrame.ClipsDescendants = true
+mainFrame.AnchorPoint = Vector2.new(0, 0)
 
--- Destroy Button (X)
+-- UI Gradient & Shadow for modern look
+local shadow = Instance.new("UIStroke", mainFrame)
+shadow.Color = Color3.fromRGB(80, 80, 80)
+shadow.Thickness = 2
+shadow.Transparency = 0.5
+
+local uicorner = Instance.new("UICorner", mainFrame)
+uicorner.CornerRadius = UDim.new(0, 10)
+
+-- Dragging functionality
+local dragging = false
+local dragInput, mousePos, framePos
+
+mainFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		mousePos = input.Position
+		framePos = mainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - mousePos
+		mainFrame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+	end
+end)
+
+-- Buttons: Minimize and Destroy
 local destroyButton = Instance.new("TextButton", mainFrame)
-destroyButton.Size = UDim2.new(0, 40, 0, 30)
-destroyButton.Position = UDim2.new(1, -45, 0, 5)
+destroyButton.Size = UDim2.new(0, 35, 0, 25)
+destroyButton.Position = UDim2.new(1, -40, 0, 5)
+destroyButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 destroyButton.Text = "X"
+destroyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 destroyButton.TextScaled = true
-destroyButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-destroyButton.TextColor3 = Color3.fromRGB(255,255,255)
+destroyButton.AutoButtonColor = true
+destroyButton.BorderSizePixel = 0
+Instance.new("UICorner", destroyButton)
 
 destroyButton.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
+	screenGui:Destroy()
 end)
 
--- Minimize Button (_)
 local minimizeButton = Instance.new("TextButton", mainFrame)
-minimizeButton.Size = UDim2.new(0, 40, 0, 30)
-minimizeButton.Position = UDim2.new(1, -90, 0, 5)
-minimizeButton.Text = "_"
-minimizeButton.TextScaled = true
+minimizeButton.Size = UDim2.new(0, 35, 0, 25)
+minimizeButton.Position = UDim2.new(1, -85, 0, 5)
 minimizeButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+minimizeButton.Text = "_"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.TextScaled = true
+minimizeButton.AutoButtonColor = true
+minimizeButton.BorderSizePixel = 0
+Instance.new("UICorner", minimizeButton)
 
 minimizeButton.MouseButton1Click:Connect(function()
-    guiMinimized = not guiMinimized
-    for _, child in pairs(mainFrame:GetChildren()) do
-        if child ~= minimizeButton and child ~= destroyButton then
-            child.Visible = not guiMinimized
-        end
-    end
-    mainFrame.Size = guiMinimized and UDim2.new(0, 50, 0, 40) or UDim2.new(0, 220, 0, 150)
+	guiMinimized = not guiMinimized
+	for _, child in pairs(mainFrame:GetChildren()) do
+		if child ~= minimizeButton and child ~= destroyButton then
+			child.Visible = not guiMinimized
+		end
+	end
+	mainFrame.Size = guiMinimized and UDim2.new(0, 60, 0, 35) or UDim2.new(0, 250, 0, 180)
 end)
 
--- Toggle creation function
+-- Function to create modern toggle buttons
 local function createToggle(name, position, callback)
-    local frame = Instance.new("Frame", mainFrame)
-    frame.Size = UDim2.new(0, 200, 0, 40)
-    frame.Position = position
-    frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    frame.BorderSizePixel = 0
+	local frame = Instance.new("Frame", mainFrame)
+	frame.Size = UDim2.new(0, 220, 0, 40)
+	frame.Position = position
+	frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	frame.BorderSizePixel = 0
+	Instance.new("UICorner", frame)
 
-    local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(0.6, 0, 1, 0)
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.BackgroundTransparency = 1
-    label.TextScaled = true
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(0.6, 0, 1, 0)
+	label.Text = name
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.BackgroundTransparency = 1
+	label.TextScaled = true
+	label.Font = Enum.Font.GothamBold
 
-    local button = Instance.new("TextButton", frame)
-    button.Size = UDim2.new(0.4, 0, 1, 0)
-    button.Position = UDim2.new(0.6, 0, 0, 0)
-    button.Text = "OFF"
-    button.TextScaled = true
-    button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+	local button = Instance.new("TextButton", frame)
+	button.Size = UDim2.new(0.35, 0, 0.6, 0)
+	button.Position = UDim2.new(0.65, 0, 0.2, 0)
+	button.Text = "OFF"
+	button.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.Font = Enum.Font.GothamBold
+	button.TextScaled = true
+	button.AutoButtonColor = true
+	Instance.new("UICorner", button)
 
-    button.MouseButton1Click:Connect(function()
-        local state = callback()
-        if state then
-            button.Text = "ON"
-            button.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        else
-            button.Text = "OFF"
-            button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-        end
-    end)
+	button.MouseButton1Click:Connect(function()
+		local state = callback()
+		if state then
+			button.Text = "ON"
+			button.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+		else
+			button.Text = "OFF"
+			button.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+		end
+	end)
 end
 
--- Fast Click toggle
-createToggle("Fast Click", UDim2.new(0, 10, 0, 40), function()
-    fastClickEnabled = not fastClickEnabled
-    return fastClickEnabled
+-- Create toggles
+createToggle("Fast Click", UDim2.new(0, 15, 0, 40), function()
+	fastClickEnabled = not fastClickEnabled
+	return fastClickEnabled
 end)
 
--- Crit Hit toggle
-createToggle("Crit Hit", UDim2.new(0, 10, 0, 85), function()
-    critHitEnabled = not critHitEnabled
-    return critHitEnabled
+createToggle("Crit Hit", UDim2.new(0, 15, 0, 90), function()
+	critHitEnabled = not critHitEnabled
+	return critHitEnabled
 end)
 
 -- Animations always ON
 if ArmWrestleController then
-    ArmWrestleController.ArmUpdate = true
+	ArmWrestleController.ArmUpdate = true
 end
 
 -- Auto fire loop
 spawn(function()
-    while true do
-        if fastClickEnabled then
-            pcall(function()
-                RF:WaitForChild("RequestClick"):InvokeServer()
-            end)
-        end
-        if critHitEnabled then
-            pcall(function()
-                RF:WaitForChild("RequestCritHit"):InvokeServer()
-            end)
-        end
-        wait(0.1)
-    end
+	while true do
+		if fastClickEnabled then
+			pcall(function()
+				RF:WaitForChild("RequestClick"):InvokeServer()
+			end)
+		end
+		if critHitEnabled then
+			pcall(function()
+				RF:WaitForChild("RequestCritHit"):InvokeServer()
+			end)
+		end
+		wait(0.1)
+	end
 end)
 
 end})
