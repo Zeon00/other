@@ -948,7 +948,7 @@ GUI:CreateToggle({
                     AutoCrit()
                     AutoHit()
 
-                    task.wait(0.001) -- delay before next execution
+                    task.wait(0.000000001) -- delay before next execution
                 end
             end)
         end
