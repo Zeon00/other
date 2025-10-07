@@ -901,63 +901,52 @@ local riftButton = GUI:CreateButton({
     end
 })
 GUI:CreateToggle({
-    parent = main, 
-    text = "Auto Battle Bot", 
-    default = true, 
+    parent = main,
+    text = "Auto Battle Bot",
+    default = true,
     callback = function(battlebot)
         _G.battlebot1 = battlebot
 
         if battlebot then
             task.spawn(function()
+                -- ===== SERVICES & RF (only once) =====
+                local Players = game:GetService("Players")
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local player = Players.LocalPlayer
+
+                local Knit = require(ReplicatedStorage.Packages.Knit)
+                local ArmWrestleService = Knit.GetService("ArmWrestleService")
+                local ArmWrestleController = Knit.GetController("ArmWrestleController")
+
+                local ClickRF = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService.RF.RequestClick
+                local CritRF = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService.RF.RequestCritHit
+
+                -- ===== FUNCTIONS =====
+                local function AutoFight(npcName)
+                    ArmWrestleController.RequestStartFight(npcName or "ToyBananaMonkey")
+                    ArmWrestleService:SetAuto(true)
+                end
+
+                local function AutoCrit()
+                    pcall(CritRF.InvokeServer, CritRF)
+                end
+
+                local function AutoHit()
+                    pcall(ClickRF.InvokeServer, ClickRF)
+                end
+
+                -- ===== MAIN LOOP =====
                 while _G.battlebot1 do
-                    -- ===== SERVICES & RF =====
-                    local Players = game:GetService("Players")
-                    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                    local player = Players.LocalPlayer
-
-                    local Knit = require(ReplicatedStorage.Packages.Knit)
-                    local ArmWrestleService = Knit.GetService("ArmWrestleService")
-                    local ArmWrestleController = Knit.GetController("ArmWrestleController")
-
-                    local ClickRF = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService.RF.RequestClick
-                    local CritRF = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService.RF.RequestCritHit
-
-                    -- ===== 1. SINGLE AUTO FIGHT =====
-                    local function AutoFight(npcName)
-                        npcName = npcName or "ToyBananaMonkey"
-                        ArmWrestleController.RequestStartFight(npcName)
-                        ArmWrestleService:SetAuto(true)
-                    end
-
-                    -- ===== 2. SINGLE AUTO CRIT =====
-                    local function AutoCrit()
-                        pcall(function()
-                            CritRF:InvokeServer()
-                        end)
-                    end
-
-                    -- ===== 3. SINGLE AUTO HIT =====
-                    local function AutoHit()
-                        pcall(function()
-                            ClickRF:InvokeServer()
-                        end)
-                    end
-
-                    -- Run all three
                     AutoFight("ToyBananaMonkey")
                     AutoCrit()
                     AutoHit()
-
-                    task.wait(0.000000001) -- delay before next execution
+                    task.wait() -- yields for one frame; fastest safe loop
                 end
             end)
         end
 
         print("Toggle state:", battlebot)
-    end
-})
-
-
+    end})
 GUI:CreateButton({
     parent = main, 
     text = "Auto Tower Bot", 
