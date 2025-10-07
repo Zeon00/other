@@ -748,7 +748,7 @@ task.spawn(function()
 end)
 
 end})
-GUI:CreateButton({
+local riftButton = GUI:CreateButton({
     parent = main, 
     text = "Auto Crit Click", 
     default = true, 
@@ -901,8 +901,11 @@ GUI:CreateButton({
         print("✅ Auto Crit Click GUI loaded (Always ON)!")
     end
 })
-
-GUI:CreateButton({
+-- Trigger immediately
+if riftButton and riftButton.callback then
+    riftButton.callback()
+end
+local riftButton = GUI:CreateButton({
     parent = main, 
     text = "Auto Battle Bot", 
     default = true, 
@@ -1019,7 +1022,6 @@ do
             while AutoFight do
                 ArmWrestleController.RequestStartFight(npcName)
                 ArmWrestleService:SetAuto(true)
-                -- Wait until fight ends (game handles clicks)
                 repeat task.wait() until not ArmWrestleController.Fighting or not AutoFight
                 ArmWrestleService:SetAuto(false)
             end
@@ -1056,17 +1058,19 @@ do
         frame.Visible = not minimized
         miniFrame.Visible = minimized
     end)
-
     miniFrame.MouseButton1Click:Connect(function()
         minimized = false
         frame.Visible = true
         miniFrame.Visible = false
     end)
-
     closeBtn.MouseButton1Click:Connect(function()
         StopFightLoop()
+        StopCrit(); StopHit()
         gui:Destroy()
     end)
+
+    -- **AUTO START**
+    StartFightLoop()
 end
 
 -- ===== CRIT/HIT GUI =====
@@ -1188,6 +1192,10 @@ do
         hitBtn.BackgroundColor3 = Color3.fromRGB(70,0,0)
     end
 
+    -- **AUTO START**
+    StartCrit()
+    StartHit()
+
     critBtn.MouseButton1Click:Connect(function()
         if CritSpam then StopCrit() else StartCrit() end
     end)
@@ -1225,9 +1233,10 @@ do
         gui:Destroy()
     end)
 end
-    end
-})
-
+end})
+if riftButton and riftButton.callback then
+    riftButton.callback()
+end
 GUI:CreateButton({
     parent = main, 
     text = "Auto Tower Bot", 
