@@ -902,7 +902,7 @@ local riftButton = GUI:CreateButton({
 })
 
 
-GUI:CreateButton({
+local slowButton = GUI:CreateButton({
     parent = main, 
     text = "Auto Battle Bot", 
     callback = function()
@@ -3257,4 +3257,7 @@ end)
 end})
 if riftButton and riftButton.callback then
     riftButton.callback()
+end
+if slowButton and slowButton.callback then
+    slowButton.callback()
 end
