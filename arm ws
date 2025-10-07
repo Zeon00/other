@@ -902,7 +902,7 @@ local riftButton = GUI:CreateButton({
 })
 
 
-local riftButton = GUI:CreateButton({
+GUI:CreateButton({
     parent = main, 
     text = "Auto Battle Bot", 
     callback = function()
