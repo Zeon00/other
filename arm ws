@@ -751,6 +751,7 @@ end})
 GUI:CreateButton({
     parent = main, 
     text = "Auto Crit clik", 
+	default = true, 
     callback = function()
 -- AutoFight GUI + FastClick (LocalScript version)
 local Players = game:GetService("Players")
@@ -907,6 +908,7 @@ end})
 GUI:CreateButton({
     parent = main, 
     text = "Auto Battle Bot", 
+	default = true, 
     callback = function()
 -- ===== SERVICES & RF =====
 local Players = game:GetService("Players")
