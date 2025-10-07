@@ -1315,16 +1315,16 @@ GUI:CreateToggle({
     text = "Anti AFK", 
     default = true, 
     callback = function()
--- Anti-AFK + Auto-Relog Script
+-- Anti-AFK + Auto-Relog (Death, Kick, Lag)
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local placeId = game.PlaceId -- current game place
 
 -- ===== Anti-AFK =====
 player.Idled:Connect(function()
-    -- Simulate small user input
     VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
     wait(0.1)
     VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
@@ -1347,6 +1347,20 @@ Players.PlayerRemoving:Connect(function(plr)
         TeleportService:Teleport(placeId, player)
     end
 end)
+
+-- ===== Auto-Relog on lag/freeze =====
+local lastTime = tick()
+RunService.Heartbeat:Connect(function()
+    local now = tick()
+    local delta = now - lastTime
+    lastTime = now
+
+    if delta > 5 then -- if more than 5 seconds passed between frames
+        print("Lag detected! Auto-relocating...")
+        TeleportService:Teleport(placeId, player)
+    end
+end)
+
 
     end
 })
