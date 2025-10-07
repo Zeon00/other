@@ -752,7 +752,7 @@ GUI:CreateButton({
     parent = main, 
     text = "Auto Crit clik", 
     callback = function()
--- AutoFight GUI + FastClick (modern, minimize + destroy)
+-- AutoFight GUI + FastClick (LocalScript version)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
@@ -781,7 +781,7 @@ local function spammer()
 	if running then return end
 	running = true
 	while fighting and autoEnabled do
-		task.wait(0.01) -- fast click
+		task.wait(0.01)
 		pcall(function()
 			RequestClick:InvokeServer()
 			RequestCritHit:InvokeServer()
@@ -809,9 +809,10 @@ end
 --------------------------------------------------------------------
 -- GUI
 --------------------------------------------------------------------
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local gui = Instance.new("ScreenGui")
 gui.Name = "AutoFightUI"
 gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0, 200, 0, 120)
@@ -820,12 +821,12 @@ frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
-frame.Visible = true
 frame.ClipsDescendants = true
 
 local uiCorner = Instance.new("UICorner", frame)
 uiCorner.CornerRadius = UDim.new(0, 10)
 
+-- Title bar
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, -60, 0, 30)
 title.Position = UDim2.new(0, 10, 0, 0)
@@ -836,7 +837,7 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 title.TextXAlignment = Enum.TextXAlignment.Left
 
--- minimize button
+-- Minimize button
 local minimize = Instance.new("TextButton", frame)
 minimize.Size = UDim2.new(0, 25, 0, 25)
 minimize.Position = UDim2.new(1, -55, 0, 2)
@@ -846,7 +847,7 @@ minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
 minimize.Font = Enum.Font.GothamBold
 minimize.TextSize = 18
 
--- close button
+-- Close button
 local close = Instance.new("TextButton", frame)
 close.Size = UDim2.new(0, 25, 0, 25)
 close.Position = UDim2.new(1, -30, 0, 2)
@@ -856,7 +857,7 @@ close.TextColor3 = Color3.fromRGB(255, 80, 80)
 close.Font = Enum.Font.GothamBold
 close.TextSize = 16
 
--- toggle button
+-- Toggle button
 local toggle = Instance.new("TextButton", frame)
 toggle.Size = UDim2.new(0.8, 0, 0, 35)
 toggle.Position = UDim2.new(0.1, 0, 0.45, 0)
@@ -872,6 +873,7 @@ toggleCorner.CornerRadius = UDim.new(0, 8)
 --------------------------------------------------------------------
 -- GUI functionality
 --------------------------------------------------------------------
+-- Toggle auto
 toggle.MouseButton1Click:Connect(function()
 	autoEnabled = not autoEnabled
 	if autoEnabled then
@@ -883,21 +885,24 @@ toggle.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- Minimize / restore
 minimize.MouseButton1Click:Connect(function()
 	minimized = not minimized
 	if minimized then
 		frame:TweenSize(UDim2.new(0, 200, 0, 35), "Out", "Quad", 0.25, true)
+		toggle.Visible = false
 	else
 		frame:TweenSize(UDim2.new(0, 200, 0, 120), "Out", "Quad", 0.25, true)
+		toggle.Visible = true
 	end
 end)
 
+-- Close GUI
 close.MouseButton1Click:Connect(function()
 	gui:Destroy()
 end)
 
 print("✅ Auto Fight GUI loaded successfully!")
-
 end})
 GUI:CreateButton({
     parent = main, 
