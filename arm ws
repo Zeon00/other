@@ -900,10 +900,8 @@ local riftButton = GUI:CreateButton({
         print("✅ Auto Crit Click GUI loaded (Always ON)!")
     end
 })
--- Trigger immediately
-if riftButton and riftButton.callback then
-    riftButton.callback()
-end
+
+
 local riftButton = GUI:CreateButton({
     parent = main, 
     text = "Auto Battle Bot", 
@@ -1232,9 +1230,7 @@ do
     end)
 end
 end})
-if riftButton and riftButton.callback then
-    riftButton.callback()
-end
+
 GUI:CreateButton({
     parent = main, 
     text = "Auto Tower Bot", 
@@ -3259,3 +3255,6 @@ CloseBtn.MouseButton1Click:Connect(function()
 	ScreenGui:Destroy()
 end)
 end})
+if riftButton and riftButton.callback then
+    riftButton.callback()
+end
