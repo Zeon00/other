@@ -893,7 +893,7 @@ GUI:CreateToggle({
                             ArmWrestleController.RequestStartFight("ToyBananaMonkey")
                             ArmWrestleService:SetAuto(true)
                         end
-                        task.wait(1) -- check every second, not every frame
+                        task.wait() -- check every second, not every frame
                     end
                 end)
 
