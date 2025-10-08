@@ -1273,61 +1273,82 @@ GUI:CreateButton({
 loadstring(game:HttpGet('https://raw.githubusercontent.com/yadielsantoss/full-script/refs/heads/main/MUTATE%20aws'))()
     end
 })
-
 GUI:CreateToggle({
-    parent = main, 
-    text = "Anti AFK", 
-    default = true, 
-    callback = function()
--- Anti-AFK + Auto-Relog (Death, Kick, Lag)
-local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
-local VirtualUser = game:GetService("VirtualUser")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-local placeId = game.PlaceId -- current game place
+    parent = main,
+    text = "Anti AFK + Auto Relog",
+    default = true,
+    callback = function(enabled)
+        if enabled then
+            -- Services & variables defined inside the toggle
+            local Players = game:GetService("Players")
+            local TeleportService = game:GetService("TeleportService")
+            local VirtualUser = game:GetService("VirtualUser")
+            local RunService = game:GetService("RunService")
+            local player = Players.LocalPlayer
+            local placeId = game.PlaceId -- current game place
 
--- ===== Anti-AFK =====
-player.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-    wait(0.1)
-    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-    print("Anti-AFK triggered")
-end)
+            _G.antiAFK = true
 
--- ===== Auto-Relog on death =====
-player.CharacterAdded:Connect(function(char)
-    local humanoid = char:WaitForChild("Humanoid")
-    humanoid.Died:Connect(function()
-        wait(1) -- short delay before relog
-        TeleportService:Teleport(placeId, player)
-    end)
-end)
+            -- Anti-AFK
+            player.Idled:Connect(function()
+                if _G.antiAFK then
+                    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                    wait(0.1)
+                    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                    print("Anti-AFK triggered")
+                end
+            end)
 
--- ===== Auto-Relog on removal (kick/disconnect) =====
-Players.PlayerRemoving:Connect(function(plr)
-    if plr == player then
-        wait(1)
-        TeleportService:Teleport(placeId, player)
-    end
-end)
+            -- Auto relog on death
+            player.CharacterAdded:Connect(function(char)
+                local humanoid = char:WaitForChild("Humanoid")
+                humanoid.Died:Connect(function()
+                    if _G.antiAFK then
+                        wait(1)
+                        TeleportService:Teleport(placeId, player)
+                    end
+                end)
+            end)
 
--- ===== Auto-Relog on lag/freeze =====
-local lastTime = tick()
-RunService.Heartbeat:Connect(function()
-    local now = tick()
-    local delta = now - lastTime
-    lastTime = now
+            -- Auto relog on removal (kick/disconnect)
+            Players.PlayerRemoving:Connect(function(plr)
+                if _G.antiAFK and plr == player then
+                    wait(1)
+                    TeleportService:Teleport(placeId, player)
+                end
+            end)
 
-    if delta > 5 then -- if more than 5 seconds passed between frames
-        print("Lag detected! Auto-relocating...")
-        TeleportService:Teleport(placeId, player)
-    end
-end)
+            -- Auto relog on lag/freeze
+            local lastTime = tick()
+            RunService.Heartbeat:Connect(function()
+                if _G.antiAFK then
+                    local now = tick()
+                    local delta = now - lastTime
+                    lastTime = now
 
+                    if delta > 5 then
+                        print("Lag detected! Auto-relocating...")
+                        TeleportService:Teleport(placeId, player)
+                    end
+                end
+            end)
 
+            -- Auto relog every 60 minutes
+            task.spawn(function()
+                while _G.antiAFK do
+                    task.wait(1 * 2) -- 60 minutes
+                    if _G.antiAFK then
+                        print("Auto relog after 60 minutes")
+                        TeleportService:Teleport(placeId, player)
+                    end
+                end
+            end)
+        else
+            _G.antiAFK = false
+        end
     end
 })
+
 GUI:CreateButton({
     parent = main, 
     text = "Use Item", 
