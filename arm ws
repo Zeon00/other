@@ -848,7 +848,7 @@ GUI:CreateToggle({
                     ArmWrestleService.StartFightSignal:Connect(function()
                         fighting = true
                         while _G.critclik1 and fighting do
-                            task.wait(0.01)
+                            task.wait(0.0001)
                             pcall(function()
                                 RequestClick:InvokeServer()
                                 RequestCritHit:InvokeServer()
