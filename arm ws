@@ -749,7 +749,7 @@ end)
 end})
 GUI:CreateToggle({
     parent = main,
-    text = "Auto Delete fight",
+    text = "Auto Delete fight & GameUI",
     default = true,
     callback = function(delfight)
         local Players = game:GetService("Players")
@@ -758,34 +758,36 @@ GUI:CreateToggle({
         -- Toggle variable
         local active = delfight
 
-        -- Function to monitor and delete Fighting GUI for a player
-        local function monitorFightingGui(player)
+        -- Function to monitor and delete target GUIs for a player
+        local function monitorPlayerGui(player)
             local playerGui = player:WaitForChild("PlayerGui")
 
-            -- Remove existing Fighting GUI
-            local fightingGui = playerGui:FindFirstChild("Fighting")
-            if fightingGui then
-                fightingGui:Destroy()
+            -- Remove existing target GUIs
+            for _, guiName in ipairs({"Fighting", "GameUI"}) do
+                local gui = playerGui:FindFirstChild(guiName)
+                if gui then
+                    gui:Destroy()
+                end
             end
 
             -- Listen for new children
             playerGui.ChildAdded:Connect(function(child)
-                if active and child.Name == "Fighting" then
+                if active and (child.Name == "Fighting" or child.Name == "GameUI") then
                     child:Destroy()
                 end
             end)
         end
 
-        -- Apply to current players
+        -- Apply to all current players
         for _, player in ipairs(Players:GetPlayers()) do
-            monitorFightingGui(player)
+            monitorPlayerGui(player)
         end
 
-        -- Apply to new players
+        -- Apply to any new player
         local playerAddedConn
         playerAddedConn = Players.PlayerAdded:Connect(function(player)
             if active then
-                monitorFightingGui(player)
+                monitorPlayerGui(player)
             end
         end)
 
@@ -796,9 +798,11 @@ GUI:CreateToggle({
                 for _, player in ipairs(Players:GetPlayers()) do
                     local playerGui = player:FindFirstChild("PlayerGui")
                     if playerGui then
-                        local fightingGui = playerGui:FindFirstChild("Fighting")
-                        if fightingGui then
-                            fightingGui:Destroy()
+                        for _, guiName in ipairs({"Fighting", "GameUI"}) do
+                            local gui = playerGui:FindFirstChild(guiName)
+                            if gui then
+                                gui:Destroy()
+                            end
                         end
                     end
                 end
@@ -813,7 +817,6 @@ GUI:CreateToggle({
         end
     end
 })
-
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Clik",
