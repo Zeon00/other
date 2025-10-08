@@ -746,8 +746,74 @@ task.spawn(function()
         task.wait(1)
     end
 end)
-
 end})
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Delete fight",
+    default = true,
+    callback = function(delfight)
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+
+        -- Toggle variable
+        local active = delfight
+
+        -- Function to monitor and delete Fighting GUI for a player
+        local function monitorFightingGui(player)
+            local playerGui = player:WaitForChild("PlayerGui")
+
+            -- Remove existing Fighting GUI
+            local fightingGui = playerGui:FindFirstChild("Fighting")
+            if fightingGui then
+                fightingGui:Destroy()
+            end
+
+            -- Listen for new children
+            playerGui.ChildAdded:Connect(function(child)
+                if active and child.Name == "Fighting" then
+                    child:Destroy()
+                end
+            end)
+        end
+
+        -- Apply to current players
+        for _, player in ipairs(Players:GetPlayers()) do
+            monitorFightingGui(player)
+        end
+
+        -- Apply to new players
+        local playerAddedConn
+        playerAddedConn = Players.PlayerAdded:Connect(function(player)
+            if active then
+                monitorFightingGui(player)
+            end
+        end)
+
+        -- Continuous deletion loop
+        local heartbeatConn
+        heartbeatConn = RunService.Heartbeat:Connect(function()
+            if active then
+                for _, player in ipairs(Players:GetPlayers()) do
+                    local playerGui = player:FindFirstChild("PlayerGui")
+                    if playerGui then
+                        local fightingGui = playerGui:FindFirstChild("Fighting")
+                        if fightingGui then
+                            fightingGui:Destroy()
+                        end
+                    end
+                end
+            end
+        end)
+
+        -- Stop everything if toggle is turned off
+        if not delfight then
+            active = false
+            if heartbeatConn then heartbeatConn:Disconnect() end
+            if playerAddedConn then playerAddedConn:Disconnect() end
+        end
+    end
+})
+
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Clik",
