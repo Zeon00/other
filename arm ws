@@ -873,7 +873,7 @@ GUI:CreateToggle({
 
         if battlebot then
             task.spawn(function()
-                -- ===== SERVICES & RF (only once) =====
+                -- ===== SERVICES & RF =====
                 local Players = game:GetService("Players")
                 local ReplicatedStorage = game:GetService("ReplicatedStorage")
                 local player = Players.LocalPlayer
@@ -885,32 +885,33 @@ GUI:CreateToggle({
                 local ClickRF = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService.RF.RequestClick
                 local CritRF = ReplicatedStorage.Packages.Knit.Services.ArmWrestleService.RF.RequestCritHit
 
-                -- ===== FUNCTIONS =====
-                local function AutoFight(npcName)
-                    ArmWrestleController.RequestStartFight(npcName or "ToyBananaMonkey")
-                    ArmWrestleService:SetAuto(true)
-                end
+                -- ===== AUTO FIGHT LOGIC =====
+                task.spawn(function()
+                    while _G.battlebot1 do
+                        local inFight = ArmWrestleService.CurrentFight -- hypothetical property
+                        if not inFight then
+                            ArmWrestleController.RequestStartFight("ToyBananaMonkey")
+                            ArmWrestleService:SetAuto(true)
+                        end
+                        task.wait(1) -- check every second, not every frame
+                    end
+                end)
 
-                local function AutoCrit()
-                    pcall(CritRF.InvokeServer, CritRF)
-                end
-
-                local function AutoHit()
-                    pcall(ClickRF.InvokeServer, ClickRF)
-                end
-
-                -- ===== MAIN LOOP =====
-                while _G.battlebot1 do
-                    AutoFight("ToyBananaMonkey")
-                    AutoCrit()
-                    AutoHit()
-                    task.wait() -- yields for one frame; fastest safe loop
-                end
+                -- ===== AUTO HIT & CRIT LOGIC (FAST) =====
+                task.spawn(function()
+                    while _G.battlebot1 do
+                        pcall(CritRF.InvokeServer, CritRF)
+                        pcall(ClickRF.InvokeServer, ClickRF)
+                        task.wait() -- fastest safe loop
+                    end
+                end)
             end)
         end
 
         print("Toggle state:", battlebot)
-    end})
+    end
+})
+
 GUI:CreateButton({
     parent = main, 
     text = "Auto Tower Bot", 
