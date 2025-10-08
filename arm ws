@@ -748,156 +748,51 @@ task.spawn(function()
 end)
 
 end})
-local riftButton = GUI:CreateButton({
-    parent = main, 
-    text = "Auto Crit Click", 
-    callback = function()
-        -- AutoFight GUI + FastClick (LocalScript version)
-        local Players = game:GetService("Players")
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local player = Players.LocalPlayer
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Crit/Clik",
+    default = true,
+    callback = function(critclik)
+        -- Set global flag for auto claim
+        _G.critclik1 = critclik
 
-        -- Knit + ArmWrestle setup
-        local Knit = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
-        local ArmWrestleService = Knit.GetService("ArmWrestleService")
+        -- If toggled ON, start the spammer loop safely
+        if critclik then
+            -- Only start if not already running
+            if not _G.spammerRunning then
+                _G.spammerRunning = true
+                coroutine.wrap(function()
+                    local Players = game:GetService("Players")
+                    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                    local player = Players.LocalPlayer
 
-        local rfFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF")
-        local RequestClick = rfFolder:WaitForChild("RequestClick")
-        local RequestCritHit = rfFolder:WaitForChild("RequestCritHit")
-        local RequestStartFight = rfFolder:FindFirstChild("RequestStartFight")
+                    local Knit = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
+                    local ArmWrestleService = Knit.GetService("ArmWrestleService")
 
-        local StartFightSignal = ArmWrestleService.StartFightSignal
-        local EndFightSignal = ArmWrestleService.EndFightSignal
+                    local rfFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF")
+                    local RequestClick = rfFolder:WaitForChild("RequestClick")
+                    local RequestCritHit = rfFolder:WaitForChild("RequestCritHit")
 
-        -- main flags
-        local fighting = false
-        local autoEnabled = true  -- START ALWAYS ON
-        local minimized = false
-        local running = false
+                    local fighting = false
 
-        -- spam clicks fast
-        local function spammer()
-            if running then return end
-            running = true
-            while fighting and autoEnabled do
-                task.wait(0.01)
-                pcall(function()
-                    RequestClick:InvokeServer()
-                    RequestCritHit:InvokeServer()
-                end)
+                    -- Connect fight signals once
+                    ArmWrestleService.StartFightSignal:Connect(function()
+                        fighting = true
+                        while _G.critclik1 and fighting do
+                            task.wait(0.01)
+                            pcall(function()
+                                RequestClick:InvokeServer()
+                                RequestCritHit:InvokeServer()
+                            end)
+                        end
+                    end)
+
+                    ArmWrestleService.EndFightSignal:Connect(function()
+                        fighting = false
+                    end)
+                end)()
             end
-            running = false
         end
-
-        -- connect fight signals
-        if StartFightSignal and type(StartFightSignal.Connect) == "function" then
-            StartFightSignal:Connect(function(opponent)
-                print("[AutoFight] Start:", opponent)
-                fighting = true
-                spammer()
-            end)
-        end
-
-        if EndFightSignal and type(EndFightSignal.Connect) == "function" then
-            EndFightSignal:Connect(function()
-                print("[AutoFight] End")
-                fighting = false
-            end)
-        end
-
-        --------------------------------------------------------------------
-        -- GUI
-        --------------------------------------------------------------------
-        local gui = Instance.new("ScreenGui")
-        gui.Name = "AutoFightUI"
-        gui.ResetOnSpawn = false
-        gui.Parent = player:WaitForChild("PlayerGui")
-
-        local frame = Instance.new("Frame", gui)
-        frame.Size = UDim2.new(0, 200, 0, 120)
-        frame.Position = UDim2.new(0.5, -100, 0.5, -60)
-        frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-        frame.BorderSizePixel = 0
-        frame.Active = true
-        frame.Draggable = true
-        frame.ClipsDescendants = true
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
-
-        -- Title
-        local title = Instance.new("TextLabel", frame)
-        title.Size = UDim2.new(1, -60, 0, 30)
-        title.Position = UDim2.new(0, 10, 0, 0)
-        title.BackgroundTransparency = 1
-        title.Text = "⚡ Auto Fight"
-        title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        title.Font = Enum.Font.GothamBold
-        title.TextSize = 16
-        title.TextXAlignment = Enum.TextXAlignment.Left
-
-        -- Minimize button
-        local minimize = Instance.new("TextButton", frame)
-        minimize.Size = UDim2.new(0, 25, 0, 25)
-        minimize.Position = UDim2.new(1, -55, 0, 2)
-        minimize.BackgroundTransparency = 1
-        minimize.Text = "-"
-        minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
-        minimize.Font = Enum.Font.GothamBold
-        minimize.TextSize = 18
-
-        -- Close button
-        local close = Instance.new("TextButton", frame)
-        close.Size = UDim2.new(0, 25, 0, 25)
-        close.Position = UDim2.new(1, -30, 0, 2)
-        close.BackgroundTransparency = 1
-        close.Text = "X"
-        close.TextColor3 = Color3.fromRGB(255, 80, 80)
-        close.Font = Enum.Font.GothamBold
-        close.TextSize = 16
-
-        -- Toggle button
-        local toggle = Instance.new("TextButton", frame)
-        toggle.Size = UDim2.new(0.8, 0, 0, 35)
-        toggle.Position = UDim2.new(0.1, 0, 0.45, 0)
-        toggle.BackgroundColor3 = Color3.fromRGB(60, 200, 60)  -- Default ON color
-        toggle.Text = "Auto: ON"  -- Start ON
-        toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-        toggle.Font = Enum.Font.GothamBold
-        toggle.TextSize = 16
-        Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
-
-        --------------------------------------------------------------------
-        -- GUI functionality
-        --------------------------------------------------------------------
-        toggle.MouseButton1Click:Connect(function()
-            autoEnabled = not autoEnabled
-            if autoEnabled then
-                toggle.BackgroundColor3 = Color3.fromRGB(60, 200, 60)
-                toggle.Text = "Auto: ON"
-                if fighting then
-                    spammer()
-                end
-            else
-                toggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-                toggle.Text = "Auto: OFF"
-            end
-        end)
-
-        minimize.MouseButton1Click:Connect(function()
-            minimized = not minimized
-            if minimized then
-                frame:TweenSize(UDim2.new(0, 200, 0, 35), "Out", "Quad", 0.25, true)
-                toggle.Visible = false
-            else
-                frame:TweenSize(UDim2.new(0, 200, 0, 120), "Out", "Quad", 0.25, true)
-                toggle.Visible = true
-            end
-        end)
-
-        close.MouseButton1Click:Connect(function()
-            gui:Destroy()
-        end)
-
-        print("✅ Auto Crit Click GUI loaded (Always ON)!")
     end
 })
 GUI:CreateToggle({
