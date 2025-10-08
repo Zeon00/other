@@ -822,48 +822,41 @@ GUI:CreateToggle({
     text = "Auto Crit/Clik",
     default = true,
     callback = function(critclik)
-        -- Set global flag for auto claim
-        _G.critclik1 = critclik
+ --// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
-        -- If toggled ON, start the spammer loop safely
-        if critclik then
-            -- Only start if not already running
-            if not _G.spammerRunning then
-                _G.spammerRunning = true
-                coroutine.wrap(function()
-                    local Players = game:GetService("Players")
-                    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                    local player = Players.LocalPlayer
+local player = Players.LocalPlayer
 
-                    local Knit = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
-                    local ArmWrestleService = Knit.GetService("ArmWrestleService")
+--// Remote references
+local ArmWrestleService = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ArmWrestleService")
+    :WaitForChild("RF")
 
-                    local rfFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("ArmWrestleService"):WaitForChild("RF")
-                    local RequestClick = rfFolder:WaitForChild("RequestClick")
-                    local RequestCritHit = rfFolder:WaitForChild("RequestCritHit")
+local RequestClick = ArmWrestleService:WaitForChild("RequestClick")
+local RequestCritHit = ArmWrestleService:WaitForChild("RequestCritHit")
 
-                    local fighting = false
+--// Toggle states (always true)
+local autoClick = true
+local autoCrit = true
 
-                    -- Connect fight signals once
-                    ArmWrestleService.StartFightSignal:Connect(function()
-                        fighting = true
-                        while _G.critclik1 and fighting do
-                            task.wait(0.0001)
-                            pcall(function()
-                                RequestClick:InvokeServer()
-                                RequestCritHit:InvokeServer()
-                            end)
-                        end
-                    end)
-
-                    ArmWrestleService.EndFightSignal:Connect(function()
-                        fighting = false
-                    end)
-                end)()
-            end
-        end
+--// Super fast loop
+RunService.RenderStepped:Connect(function()
+    if autoClick then
+        pcall(function()
+            RequestClick:InvokeServer()
+        end)
     end
-})
+    if autoCrit then
+        pcall(function()
+            RequestCritHit:InvokeServer()
+        end)
+    end
+end)
+end})
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
