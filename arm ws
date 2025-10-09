@@ -818,14 +818,15 @@ GUI:CreateToggle({
         local Players = game:GetService("Players")
         local RunService = game:GetService("RunService")
 
-        -- Toggle variable
-        local active = delfight
+        -- Connections we will disconnect later
+        local heartbeatConn
+        local playerAddedConn
 
-        -- Function to monitor and delete target GUIs for a player
+        -- Function to monitor a player's PlayerGui
         local function monitorPlayerGui(player)
             local playerGui = player:WaitForChild("PlayerGui")
 
-            -- Remove existing target GUIs
+            -- Delete existing GUIs
             for _, guiName in ipairs({"Fighting", "GameUI"}) do
                 local gui = playerGui:FindFirstChild(guiName)
                 if gui then
@@ -833,31 +834,25 @@ GUI:CreateToggle({
                 end
             end
 
-            -- Listen for new children
+            -- Delete any new GUIs when added
             playerGui.ChildAdded:Connect(function(child)
-                if active and (child.Name == "Fighting" or child.Name == "GameUI") then
+                if delfight and (child.Name == "Fighting" or child.Name == "GameUI") then
                     child:Destroy()
                 end
             end)
         end
 
-        -- Apply to all current players
-        for _, player in ipairs(Players:GetPlayers()) do
-            monitorPlayerGui(player)
-        end
-
-        -- Apply to any new player
-        local playerAddedConn
-        playerAddedConn = Players.PlayerAdded:Connect(function(player)
-            if active then
+        if delfight then
+            -- Apply to current players
+            for _, player in ipairs(Players:GetPlayers()) do
                 monitorPlayerGui(player)
             end
-        end)
 
-        -- Continuous deletion loop
-        local heartbeatConn
-        heartbeatConn = RunService.Heartbeat:Connect(function()
-            if active then
+            -- Apply to new players
+            playerAddedConn = Players.PlayerAdded:Connect(monitorPlayerGui)
+
+            -- Continuous deletion loop (failsafe)
+            heartbeatConn = RunService.Heartbeat:Connect(function()
                 for _, player in ipairs(Players:GetPlayers()) do
                     local playerGui = player:FindFirstChild("PlayerGui")
                     if playerGui then
@@ -869,17 +864,21 @@ GUI:CreateToggle({
                         end
                     end
                 end
+            end)
+        else
+            -- Toggle off: disconnect everything
+            if heartbeatConn then
+                heartbeatConn:Disconnect()
+                heartbeatConn = nil
             end
-        end)
-
-        -- Stop everything if toggle is turned off
-        if not delfight then
-            active = false
-            if heartbeatConn then heartbeatConn:Disconnect() end
-            if playerAddedConn then playerAddedConn:Disconnect() end
+            if playerAddedConn then
+                playerAddedConn:Disconnect()
+                playerAddedConn = nil
+            end
         end
     end
 })
+
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Clik",
