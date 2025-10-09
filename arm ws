@@ -32,7 +32,7 @@ GUI:CreateSection({
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Quest Token", 
-    default = true, 
+    default = false, 
     callback = function(enabled)
 
         if enabled then
