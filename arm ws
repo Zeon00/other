@@ -32,13 +32,14 @@ GUI:CreateSection({
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Quest Token", 
-    default = false, 
-    callback = function(claimrift)
+    default = true, 
+    callback = function(enabled)
 
-        if claimrift then
+        if enabled then
             _G.AutoQuestToken = true
-
             task.spawn(function()
+
+                --// ⚡ Auto Quest Trainer (Zone1 Knuckle + Local Grip/Dumbbell + Smart Return + 30min Cooldown)
                 local Players = game:GetService("Players")
                 local ReplicatedStorage = game:GetService("ReplicatedStorage")
                 local Workspace = game:GetService("Workspace")
@@ -46,12 +47,14 @@ GUI:CreateToggle({
                 local player = Players.LocalPlayer
                 local Knit = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
 
+                --// Knit Services
                 local Services = Knit:WaitForChild("Services")
                 local PunchBagRemote = Services.PunchBagService.RE.onGiveStats
                 local ToolClickRemote = Services.ToolService.RE.onClick
                 local ToolEquipRemote = Services.ToolService.RE.onEquipRequest
                 local TeleportRemote = Services.ZoneService.RE.teleport
 
+                --// Helper: find zone by prefix (handles "1A", "1Boss", etc.)
                 local function findZone(prefix)
                     for _, zone in pairs(Workspace:WaitForChild("Zones"):GetChildren()) do
                         if zone:IsA("Folder") and zone.Name:sub(1, #prefix) == prefix then
@@ -61,15 +64,18 @@ GUI:CreateToggle({
                     return nil
                 end
 
+                --// Zone 1 info (Knuckle quest area)
                 local zone1 = findZone("1")
                 local zone1Spawn = zone1 and zone1:WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
                 local punchBagCFrame = CFrame.new(-10493.505859375, 34.341880798339844, 4063.761962890625)
 
+                --// Config
                 local totalPunches, totalTools = 850, 1000
                 local punchDelay, toolDelay = 0.18, 0.12
                 local teleportDelay, preTrainDelay = 10, 2
-                local questCooldown = 1800
+                local questCooldown = 1800 -- 30 minutes
 
+                --// Helpers
                 local function teleportTo(target)
                     if target then
                         TeleportRemote:FireServer(target)
@@ -107,24 +113,31 @@ GUI:CreateToggle({
                     return closestZone
                 end
 
+                --// Training Functions
                 local function trainPunchBag()
+                    print("🥊 [AutoQuest] Training Knuckle quest in Zone 1...")
                     teleportTo(zone1Spawn)
                     task.wait(teleportDelay)
                     moveTo(punchBagCFrame)
                     task.wait(preTrainDelay)
                     for i = 1, totalPunches do
+                        if not _G.AutoQuestToken then return end
                         PunchBagRemote:FireServer("1", "Tier6")
                         task.wait(punchDelay)
                     end
+                    print("✅ [AutoQuest] Finished Knuckle training.")
                 end
 
                 local function trainTool(toolType)
+                    print("💪 [AutoQuest] Training " .. toolType .. " locally...")
                     ToolEquipRemote:FireServer("1", toolType, "250Kg")
                     task.wait(1)
                     for i = 1, totalTools do
+                        if not _G.AutoQuestToken then return end
                         ToolClickRemote:FireServer()
                         task.wait(toolDelay)
                     end
+                    print("✅ [AutoQuest] Finished " .. toolType .. " training.")
                 end
 
                 local function identifyQuestType(text)
@@ -137,18 +150,25 @@ GUI:CreateToggle({
                     return nil
                 end
 
+                --// Main Loop
                 while _G.AutoQuestToken do
                     local questText = player:GetAttribute("TokenQuestString")
+
                     if questText then
                         local questType = identifyQuestType(questText)
                         local currentZone = getCurrentZoneByPosition()
                         local returnTarget = nil
+
+                        -- Remember player zone before training
                         if currentZone then
                             local teleports = currentZone:FindFirstChild("Interactables") and currentZone.Interactables:FindFirstChild("Teleports")
                             if teleports and teleports:FindFirstChild("Locations") and teleports.Locations:FindFirstChild("Spawn") then
                                 returnTarget = teleports.Locations.Spawn
+                                print("📍 [AutoQuest] Saved player zone:", currentZone.Name)
                             end
                         end
+
+                        print("🎯 [AutoQuest] Doing quest:", questType)
 
                         if questType == "Knuckle" then
                             trainPunchBag()
@@ -156,19 +176,35 @@ GUI:CreateToggle({
                             trainTool("Grips")
                         elseif questType == "Dumbbell" then
                             trainTool("Dumbells")
+                        else
+                            print("⚠ [AutoQuest] Unknown quest:", questText)
                         end
 
+                        -- Always teleport back
                         if returnTarget then
+                            print("🚀 [AutoQuest] Returning to:", currentZone.Name)
                             teleportTo(returnTarget)
+                            task.wait(5)
+                        else
+                            print("⚠ [AutoQuest] No return zone found.")
                         end
-                        task.wait(questCooldown)
+
+                        -- Wait cooldown before recheck
+                        print("⏲️ [AutoQuest] Waiting 30 minutes before next quest...")
+                        local t = 0
+                        while _G.AutoQuestToken and t < questCooldown do
+                            task.wait(1)
+                            t += 1
+                        end
                     else
+                        print("⏳ [AutoQuest] Waiting for quest...")
                         task.wait(5)
                     end
                 end
             end)
         else
             _G.AutoQuestToken = false
+            print("🛑 [AutoQuest] Disabled.")
         end
     end
 })
@@ -892,7 +928,7 @@ end})
 GUI:CreateToggle({
     parent = main,
     text = "Auto Delete fight & GameUI",
-    default = false,
+    default = true,
     callback = function(delfight)
         local Players = game:GetService("Players")
         local RunService = game:GetService("RunService")
@@ -961,7 +997,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Clik",
-    default = false,
+    default = true,
     callback = function(critclik)
  --// Services
 local Players = game:GetService("Players")
@@ -981,8 +1017,8 @@ local RequestClick = ArmWrestleService:WaitForChild("RequestClick")
 local RequestCritHit = ArmWrestleService:WaitForChild("RequestCritHit")
 
 --// Toggle states (always true)
-local autoClick = true
-local autoCrit = true
+local autoClick = false
+local autoCrit = false
 
 --// Super fast loop
 RunService.RenderStepped:Connect(function()
@@ -1001,7 +1037,7 @@ end})
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
-    default = false,
+    default = true,
     callback = function(battlebot)
         _G.battlebot1 = battlebot
 
