@@ -31,6 +31,150 @@ GUI:CreateSection({
 })
 GUI:CreateToggle({
     parent = main, 
+    text = "Auto Quest Token", 
+    default = false, 
+    callback = function(claimrift)
+
+        if claimrift then
+            _G.AutoQuestToken = true
+
+            task.spawn(function()
+                local Players = game:GetService("Players")
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local Workspace = game:GetService("Workspace")
+
+                local player = Players.LocalPlayer
+                local Knit = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
+
+                local Services = Knit:WaitForChild("Services")
+                local PunchBagRemote = Services.PunchBagService.RE.onGiveStats
+                local ToolClickRemote = Services.ToolService.RE.onClick
+                local ToolEquipRemote = Services.ToolService.RE.onEquipRequest
+                local TeleportRemote = Services.ZoneService.RE.teleport
+
+                local function findZone(prefix)
+                    for _, zone in pairs(Workspace:WaitForChild("Zones"):GetChildren()) do
+                        if zone:IsA("Folder") and zone.Name:sub(1, #prefix) == prefix then
+                            return zone
+                        end
+                    end
+                    return nil
+                end
+
+                local zone1 = findZone("1")
+                local zone1Spawn = zone1 and zone1:WaitForChild("Interactables"):WaitForChild("Teleports"):WaitForChild("Locations"):WaitForChild("Spawn")
+                local punchBagCFrame = CFrame.new(-10493.505859375, 34.341880798339844, 4063.761962890625)
+
+                local totalPunches, totalTools = 850, 1000
+                local punchDelay, toolDelay = 0.18, 0.12
+                local teleportDelay, preTrainDelay = 10, 2
+                local questCooldown = 1800
+
+                local function teleportTo(target)
+                    if target then
+                        TeleportRemote:FireServer(target)
+                    end
+                end
+
+                local function moveTo(cframe)
+                    local char = player.Character or player.CharacterAdded:Wait()
+                    local hrp = char:WaitForChild("HumanoidRootPart")
+                    hrp.CFrame = cframe + Vector3.new(0, 3, 0)
+                end
+
+                local function getCurrentZoneByPosition()
+                    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    if not hrp then return nil end
+                    local pos = hrp.Position
+
+                    local closestZone, closestDist = nil, math.huge
+                    for _, zone in pairs(Workspace:WaitForChild("Zones"):GetChildren()) do
+                        if zone:IsA("Folder") and zone:FindFirstChild("Interactables") then
+                            local teleports = zone.Interactables:FindFirstChild("Teleports")
+                            if teleports and teleports:FindFirstChild("Locations") then
+                                for _, loc in pairs(teleports.Locations:GetChildren()) do
+                                    if loc:IsA("BasePart") then
+                                        local dist = (loc.Position - pos).Magnitude
+                                        if dist < closestDist then
+                                            closestDist = dist
+                                            closestZone = zone
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    return closestZone
+                end
+
+                local function trainPunchBag()
+                    teleportTo(zone1Spawn)
+                    task.wait(teleportDelay)
+                    moveTo(punchBagCFrame)
+                    task.wait(preTrainDelay)
+                    for i = 1, totalPunches do
+                        PunchBagRemote:FireServer("1", "Tier6")
+                        task.wait(punchDelay)
+                    end
+                end
+
+                local function trainTool(toolType)
+                    ToolEquipRemote:FireServer("1", toolType, "250Kg")
+                    task.wait(1)
+                    for i = 1, totalTools do
+                        ToolClickRemote:FireServer()
+                        task.wait(toolDelay)
+                    end
+                end
+
+                local function identifyQuestType(text)
+                    if not text then return nil end
+                    local lower = text:lower()
+                    if lower:find("knuckle") then return "Knuckle"
+                    elseif lower:find("grip") then return "Grip"
+                    elseif lower:find("dumbbell") or lower:find("dumble") then return "Dumbbell"
+                    end
+                    return nil
+                end
+
+                while _G.AutoQuestToken do
+                    local questText = player:GetAttribute("TokenQuestString")
+                    if questText then
+                        local questType = identifyQuestType(questText)
+                        local currentZone = getCurrentZoneByPosition()
+                        local returnTarget = nil
+                        if currentZone then
+                            local teleports = currentZone:FindFirstChild("Interactables") and currentZone.Interactables:FindFirstChild("Teleports")
+                            if teleports and teleports:FindFirstChild("Locations") and teleports.Locations:FindFirstChild("Spawn") then
+                                returnTarget = teleports.Locations.Spawn
+                            end
+                        end
+
+                        if questType == "Knuckle" then
+                            trainPunchBag()
+                        elseif questType == "Grip" then
+                            trainTool("Grips")
+                        elseif questType == "Dumbbell" then
+                            trainTool("Dumbells")
+                        end
+
+                        if returnTarget then
+                            teleportTo(returnTarget)
+                        end
+                        task.wait(questCooldown)
+                    else
+                        task.wait(5)
+                    end
+                end
+            end)
+        else
+            _G.AutoQuestToken = false
+        end
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
     text = "Auto Claim", 
     default = true, 
     callback = function(claim)
