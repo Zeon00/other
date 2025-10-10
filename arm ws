@@ -2367,36 +2367,35 @@ GUI:CreateButton({
     parent = main, 
     text = "Auto Spinner Bot", 
     callback = function()
---// Services
+-- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
---// Knit Spinner Service
+-- Knit Spinner Service
 local SpinnerService = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
     :WaitForChild("Services"):WaitForChild("SpinnerService")
 
 local SpinInfo = require(ReplicatedStorage.Data.SpinInfo)
 
---// GUI Setup
+-- GUI Setup
 local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.ResetOnSpawn = false
 
+-- Main Frame (Compact)
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 300, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+MainFrame.Size = UDim2.new(0, 300, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -160)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainFrame.Active = true
 MainFrame.Draggable = true
-
 local UICorner = Instance.new("UICorner", MainFrame)
 UICorner.CornerRadius = UDim.new(0, 10)
-
 local UIStroke = Instance.new("UIStroke", MainFrame)
 UIStroke.Color = Color3.fromRGB(70, 70, 70)
 UIStroke.Thickness = 2
 
---// Title Bar
+-- Title Bar
 local TitleBar = Instance.new("Frame", MainFrame)
 TitleBar.Size = UDim2.new(1, 0, 0, 35)
 TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -2422,10 +2421,7 @@ Close.TextColor3 = Color3.fromRGB(255,255,255)
 Close.Font = Enum.Font.GothamBold
 Close.TextScaled = true
 local UICornerC = Instance.new("UICorner", Close)
-
-Close.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
+Close.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
 -- Minimize Button
 local Minimize = Instance.new("TextButton", TitleBar)
@@ -2444,7 +2440,7 @@ Body.Size = UDim2.new(1, -20, 1, -45)
 Body.Position = UDim2.new(0, 10, 0, 40)
 Body.BackgroundTransparency = 1
 
---// Search Bar
+-- Search Bar
 local SearchBox = Instance.new("TextBox", Body)
 SearchBox.Size = UDim2.new(1, 0, 0, 30)
 SearchBox.PlaceholderText = "Search spinner..."
@@ -2455,31 +2451,38 @@ SearchBox.Font = Enum.Font.Gotham
 SearchBox.TextSize = 16
 local UICornerS = Instance.new("UICorner", SearchBox)
 
--- Dropdown Frame
+-- Dropdown Frame (6 baris visible)
 local DropdownFrame = Instance.new("Frame", Body)
-DropdownFrame.Size = UDim2.new(1, 0, 0, 120)
-DropdownFrame.Position = UDim2.new(0, 0, 0, 40)
+DropdownFrame.Size = UDim2.new(1, 0, 0, 155)
+DropdownFrame.Position = UDim2.new(0, 0, 0, 35)
 DropdownFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 DropdownFrame.ClipsDescendants = true
 local UICornerD = Instance.new("UICorner", DropdownFrame)
 
-local DropdownList = Instance.new("UIListLayout", DropdownFrame)
-DropdownList.SortOrder = Enum.SortOrder.LayoutOrder
+local ScrollDropdown = Instance.new("ScrollingFrame", DropdownFrame)
+ScrollDropdown.Size = UDim2.new(1,0,1,0)
+ScrollDropdown.BackgroundTransparency = 1
+ScrollDropdown.ScrollBarThickness = 6
+ScrollDropdown.CanvasSize = UDim2.new(0,0,0,0)
+ScrollDropdown.ClipsDescendants = true
+local ScrollLayout = Instance.new("UIListLayout", ScrollDropdown)
+ScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ScrollLayout.Padding = UDim.new(0,2)
 
--- Selected Frame
+-- Selected Frame (Compact)
 local SelectedFrame = Instance.new("Frame", Body)
-SelectedFrame.Size = UDim2.new(1, 0, 0, 120)
-SelectedFrame.Position = UDim2.new(0, 0, 0, 170)
+SelectedFrame.Size = UDim2.new(1, 0, 0, 70)
+SelectedFrame.Position = UDim2.new(0, 0, 0, 195)
 SelectedFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
 local UICornerSel = Instance.new("UICorner", SelectedFrame)
-
 local SelectedList = Instance.new("UIListLayout", SelectedFrame)
 SelectedList.SortOrder = Enum.SortOrder.LayoutOrder
+SelectedList.Padding = UDim.new(0, 2)
 
 -- Toggle Button
 local Toggle = Instance.new("TextButton", Body)
-Toggle.Size = UDim2.new(1, 0, 0, 40)
-Toggle.Position = UDim2.new(0, 0, 1, -45)
+Toggle.Size = UDim2.new(1, 0, 0, 35)
+Toggle.Position = UDim2.new(0, 0, 1, -35)
 Toggle.BackgroundColor3 = Color3.fromRGB(200,50,50)
 Toggle.TextColor3 = Color3.fromRGB(255,255,255)
 Toggle.Font = Enum.Font.GothamBold
@@ -2487,7 +2490,7 @@ Toggle.TextSize = 18
 Toggle.Text = "STOPPED (0)"
 local UICornerT = Instance.new("UICorner", Toggle)
 
---// Logic
+-- Logic
 local AllSpinners = {}
 for name, _ in pairs(SpinInfo) do
     table.insert(AllSpinners, name)
@@ -2502,11 +2505,7 @@ local loop
 local function updateToggleText()
     local count = 0
     for _ in pairs(Selected) do count += 1 end
-    if Active then
-        Toggle.Text = "RUNNING (" .. count .. ")"
-    else
-        Toggle.Text = "STOPPED (" .. count .. ")"
-    end
+    Toggle.Text = (Active and "RUNNING (" or "STOPPED (") .. count .. ")"
 end
 
 -- Add selected spinner
@@ -2550,14 +2549,16 @@ end
 
 -- Refresh dropdown
 local function refreshDropdown(filter)
-    for _, child in pairs(DropdownFrame:GetChildren()) do
+    for _, child in pairs(ScrollDropdown:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
 
+    local totalHeight = 0
     for _, name in ipairs(AllSpinners) do
         if filter == "" or string.find(name:lower(), filter:lower()) then
-            local Btn = Instance.new("TextButton", DropdownFrame)
+            local Btn = Instance.new("TextButton", ScrollDropdown)
             Btn.Size = UDim2.new(1, -10, 0, 25)
+            Btn.Position = UDim2.new(0, 5, 0, totalHeight)
             Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
             Btn.Text = name
             Btn.TextColor3 = Color3.fromRGB(255,255,255)
@@ -2568,53 +2569,57 @@ local function refreshDropdown(filter)
             Btn.MouseButton1Click:Connect(function()
                 addSelected(name)
             end)
+
+            totalHeight += 27
         end
     end
+    ScrollDropdown.CanvasSize = UDim2.new(0,0,0,totalHeight)
 end
 
 SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
     refreshDropdown(SearchBox.Text)
 end)
 
--- Toggle Run/Stop (fast loop)
+-- Toggle Run/Stop
 Toggle.MouseButton1Click:Connect(function()
     Active = not Active
+    Toggle.BackgroundColor3 = Active and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
     if Active then
-        Toggle.BackgroundColor3 = Color3.fromRGB(50,200,50)
         loop = task.spawn(function()
             while Active do
                 for name, _ in pairs(Selected) do
-                    local args = {name, "x25"}
-                    SpinnerService.RF.Spin:InvokeServer(unpack(args))
-                    task.wait(0.1) -- very fast spin loop
+                    SpinnerService.RF.Spin:InvokeServer(name, "x25")
+                    task.wait(0.1)
                 end
                 task.wait(0.1)
             end
         end)
-    else
-        Toggle.BackgroundColor3 = Color3.fromRGB(200,50,50)
-        if loop then task.cancel(loop) end
+    elseif loop then
+        task.cancel(loop)
     end
     updateToggleText()
 end)
 
--- Minimize Body
+-- Minimize Body (fix title always terlihat)
 local minimized = false
 local normalSize = MainFrame.Size
+local titleBarHeight = TitleBar.Size.Y.Offset
 
 Minimize.MouseButton1Click:Connect(function()
     minimized = not minimized
     if minimized then
         Body.Visible = false
-        MainFrame.Size = UDim2.new(normalSize.X.Scale, normalSize.X.Offset, 0, 40)
+        MainFrame.Size = UDim2.new(normalSize.X.Scale, normalSize.X.Offset, 0, titleBarHeight)
     else
         Body.Visible = true
         MainFrame.Size = normalSize
     end
 end)
+
 -- Init
 refreshDropdown("")
 updateToggleText()
+
 end})
 GUI:CreateButton({
     parent = main, 
