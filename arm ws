@@ -29,6 +29,268 @@ GUI:CreateSection({
     parent = main, 
     text = "Player"
 })
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Trick or Treat", 
+    callback = function()
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- Knit Services
+local KnitServices = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services")
+local TrickOrTreatRF = KnitServices:WaitForChild("TrickOrTreatService"):WaitForChild("RF")
+local ToolServiceRE = KnitServices:WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick")
+
+local RequestTrickOrTreat = TrickOrTreatRF:WaitForChild("RequestTrickOrTreat")
+local EndTrickOrTreat = TrickOrTreatRF:WaitForChild("EndTrickOrTreat")
+local ClaimTreatBag = TrickOrTreatRF:WaitForChild("ClaimTreatBag")
+
+-- Claim Treat Bag once
+pcall(function() ClaimTreatBag:InvokeServer() end)
+
+-- Houses folder
+local housesFolder = Workspace:WaitForChild("GameObjects"):WaitForChild("TrickOrTreat")
+local cooldownTime = 120 -- 2 minutes
+local houseTimers = {} -- track last knock time
+
+-- ===== GUI Setup =====
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 180, 0, 150)
+frame.Position = UDim2.new(0, 20, 0, 20)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 25)
+titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+titleBar.Parent = frame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -50, 1, 0)
+titleLabel.Position = UDim2.new(0, 5, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Auto Trick-or-Treat"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 14
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 20, 1, 0)
+closeButton.Position = UDim2.new(1, -25, 0, 0)
+closeButton.Text = "X"
+closeButton.BackgroundTransparency = 1
+closeButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextSize = 14
+closeButton.Parent = titleBar
+closeButton.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 20, 1, 0)
+minimizeButton.Position = UDim2.new(1, -50, 0, 0)
+minimizeButton.Text = "_"
+minimizeButton.BackgroundTransparency = 1
+minimizeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+minimizeButton.Font = Enum.Font.SourceSansBold
+minimizeButton.TextSize = 14
+minimizeButton.Parent = titleBar
+
+-- Toggle Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 80, 0, 20)
+toggleButton.Position = UDim2.new(0, 5, 0, 30)
+toggleButton.Text = "Auto: OFF"
+toggleButton.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 12
+toggleButton.Parent = frame
+
+local autoEnabled = false
+toggleButton.MouseButton1Click:Connect(function()
+    autoEnabled = not autoEnabled
+    toggleButton.Text = autoEnabled and "Auto: ON" or "Auto: OFF"
+end)
+
+-- Scroll Frame
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, -10, 1, -55)
+scrollingFrame.Position = UDim2.new(0, 5, 0, 55)
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollingFrame.ScrollBarThickness = 5
+scrollingFrame.Parent = frame
+
+local uiList = Instance.new("UIListLayout")
+uiList.Padding = UDim.new(0, 2)
+uiList.Parent = scrollingFrame
+
+local houseFrames = {}
+
+-- Create House UI
+local function CreateHouseUI(houseName)
+    if houseFrames[houseName] then return houseFrames[houseName] end
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 0, 20)
+    container.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+    container.Parent = scrollingFrame
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(0.6, 0, 1, 0)
+    nameLabel.Position = UDim2.new(0, 2, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.Font = Enum.Font.SourceSansBold
+    nameLabel.TextSize = 12
+    nameLabel.Text = houseName
+    nameLabel.Parent = container
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(0.4, -2, 1, 0)
+    statusLabel.Position = UDim2.new(0.6, 0, 0, 0)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    statusLabel.Font = Enum.Font.SourceSans
+    statusLabel.TextSize = 12
+    statusLabel.Text = "Cooldown"
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Right
+    statusLabel.Parent = container
+
+    -- Progress bar
+    local progressBG = Instance.new("Frame")
+    progressBG.Size = UDim2.new(1, -4, 0, 4)
+    progressBG.Position = UDim2.new(0, 2, 1, -6)
+    progressBG.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    progressBG.BorderSizePixel = 0
+    progressBG.Parent = container
+
+    local progressFill = Instance.new("Frame")
+    progressFill.Size = UDim2.new(0, 0, 1, 0)
+    progressFill.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+    progressFill.BorderSizePixel = 0
+    progressFill.Parent = progressBG
+
+    houseFrames[houseName] = {container = container, nameLabel = nameLabel, statusLabel = statusLabel, progressFill = progressFill}
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, uiList.AbsoluteContentSize.Y + 5)
+    return houseFrames[houseName]
+end
+
+local function UpdateHouseProgress(house)
+    local houseUI = houseFrames[house.Name] or CreateHouseUI(house.Name)
+    local lastTime = houseTimers[house] or 0
+    local elapsed = os.clock() - lastTime
+    local progress = math.clamp(elapsed / cooldownTime, 0, 1)
+    houseUI.progressFill.Size = UDim2.new(progress, 0, 1, 0)
+    houseUI.statusLabel.Text = progress >= 1 and "Ready" or string.format("%ds", math.ceil(cooldownTime - elapsed))
+end
+
+-- Trick-or-Treat House Function
+local function TrickOrTreatHouse(house)
+    spawn(function()
+        local last = houseTimers[house] or 0
+        if os.clock() - last < cooldownTime then
+            UpdateHouseProgress(house)
+            return
+        end
+
+        local args = {house}
+        local ok, result = pcall(function() return RequestTrickOrTreat:InvokeServer(unpack(args)) end)
+        if ok and result then
+            UpdateHouseProgress(house)
+            -- Fast click spam
+            local startTime = os.clock()
+            while os.clock() - startTime < 8 do
+                pcall(function() ToolServiceRE:FireServer() end)
+                task.wait(0.05)
+            end
+            pcall(function() EndTrickOrTreat:InvokeServer(unpack(args)) end)
+            houseTimers[house] = os.clock()
+            UpdateHouseProgress(house)
+        end
+    end)
+end
+
+-- Auto-knock loop
+spawn(function()
+    while true do
+        if autoEnabled then
+            for _, house in ipairs(housesFolder:GetChildren()) do
+                TrickOrTreatHouse(house)
+            end
+        end
+        task.wait(1)
+    end
+end)
+
+-- Update progress bars continuously
+spawn(function()
+    while true do
+        for _, house in ipairs(housesFolder:GetChildren()) do
+            UpdateHouseProgress(house)
+        end
+        task.wait(0.5)
+    end
+end)
+
+-- ===== Draggable =====
+local dragging = false
+local dragInput, dragStart, startPos
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Minimize button
+local isMinimized = false
+minimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    scrollingFrame.Visible = not isMinimized
+    frame.Size = isMinimized and UDim2.new(0, 180, 0, 55) or UDim2.new(0, 180, 0, 150)
+end)
+
+-- Create initial UI for existing houses
+for _, house in ipairs(housesFolder:GetChildren()) do
+    CreateHouseUI(house.Name)
+end
+
+    end
+})
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Quest Token", 
