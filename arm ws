@@ -30,7 +30,7 @@ GUI:CreateSection({
     text = "Player"
 })
 -- Assuming you have a UI library with CreateToggle function
-CreateToggle({
+GUI:CreateToggle({
     parent = main,
     text = "Auto Trick and Treat",
     default = true,
