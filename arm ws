@@ -29,7 +29,6 @@ GUI:CreateSection({
     parent = main, 
     text = "Player"
 })
--- Assuming you have a UI library with CreateToggle function
 GUI:CreateToggle({
     parent = main,
     text = "Auto Trick and Treat",
@@ -1209,7 +1208,7 @@ GUI:CreateToggle({
 
                 -- ===== FUNCTIONS =====
                 local function AutoFight(npcName)
-                    ArmWrestleController.RequestStartFight(npcName or "ToyBananaMonkey")
+                    ArmWrestleController.RequestStartFight(npcName or "Mummy")
                     ArmWrestleService:SetAuto(true)
                 end
 
