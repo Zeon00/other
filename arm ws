@@ -1657,7 +1657,7 @@ GUI:CreateToggle({
             -- Auto relog every 60 minutes
             task.spawn(function()
                 while _G.antiAFK do
-                    task.wait(180 * 60) -- 120 minutes
+                    task.wait(480 * 60) -- 120 minutes
                     if _G.antiAFK then
                         print("Auto relog after 60 minutes")
                         TeleportService:Teleport(placeId, player)
