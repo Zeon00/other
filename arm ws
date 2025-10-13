@@ -1094,40 +1094,56 @@ GUI:CreateToggle({
         local Players = game:GetService("Players")
         local RunService = game:GetService("RunService")
 
-        -- Connections we will disconnect later
+        -- Simpan GUI yang dihapus agar bisa dikembalikan
+        local savedGUIs = {}
+
+        -- Connections
         local heartbeatConn
         local playerAddedConn
 
-        -- Function to monitor a player's PlayerGui
         local function monitorPlayerGui(player)
             local playerGui = player:WaitForChild("PlayerGui")
 
-            -- Delete existing GUIs
-            for _, guiName in ipairs({"Fighting", "GameUI"}) do
-                local gui = playerGui:FindFirstChild(guiName)
-                if gui then
-                    gui:Destroy()
+            -- Jika toggle aktif (hapus)
+            if delfight then
+                for _, guiName in ipairs({"Fighting", "GameUI"}) do
+                    local gui = playerGui:FindFirstChild(guiName)
+                    if gui then
+                        -- Simpan clone sebelum hapus
+                        if not savedGUIs[player] then
+                            savedGUIs[player] = {}
+                        end
+                        savedGUIs[player][guiName] = gui:Clone()
+                        gui:Destroy()
+                    end
+                end
+
+                -- Jika GUI baru muncul, hapus lagi
+                playerGui.ChildAdded:Connect(function(child)
+                    if delfight and (child.Name == "Fighting" or child.Name == "GameUI") then
+                        child:Destroy()
+                    end
+                end)
+
+            else
+                -- Restore GUI yang disimpan
+                if savedGUIs[player] then
+                    for guiName, guiClone in pairs(savedGUIs[player]) do
+                        if not playerGui:FindFirstChild(guiName) then
+                            guiClone:Clone().Parent = playerGui
+                        end
+                    end
+                    savedGUIs[player] = nil
                 end
             end
-
-            -- Delete any new GUIs when added
-            playerGui.ChildAdded:Connect(function(child)
-                if delfight and (child.Name == "Fighting" or child.Name == "GameUI") then
-                    child:Destroy()
-                end
-            end)
         end
 
         if delfight then
-            -- Apply to current players
             for _, player in ipairs(Players:GetPlayers()) do
                 monitorPlayerGui(player)
             end
-
-            -- Apply to new players
             playerAddedConn = Players.PlayerAdded:Connect(monitorPlayerGui)
 
-            -- Continuous deletion loop (failsafe)
             heartbeatConn = RunService.Heartbeat:Connect(function()
                 for _, player in ipairs(Players:GetPlayers()) do
                     local playerGui = player:FindFirstChild("PlayerGui")
@@ -1135,6 +1151,10 @@ GUI:CreateToggle({
                         for _, guiName in ipairs({"Fighting", "GameUI"}) do
                             local gui = playerGui:FindFirstChild(guiName)
                             if gui then
+                                if not savedGUIs[player] then
+                                    savedGUIs[player] = {}
+                                end
+                                savedGUIs[player][guiName] = gui:Clone()
                                 gui:Destroy()
                             end
                         end
@@ -1142,7 +1162,7 @@ GUI:CreateToggle({
                 end
             end)
         else
-            -- Toggle off: disconnect everything
+            -- Matikan auto delete
             if heartbeatConn then
                 heartbeatConn:Disconnect()
                 heartbeatConn = nil
@@ -1151,9 +1171,15 @@ GUI:CreateToggle({
                 playerAddedConn:Disconnect()
                 playerAddedConn = nil
             end
+
+            -- Kembalikan GUI untuk semua player
+            for _, player in ipairs(Players:GetPlayers()) do
+                monitorPlayerGui(player)
+            end
         end
     end
 })
+
 
 GUI:CreateToggle({
     parent = main,
