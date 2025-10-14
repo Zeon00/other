@@ -2208,9 +2208,8 @@ GUI:CreateButton({
     parent = main, 
     text = "Brew Hallowen", 
     callback = function()
--- 🎃 Halloween Brewer (Compact Final)
--- Features: 10 recipes, toggles auto-loop, 60s cooldown, progress bar, movable, minimize->draggable bubble, close
--- Paste into a LocalScript or executor
+-- 🎃 Halloween Brewer (Mobile Scaled)
+-- Auto-resize UI untuk Android & PC
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -2224,7 +2223,7 @@ local BrewRemote = ReplicatedStorage
 	:WaitForChild("Services"):WaitForChild("BrewingService")
 	:WaitForChild("RF"):WaitForChild("Brew")
 
--- Full recipes (1..10)
+-- Recipes
 local Recipes = {
 	[1]  = { Reward = "Cookie", Ingredients = { ["2"]=3, ["3"]=5 } },
 	[2]  = { Reward = "Starfruit", Ingredients = { ["4"]=4, ["5"]=10 } },
@@ -2244,8 +2243,7 @@ local ingredientNames = {
 	["7"]="Candy Corn", ["8"]="Zombie Hand", ["9"]="Coffin"
 }
 
--- CONFIG
-local COOLDOWN = 60 -- seconds between crafts
+local COOLDOWN = 60
 
 -- GUI root
 local screenGui = Instance.new("ScreenGui")
@@ -2253,162 +2251,147 @@ screenGui.Name = "HalloweenBrewer"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Main panel
+-- Dapatkan resolusi layar untuk scaling
+local viewport = workspace.CurrentCamera.ViewportSize
+local scaleFactor = math.clamp(viewport.Y / 1080, 0.6, 1.0) -- skala lebih kecil di HP
+
+-- Main frame (auto scale)
 local main = Instance.new("Frame", screenGui)
 main.Name = "Main"
-main.Size = UDim2.new(0, 380, 0, 520)
-main.Position = UDim2.new(0.5, -190, 0.5, -260)
+main.Size = UDim2.new(0, 380 * scaleFactor, 0, 520 * scaleFactor)
+main.Position = UDim2.new(0.5, -190 * scaleFactor, 0.5, -260 * scaleFactor)
 main.BackgroundColor3 = Color3.fromRGB(24,24,24)
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12 * scaleFactor)
 
+-- Header
 local header = Instance.new("Frame", main)
-header.Size = UDim2.new(1,0,0,40)
-header.Position = UDim2.new(0,0,0,0)
+header.Size = UDim2.new(1,0,0,40 * scaleFactor)
 header.BackgroundColor3 = Color3.fromRGB(34,34,34)
-Instance.new("UICorner", header).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 12 * scaleFactor)
 
 local title = Instance.new("TextLabel", header)
-title.Size = UDim2.new(1, -120, 1, 0)
-title.Position = UDim2.new(0, 12, 0, 0)
+title.Size = UDim2.new(1, -120 * scaleFactor, 1, 0)
+title.Position = UDim2.new(0, 12 * scaleFactor, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "🎃 Halloween Brewer"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 18
+title.TextSize = 18 * scaleFactor
 title.TextColor3 = Color3.fromRGB(255,170,80)
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 local minimizeBtn = Instance.new("TextButton", header)
-minimizeBtn.Size = UDim2.new(0,36,0,28)
-minimizeBtn.Position = UDim2.new(1, -86, 0, 6)
+minimizeBtn.Size = UDim2.new(0,36 * scaleFactor,0,28 * scaleFactor)
+minimizeBtn.Position = UDim2.new(1, -86 * scaleFactor, 0, 6 * scaleFactor)
 minimizeBtn.BackgroundColor3 = Color3.fromRGB(48,48,48)
 minimizeBtn.Text = "-"
 minimizeBtn.Font = Enum.Font.GothamBold
-minimizeBtn.TextSize = 18
-minimizeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+minimizeBtn.TextSize = 18 * scaleFactor
+minimizeBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(1,0)
 
 local closeBtn = Instance.new("TextButton", header)
-closeBtn.Size = UDim2.new(0,36,0,28)
-closeBtn.Position = UDim2.new(1, -44, 0, 6)
+closeBtn.Size = UDim2.new(0,36 * scaleFactor,0,28 * scaleFactor)
+closeBtn.Position = UDim2.new(1, -44 * scaleFactor, 0, 6 * scaleFactor)
 closeBtn.BackgroundColor3 = Color3.fromRGB(110,40,40)
 closeBtn.Text = "X"
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 16
-closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.TextSize = 16 * scaleFactor
+closeBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1,0)
 
--- Scroll area
+-- Scroll list
 local scroll = Instance.new("ScrollingFrame", main)
-scroll.Name = "List"
-scroll.Position = UDim2.new(0,8,0,48)
-scroll.Size = UDim2.new(1,-16,1,-56)
-scroll.CanvasSize = UDim2.new(0,0,0, #Recipes * 115)
+scroll.Position = UDim2.new(0,8 * scaleFactor,0,48 * scaleFactor)
+scroll.Size = UDim2.new(1,-16 * scaleFactor,1,-56 * scaleFactor)
+scroll.CanvasSize = UDim2.new(0,0,0, #Recipes * 100 * scaleFactor)
 scroll.BackgroundTransparency = 1
-scroll.ScrollBarThickness = 6
+scroll.ScrollBarThickness = 6 * scaleFactor
 local layout = Instance.new("UIListLayout", scroll)
-layout.Padding = UDim.new(0,8)
+layout.Padding = UDim.new(0,8 * scaleFactor)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Floating draggable bubble
+-- Floating bubble
 local bubble = Instance.new("TextButton", screenGui)
-bubble.Name = "Bubble"
-bubble.Size = UDim2.new(0,56,0,56)
-bubble.Position = UDim2.new(1, -86, 1, -96)
+bubble.Size = UDim2.new(0,56 * scaleFactor,0,56 * scaleFactor)
+bubble.Position = UDim2.new(1, -86 * scaleFactor, 1, -96 * scaleFactor)
 bubble.BackgroundColor3 = Color3.fromRGB(255,140,0)
 bubble.Text = "🎃"
 bubble.Font = Enum.Font.GothamBold
-bubble.TextSize = 28
+bubble.TextSize = 28 * scaleFactor
 bubble.TextColor3 = Color3.new(1,1,1)
 bubble.Visible = false
 Instance.new("UICorner", bubble).CornerRadius = UDim.new(1,0)
 
--- Make bubble draggable like a mobile bubble
+-- Drag bubble
 do
-	local dragging = false
-	local dragStart = nil
-	local startPos = nil
-	bubble.InputBegan:Connect(function(inp)
-		if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+	local dragging, dragStart, startPos
+	bubble.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
-			dragStart = inp.Position
+			dragStart = i.Position
 			startPos = bubble.Position
-			inp.Changed:Connect(function()
-				if inp.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
+			i.Changed:Connect(function()
+				if i.UserInputState == Enum.UserInputState.End then dragging = false end
 			end)
 		end
 	end)
-	UserInputService.InputChanged:Connect(function(inp)
-		if dragging and inp.UserInputType == Enum.UserInputType.MouseMovement then
-			local delta = inp.Position - dragStart
-			bubble.Position = UDim2.new(
-				startPos.X.Scale,
-				startPos.X.Offset + delta.X,
-				startPos.Y.Scale,
-				startPos.Y.Offset + delta.Y
-			)
+	UserInputService.InputChanged:Connect(function(i)
+		if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = i.Position - dragStart
+			bubble.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+				startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 		end
 	end)
 end
 
--- storage for toggles & progress UI
-local toggles = {}
-local progressFills = {}
-
--- brew helper (safe)
+-- brew helper
+local toggles, progressFills = {}, {}
 local function DoBrew(recipe)
-	local args = { {} }
-	for id, amt in pairs(recipe.Ingredients) do
-		args[1][id] = { Amount = amt, Slot = tonumber(id) or 1 }
-	end
-	-- call in protected thread
 	task.spawn(function()
-		local ok, err = pcall(function() BrewRemote:InvokeServer(unpack(args)) end)
-		if not ok then
-			warn("Brewing failed:", err)
+		local args = { {} }
+		for id, amt in pairs(recipe.Ingredients) do
+			args[1][id] = { Amount = amt, Slot = tonumber(id) or 1 }
 		end
+		pcall(function() BrewRemote:InvokeServer(unpack(args)) end)
 	end)
 end
 
--- create entries
+-- list entries
 for i, recipe in ipairs(Recipes) do
 	local entry = Instance.new("Frame", scroll)
-	entry.Size = UDim2.new(1, -4, 0, 110)
+	entry.Size = UDim2.new(1, -4, 0, 90 * scaleFactor)
 	entry.BackgroundColor3 = Color3.fromRGB(40,40,40)
 	entry.BorderSizePixel = 0
-	Instance.new("UICorner", entry).CornerRadius = UDim.new(0,8)
+	Instance.new("UICorner", entry).CornerRadius = UDim.new(0,8 * scaleFactor)
 
 	local toggle = Instance.new("TextButton", entry)
-	toggle.Size = UDim2.new(0,30,0,30)
-	toggle.Position = UDim2.new(0,10,0,10)
+	toggle.Size = UDim2.new(0,26 * scaleFactor,0,26 * scaleFactor)
+	toggle.Position = UDim2.new(0,10 * scaleFactor,0,10 * scaleFactor)
 	toggle.Text = ""
 	toggle.BackgroundColor3 = Color3.fromRGB(70,70,70)
 	Instance.new("UICorner", toggle).CornerRadius = UDim.new(1,0)
 
 	local name = Instance.new("TextLabel", entry)
-	name.Position = UDim2.new(0,50,0,8)
-	name.Size = UDim2.new(1,-60,0,22)
+	name.Position = UDim2.new(0,44 * scaleFactor,0,6 * scaleFactor)
+	name.Size = UDim2.new(1,-60 * scaleFactor,0,20 * scaleFactor)
 	name.BackgroundTransparency = 1
 	name.Font = Enum.Font.GothamBold
-	name.TextSize = 16
+	name.TextSize = 15 * scaleFactor
 	name.TextColor3 = Color3.fromRGB(255,200,100)
 	name.TextXAlignment = Enum.TextXAlignment.Left
 	name.Text = recipe.Reward
 
 	local ing = Instance.new("TextLabel", entry)
-	ing.Position = UDim2.new(0,14,0,34)
-	ing.Size = UDim2.new(1,-28,0,48)
+	ing.Position = UDim2.new(0,14 * scaleFactor,0,32 * scaleFactor)
+	ing.Size = UDim2.new(1,-28 * scaleFactor,0,36 * scaleFactor)
 	ing.BackgroundTransparency = 1
 	ing.Font = Enum.Font.Gotham
-	ing.TextSize = 13
+	ing.TextSize = 12 * scaleFactor
 	ing.TextWrapped = true
 	ing.TextColor3 = Color3.fromRGB(230,230,230)
-	ing.TextXAlignment = Enum.TextXAlignment.Left
-	ing.TextYAlignment = Enum.TextYAlignment.Top
 	local parts = {}
 	for id, amt in pairs(recipe.Ingredients) do
 		table.insert(parts, string.format("%s ×%d", ingredientNames[id] or id, amt))
@@ -2417,67 +2400,42 @@ for i, recipe in ipairs(Recipes) do
 
 	-- progress bar
 	local bar = Instance.new("Frame", entry)
-	bar.Size = UDim2.new(1, -24, 0, 12)
-	bar.Position = UDim2.new(0,12,1,-18)
+	bar.Size = UDim2.new(1, -24 * scaleFactor, 0, 10 * scaleFactor)
+	bar.Position = UDim2.new(0,12 * scaleFactor,1,-14 * scaleFactor)
 	bar.BackgroundColor3 = Color3.fromRGB(65,65,65)
 	bar.BorderSizePixel = 0
-	Instance.new("UICorner", bar).CornerRadius = UDim.new(0,6)
+	Instance.new("UICorner", bar).CornerRadius = UDim.new(0,6 * scaleFactor)
 
 	local fill = Instance.new("Frame", bar)
 	fill.Size = UDim2.new(0,0,1,0)
-	fill.Position = UDim2.new(0,0,0,0)
 	fill.BackgroundColor3 = Color3.fromRGB(255,140,0)
-	Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6)
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6 * scaleFactor)
 
-	-- store UI refs
 	toggles[i] = false
 	progressFills[i] = fill
 
-	-- toggle behaviour: auto-loop with COOLDOWN seconds and animated progress
 	toggle.MouseButton1Click:Connect(function()
 		toggles[i] = not toggles[i]
 		toggle.BackgroundColor3 = toggles[i] and Color3.fromRGB(255,140,0) or Color3.fromRGB(70,70,70)
-
 		if toggles[i] then
-			-- spawn loop
 			task.spawn(function()
 				while toggles[i] do
-					-- invoke brew
 					DoBrew(recipe)
-					-- animate progress over COOLDOWN seconds
-					local startTime = tick()
-					local finished = false
-					while tick() - startTime < COOLDOWN do
-						if not toggles[i] then finished = true; break end
-						local pct = (tick() - startTime) / COOLDOWN
-						if pct < 0 then pct = 0 end
-						if pct > 1 then pct = 1 end
-						-- update fill (avoid heavy updates)
-						fill.Size = UDim2.new(pct, 0, 1, 0)
+					local start = tick()
+					while tick() - start < COOLDOWN and toggles[i] do
+						fill.Size = UDim2.new((tick()-start)/COOLDOWN,0,1,0)
 						task.wait(0.15)
 					end
-					if not toggles[i] then break end
-					-- ensure full
-					fill.Size = UDim2.new(1,0,1,0)
-					-- short pause before resetting bar
-					task.wait(0.1)
 					fill.Size = UDim2.new(0,0,1,0)
-					-- if still toggled, loop continues
-					if finished then break end
-				end
-				-- reset fill when stopped
-				if progressFills[i] then
-					progressFills[i].Size = UDim2.new(0,0,1,0)
 				end
 			end)
 		else
-			-- stopped: reset bar
 			fill.Size = UDim2.new(0,0,1,0)
 		end
 	end)
 end
 
--- minimize to bubble and restore
+-- minimize / restore
 minimizeBtn.MouseButton1Click:Connect(function()
 	main.Visible = false
 	bubble.Visible = true
@@ -2486,15 +2444,13 @@ bubble.MouseButton1Click:Connect(function()
 	main.Visible = true
 	bubble.Visible = false
 end)
-
--- close destroys GUI and stops loops
 closeBtn.MouseButton1Click:Connect(function()
-	-- stop all toggles
-	for k,_ in pairs(toggles) do toggles[k] = false end
+	for k in pairs(toggles) do toggles[k] = false end
 	screenGui:Destroy()
 end)
 
-print("🎃 Halloween Brewer loaded — auto-brew toggles active (60s cooldown).")
+print("🎃 Halloween Brewer (mobile-scaled) loaded!")
+
 
     end
 })
