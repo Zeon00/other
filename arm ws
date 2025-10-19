@@ -2462,7 +2462,7 @@ GUI:CreateButton({
     text = "Auto Digger and Claim", 
     callback = function()
 -- ⚙️ Grave Tools GUI (Auto Dig, Claim, Teleport, Moveable, Minimize, Destroy)
--- ✅ Supports GraveDigger teleport and auto dig system
+-- ✅ Supports GraveDigger teleport and auto dig system + floating minimize icon
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -2487,6 +2487,7 @@ local gui = Instance.new("ScreenGui", PlayerGui)
 gui.Name = "GraveToolsGUI"
 gui.ResetOnSpawn = false
 
+-- Main Frame
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 230, 0, 180)
 frame.Position = UDim2.new(0.5, -115, 0.4, 0)
@@ -2512,7 +2513,7 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 14
 title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimize + X
+-- Minimize + Close
 local minimize = Instance.new("TextButton", header)
 minimize.Size = UDim2.new(0, 25, 1, 0)
 minimize.Position = UDim2.new(1, -50, 0, 0)
@@ -2531,7 +2532,20 @@ close.TextColor3 = Color3.fromRGB(255, 80, 80)
 close.Font = Enum.Font.GothamBold
 close.TextSize = 16
 
--- Buttons
+-- Create floating ⚙️ icon
+local floatIcon = Instance.new("TextButton", gui)
+floatIcon.Size = UDim2.new(0, 45, 0, 45)
+floatIcon.Position = UDim2.new(0.02, 0, 0.7, 0)
+floatIcon.BackgroundColor3 = Color3.fromRGB(55, 55, 60)
+floatIcon.Text = "⚙️"
+floatIcon.TextSize = 28
+floatIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+floatIcon.Visible = false
+floatIcon.Active = true
+floatIcon.Draggable = true
+Instance.new("UICorner", floatIcon).CornerRadius = UDim.new(0, 12)
+
+-- Buttons factory
 local function makeButton(text, yPos, color)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -20, 0, 35)
@@ -2551,7 +2565,8 @@ local autoClaim = makeButton("Auto Claim: OFF", 85)
 local teleportBtn = makeButton("Teleport to GraveDigger", 130, Color3.fromRGB(60, 100, 180))
 
 -- Toggle states
-local digEnabled, claimEnabled = false, false
+local digEnabled, claimEnabled, minimized = false, false, false
+
 autoDig.MouseButton1Click:Connect(function()
 	digEnabled = not digEnabled
 	autoDig.Text = digEnabled and "Auto Dig: ON" or "Auto Dig: OFF"
@@ -2564,29 +2579,37 @@ autoClaim.MouseButton1Click:Connect(function()
 	autoClaim.BackgroundColor3 = claimEnabled and Color3.fromRGB(60, 180, 75) or Color3.fromRGB(180, 60, 60)
 end)
 
-
--- Teleport button logic (to fixed coordinates)
+-- Teleport to fixed coordinates
 teleportBtn.MouseButton1Click:Connect(function()
 	local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
 	if root then
 		root.CFrame = CFrame.new(Vector3.new(-12774.987, 13.554, -2643.155))
-		print("[Teleport] Moved to GraveDigger spot successfully.")
+		print("[Teleport] Moved to GraveDigger successfully.")
 	else
 		warn("No HumanoidRootPart found!")
 	end
 end)
 
-
--- Close + minimize logic
-local minimized = false
+-- Minimize logic
 minimize.MouseButton1Click:Connect(function()
 	minimized = not minimized
-	for _, child in ipairs(frame:GetChildren()) do
-		if child ~= header then child.Visible = not minimized end
+	if minimized then
+		frame.Visible = false
+		floatIcon.Visible = true
+	else
+		frame.Visible = true
+		floatIcon.Visible = false
 	end
-	frame.Size = minimized and UDim2.new(0, 230, 0, 25) or UDim2.new(0, 230, 0, 180)
 end)
 
+-- Floating ⚙️ icon click -> reopen GUI
+floatIcon.MouseButton1Click:Connect(function()
+	minimized = false
+	frame.Visible = true
+	floatIcon.Visible = false
+end)
+
+-- Close button
 close.MouseButton1Click:Connect(function()
 	gui:Destroy()
 end)
