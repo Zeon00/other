@@ -2457,6 +2457,170 @@ end)
 
 print("🎃 Halloween Brewer (mobile-scaled, updated data) loaded!")
 end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Lds Mutate", 
+    callback = function()
+-- ⚰️ Grave Auto-Digger GUI (Movable + Minimize + Destroy)
+-- Works for mobile & PC, safe Knit-based structure
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- Knit Remotes
+local GraveService = ReplicatedStorage.Packages.Knit.Services.GraveDiggerService.RF
+local DigGraveRF = GraveService:WaitForChild("DigGrave")
+local ClaimGraveDiggerRF = GraveService:WaitForChild("ClaimGraveDigger")
+
+-- Create ScreenGui
+local gui = Instance.new("ScreenGui")
+gui.Name = "GraveAutoDigUI"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
+
+-- Main Frame
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 210, 0, 130)
+main.Position = UDim2.new(0.5, -105, 0.75, 0)
+main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.Parent = gui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 28)
+titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = main
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel", titleBar)
+title.Size = UDim2.new(1, -60, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.Text = "⚰️ Grave Digger"
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(255, 170, 100)
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Minimize and Destroy Buttons
+local minimize = Instance.new("TextButton", titleBar)
+minimize.Size = UDim2.new(0, 24, 0, 24)
+minimize.Position = UDim2.new(1, -54, 0, 2)
+minimize.Text = "–"
+minimize.Font = Enum.Font.GothamBold
+minimize.TextSize = 20
+minimize.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+minimize.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", minimize).CornerRadius = UDim.new(0, 6)
+
+local close = Instance.new("TextButton", titleBar)
+close.Size = UDim2.new(0, 24, 0, 24)
+close.Position = UDim2.new(1, -28, 0, 2)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 16
+close.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+close.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", close).CornerRadius = UDim.new(0, 6)
+
+-- Buttons Container
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, -20, 0, 90)
+content.Position = UDim2.new(0, 10, 0, 36)
+content.BackgroundTransparency = 1
+content.Parent = main
+
+local autoBtn = Instance.new("TextButton", content)
+autoBtn.Size = UDim2.new(1, 0, 0, 38)
+autoBtn.Position = UDim2.new(0, 0, 0, 0)
+autoBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+autoBtn.Text = "Auto Dig: OFF"
+autoBtn.Font = Enum.Font.GothamBold
+autoBtn.TextSize = 16
+autoBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", autoBtn).CornerRadius = UDim.new(0, 8)
+
+local claimBtn = Instance.new("TextButton", content)
+claimBtn.Size = UDim2.new(1, 0, 0, 38)
+claimBtn.Position = UDim2.new(0, 0, 0, 48)
+claimBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 180)
+claimBtn.Text = "Claim Digger"
+claimBtn.Font = Enum.Font.GothamBold
+claimBtn.TextSize = 16
+claimBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", claimBtn).CornerRadius = UDim.new(0, 8)
+
+-- Behavior Logic
+local autoEnabled = false
+local minimized = false
+
+autoBtn.MouseButton1Click:Connect(function()
+	autoEnabled = not autoEnabled
+	autoBtn.Text = autoEnabled and "Auto Dig: ON" or "Auto Dig: OFF"
+	autoBtn.BackgroundColor3 = autoEnabled
+		and Color3.fromRGB(60, 180, 75)
+		or Color3.fromRGB(180, 60, 60)
+end)
+
+claimBtn.MouseButton1Click:Connect(function()
+	local success = ClaimGraveDiggerRF:InvokeServer()
+	if success then
+		claimBtn.Text = "✅ Claimed!"
+		claimBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 75)
+	else
+		claimBtn.Text = "❌ Failed"
+		claimBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+	end
+	task.wait(2)
+	claimBtn.Text = "Claim Digger"
+	claimBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 180)
+end)
+
+-- Minimize toggle
+minimize.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	content.Visible = not minimized
+	main.Size = minimized and UDim2.new(0, 210, 0, 30) or UDim2.new(0, 210, 0, 130)
+	minimize.Text = minimized and "+" or "–"
+end)
+
+-- Destroy GUI
+close.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+-- Auto Dig loop
+task.spawn(function()
+	while task.wait(1) do
+		if not autoEnabled then continue end
+
+		for _, grave in CollectionService:GetTagged("GraveDigging") do
+			local primary = grave:FindFirstChild("Primary")
+			if not primary then continue end
+
+			local timerGui = primary:FindFirstChild("TimerAtt")
+				and primary.TimerAtt:FindFirstChild("BillboardGui")
+
+			if timerGui and not timerGui.Enabled then
+				local success = DigGraveRF:InvokeServer(grave)
+				if success then
+					print("[AutoDig] Dug:", grave.Name)
+				end
+			end
+		end
+	end
+end)
+print("✅ Movable Grave Auto-Digger GUI loaded.")
+    end
+})
 local main = GUI:CreateTab("misc", "egg") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
