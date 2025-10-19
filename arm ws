@@ -2208,7 +2208,7 @@ GUI:CreateButton({
     parent = main, 
     text = "Brew Hallowen", 
     callback = function()
--- 🎃 Halloween Brewer (Mobile Scaled)
+-- 🎃 Halloween Brewer (Mobile Scaled - Updated)
 -- Auto-resize UI untuk Android & PC
 
 local Players = game:GetService("Players")
@@ -2223,7 +2223,7 @@ local BrewRemote = ReplicatedStorage
 	:WaitForChild("Services"):WaitForChild("BrewingService")
 	:WaitForChild("RF"):WaitForChild("Brew")
 
--- Recipes
+-- Recipes (Updated with new decompiled data)
 local Recipes = {
 	[1]  = { Reward = "Cookie", Ingredients = { ["2"]=3, ["3"]=5 } },
 	[2]  = { Reward = "Starfruit", Ingredients = { ["4"]=4, ["5"]=10 } },
@@ -2235,12 +2235,18 @@ local Recipes = {
 	[8]  = { Reward = "Wins Potion", Ingredients = { ["2"]=1, ["3"]=2, ["4"]=3 } },
 	[9]  = { Reward = "Luck Potion", Ingredients = { ["1"]=1, ["8"]=15, ["9"]=20 } },
 	[10] = { Reward = "Halloween 2025 Training Potion", Ingredients = { ["1"]=1, ["4"]=15, ["9"]=25 } },
+	[11] = { Reward = "Halloween 2025 Training Potion (v2)", Ingredients = { ["10"]=15, ["12"]=30, ["15"]=8 } },
+	[12] = { Reward = "Spooky Tower Key", Ingredients = { ["11"]=15, ["13"]=20, ["15"]=4 } },
+	[13] = { Reward = "Haunted Ticket", Ingredients = { ["14"]=5, ["12"]=4, ["10"]=3 } },
 }
 
+-- Ingredient names (Updated)
 local ingredientNames = {
 	["1"]="Cave Bat", ["2"]="Spooky Ghost", ["3"]="Witch Hat",
 	["4"]="Wizard Hat", ["5"]="Spiders Web", ["6"]="Jack O Lantern",
-	["7"]="Candy Corn", ["8"]="Zombie Hand", ["9"]="Coffin"
+	["7"]="Candy Corn", ["8"]="Zombie Hand", ["9"]="Coffin",
+	["10"]="Broomstick", ["11"]="Witch Cauldron", ["12"]="Ghost Soul",
+	["13"]="Green Ghost Soul", ["14"]="Blue Ghost Soul", ["15"]="Tombstone"
 }
 
 local COOLDOWN = 60
@@ -2253,9 +2259,9 @@ screenGui.Parent = playerGui
 
 -- Dapatkan resolusi layar untuk scaling
 local viewport = workspace.CurrentCamera.ViewportSize
-local scaleFactor = math.clamp(viewport.Y / 1080, 0.6, 1.0) -- skala lebih kecil di HP
+local scaleFactor = math.clamp(viewport.Y / 1080, 0.6, 1.0)
 
--- Main frame (auto scale)
+-- Main frame
 local main = Instance.new("Frame", screenGui)
 main.Name = "Main"
 main.Size = UDim2.new(0, 380 * scaleFactor, 0, 520 * scaleFactor)
@@ -2347,7 +2353,7 @@ do
 	end)
 end
 
--- brew helper
+-- Brew function
 local toggles, progressFills = {}, {}
 local function DoBrew(recipe)
 	task.spawn(function()
@@ -2359,7 +2365,7 @@ local function DoBrew(recipe)
 	end)
 end
 
--- list entries
+-- List entries
 for i, recipe in ipairs(Recipes) do
 	local entry = Instance.new("Frame", scroll)
 	entry.Size = UDim2.new(1, -4, 0, 90 * scaleFactor)
@@ -2449,11 +2455,8 @@ closeBtn.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 end)
 
-print("🎃 Halloween Brewer (mobile-scaled) loaded!")
-
-
-    end
-})
+print("🎃 Halloween Brewer (mobile-scaled, updated data) loaded!")
+end})
 local main = GUI:CreateTab("misc", "egg") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
