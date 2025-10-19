@@ -2457,194 +2457,186 @@ end)
 
 print("🎃 Halloween Brewer (mobile-scaled, updated data) loaded!")
 end})
-GUI:CreateButton({
+GUI:CreateToggle({
     parent = main, 
-    text = "Auto Digger and Claim", 
-    callback = function()
--- ⚙️ Grave Tools GUI (Auto Dig, Claim, Teleport, Moveable, Minimize, Destroy)
--- ✅ Supports GraveDigger teleport and auto dig system + floating minimize icon
+    text = "Auto Digger Claim", 
+    default = true, 
+    callback = function(digger)
+        if digger then	
+            _G.digger1 = true
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CollectionService = game:GetService("CollectionService")
-local UIS = game:GetService("UserInputService")
-local Player = Players.LocalPlayer
-local Character = Player.Character or Player.CharacterAdded:Wait()
-local PlayerGui = Player:WaitForChild("PlayerGui")
+            -- ⚙️ Grave Tools GUI (Auto Dig, Claim, Teleport, Moveable, Minimize, Destroy)
+            local Players = game:GetService("Players")
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            local CollectionService = game:GetService("CollectionService")
+            local UIS = game:GetService("UserInputService")
+            local Player = Players.LocalPlayer
+            local Character = Player.Character or Player.CharacterAdded:Wait()
+            local PlayerGui = Player:WaitForChild("PlayerGui")
 
--- Knit Services
-local KnitServices = ReplicatedStorage.Packages.Knit.Services
-local GraveServiceRF = KnitServices.GraveDiggerService.RF
-local GraveMonsterRE = KnitServices.GraveMonsterService.RE
+            -- Knit Services
+            local KnitServices = ReplicatedStorage.Packages.Knit.Services
+            local GraveServiceRF = KnitServices.GraveDiggerService.RF
+            local GraveMonsterRE = KnitServices.GraveMonsterService.RE
 
-local DigGraveRF = GraveServiceRF:WaitForChild("DigGrave")
-local ClaimDiggerRF = GraveServiceRF:WaitForChild("ClaimGraveDigger")
-local SpawnGraveSignal = GraveMonsterRE:WaitForChild("SpawnGraveSignal")
-local SetupGraveSignal = GraveMonsterRE:WaitForChild("SetupGraveSignal")
+            local DigGraveRF = GraveServiceRF:WaitForChild("DigGrave")
+            local ClaimDiggerRF = GraveServiceRF:WaitForChild("ClaimGraveDigger")
+            local SpawnGraveSignal = GraveMonsterRE:WaitForChild("SpawnGraveSignal")
+            local SetupGraveSignal = GraveMonsterRE:WaitForChild("SetupGraveSignal")
 
--- GUI Setup
-local gui = Instance.new("ScreenGui", PlayerGui)
-gui.Name = "GraveToolsGUI"
-gui.ResetOnSpawn = false
+            -- GUI Setup
+            local gui = Instance.new("ScreenGui", PlayerGui)
+            gui.Name = "GraveToolsGUI"
+            gui.ResetOnSpawn = false
 
--- Main Frame
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 230, 0, 180)
-frame.Position = UDim2.new(0.5, -115, 0.4, 0)
-frame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-frame.Active = true
-frame.Draggable = true
-frame.Parent = gui
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+            -- Main Frame
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(0, 230, 0, 180)
+            frame.Position = UDim2.new(0.5, -115, 0.4, 0)
+            frame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+            frame.Active = true
+            frame.Draggable = true
+            frame.Parent = gui
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 
--- Header
-local header = Instance.new("Frame", frame)
-header.Size = UDim2.new(1, 0, 0, 25)
-header.BackgroundColor3 = Color3.fromRGB(55, 55, 60)
-Instance.new("UICorner", header).CornerRadius = UDim.new(0, 10)
+            -- Header
+            local header = Instance.new("Frame", frame)
+            header.Size = UDim2.new(1, 0, 0, 25)
+            header.BackgroundColor3 = Color3.fromRGB(55, 55, 60)
+            Instance.new("UICorner", header).CornerRadius = UDim.new(0, 10)
 
-local title = Instance.new("TextLabel", header)
-title.Size = UDim2.new(1, -50, 1, 0)
-title.Position = UDim2.new(0, 10, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "⚙️ Grave Tools"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 14
-title.TextXAlignment = Enum.TextXAlignment.Left
+            local title = Instance.new("TextLabel", header)
+            title.Size = UDim2.new(1, -50, 1, 0)
+            title.Position = UDim2.new(0, 10, 0, 0)
+            title.BackgroundTransparency = 1
+            title.Text = "⚙️ Grave Tools"
+            title.TextColor3 = Color3.fromRGB(255, 255, 255)
+            title.Font = Enum.Font.GothamBold
+            title.TextSize = 14
+            title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimize + Close
-local minimize = Instance.new("TextButton", header)
-minimize.Size = UDim2.new(0, 25, 1, 0)
-minimize.Position = UDim2.new(1, -50, 0, 0)
-minimize.Text = "-"
-minimize.BackgroundTransparency = 1
-minimize.TextColor3 = Color3.fromRGB(200, 200, 200)
-minimize.Font = Enum.Font.GothamBold
-minimize.TextSize = 16
+            -- Minimize + Close
+            local minimize = Instance.new("TextButton", header)
+            minimize.Size = UDim2.new(0, 25, 1, 0)
+            minimize.Position = UDim2.new(1, -50, 0, 0)
+            minimize.Text = "-"
+            minimize.BackgroundTransparency = 1
+            minimize.TextColor3 = Color3.fromRGB(200, 200, 200)
+            minimize.Font = Enum.Font.GothamBold
+            minimize.TextSize = 16
 
-local close = Instance.new("TextButton", header)
-close.Size = UDim2.new(0, 25, 1, 0)
-close.Position = UDim2.new(1, -25, 0, 0)
-close.Text = "X"
-close.BackgroundTransparency = 1
-close.TextColor3 = Color3.fromRGB(255, 80, 80)
-close.Font = Enum.Font.GothamBold
-close.TextSize = 16
+            local close = Instance.new("TextButton", header)
+            close.Size = UDim2.new(0, 25, 1, 0)
+            close.Position = UDim2.new(1, -25, 0, 0)
+            close.Text = "X"
+            close.BackgroundTransparency = 1
+            close.TextColor3 = Color3.fromRGB(255, 80, 80)
+            close.Font = Enum.Font.GothamBold
+            close.TextSize = 16
 
--- Create floating ⚙️ icon
-local floatIcon = Instance.new("TextButton", gui)
-floatIcon.Size = UDim2.new(0, 45, 0, 45)
-floatIcon.Position = UDim2.new(0.02, 0, 0.7, 0)
-floatIcon.BackgroundColor3 = Color3.fromRGB(55, 55, 60)
-floatIcon.Text = "⚙️"
-floatIcon.TextSize = 28
-floatIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-floatIcon.Visible = false
-floatIcon.Active = true
-floatIcon.Draggable = true
-Instance.new("UICorner", floatIcon).CornerRadius = UDim.new(0, 12)
+            -- Floating ⚙️ icon
+            local floatIcon = Instance.new("TextButton", gui)
+            floatIcon.Size = UDim2.new(0, 45, 0, 45)
+            floatIcon.Position = UDim2.new(0.02, 0, 0.7, 0)
+            floatIcon.BackgroundColor3 = Color3.fromRGB(55, 55, 60)
+            floatIcon.Text = "⚙️"
+            floatIcon.TextSize = 28
+            floatIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+            floatIcon.Visible = false
+            floatIcon.Draggable = true
+            Instance.new("UICorner", floatIcon).CornerRadius = UDim.new(0, 12)
 
--- Buttons factory
-local function makeButton(text, yPos, color)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, -20, 0, 35)
-	btn.Position = UDim2.new(0, 10, 0, yPos)
-	btn.BackgroundColor3 = color or Color3.fromRGB(180, 60, 60)
-	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 16
-	btn.Text = text
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-	btn.Parent = frame
-	return btn
-end
+            -- Buttons
+            local function makeButton(text, yPos, color)
+                local btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(1, -20, 0, 35)
+                btn.Position = UDim2.new(0, 10, 0, yPos)
+                btn.BackgroundColor3 = color or Color3.fromRGB(180, 60, 60)
+                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                btn.Font = Enum.Font.GothamBold
+                btn.TextSize = 16
+                btn.Text = text
+                Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+                btn.Parent = frame
+                return btn
+            end
 
-local autoDig = makeButton("Auto Dig: OFF", 40)
-local autoClaim = makeButton("Auto Claim: OFF", 85)
-local teleportBtn = makeButton("Teleport to GraveDigger", 130, Color3.fromRGB(60, 100, 180))
+            local autoDig = makeButton("Auto Dig: ON", 40, Color3.fromRGB(60, 180, 75))
+            local autoClaim = makeButton("Auto Claim: ON", 85, Color3.fromRGB(60, 180, 75))
+            local teleportBtn = makeButton("Teleport to GraveDigger", 130, Color3.fromRGB(60, 100, 180))
 
--- Toggle states
-local digEnabled, claimEnabled, minimized = false, false, false
+            -- langsung aktif dari awal
+            local digEnabled, claimEnabled, minimized = true, true, false
 
-autoDig.MouseButton1Click:Connect(function()
-	digEnabled = not digEnabled
-	autoDig.Text = digEnabled and "Auto Dig: ON" or "Auto Dig: OFF"
-	autoDig.BackgroundColor3 = digEnabled and Color3.fromRGB(60, 180, 75) or Color3.fromRGB(180, 60, 60)
-end)
+            -- Tombol manual tetap bisa dipakai kalau mau
+            autoDig.MouseButton1Click:Connect(function()
+                digEnabled = not digEnabled
+                autoDig.Text = digEnabled and "Auto Dig: ON" or "Auto Dig: OFF"
+                autoDig.BackgroundColor3 = digEnabled and Color3.fromRGB(60, 180, 75) or Color3.fromRGB(180, 60, 60)
+            end)
 
-autoClaim.MouseButton1Click:Connect(function()
-	claimEnabled = not claimEnabled
-	autoClaim.Text = claimEnabled and "Auto Claim: ON" or "Auto Claim: OFF"
-	autoClaim.BackgroundColor3 = claimEnabled and Color3.fromRGB(60, 180, 75) or Color3.fromRGB(180, 60, 60)
-end)
+            autoClaim.MouseButton1Click:Connect(function()
+                claimEnabled = not claimEnabled
+                autoClaim.Text = claimEnabled and "Auto Claim: ON" or "Auto Claim: OFF"
+                autoClaim.BackgroundColor3 = claimEnabled and Color3.fromRGB(60, 180, 75) or Color3.fromRGB(180, 60, 60)
+            end)
 
--- Teleport to fixed coordinates
-teleportBtn.MouseButton1Click:Connect(function()
-	local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-	if root then
-		root.CFrame = CFrame.new(Vector3.new(-12774.987, 13.554, -2643.155))
-		print("[Teleport] Moved to GraveDigger successfully.")
-	else
-		warn("No HumanoidRootPart found!")
-	end
-end)
+            teleportBtn.MouseButton1Click:Connect(function()
+                local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    root.CFrame = CFrame.new(Vector3.new(-12774.987, 13.554, -2643.155))
+                    print("[Teleport] Moved to GraveDigger successfully.")
+                else
+                    warn("No HumanoidRootPart found!")
+                end
+            end)
 
--- Minimize logic
-minimize.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	if minimized then
-		frame.Visible = false
-		floatIcon.Visible = true
-	else
-		frame.Visible = true
-		floatIcon.Visible = false
-	end
-end)
+            -- Minimize logic
+            minimize.MouseButton1Click:Connect(function()
+                minimized = not minimized
+                frame.Visible = not minimized
+                floatIcon.Visible = minimized
+            end)
 
--- Floating ⚙️ icon click -> reopen GUI
-floatIcon.MouseButton1Click:Connect(function()
-	minimized = false
-	frame.Visible = true
-	floatIcon.Visible = false
-end)
+            floatIcon.MouseButton1Click:Connect(function()
+                minimized = false
+                frame.Visible = true
+                floatIcon.Visible = false
+            end)
 
--- Close button
-close.MouseButton1Click:Connect(function()
-	gui:Destroy()
-end)
+            close.MouseButton1Click:Connect(function()
+                gui:Destroy()
+                _G.digger1 = false
+            end)
 
--- Grave event hooks
-SpawnGraveSignal.OnClientEvent:Connect(function(data)
-	print("[Event] Spawned Grave ID:", data.ID)
-end)
-SetupGraveSignal.OnClientEvent:Connect(function(model, id)
-	print("[Event] Setup Grave:", id)
-end)
-
--- AutoDig loop
-task.spawn(function()
-	while task.wait(1) do
-		if digEnabled then
-			for _, grave in CollectionService:GetTagged("GraveDigging") do
-				local timerGui = grave:FindFirstChild("Primary") and grave.Primary:FindFirstChild("TimerAtt")
-				if timerGui and timerGui:FindFirstChild("BillboardGui") and not timerGui.BillboardGui.Enabled then
-					pcall(function()
-						DigGraveRF:InvokeServer(grave)
-					end)
-				end
-			end
-		end
-		if claimEnabled then
-			pcall(function()
-				ClaimDiggerRF:InvokeServer()
-			end)
-		end
-	end
-end)
-
+            -- AutoDig loop
+            task.spawn(function()
+                while _G.digger1 do
+                    task.wait(1)
+                    if digEnabled then
+                        for _, grave in CollectionService:GetTagged("GraveDigging") do
+                            local timerGui = grave:FindFirstChild("Primary") and grave.Primary:FindFirstChild("TimerAtt")
+                            if timerGui and timerGui:FindFirstChild("BillboardGui") and not timerGui.BillboardGui.Enabled then
+                                pcall(function()
+                                    DigGraveRF:InvokeServer(grave)
+                                end)
+                            end
+                        end
+                    end
+                    if claimEnabled then
+                        pcall(function()
+                            ClaimDiggerRF:InvokeServer()
+                        end)
+                    end
+                end
+            end)
+        else
+            _G.digger1 = false
+        end
+        print("Toggle state:", digger)
     end
 })
+
 local main = GUI:CreateTab("misc", "egg") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
