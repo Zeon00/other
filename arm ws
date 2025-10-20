@@ -65,7 +65,7 @@ end
 GUI:CreateToggle({
     parent = main,
     text = "Auto Trick and Treat",
-    default = true,
+    default = false,
     callback = function(state)  -- 'state' is true or false
         _G.Hit1 = state  -- save toggle state globally
 
@@ -1190,7 +1190,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Clik",
-    default = true,
+    default = false,
     callback = function(critclik)
  --// Services
 local Players = game:GetService("Players")
@@ -1230,7 +1230,7 @@ end})
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
-    default = true,
+    default = false,
     callback = function(battlebot)
         _G.battlebot1 = battlebot
 
