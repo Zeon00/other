@@ -62,69 +62,257 @@ if placeId == targetPlaceId then
 end
     end
 })
-GUI:CreateToggle({
-    parent = main,
-    text = "Auto Trick or Treat 🎃 (Range Free)",
-    default = false,
-    callback = function(state)
-        _G.TrickAutoRange = state
 
-        if state then
-            task.spawn(function()
-                local Players = game:GetService("Players")
-                local Workspace = game:GetService("Workspace")
-                local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                local KnitServices = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services")
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Trick n Treat", 
+    callback = function()
+--// Auto Farm All Grave Zombies + GUI Toggle + Distance Check (Teleport)
+--// Buat di LocalScript (misal di StarterPlayerScripts)
 
-                local TrickRF = KnitServices:WaitForChild("TrickOrTreatService"):WaitForChild("RF")
-                local Request = TrickRF:WaitForChild("RequestTrickOrTreat")
-                local EndTrick = TrickRF:WaitForChild("EndTrickOrTreat")
-                local ClaimBag = TrickRF:WaitForChild("ClaimTreatBag")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Knit = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
+local Workspace = game:GetService("Workspace")
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local HRP = Character:WaitForChild("HumanoidRootPart")
+local PlayerGui = Player:WaitForChild("PlayerGui")
 
-                local housesFolder = Workspace:WaitForChild("GameObjects"):WaitForChild("TrickOrTreat")
-                local cooldown = 120
-                local timers = {}
+local GraveController = Knit.GetController("GraveMonsterController")
 
-                -- Klaim treat bag sekali di awal
-                pcall(function()
-                    ClaimBag:InvokeServer()
-                end)
+-- Global state
+getgenv().AutoFarm = false
+getgenv().ScriptRunning = true
 
-                while _G.TrickAutoRange do
-                    for _, house in ipairs(housesFolder:GetChildren()) do
-                        if not _G.TrickAutoRange then break end
+------------------------------------------------
+-- GUI SETUP
+------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "AutoFarmGUI"
+ScreenGui.ResetOnSpawn = false
 
-                        local last = timers[house] or 0
-                        if os.clock() - last >= cooldown then
-                            local ok, result = pcall(function()
-                                return Request:InvokeServer(house)
-                            end)
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 200, 0, 100)
+Frame.Position = UDim2.new(0.05, 0, 0.25, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Frame.BackgroundTransparency = 0.2
+Frame.BorderSizePixel = 0
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
 
-                            if ok and result then
-                                -- Tunggu 3 detik sebelum end
-                                task.wait(3)
-                                pcall(function()
-                                    EndTrick:InvokeServer(house)
-                                end)
+local Title = Instance.new("TextLabel", Frame)
+Title.Text = "Auto Farm Grave"
+Title.Size = UDim2.new(1, 0, 0, 25)
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
 
-                                timers[house] = os.clock()
-                            end
-                        end
+local ToggleButton = Instance.new("TextButton", Frame)
+ToggleButton.Size = UDim2.new(0.7, 0, 0.4, 0)
+ToggleButton.Position = UDim2.new(0.15, 0, 0.35, 0)
+ToggleButton.Text = "OFF"
+ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(150,0,0)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 18
+Instance.new("UICorner", ToggleButton)
 
-                        task.wait(0.05)
-                    end
-                    task.wait(0.2)
-                end
-            end)
-        else
-            _G.TrickAutoRange = false
-        end
+local ExitButton = Instance.new("TextButton", Frame)
+ExitButton.Size = UDim2.new(0.25, 0, 0.25, 0)
+ExitButton.Position = UDim2.new(0.72, 0, 0, 0)
+ExitButton.Text = "X"
+ExitButton.TextColor3 = Color3.fromRGB(255,255,255)
+ExitButton.BackgroundColor3 = Color3.fromRGB(200,0,0)
+ExitButton.Font = Enum.Font.GothamBold
+ExitButton.TextSize = 16
+Instance.new("UICorner", ExitButton)
 
-        print("[Auto Trick or Treat Range Free] Status:", state)
+------------------------------------------------
+-- TOGGLE & EXIT
+------------------------------------------------
+ToggleButton.MouseButton1Click:Connect(function()
+	getgenv().AutoFarm = not getgenv().AutoFarm
+	if getgenv().AutoFarm then
+		ToggleButton.Text = "ON"
+		ToggleButton.BackgroundColor3 = Color3.fromRGB(0,200,0)
+	else
+		ToggleButton.Text = "OFF"
+		ToggleButton.BackgroundColor3 = Color3.fromRGB(150,0,0)
+	end
+end)
+
+ExitButton.MouseButton1Click:Connect(function()
+	getgenv().ScriptRunning = false
+	ScreenGui:Destroy()
+end)
+
+------------------------------------------------
+-- AUTO FARM LOOP
+------------------------------------------------
+local ATTACK_RANGE = 15 -- jarak aman biar bisa attack
+
+task.spawn(function()
+	while getgenv().ScriptRunning do
+		if getgenv().AutoFarm then
+			pcall(function()
+				Character = Player.Character or Player.CharacterAdded:Wait()
+				HRP = Character:FindFirstChild("HumanoidRootPart")
+
+				for _, grave in pairs(Workspace.GameObjects.GraveSpawns:GetChildren()) do
+					if grave:FindFirstChild("NPCs") then
+						for _, npc in pairs(grave.NPCs:GetChildren()) do
+							if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and not npc:GetAttribute("Defeated") then
+								local graveId = grave:GetAttribute("GraveId")
+								local npcRoot = npc:FindFirstChild("HumanoidRootPart")
+
+								if graveId and npcRoot and HRP then
+									local distance = (npcRoot.Position - HRP.Position).Magnitude
+									if distance > ATTACK_RANGE then
+										-- Teleport dekat zombie
+										HRP.CFrame = npcRoot.CFrame + Vector3.new(0, 0, 3)
+										task.wait(0.1)
+									end
+
+									-- Attack!
+									GraveController.AttackMonster(graveId, npc)
+								end
+							end
+						end
+					end
+				end
+			end)
+		end
+		task.wait(0.3)
+	end
+end)
     end
 })
 
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Attack Zombie", 
+    callback = function()
+--// Auto Farm All Grave Zombies + GUI Toggle + Distance Check (Teleport)
+--// Buat di LocalScript (misal di StarterPlayerScripts)
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Knit = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
+local Workspace = game:GetService("Workspace")
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local HRP = Character:WaitForChild("HumanoidRootPart")
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local GraveController = Knit.GetController("GraveMonsterController")
+
+-- Global state
+getgenv().AutoFarm = false
+getgenv().ScriptRunning = true
+
+------------------------------------------------
+-- GUI SETUP
+------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "AutoFarmGUI"
+ScreenGui.ResetOnSpawn = false
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 200, 0, 100)
+Frame.Position = UDim2.new(0.05, 0, 0.25, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Frame.BackgroundTransparency = 0.2
+Frame.BorderSizePixel = 0
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+
+local Title = Instance.new("TextLabel", Frame)
+Title.Text = "Auto Farm Grave"
+Title.Size = UDim2.new(1, 0, 0, 25)
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+
+local ToggleButton = Instance.new("TextButton", Frame)
+ToggleButton.Size = UDim2.new(0.7, 0, 0.4, 0)
+ToggleButton.Position = UDim2.new(0.15, 0, 0.35, 0)
+ToggleButton.Text = "OFF"
+ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(150,0,0)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 18
+Instance.new("UICorner", ToggleButton)
+
+local ExitButton = Instance.new("TextButton", Frame)
+ExitButton.Size = UDim2.new(0.25, 0, 0.25, 0)
+ExitButton.Position = UDim2.new(0.72, 0, 0, 0)
+ExitButton.Text = "X"
+ExitButton.TextColor3 = Color3.fromRGB(255,255,255)
+ExitButton.BackgroundColor3 = Color3.fromRGB(200,0,0)
+ExitButton.Font = Enum.Font.GothamBold
+ExitButton.TextSize = 16
+Instance.new("UICorner", ExitButton)
+
+------------------------------------------------
+-- TOGGLE & EXIT
+------------------------------------------------
+ToggleButton.MouseButton1Click:Connect(function()
+	getgenv().AutoFarm = not getgenv().AutoFarm
+	if getgenv().AutoFarm then
+		ToggleButton.Text = "ON"
+		ToggleButton.BackgroundColor3 = Color3.fromRGB(0,200,0)
+	else
+		ToggleButton.Text = "OFF"
+		ToggleButton.BackgroundColor3 = Color3.fromRGB(150,0,0)
+	end
+end)
+
+ExitButton.MouseButton1Click:Connect(function()
+	getgenv().ScriptRunning = false
+	ScreenGui:Destroy()
+end)
+
+------------------------------------------------
+-- AUTO FARM LOOP
+------------------------------------------------
+local ATTACK_RANGE = 15 -- jarak aman biar bisa attack
+
+task.spawn(function()
+	while getgenv().ScriptRunning do
+		if getgenv().AutoFarm then
+			pcall(function()
+				Character = Player.Character or Player.CharacterAdded:Wait()
+				HRP = Character:FindFirstChild("HumanoidRootPart")
+
+				for _, grave in pairs(Workspace.GameObjects.GraveSpawns:GetChildren()) do
+					if grave:FindFirstChild("NPCs") then
+						for _, npc in pairs(grave.NPCs:GetChildren()) do
+							if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and not npc:GetAttribute("Defeated") then
+								local graveId = grave:GetAttribute("GraveId")
+								local npcRoot = npc:FindFirstChild("HumanoidRootPart")
+
+								if graveId and npcRoot and HRP then
+									local distance = (npcRoot.Position - HRP.Position).Magnitude
+									if distance > ATTACK_RANGE then
+										-- Teleport dekat zombie
+										HRP.CFrame = npcRoot.CFrame + Vector3.new(0, 0, 3)
+										task.wait(0.1)
+									end
+
+									-- Attack!
+									GraveController.AttackMonster(graveId, npc)
+								end
+							end
+						end
+					end
+				end
+			end)
+		end
+		task.wait(0.3)
+	end
+end)
+
+    end
+})
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Quest Token", 
@@ -1611,7 +1799,7 @@ GUI:CreateToggle({
             -- Auto relog every 60 minutes
             task.spawn(function()
                 while _G.antiAFK do
-                    task.wait(480 * 60) -- 120 minutes
+                    task.wait(48000 * 60) -- 120 minutes
                     if _G.antiAFK then
                         print("Auto relog after 60 minutes")
                         TeleportService:Teleport(placeId, player)
