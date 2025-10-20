@@ -63,156 +63,75 @@ end
     end
 })
 GUI:CreateToggle({
-    parent = main,
-    text = "Auto Trick and Treat",
-    default = false,
-    callback = function(state)  -- 'state' is true or false
-        _G.Hit1 = state  -- save toggle state globally
+	parent = main,
+	text = "Auto Trick and Treat",
+	default = false,
+	callback = function(state)
+		_G.AutoTrick = state
+		print("Auto Trick:", state)
 
-        if state then
-            -- Start auto-knock loop in a new thread
-            task.spawn(function()
-                -- Services
-                local Players = game:GetService("Players")
-                local Workspace = game:GetService("Workspace")
-                local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                local RunService = game:GetService("RunService")
-                local task = task
+		if state then
+			task.spawn(function()
+				-- ✅ Services
+				local Players = game:GetService("Players")
+				local Workspace = game:GetService("Workspace")
+				local ReplicatedStorage = game:GetService("ReplicatedStorage")
+				local RunService = game:GetService("RunService")
 
-                -- Knit Services
-                local KnitServices = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services")
-                local TrickOrTreatRF = KnitServices:WaitForChild("TrickOrTreatService"):WaitForChild("RF")
-                local ToolServiceRE = KnitServices:WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick")
+				-- ✅ Knit Services
+				local KnitServices = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services")
+				local TrickOrTreatRF = KnitServices:WaitForChild("TrickOrTreatService"):WaitForChild("RF")
+				local ToolServiceRE = KnitServices:WaitForChild("ToolService"):WaitForChild("RE"):WaitForChild("onClick")
 
-                local RequestTrickOrTreat = TrickOrTreatRF:WaitForChild("RequestTrickOrTreat")
-                local EndTrickOrTreat = TrickOrTreatRF:WaitForChild("EndTrickOrTreat")
-                local ClaimTreatBag = TrickOrTreatRF:WaitForChild("ClaimTreatBag")
+				local RequestTrickOrTreat = TrickOrTreatRF:WaitForChild("RequestTrickOrTreat")
+				local EndTrickOrTreat = TrickOrTreatRF:WaitForChild("EndTrickOrTreat")
+				local ClaimTreatBag = TrickOrTreatRF:WaitForChild("ClaimTreatBag")
 
-                -- Claim Treat Bag once
-                pcall(function() ClaimTreatBag:InvokeServer() end)
+				-- ✅ Setup houses
+				local housesFolder = Workspace:WaitForChild("GameObjects"):WaitForChild("TrickOrTreat")
+				local cooldownTime = 120
+				local houseTimers = {}
 
-                -- Houses folder
-                local housesFolder = Workspace:WaitForChild("GameObjects"):WaitForChild("TrickOrTreat")
-                local cooldownTime = 120
-                local houseTimers = {}
+				-- ✅ Claim bag at start
+				pcall(function() ClaimTreatBag:InvokeServer() end)
 
-                -- Floating GUI
-                local LocalPlayer = Players.LocalPlayer
-                local screenGui = Instance.new("ScreenGui")
-                screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+				-- 🕐 Main Loop
+				while _G.AutoTrick do
+					for _, house in ipairs(housesFolder:GetChildren()) do
+						if not _G.AutoTrick then break end
 
-                local frame = Instance.new("Frame")
-                frame.Size = UDim2.new(0, 0, 0, 30)
-                frame.Position = UDim2.new(0, 20, 0, 20)
-                frame.BackgroundTransparency = 0.5
-                frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
-                frame.BorderSizePixel = 0
-                frame.Parent = screenGui
+						-- Cooldown check
+						local last = houseTimers[house.Name] or 0
+						if os.clock() - last >= cooldownTime then
+							task.spawn(function()
+								pcall(function()
+									-- Step 1: Request Trick or Treat
+									RequestTrickOrTreat:InvokeServer(house)
+									task.wait(1)
 
-                local uiList = Instance.new("UIListLayout")
-                uiList.FillDirection = Enum.FillDirection.Horizontal
-                uiList.HorizontalAlignment = Enum.HorizontalAlignment.Left
-                uiList.SortOrder = Enum.SortOrder.LayoutOrder
-                uiList.Padding = UDim.new(0, 10)
-                uiList.Parent = frame
+									-- Step 2: Knock (simulate clicks)
+									for i = 1, 20 do
+										if not _G.AutoTrick then break end
+										ToolServiceRE:FireServer(house)
+										task.wait(0.05)
+									end
 
-                local houseFrames = {}
+									-- Step 3: End Trick or Treat
+									EndTrickOrTreat:InvokeServer(house)
+									houseTimers[house.Name] = os.clock()
+								end)
+							end)
+						end
 
-                local function CreateHouseUI(houseName)
-                    if houseFrames[houseName] then return houseFrames[houseName] end
-                    local container = Instance.new("Frame")
-                    container.Size = UDim2.new(0, 120, 1, 0)
-                    container.BackgroundTransparency = 0.7
-                    container.BackgroundColor3 = Color3.fromRGB(30,30,30)
-                    container.BorderSizePixel = 0
-                    container.Parent = frame
-
-                    local nameLabel = Instance.new("TextLabel")
-                    nameLabel.Size = UDim2.new(0.5, 0, 1, 0)
-                    nameLabel.Position = UDim2.new(0, 0, 0, 0)
-                    nameLabel.BackgroundTransparency = 1
-                    nameLabel.TextColor3 = Color3.fromRGB(255,255,255)
-                    nameLabel.Font = Enum.Font.SourceSansBold
-                    nameLabel.TextSize = 14
-                    nameLabel.Text = houseName
-                    nameLabel.Parent = container
-
-                    local statusLabel = Instance.new("TextLabel")
-                    statusLabel.Size = UDim2.new(0.5, 0, 1, 0)
-                    statusLabel.Position = UDim2.new(0.5, 0, 0, 0)
-                    statusLabel.BackgroundTransparency = 1
-                    statusLabel.TextColor3 = Color3.fromRGB(200,200,200)
-                    statusLabel.Font = Enum.Font.SourceSans
-                    statusLabel.TextSize = 14
-                    statusLabel.Text = "Cooldown"
-                    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    statusLabel.Parent = container
-
-                    houseFrames[houseName] = {container = container, nameLabel = nameLabel, statusLabel = statusLabel}
-                    return houseFrames[houseName]
-                end
-
-                local function UpdateHouseStatus(house)
-                    local houseUI = houseFrames[house.Name] or CreateHouseUI(house.Name)
-                    local last = houseTimers[house.Name] or 0
-                    local elapsed = os.clock() - last
-                    if elapsed >= cooldownTime then
-                        houseUI.statusLabel.Text = "Knocking"
-                    else
-                        houseUI.statusLabel.Text = "Cooldown "..math.ceil(cooldownTime - elapsed).."s"
-                    end
-                end
-
-                local function KnockHouse(house)
-                    if not _G.Hit1 then return end -- stop if toggle off
-                    local last = houseTimers[house.Name] or 0
-                    if os.clock() - last < cooldownTime then return false end
-
-                    local ok, result = pcall(function() return RequestTrickOrTreat:InvokeServer(house) end)
-                    if ok and result then
-                        local startTime = os.clock()
-                        while os.clock() - startTime < 5 do
-                            pcall(function() ToolServiceRE:FireServer(house) end)
-                            task.wait(0.05)
-                        end
-                        pcall(function() EndTrickOrTreat:InvokeServer(house) end)
-                        houseTimers[house.Name] = os.clock()
-                        return true
-                    end
-                    return false
-                end
-
-                -- Auto-knock loop
-                task.spawn(function()
-                    while _G.Hit1 do
-                        for _, house in ipairs(housesFolder:GetChildren()) do
-                            KnockHouse(house)
-                            UpdateHouseStatus(house)
-                            task.wait(0.05)
-                        end
-                        task.wait(0.1)
-                    end
-                end)
-
-                -- Update GUI
-                RunService.RenderStepped:Connect(function()
-                    for _, house in ipairs(housesFolder:GetChildren()) do
-                        UpdateHouseStatus(house)
-                    end
-                end)
-
-                -- Create GUI
-                for _, house in ipairs(housesFolder:GetChildren()) do
-                    CreateHouseUI(house.Name)
-                end
-            end)
-        else
-            _G.Hit1 = false
-        end
-
-        print("Toggle state:", state)
-    end
+						task.wait(0.25)
+					end
+					task.wait(1)
+				end
+			end)
+		end
+	end
 })
+
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Quest Token", 
