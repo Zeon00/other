@@ -1350,7 +1350,7 @@ GUI:CreateToggle({
 
                 -- ===== FUNCTIONS =====
                 local function AutoFight(npcName)
-                    ArmWrestleController.RequestStartFight(npcName or "GreimReaper")
+                    ArmWrestleController.RequestStartFight(npcName or "PumpkinDemon")
                     ArmWrestleService:SetAuto(true)
                 end
 
@@ -1364,7 +1364,7 @@ GUI:CreateToggle({
 
                 -- ===== MAIN LOOP =====
                 while _G.battlebot1 do
-                    AutoFight("GrimReaper")
+                    AutoFight("PumpkinDemon")
                     AutoCrit()
                     AutoHit()
                     task.wait() -- yields for one frame; fastest safe loop
