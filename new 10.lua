@@ -358,25 +358,26 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- // Remote
+-----------------------------------------------------
+-- [[ AUTO ATTACK GUI ]]
+-----------------------------------------------------
+
 local Remote = ReplicatedStorage:WaitForChild("Modules")
 	:WaitForChild("Network")
 	:WaitForChild("Network")
 	:WaitForChild("RemoteEvent")
 
--- // GUI Setup
 local screenGui = Instance.new("ScreenGui", playerGui)
 screenGui.Name = "AutoAttackGUI"
 screenGui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", screenGui)
 frame.Size = UDim2.new(0, 200, 0, 150)
-frame.Position = UDim2.new(0.5, -100, 0.5, -75)
+frame.Position = UDim2.new(0.7, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
-frame.Visible = true
 
 local titleBar = Instance.new("Frame", frame)
 titleBar.Size = UDim2.new(1, 0, 0, 26)
@@ -426,7 +427,7 @@ minimizeBtn.MouseButton1Click:Connect(function()
 	frame.Size = minimized and UDim2.new(0, 200, 0, 26) or UDim2.new(0, 200, 0, 150)
 end)
 
--- // Buttons
+-- tombol toggle attack
 local toggleButton = Instance.new("TextButton", frame)
 toggleButton.Size = UDim2.new(1, -20, 0, 32)
 toggleButton.Position = UDim2.new(0, 10, 0, 40)
@@ -435,8 +436,8 @@ toggleButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
 toggleButton.TextColor3 = Color3.new(1, 1, 1)
 toggleButton.Font = Enum.Font.Gotham
 toggleButton.TextSize = 14
-toggleButton.AutoButtonColor = false
 
+-- dropdown world
 local dropdown = Instance.new("TextButton", frame)
 dropdown.Size = UDim2.new(1, -20, 0, 32)
 dropdown.Position = UDim2.new(0, 10, 0, 84)
@@ -445,9 +446,8 @@ dropdown.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 dropdown.TextColor3 = Color3.new(1, 1, 1)
 dropdown.Font = Enum.Font.Gotham
 dropdown.TextSize = 13
-dropdown.AutoButtonColor = false
 
--- // World Data
+-- data world
 local worldData = {
 	["1"] = { "\000\000\001\001\000\004Monk", "\000\000\001\001\000\aStudent", "\000\000\001\001\000\aSamurai", "\000\000\001\001\000\003Oni", "\000\000\001\001\000\aWarrior" },
 	["2"] = { "\000\000\001\001\000\003Odo", "\000\000\001\001\000\005Newma", "\000\000\001\001\000\004Yaha", "\000\000\001\001\000\004Susa", "\000\000\001\001\000\003Kyo" },
@@ -461,7 +461,6 @@ local worldData = {
 	["10"] = { "\000\000\001\001\000\nOban Pupil", "\000\000\001\001\000\fOban Student", "\000\000\001\001\000\rOban Disciple", "\000\000\001\001\000\fOban Scholar", "\000\000\001\001\000\vOban Sensei" }
 }
 
--- // Logic
 local selectedWorld = "1"
 local attackRunning = false
 
@@ -476,14 +475,12 @@ local function attackWorld(worldId)
 	end
 end
 
--- Dropdown world ganti
 dropdown.MouseButton1Click:Connect(function()
 	local nextWorld = (tonumber(selectedWorld) % 10) + 1
 	selectedWorld = tostring(nextWorld)
 	dropdown.Text = "Select World: " .. selectedWorld
 end)
 
--- Toggle On/Off
 toggleButton.MouseButton1Click:Connect(function()
 	attackRunning = not attackRunning
 	if attackRunning then
@@ -501,6 +498,117 @@ toggleButton.MouseButton1Click:Connect(function()
 	end
 end)
 
+-----------------------------------------------------
+-- [[ HIPHEIGHT GUI ]]
+-----------------------------------------------------
+
+local hipGui = Instance.new("ScreenGui", playerGui)
+hipGui.Name = "HipHeightGui"
+hipGui.ResetOnSpawn = false
+
+local frame2 = Instance.new("Frame", hipGui)
+frame2.Size = UDim2.new(0, 180, 0, 100)
+frame2.Position = UDim2.new(0.05, 0, 0.2, 0)
+frame2.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame2.Active = true
+frame2.Draggable = true
+
+local toggleBtn = Instance.new("TextButton", frame2)
+toggleBtn.Size = UDim2.new(0, 150, 0, 40)
+toggleBtn.Position = UDim2.new(0, 15, 0, 20)
+toggleBtn.Text = "HipHeight: OFF"
+toggleBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+
+local closeBtn = Instance.new("TextButton", frame2)
+closeBtn.Size = UDim2.new(0, 20, 0, 20)
+closeBtn.Position = UDim2.new(1, -25, 0, 5)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.new(1, 0, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+
+-- tombol minimize jadi icon kecil
+local minimizeBtn2 = Instance.new("TextButton", frame2)
+minimizeBtn2.Size = UDim2.new(0, 20, 0, 20)
+minimizeBtn2.Position = UDim2.new(1, -50, 0, 5)
+minimizeBtn2.Text = "-"
+minimizeBtn2.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+minimizeBtn2.TextColor3 = Color3.new(1, 1, 1)
+
+local floatIcon = Instance.new("TextButton", hipGui)
+floatIcon.Size = UDim2.new(0, 60, 0, 30)
+floatIcon.Position = UDim2.new(0.05, 0, 0.8, 0)
+floatIcon.Text = "Hip"
+floatIcon.Visible = false
+floatIcon.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+floatIcon.TextColor3 = Color3.new(1, 1, 1)
+floatIcon.Draggable = true
+
+local humanoid, defaultHipHeight
+local isOn = false
+local hipHeightValue = 20
+
+local function updateHumanoid(char)
+	humanoid = char:WaitForChild("Humanoid")
+	defaultHipHeight = humanoid.HipHeight
+	if isOn then
+		humanoid.HipHeight = hipHeightValue
+	end
+end
+
+if player.Character then updateHumanoid(player.Character) end
+player.CharacterAdded:Connect(updateHumanoid)
+
+toggleBtn.MouseButton1Click:Connect(function()
+	if not humanoid then return end
+	isOn = not isOn
+	if isOn then
+		humanoid.HipHeight = hipHeightValue
+		toggleBtn.Text = "HipHeight: ON"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+	else
+		humanoid.HipHeight = defaultHipHeight or 2
+		toggleBtn.Text = "HipHeight: OFF"
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	end
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+	hipGui:Destroy()
+end)
+
+minimizeBtn2.MouseButton1Click:Connect(function()
+	frame2.Visible = false
+	floatIcon.Visible = true
+end)
+
+floatIcon.MouseButton1Click:Connect(function()
+	frame2.Visible = true
+	floatIcon.Visible = false
+end)
+
+
+    end
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Anti AFK", 
+    default = true, 
+    callback = function()
+-- LocalScript di StarterPlayerScripts
+-- Anti-AFK otomatis aktif begitu player join
+
+local player = game.Players.LocalPlayer
+local vu = game:GetService("VirtualUser")
+
+player.Idled:Connect(function()
+	-- simulasi klik kanan agar dianggap aktif
+	vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+	task.wait(1)
+	vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+end)
+
+print("[Anti-AFK] Aktif otomatis ✅")
     end
 })
 
