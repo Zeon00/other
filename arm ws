@@ -1738,79 +1738,40 @@ loadstring(game:HttpGet('https://raw.githubusercontent.com/yadielsantoss/full-sc
 })
 GUI:CreateToggle({
     parent = main,
-    text = "Anti AFK + Auto Relog",
+    text = "Anti AFK",
     default = true,
     callback = function(enabled)
+        local player = game.Players.LocalPlayer
+        local vu = game:GetService("VirtualUser")
+
+        -- simpan koneksi event di luar agar bisa dimatikan nanti
+        if not _G.AntiAfkConnection then
+            _G.AntiAfkConnection = nil
+        end
+
+        -- kalau diaktifkan
         if enabled then
-            -- Services & variables defined inside the toggle
-            local Players = game:GetService("Players")
-            local TeleportService = game:GetService("TeleportService")
-            local VirtualUser = game:GetService("VirtualUser")
-            local RunService = game:GetService("RunService")
-            local player = Players.LocalPlayer
-            local placeId = game.PlaceId -- current game place
-
-            _G.antiAFK = true
-
-            -- Anti-AFK
-            player.Idled:Connect(function()
-                if _G.antiAFK then
-                    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                    wait(0.1)
-                    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                    print("Anti-AFK triggered")
-                end
-            end)
-
-            -- Auto relog on death
-            player.CharacterAdded:Connect(function(char)
-                local humanoid = char:WaitForChild("Humanoid")
-                humanoid.Died:Connect(function()
-                    if _G.antiAFK then
-                        wait(1)
-                        TeleportService:Teleport(placeId, player)
-                    end
+            -- buat koneksi baru hanya kalau belum ada
+            if not _G.AntiAfkConnection then
+                _G.AntiAfkConnection = player.Idled:Connect(function()
+                    vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+                    task.wait(1)
+                    vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
                 end)
-            end)
+                print("[Anti-AFK] Aktif ✅")
+            end
 
-            -- Auto relog on removal (kick/disconnect)
-            Players.PlayerRemoving:Connect(function(plr)
-                if _G.antiAFK and plr == player then
-                    wait(1)
-                    TeleportService:Teleport(placeId, player)
-                end
-            end)
-
-            -- Auto relog on lag/freeze
-            local lastTime = tick()
-            RunService.Heartbeat:Connect(function()
-                if _G.antiAFK then
-                    local now = tick()
-                    local delta = now - lastTime
-                    lastTime = now
-
-                    if delta > 5 then
-                        print("Lag detected! Auto-relocating...")
-                        TeleportService:Teleport(placeId, player)
-                    end
-                end
-            end)
-
-            -- Auto relog every 60 minutes
-            task.spawn(function()
-                while _G.antiAFK do
-                    task.wait(48000 * 600000) -- 120 minutes
-                    if _G.antiAFK then
-                        print("Auto relog after 60 minutes")
-                        TeleportService:Teleport(placeId, player)
-                    end
-                end
-            end)
         else
-            _G.antiAFK = false
+            -- kalau dimatikan, disconnect koneksi
+            if _G.AntiAfkConnection then
+                _G.AntiAfkConnection:Disconnect()
+                _G.AntiAfkConnection = nil
+                print("[Anti-AFK] Nonaktif ❌")
+            end
         end
     end
 })
+
 
 GUI:CreateButton({
     parent = main, 
