@@ -34,145 +34,126 @@ GUI:CreateToggle({
     text = "Training DUmmy", 
     default = true, 
     callback = function()
---// Anti Error Safe Function
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+--// Safe fire helper
 local function safeFire(fn)
-	local s, e = pcall(fn)
-	if not s then warn("[UI ERROR]:", e) end
+	local ok, err = pcall(fn)
+	if not ok then warn("[SafeFire Error]:", err) end
 end
 
---// Main ScreenGui
+--// Main GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AutoFarmUI"
+screenGui.Name = "SimpleAutoGUI"
 screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Parent = PlayerGui
 
 --// Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 260, 0, 360)
-mainFrame.Position = UDim2.new(0.5, -130, 0.5, -180)
-mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+mainFrame.Size = UDim2.new(0, 320, 0, 320)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -160)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
 mainFrame.Draggable = true
-mainFrame.ZIndex = 3
+mainFrame.ZIndex = 5
 mainFrame.Parent = screenGui
 local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 12)
 mainCorner.Parent = mainFrame
 
---// Title Bar
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 34)
-titleBar.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
-titleBar.ZIndex = 4
-titleBar.Parent = mainFrame
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 12)
-titleCorner.Parent = titleBar
+--// Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -40, 0, 40)
+title.Position = UDim2.new(0, 10, 0, 10)
+title.BackgroundTransparency = 1
+title.Text = "Simple Auto"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.ZIndex = 6
+title.Parent = mainFrame
 
-local titleText = Instance.new("TextLabel")
-titleText.Size = UDim2.new(1, -40, 1, 0)
-titleText.Position = UDim2.new(0, 10, 0, 0)
-titleText.BackgroundTransparency = 1
-titleText.Text = "⚙️ Auto Farm Panel"
-titleText.TextColor3 = Color3.new(1, 1, 1)
-titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 18
-titleText.TextXAlignment = Enum.TextXAlignment.Left
-titleText.ZIndex = 5
-titleText.Parent = titleBar
+--// Close / Minimize
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -35, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.new(1,1,1)
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 18
+closeButton.ZIndex = 6
+closeButton.Parent = mainFrame
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeButton
 
---// Minimize Button
-local minimize = Instance.new("TextButton")
-minimize.Size = UDim2.new(0, 28, 0, 28)
-minimize.Position = UDim2.new(1, -34, 0.5, -14)
-minimize.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
-minimize.Text = "-"
-minimize.TextColor3 = Color3.new(1, 1, 1)
-minimize.Font = Enum.Font.GothamBold
-minimize.TextSize = 18
-minimize.ZIndex = 6
-minimize.Parent = titleBar
-local minCorner = Instance.new("UICorner")
-minCorner.CornerRadius = UDim.new(0, 6)
-minCorner.Parent = minimize
+local floatIcon = Instance.new("TextButton")
+floatIcon.Size = UDim2.new(0, 140, 0, 36)
+floatIcon.Position = UDim2.new(0.85, 0, 0.15, 0)
+floatIcon.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+floatIcon.Text = "Simple Auto"
+floatIcon.TextColor3 = Color3.new(1,1,1)
+floatIcon.Font = Enum.Font.GothamBold
+floatIcon.TextSize = 16
+floatIcon.Visible = false
+floatIcon.ZIndex = 7
+floatIcon.Parent = screenGui
+local floatCorner = Instance.new("UICorner")
+floatCorner.CornerRadius = UDim.new(0, 10)
+floatCorner.Parent = floatIcon
 
---// Content Container
-local content = Instance.new("Frame")
-content.Size = UDim2.new(1, 0, 1, -34)
-content.Position = UDim2.new(0, 0, 0, 34)
-content.BackgroundTransparency = 1
-content.ClipsDescendants = true
-content.ZIndex = 3
-content.Parent = mainFrame
+closeButton.MouseButton1Click:Connect(function()
+	mainFrame.Visible = false
+	floatIcon.Visible = true
+end)
+floatIcon.MouseButton1Click:Connect(function()
+	mainFrame.Visible = true
+	floatIcon.Visible = false
+end)
 
---// Layout for elements
-local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 10)
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout.VerticalAlignment = Enum.VerticalAlignment.Top
-layout.Parent = content
-
---// Toggle Template Function
-local function createToggle(name, order)
-	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(0.8, 0, 0, 36)
-	frame.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-	frame.ZIndex = 2
-	frame.Parent = content
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = frame
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0.7, 0, 1, 0)
-	label.BackgroundTransparency = 1
-	label.Text = name
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 16
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Position = UDim2.new(0.05, 0, 0, 0)
-	label.ZIndex = 3
-	label.Parent = frame
-
-	local toggle = Instance.new("TextButton")
-	toggle.Size = UDim2.new(0.2, 0, 0.6, 0)
-	toggle.Position = UDim2.new(0.75, 0, 0.2, 0)
-	toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 110)
-	toggle.Text = "OFF"
-	toggle.TextColor3 = Color3.new(1, 0.3, 0.3)
-	toggle.Font = Enum.Font.GothamBold
-	toggle.TextSize = 14
-	toggle.ZIndex = 4
-	toggle.Parent = frame
-	local togCorner = Instance.new("UICorner")
-	togCorner.CornerRadius = UDim.new(0, 6)
-	togCorner.Parent = toggle
-
-	local state = false
-	toggle.MouseButton1Click:Connect(function()
-		state = not state
-		toggle.Text = state and "ON" or "OFF"
-		toggle.TextColor3 = state and Color3.new(0.3, 1, 0.3) or Color3.new(1, 0.3, 0.3)
-		safeFire(function()
-			print(name, "set to", state)
-		end)
-	end)
+--// Helper to create toggle button
+local function createToggleButton(parent, text, posY)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.8, 0, 0, 40)
+	btn.Position = UDim2.new(0.1, 0, posY, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(70,70,80)
+	btn.Text = text
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 18
+	btn.AutoButtonColor = true
+	btn.ZIndex = 6
+	btn.Parent = parent
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 8)
+	c.Parent = btn
+	return btn
 end
 
---// Create Toggles
-createToggle("Auto Farm", 1)
-createToggle("Auto Upgrade", 2)
-createToggle("Auto Collect", 3)
+--// References for remotes (logic asli)
+local GameRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Game")
+local TowerRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Tower")
+local NetworkModule = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("Network"):WaitForChild("RemoteEvent")
 
---// Dummy Dropdown (ZIndex fixed)
+---------------------------------------------------------------------
+-- DUMMY DROPDOWN
+---------------------------------------------------------------------
 local dummyFrame = Instance.new("Frame")
 dummyFrame.Size = UDim2.new(0.8, 0, 0, 36)
-dummyFrame.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-dummyFrame.ZIndex = 5
-dummyFrame.Parent = content
+dummyFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
+dummyFrame.BackgroundColor3 = Color3.fromRGB(70,70,80)
+dummyFrame.ZIndex = 10
+dummyFrame.Parent = mainFrame
 local dummyCorner = Instance.new("UICorner")
 dummyCorner.CornerRadius = UDim.new(0, 8)
 dummyCorner.Parent = dummyFrame
@@ -181,136 +162,204 @@ local dummySelected = Instance.new("TextButton")
 dummySelected.Size = UDim2.new(1, 0, 1, 0)
 dummySelected.BackgroundTransparency = 1
 dummySelected.Text = "Select Dummy"
-dummySelected.TextColor3 = Color3.new(1, 1, 1)
+dummySelected.TextColor3 = Color3.new(1,1,1)
 dummySelected.Font = Enum.Font.Gotham
 dummySelected.TextSize = 16
 dummySelected.TextXAlignment = Enum.TextXAlignment.Left
-dummySelected.ZIndex = 6
+dummySelected.ZIndex = 11
 dummySelected.Parent = dummyFrame
 
 local dummyList = Instance.new("ScrollingFrame")
-dummyList.Size = UDim2.new(1, 0, 0, 0)
-dummyList.Position = UDim2.new(0, 0, 1, 2)
-dummyList.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+dummyList.Size = UDim2.new(0.8,0,0,0)
+dummyList.Position = UDim2.new(0.1,0,0.2,40)
+dummyList.BackgroundColor3 = Color3.fromRGB(50,50,60)
 dummyList.BorderSizePixel = 0
 dummyList.ScrollBarThickness = 6
 dummyList.ClipsDescendants = true
-dummyList.ZIndex = 10
-dummyList.Parent = dummyFrame
+dummyList.Visible = false
+dummyList.ZIndex = 20
+dummyList.Parent = screenGui
 
 local dummyLayout = Instance.new("UIListLayout")
 dummyLayout.SortOrder = Enum.SortOrder.LayoutOrder
-dummyLayout.Padding = UDim.new(0, 2)
+dummyLayout.Padding = UDim.new(0,2)
 dummyLayout.Parent = dummyList
 
-local DummyOptions = {"Dummy1", "Dummy2", "Dummy3", "Dummy4", "Dummy5", "Dummy6"}
+local DummyOptions = {"Dummy1","Dummy2","Dummy3","Dummy4","Dummy5","Dummy6"}
+local selectedDummy = DummyOptions[1]
 local dummyOpen = false
+
 local function toggleDummyDropdown()
 	dummyOpen = not dummyOpen
-	local target = dummyOpen and 150 or 0
-	dummyList:TweenSize(UDim2.new(1, 0, 0, target), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.18, true)
+	dummyList.Visible = dummyOpen
+	if dummyOpen then
+		local absPos = dummyFrame.AbsolutePosition
+		dummyList.Position = UDim2.new(0, absPos.X, 0, absPos.Y + dummyFrame.AbsoluteSize.Y)
+		dummyList.Size = UDim2.new(0, dummyFrame.AbsoluteSize.X, 0, 150)
+	end
 end
 dummySelected.MouseButton1Click:Connect(toggleDummyDropdown)
 
 for _, name in ipairs(DummyOptions) do
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, 0, 0, 30)
-	btn.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Size = UDim2.new(1,0,0,30)
+	btn.BackgroundColor3 = Color3.fromRGB(70,70,80)
+	btn.TextColor3 = Color3.new(1,1,1)
 	btn.Text = name
 	btn.Font = Enum.Font.Gotham
 	btn.TextSize = 14
-	btn.ZIndex = 11
+	btn.ZIndex = 21
 	btn.Parent = dummyList
 	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, 6)
+	c.CornerRadius = UDim.new(0,6)
 	c.Parent = btn
 	btn.MouseButton1Click:Connect(function()
-		dummySelected.Text = "Selected: " .. name
-		toggleDummyDropdown()
+		selectedDummy = name
+		dummySelected.Text = "Selected: "..name
+		dummyList.Visible = false
+		dummyOpen = false
 	end)
 end
 dummyLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	dummyList.CanvasSize = UDim2.new(0, 0, 0, dummyLayout.AbsoluteContentSize.Y + 6)
+	dummyList.CanvasSize = UDim2.new(0,0,0,dummyLayout.AbsoluteContentSize.Y + 6)
 end)
 
---// Teleport Dropdown (ZIndex fixed)
+--// Auto Dummy Toggle (logic asli)
+local dummyToggle = createToggleButton(mainFrame,"Auto Dummy: OFF",0.38)
+local dummyOn = false
+local dummyLoop
+dummyToggle.MouseButton1Click:Connect(function()
+	dummyOn = not dummyOn
+	dummyToggle.Text = dummyOn and "Auto Dummy: ON" or "Auto Dummy: OFF"
+	if dummyOn then
+		dummyLoop = RunService.RenderStepped:Connect(function()
+			safeFire(function()
+				NetworkModule:FireServer("\000\006"..selectedDummy) -- logic asli tetap
+			end)
+		end)
+	else
+		if dummyLoop then dummyLoop:Disconnect() dummyLoop=nil end
+	end
+end)
+
+---------------------------------------------------------------------
+-- Auto Rebirth Toggle
+---------------------------------------------------------------------
+local rebirthToggle = createToggleButton(mainFrame,"Auto Rebirth: OFF",0.56)
+local rebirthOn = false
+local rebirthLoop
+rebirthToggle.MouseButton1Click:Connect(function()
+	rebirthOn = not rebirthOn
+	rebirthToggle.Text = rebirthOn and "Auto Rebirth: ON" or "Auto Rebirth: OFF"
+	if rebirthOn then
+		rebirthLoop = RunService.RenderStepped:Connect(function()
+			safeFire(function()
+				GameRemote:FireServer("Rebirth")
+			end)
+		end)
+	else
+		if rebirthLoop then rebirthLoop:Disconnect() rebirthLoop=nil end
+	end
+end)
+
+---------------------------------------------------------------------
+-- Auto Next Floor Toggle
+---------------------------------------------------------------------
+local nextToggle = createToggleButton(mainFrame,"Auto Next: OFF",0.74)
+local nextOn = false
+local nextLoop
+nextToggle.MouseButton1Click:Connect(function()
+	nextOn = not nextOn
+	nextToggle.Text = nextOn and "Auto Next: ON" or "Auto Next: OFF"
+	if nextOn then
+		nextLoop = RunService.RenderStepped:Connect(function()
+			safeFire(function()
+				TowerRemote:FireServer("NextFloor")
+			end)
+		end)
+	else
+		if nextLoop then nextLoop:Disconnect() nextLoop=nil end
+	end
+end)
+
+---------------------------------------------------------------------
+-- Teleport Dropdown
+---------------------------------------------------------------------
 local tpFrame = Instance.new("Frame")
-tpFrame.Size = UDim2.new(0.8, 0, 0, 36)
-tpFrame.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-tpFrame.ZIndex = 5
-tpFrame.Parent = content
+tpFrame.Size = UDim2.new(0.8,0,0,36)
+tpFrame.Position = UDim2.new(0.1,0,0.86,0)
+tpFrame.BackgroundColor3 = Color3.fromRGB(70,70,80)
+tpFrame.ZIndex = 10
+tpFrame.Parent = mainFrame
 local tpCorner = Instance.new("UICorner")
-tpCorner.CornerRadius = UDim.new(0, 8)
+tpCorner.CornerRadius = UDim.new(0,8)
 tpCorner.Parent = tpFrame
 
 local tpSelected = Instance.new("TextButton")
-tpSelected.Size = UDim2.new(1, 0, 1, 0)
+tpSelected.Size = UDim2.new(1,0,1,0)
 tpSelected.BackgroundTransparency = 1
 tpSelected.Text = "Select World"
-tpSelected.TextColor3 = Color3.new(1, 1, 1)
+tpSelected.TextColor3 = Color3.new(1,1,1)
 tpSelected.Font = Enum.Font.Gotham
 tpSelected.TextSize = 16
 tpSelected.TextXAlignment = Enum.TextXAlignment.Left
-tpSelected.ZIndex = 6
+tpSelected.ZIndex = 11
 tpSelected.Parent = tpFrame
 
 local tpList = Instance.new("ScrollingFrame")
-tpList.Size = UDim2.new(1, 0, 0, 0)
-tpList.Position = UDim2.new(0, 0, 1, 2)
-tpList.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+tpList.Size = UDim2.new(0.8,0,0,0)
+tpList.Position = UDim2.new(0.1,0,0.86,36)
+tpList.BackgroundColor3 = Color3.fromRGB(50,50,60)
 tpList.BorderSizePixel = 0
 tpList.ScrollBarThickness = 6
 tpList.ClipsDescendants = true
-tpList.ZIndex = 10
-tpList.Parent = tpFrame
+tpList.Visible = false
+tpList.ZIndex = 20
+tpList.Parent = screenGui
 
 local tpLayout = Instance.new("UIListLayout")
 tpLayout.SortOrder = Enum.SortOrder.LayoutOrder
-tpLayout.Padding = UDim.new(0, 2)
+tpLayout.Padding = UDim.new(0,2)
 tpLayout.Parent = tpList
 
 local Worlds = {}
-for i = 1, 25 do table.insert(Worlds, "World" .. i) end
+for i=1,25 do table.insert(Worlds,"World"..i) end
 local tpOpen = false
 local function toggleTPDropdown()
 	tpOpen = not tpOpen
-	local target = tpOpen and 150 or 0
-	tpList:TweenSize(UDim2.new(1, 0, 0, target), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.18, true)
+	tpList.Visible = tpOpen
+	if tpOpen then
+		local absPos = tpFrame.AbsolutePosition
+		tpList.Position = UDim2.new(0,absPos.X,0,absPos.Y+tpFrame.AbsoluteSize.Y)
+		tpList.Size = UDim2.new(0,tpFrame.AbsoluteSize.X,0,150)
+	end
 end
 tpSelected.MouseButton1Click:Connect(toggleTPDropdown)
 
-for _, name in ipairs(Worlds) do
+for _,name in ipairs(Worlds) do
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, 0, 0, 30)
-	btn.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Size = UDim2.new(1,0,0,30)
+	btn.BackgroundColor3 = Color3.fromRGB(70,70,80)
+	btn.TextColor3 = Color3.new(1,1,1)
 	btn.Text = name
 	btn.Font = Enum.Font.Gotham
 	btn.TextSize = 14
-	btn.ZIndex = 11
+	btn.ZIndex = 21
 	btn.Parent = tpList
 	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, 6)
+	c.CornerRadius = UDim.new(0,6)
 	c.Parent = btn
 	btn.MouseButton1Click:Connect(function()
 		tpSelected.Text = name
-		toggleTPDropdown()
+		tpList.Visible = false
+		tpOpen = false
 		safeFire(function()
-			print("Teleport to:", name)
+			GameRemote:FireServer("Travel",name)
 		end)
 	end)
 end
 tpLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	tpList.CanvasSize = UDim2.new(0, 0, 0, tpLayout.AbsoluteContentSize.Y + 6)
-end)
-
---// Minimize Logic
-local minimized = false
-minimize.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	local targetY = minimized and 34 or 360
-	mainFrame:TweenSize(UDim2.new(0, 260, 0, targetY), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25, true)
+	tpList.CanvasSize = UDim2.new(0,0,0,tpLayout.AbsoluteContentSize.Y + 6)
 end)
     end
 })
@@ -579,5 +628,6 @@ end)
 print("[Anti-AFK] Aktif otomatis ✅")
     end
 })
+
 
 
