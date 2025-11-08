@@ -1,21 +1,3 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-local Window = Rayfield:CreateWindow({
-    Name = "Ashlabs - Arm Wrestle Simulator",
-    LoadingTitle = "Rayfield UI",
-    LoadingSubtitle = "Converted from Ash-Libs",
-    ConfigurationSaving = { Enabled = false },
-    Discord = { Enabled = false }
-})
-
--- Helper: create sanitized tab var names
-local function _san(name)
-    local t = {}
-    for w in name:gmatch("%w+") do
-        table.insert(t, w:sub(1,1):upper() .. w:sub(2))
-    end
-    return table.concat(t, "") .. "Tab"
-end
-
 local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/BloodLetters/Ash-Libs/refs/heads/main/source.lua"))()
 GUI:CreateMain({
     Name = "Ashlabs",
@@ -42,11 +24,14 @@ GUI:CreateMain({
     }
 })
 
-local MainTab = Window:CreateTab("Main", "user-round") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab2:CreateSection("Player")
-MiscTab2:CreateButton{ Name = "Trade ke Benz_0x7", 
-     
-     
+local main = GUI:CreateTab("Main", "user-round") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Player"
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Trade ke Benz_0x7", 
     callback = function()
 local args = {
 	game:GetService("Players"):WaitForChild("benz_0x7")
@@ -54,10 +39,10 @@ local args = {
 game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("TradingService"):WaitForChild("RF"):WaitForChild("sendTradeRequest"):InvokeServer(unpack(args))
 
     end
-}
-MiscTab2:CreateButton{ Name = "Fast Relog", 
-     
-     
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Fast Relog", 
     callback = function()
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
@@ -76,11 +61,11 @@ if placeId == targetPlaceId then
     TeleportService:Teleport(targetPlaceId, player)
 end
     end
-}
+})
 
-MiscTab2:CreateButton{ Name = "Auto Trick n Treat", 
-     
-     
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Trick n Treat", 
     callback = function()
 --// Auto Farm All Grave Zombies + GUI Toggle + Distance Check (Teleport)
 --// Buat di LocalScript (misal di StarterPlayerScripts)
@@ -201,11 +186,11 @@ task.spawn(function()
 	end
 end)
     end
-}
+})
 
-MiscTab2:CreateButton{ Name = "Auto Attack Zombie", 
-     
-     
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Attack Zombie", 
     callback = function()
 --// Auto Farm All Grave Zombies + GUI Toggle + Distance Check (Teleport)
 --// Buat di LocalScript (misal di StarterPlayerScripts)
@@ -327,10 +312,10 @@ task.spawn(function()
 end)
 
     end
-}
-MiscTab2:CreateToggle{ Name = "Auto Quest Token", 
-     
-     
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Quest Token", 
     default = false, 
     callback = function(enabled)
 
@@ -506,11 +491,11 @@ MiscTab2:CreateToggle{ Name = "Auto Quest Token",
             print("🛑 [AutoQuest] Disabled.")
         end
     end
-}
+})
 
-MiscTab2:CreateToggle{ Name = "Auto Claim", 
-     
-     
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Claim", 
     default = true, 
     callback = function(claim)
 	if claim then	
@@ -546,11 +531,11 @@ end
            end
         print("Toggle state:", claim)
     end
-}
+})
 
-MiscTab2:CreateToggle{ Name = "Auto Roll Aura", 
-     
-     
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Roll Aura", 
     default = true, 
     callback = function(Aura)
 if Aura then
@@ -564,10 +549,10 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
 		print("Toggle state:", Aura)
     end
-}
-MiscTab2:CreateToggle{ Name = "Auto Insert Goliath", 
-     
-     
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Insert Goliath", 
     default = false, 
     callback = function(state)
         getgenv().AUTO_INSERT_GOLIATH = state
@@ -618,10 +603,10 @@ MiscTab2:CreateToggle{ Name = "Auto Insert Goliath",
             end)
         end
     end
-}
-MiscTab2:CreateToggle{ Name = "Auto Claim Goliath", 
-     
-     
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Claim Goliath", 
     default = false, 
     callback = function(state)
         getgenv().AUTO_CLAIM_GOLIATH = state
@@ -660,13 +645,16 @@ MiscTab2:CreateToggle{ Name = "Auto Claim Goliath",
             end)
         end
     end
-}
-local MachineAndShopTab = Window:CreateTab("Machine and Shop", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab2:CreateSection("Shop")
+})
+local main = GUI:CreateTab("Machine and Shop", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Shop"
+})
 
-MiscTab2:CreateToggle{ Name = "Squid Merchant", 
-     
-     
+GUI:CreateToggle({
+    parent = main, 
+    text = "Squid Merchant", 
     default = true, 
     callback = function(squid)
 if squid then
@@ -702,10 +690,10 @@ end
            end
         print("Toggle state:", squid)
     end
-}
-MiscTab2:CreateToggle{ Name = "Buy Shop Summer", 
-     
-     
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Buy Shop Summer", 
     default = true, 
     callback = function(shopsummer)
 if shopsummer then
@@ -722,10 +710,10 @@ task.wait(60)
            end
 		 print("Toggle state:", shopsummer)
     end
-}
-MiscTab2:CreateButton{ Name = "Goliath Machine", 
-     
-     
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Goliath Machine", 
     callback = function()
 -- Knit approach: calls the controller methods used in the decompiled code.
 local Players = game:GetService("Players")
@@ -782,10 +770,10 @@ task.spawn(function()
     -- task.delay(3, closeGoliath)
 end)
 
-end}
-MiscTab2:CreateButton{ Name = "Machine Pristine", 
-     
-     
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Machine Pristine", 
     callback = function()
 --// LocalScript inside StarterPlayerScripts (or executor if testing)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -801,11 +789,11 @@ local PristineController = Knit.GetController("PristineController")
 PristineController:UpdatePetList()
 PristineController.FrameController:Open()
 PristineController:UpdateDisplay()
-end}
+end})
 
-MiscTab2:CreateButton{ Name = "Medal Shop", 
-     
-     
+GUI:CreateButton({
+    parent = main, 
+    text = "Medal Shop", 
     callback = function()
 --// LocalScript inside StarterPlayerScripts (or executor)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -821,11 +809,11 @@ local MedalMerchantController = Knit.GetController("MedalMerchantController")
 if MedalMerchantController and MedalMerchantController.FrameController then
     MedalMerchantController.FrameController:Open()
 end
-end}
+end})
 
-MiscTab2:CreateButton{ Name = "Forge Machine", 
-     
-     
+GUI:CreateButton({
+    parent = main, 
+    text = "Forge Machine", 
     callback = function()
 -- ⚡ Execution script to open Forge Machine UI
 local Players = game:GetService("Players")
@@ -845,11 +833,11 @@ local ForgeFrame = FrameController.new(ForgeUI)
 -- 🔥 Open the Forge UI instantly
 ForgeFrame:Open()
 print("⚙️ Forge Machine UI opened successfully!")
-end}
+end})
 
-MiscTab2:CreateButton{ Name = "Rift Machine", 
-     
-     
+GUI:CreateButton({
+    parent = main, 
+    text = "Rift Machine", 
     callback = function()
 --⚡ Force open Rift Machine UI
 local Players = game:GetService("Players")
@@ -878,13 +866,16 @@ end
 
 -- Example: auto-open on script run
 openRiftMachine()
-end}
+end})
 
-local BattleTab = Window:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab2:CreateSection("Support Battle")
-MiscTab2:CreateButton{ Name = "Auto Swing", 
-    
-    
+local main = GUI:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Support Battle"
+})
+GUI:CreateButton({
+    parent = main,
+    text = "Auto Swing",
     callback = function()
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -908,11 +899,11 @@ MiscTab2:CreateButton{ Name = "Auto Swing",
             print("🛑 Auto Swing OFF")
         end
     end
-}
+})
 
-MiscTab2:CreateButton{ Name = "Auto  Rebirth and superRebirth", 
-     
-     
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto  Rebirth and superRebirth", 
     callback = function()
 --// Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1023,7 +1014,7 @@ body.BackgroundTransparency = 1
 -- Hover effect
 local function addHover(btn)
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(255,255,180)}:Play()
+        TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(255,255,180)}):Play()
     end)
     btn.MouseLeave:Connect(function()
         TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(255,255,255)}):Play()
@@ -1228,9 +1219,9 @@ task.spawn(function()
     end
 end)
 end})
-MiscTab2:CreateToggle{ Name = "Auto Delete fight & GameUI", 
-    
-    
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Delete fight & GameUI",
     default = false,
     callback = function(delfight)
         local Players = game:GetService("Players")
@@ -1245,7 +1236,7 @@ MiscTab2:CreateToggle{ Name = "Auto Delete fight & GameUI",
             local playerGui = player:WaitForChild("PlayerGui")
 
             -- Delete existing GUIs
-            for _, guiName in ipairs({"Fighting", "GameUI"} do
+            for _, guiName in ipairs({"Fighting", "GameUI"}) do
                 local gui = playerGui:FindFirstChild(guiName)
                 if gui then
                     gui:Destroy()
@@ -1296,9 +1287,9 @@ MiscTab2:CreateToggle{ Name = "Auto Delete fight & GameUI",
         end
     end
 })  
-MiscTab2:CreateToggle{ Name = "Auto Crit/Clik", 
-    
-    
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Crit/Clik",
     default = false,
     callback = function(critclik)
  --// Services
@@ -1335,10 +1326,10 @@ RunService.RenderStepped:Connect(function()
         end)
     end
 end)
-end}
-MiscTab2:CreateToggle{ Name = "Auto Battle Bot", 
-    
-    
+end})
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Battle Bot",
     default = false,
     callback = function(battlebot)
         _G.battlebot1 = battlebot
@@ -1382,10 +1373,10 @@ MiscTab2:CreateToggle{ Name = "Auto Battle Bot",
         end
 
         print("Toggle state:", battlebot)
-    end}
-MiscTab2:CreateButton{ Name = "Auto Tower Bot", 
-     
-     
+    end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Tower Bot", 
     callback = function()
 -- ⚡ Auto Tower + Spam Click Modern GUI
 -- Features: Draggable, Minimize/Unminimize with Floating Button, X Close, Loop + SpamClick
@@ -1574,10 +1565,10 @@ miniButton.MouseButton1Click:Connect(function()
     frame.Visible = true
     miniButton.Visible = false
 end)
-end}
-MiscTab2:CreateButton{ Name = "Auto Trial", 
-     
-     
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Trial", 
     callback = function()
 -- Modern Compact GUI with Loop & Color State
 local Players = game:GetService("Players")
@@ -1724,27 +1715,30 @@ joinButton.MouseButton1Click:Connect(function()
         end
     end
 end)
-end}
-local MiscTab = Window:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab2:CreateSection("Option")
-MiscTab2:CreateButton{ Name = "Auto CLick", 
-     
-     
+end})
+local main = GUI:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Option"
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto CLick", 
     callback = function()
 getgenv().key = "Hostile"
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
-end}
+end})
 
-MiscTab2:CreateButton{ Name = "Lds Mutate", 
-     
-     
+GUI:CreateButton({
+    parent = main, 
+    text = "Lds Mutate", 
     callback = function()
 loadstring(game:HttpGet('https://raw.githubusercontent.com/yadielsantoss/full-script/refs/heads/main/MUTATE%20aws'))()
     end
-}
-MiscTab2:CreateToggle{ Name = "Anti AFK", 
-    
-    
+})
+GUI:CreateToggle({
+    parent = main,
+    text = "Anti AFK",
     default = true,
     callback = function(enabled)
         local player = game.Players.LocalPlayer
@@ -1776,12 +1770,12 @@ MiscTab2:CreateToggle{ Name = "Anti AFK",
             end
         end
     end
-}
+})
 
 
-MiscTab2:CreateButton{ Name = "Use Item", 
-     
-     
+GUI:CreateButton({
+    parent = main, 
+    text = "Use Item", 
     callback = function()
 --// Services
 local Players = game:GetService("Players")
@@ -1924,7 +1918,7 @@ for _, data in ipairs(items) do
         value = value,
         input = input,
         getChecked = function() return checked end
-    }
+    })
 end
 
 -- Run button
@@ -1964,9 +1958,9 @@ closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 end})
-MiscTab2:CreateButton{ Name = "Buy Medal", 
-     
-     
+GUI:CreateButton({
+    parent = main, 
+    text = "Buy Medal", 
     callback = function()
 local buyMedal = game:GetService("ReplicatedStorage")
     :WaitForChild("Packages")
@@ -2015,10 +2009,10 @@ buyMedal:InvokeServer("Boombox Medal")
 buyMedal:InvokeServer("Lucky 1 Medal")
 buyMedal:InvokeServer("Guard Medal")
 end
-}
-MiscTab2:CreateButton{ Name = "Reedem Gamepass", 
-     
-     
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Reedem Gamepass", 
     callback = function()
 	local claim = game:GetService("ReplicatedStorage")
     :WaitForChild("Packages")
@@ -2060,10 +2054,10 @@ claim:InvokeServer("Regular",29)
 claim:InvokeServer("Regular",30)
 
 end
-}
-MiscTab2:CreateButton{ Name = "Reedem Code", 
-     
-     
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Reedem Code", 
     callback = function()
 local redeem = game:GetService("ReplicatedStorage")
     :WaitForChild("Packages")
@@ -2130,13 +2124,16 @@ redeem:FireServer("21iscoming")
 redeem:FireServer("welovemining")
 redeem:FireServer("sorryfordelay")
 
-end}
+end})
 
-local NewEventTab = Window:CreateTab("New Event", "squircle") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab2:CreateSection("Option")
-MiscTab2:CreateToggle{ Name = "Equip Mining", 
-     
-     
+local main = GUI:CreateTab("New Event", "squircle") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Option"
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Equip Mining", 
     default = false, 
     callback = function(duck)
 if duck then
@@ -2163,10 +2160,10 @@ end
            end
         print("Toggle state:", duck)
     end
-}
-MiscTab2:CreateToggle{ Name = "Equip Knuckle", 
-     
-     
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Equip Knuckle", 
     default = false, 
     callback = function(knuckle)
 if knuckle then
@@ -2190,12 +2187,15 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
            end
         print("Toggle state:", knuckle)
     end
-}
-local MiscTab2 = Window:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab2:CreateSection("Shortcut")
-MiscTab2:CreateToggle{ Name = "Auto Daily Login", 
-     
-     
+})
+local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Shortcut"
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Daily Login", 
     default = true, 
     callback = function(dailylogin)
 if dailylogin then
@@ -2209,10 +2209,10 @@ task.wait(20)
         end
 		print("Toggle state:", dailylogin)
     end
-}
-MiscTab2:CreateToggle{ Name = "Auto Open Trainer", 
-     
-     
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Open Trainer", 
     default = true, 
     callback = function(trainer)
 if trainer then
@@ -2230,10 +2230,10 @@ end
            end
 		print("Toggle state:", trainer)
     end
-}
-MiscTab2:CreateToggle{ Name = "Auto Upgrade Snack", 
-     
-     
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Upgrade Snack", 
     default = false, 
     callback = function(upgrade)
 if upgrade then
@@ -2264,10 +2264,10 @@ end
            end
         print("Toggle state:", upgrade)
     end
-}
-MiscTab2:CreateButton{ Name = "Brew Hallowen", 
-     
-     
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Brew Hallowen", 
     callback = function()
 -- 🎃 Halloween Brewer (Mobile Scaled - Updated)
 -- Auto-resize UI untuk Android & PC
@@ -2517,10 +2517,10 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 print("🎃 Halloween Brewer (mobile-scaled, updated data) loaded!")
-end}
-MiscTab2:CreateToggle{ Name = "Auto Digger Claim", 
-     
-     
+end})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Digger Claim", 
     default = true, 
     callback = function(digger)
         if digger then	
@@ -2696,13 +2696,16 @@ MiscTab2:CreateToggle{ Name = "Auto Digger Claim",
         end
         print("Toggle state:", digger)
     end
-}
+})
 
-local MiscTab3 = Window:CreateTab("misc", "egg") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab2:CreateSection("Egg Hatch")
-MiscTab2:CreateButton{ Name = "Auto Hatch Egg", 
-     
-     
+local main = GUI:CreateTab("misc", "egg") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Egg Hatch"
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Hatch Egg", 
     callback = function()
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -3045,10 +3048,10 @@ end)
 
 -- Initial load
 refreshZones("")
- end}
-MiscTab2:CreateButton{ Name = "Auto Spinner Bot", 
-     
-     
+ end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Spinner Bot", 
     callback = function()
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -3303,10 +3306,10 @@ end)
 refreshDropdown("")
 updateToggleText()
 
-end}
-MiscTab2:CreateButton{ Name = "Auto Open Chest", 
-     
-     
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Open Chest", 
     callback = function()
 --// Services
 local Players = game:GetService("Players")
@@ -3543,10 +3546,10 @@ end)
 CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
-end}
-MiscTab2:CreateButton{ Name = "Auto Mining", 
-     
-     
+end})
+GUI:CreateButton({
+    parent = main, 
+    text = "Auto Mining", 
     callback = function()
 --// Services
 local Players = game:GetService("Players")
@@ -3842,7 +3845,7 @@ end)
 CloseBtn.MouseButton1Click:Connect(function()
 	ScreenGui:Destroy()
 end)
-end}
+end})
 if riftButton and riftButton.callback then
     riftButton.callback()
 end
