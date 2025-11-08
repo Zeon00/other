@@ -43,8 +43,8 @@ GUI:CreateMain({
 })
 
 local MainTab = Window:CreateTab("Main", "user-round") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab:CreateSection("Player")
-MiscTab:CreateButton{ Name = "Trade ke Benz_0x7", 
+MiscTab2:CreateSection("Player")
+MiscTab2:CreateButton{ Name = "Trade ke Benz_0x7", 
      
      
     callback = function()
@@ -55,7 +55,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 
     end
 }
-MiscTab:CreateButton{ Name = "Fast Relog", 
+MiscTab2:CreateButton{ Name = "Fast Relog", 
      
      
     callback = function()
@@ -78,7 +78,7 @@ end
     end
 }
 
-MiscTab:CreateButton{ Name = "Auto Trick n Treat", 
+MiscTab2:CreateButton{ Name = "Auto Trick n Treat", 
      
      
     callback = function()
@@ -203,7 +203,7 @@ end)
     end
 }
 
-MiscTab:CreateButton{ Name = "Auto Attack Zombie", 
+MiscTab2:CreateButton{ Name = "Auto Attack Zombie", 
      
      
     callback = function()
@@ -328,7 +328,7 @@ end)
 
     end
 }
-MiscTab:CreateToggle{ Name = "Auto Quest Token", 
+MiscTab2:CreateToggle{ Name = "Auto Quest Token", 
      
      
     default = false, 
@@ -508,7 +508,7 @@ MiscTab:CreateToggle{ Name = "Auto Quest Token",
     end
 }
 
-MiscTab:CreateToggle{ Name = "Auto Claim", 
+MiscTab2:CreateToggle{ Name = "Auto Claim", 
      
      
     default = true, 
@@ -548,7 +548,7 @@ end
     end
 }
 
-MiscTab:CreateToggle{ Name = "Auto Roll Aura", 
+MiscTab2:CreateToggle{ Name = "Auto Roll Aura", 
      
      
     default = true, 
@@ -565,7 +565,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 		print("Toggle state:", Aura)
     end
 }
-MiscTab:CreateToggle{ Name = "Auto Insert Goliath", 
+MiscTab2:CreateToggle{ Name = "Auto Insert Goliath", 
      
      
     default = false, 
@@ -619,7 +619,7 @@ MiscTab:CreateToggle{ Name = "Auto Insert Goliath",
         end
     end
 }
-MiscTab:CreateToggle{ Name = "Auto Claim Goliath", 
+MiscTab2:CreateToggle{ Name = "Auto Claim Goliath", 
      
      
     default = false, 
@@ -662,9 +662,9 @@ MiscTab:CreateToggle{ Name = "Auto Claim Goliath",
     end
 }
 local MachineAndShopTab = Window:CreateTab("Machine and Shop", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab:CreateSection("Shop")
+MiscTab2:CreateSection("Shop")
 
-MiscTab:CreateToggle{ Name = "Squid Merchant", 
+MiscTab2:CreateToggle{ Name = "Squid Merchant", 
      
      
     default = true, 
@@ -703,7 +703,7 @@ end
         print("Toggle state:", squid)
     end
 }
-MiscTab:CreateToggle{ Name = "Buy Shop Summer", 
+MiscTab2:CreateToggle{ Name = "Buy Shop Summer", 
      
      
     default = true, 
@@ -723,7 +723,7 @@ task.wait(60)
 		 print("Toggle state:", shopsummer)
     end
 }
-MiscTab:CreateButton{ Name = "Goliath Machine", 
+MiscTab2:CreateButton{ Name = "Goliath Machine", 
      
      
     callback = function()
@@ -783,7 +783,7 @@ task.spawn(function()
 end)
 
 end}
-MiscTab:CreateButton{ Name = "Machine Pristine", 
+MiscTab2:CreateButton{ Name = "Machine Pristine", 
      
      
     callback = function()
@@ -803,7 +803,7 @@ PristineController.FrameController:Open()
 PristineController:UpdateDisplay()
 end}
 
-MiscTab:CreateButton{ Name = "Medal Shop", 
+MiscTab2:CreateButton{ Name = "Medal Shop", 
      
      
     callback = function()
@@ -823,7 +823,7 @@ if MedalMerchantController and MedalMerchantController.FrameController then
 end
 end}
 
-MiscTab:CreateButton{ Name = "Forge Machine", 
+MiscTab2:CreateButton{ Name = "Forge Machine", 
      
      
     callback = function()
@@ -847,7 +847,7 @@ ForgeFrame:Open()
 print("⚙️ Forge Machine UI opened successfully!")
 end}
 
-MiscTab:CreateButton{ Name = "Rift Machine", 
+MiscTab2:CreateButton{ Name = "Rift Machine", 
      
      
     callback = function()
@@ -881,8 +881,8 @@ openRiftMachine()
 end}
 
 local BattleTab = Window:CreateTab("Battle", "swords") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab:CreateSection("Support Battle")
-MiscTab:CreateButton{ Name = "Auto Swing", 
+MiscTab2:CreateSection("Support Battle")
+MiscTab2:CreateButton{ Name = "Auto Swing", 
     
     
     callback = function()
@@ -910,7 +910,7 @@ MiscTab:CreateButton{ Name = "Auto Swing",
     end
 }
 
-MiscTab:CreateButton{ Name = "Auto  Rebirth and superRebirth", 
+MiscTab2:CreateButton{ Name = "Auto  Rebirth and superRebirth", 
      
      
     callback = function()
@@ -1228,7 +1228,7 @@ task.spawn(function()
     end
 end)
 end})
-MiscTab:CreateToggle{ Name = "Auto Delete fight & GameUI", 
+MiscTab2:CreateToggle{ Name = "Auto Delete fight & GameUI", 
     
     
     default = false,
@@ -1296,7 +1296,7 @@ MiscTab:CreateToggle{ Name = "Auto Delete fight & GameUI",
         end
     end
 })  
-MiscTab:CreateToggle{ Name = "Auto Crit/Clik", 
+MiscTab2:CreateToggle{ Name = "Auto Crit/Clik", 
     
     
     default = false,
@@ -1336,7 +1336,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 end}
-MiscTab:CreateToggle{ Name = "Auto Battle Bot", 
+MiscTab2:CreateToggle{ Name = "Auto Battle Bot", 
     
     
     default = false,
@@ -1383,7 +1383,7 @@ MiscTab:CreateToggle{ Name = "Auto Battle Bot",
 
         print("Toggle state:", battlebot)
     end}
-MiscTab:CreateButton{ Name = "Auto Tower Bot", 
+MiscTab2:CreateButton{ Name = "Auto Tower Bot", 
      
      
     callback = function()
@@ -1575,7 +1575,7 @@ miniButton.MouseButton1Click:Connect(function()
     miniButton.Visible = false
 end)
 end}
-MiscTab:CreateButton{ Name = "Auto Trial", 
+MiscTab2:CreateButton{ Name = "Auto Trial", 
      
      
     callback = function()
@@ -1726,8 +1726,8 @@ joinButton.MouseButton1Click:Connect(function()
 end)
 end}
 local MiscTab = Window:CreateTab("Misc", "circle-ellipsis") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab:CreateSection("Option")
-MiscTab:CreateButton{ Name = "Auto CLick", 
+MiscTab2:CreateSection("Option")
+MiscTab2:CreateButton{ Name = "Auto CLick", 
      
      
     callback = function()
@@ -1735,14 +1735,14 @@ getgenv().key = "Hostile"
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligence/main/MC%20KSystem%202"))()
 end}
 
-MiscTab:CreateButton{ Name = "Lds Mutate", 
+MiscTab2:CreateButton{ Name = "Lds Mutate", 
      
      
     callback = function()
 loadstring(game:HttpGet('https://raw.githubusercontent.com/yadielsantoss/full-script/refs/heads/main/MUTATE%20aws'))()
     end
 }
-MiscTab:CreateToggle{ Name = "Anti AFK", 
+MiscTab2:CreateToggle{ Name = "Anti AFK", 
     
     
     default = true,
@@ -1779,7 +1779,7 @@ MiscTab:CreateToggle{ Name = "Anti AFK",
 }
 
 
-MiscTab:CreateButton{ Name = "Use Item", 
+MiscTab2:CreateButton{ Name = "Use Item", 
      
      
     callback = function()
@@ -1964,7 +1964,7 @@ closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 end})
-MiscTab:CreateButton{ Name = "Buy Medal", 
+MiscTab2:CreateButton{ Name = "Buy Medal", 
      
      
     callback = function()
@@ -2016,7 +2016,7 @@ buyMedal:InvokeServer("Lucky 1 Medal")
 buyMedal:InvokeServer("Guard Medal")
 end
 }
-MiscTab:CreateButton{ Name = "Reedem Gamepass", 
+MiscTab2:CreateButton{ Name = "Reedem Gamepass", 
      
      
     callback = function()
@@ -2061,7 +2061,7 @@ claim:InvokeServer("Regular",30)
 
 end
 }
-MiscTab:CreateButton{ Name = "Reedem Code", 
+MiscTab2:CreateButton{ Name = "Reedem Code", 
      
      
     callback = function()
@@ -2133,8 +2133,8 @@ redeem:FireServer("sorryfordelay")
 end}
 
 local NewEventTab = Window:CreateTab("New Event", "squircle") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab:CreateSection("Option")
-MiscTab:CreateToggle{ Name = "Equip Mining", 
+MiscTab2:CreateSection("Option")
+MiscTab2:CreateToggle{ Name = "Equip Mining", 
      
      
     default = false, 
@@ -2164,7 +2164,7 @@ end
         print("Toggle state:", duck)
     end
 }
-MiscTab:CreateToggle{ Name = "Equip Knuckle", 
+MiscTab2:CreateToggle{ Name = "Equip Knuckle", 
      
      
     default = false, 
@@ -2191,9 +2191,9 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
         print("Toggle state:", knuckle)
     end
 }
-local MiscTab = Window:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab:CreateSection("Shortcut")
-MiscTab:CreateToggle{ Name = "Auto Daily Login", 
+local MiscTab2 = Window:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
+MiscTab2:CreateSection("Shortcut")
+MiscTab2:CreateToggle{ Name = "Auto Daily Login", 
      
      
     default = true, 
@@ -2210,7 +2210,7 @@ task.wait(20)
 		print("Toggle state:", dailylogin)
     end
 }
-MiscTab:CreateToggle{ Name = "Auto Open Trainer", 
+MiscTab2:CreateToggle{ Name = "Auto Open Trainer", 
      
      
     default = true, 
@@ -2231,7 +2231,7 @@ end
 		print("Toggle state:", trainer)
     end
 }
-MiscTab:CreateToggle{ Name = "Auto Upgrade Snack", 
+MiscTab2:CreateToggle{ Name = "Auto Upgrade Snack", 
      
      
     default = false, 
@@ -2265,7 +2265,7 @@ end
         print("Toggle state:", upgrade)
     end
 }
-MiscTab:CreateButton{ Name = "Brew Hallowen", 
+MiscTab2:CreateButton{ Name = "Brew Hallowen", 
      
      
     callback = function()
@@ -2518,7 +2518,7 @@ end)
 
 print("🎃 Halloween Brewer (mobile-scaled, updated data) loaded!")
 end}
-MiscTab:CreateToggle{ Name = "Auto Digger Claim", 
+MiscTab2:CreateToggle{ Name = "Auto Digger Claim", 
      
      
     default = true, 
@@ -2698,9 +2698,9 @@ MiscTab:CreateToggle{ Name = "Auto Digger Claim",
     end
 }
 
-local MiscTab = Window:CreateTab("misc", "egg") -- You can use IconID we didnt impleemnt lucid or any external icons
-MiscTab:CreateSection("Egg Hatch")
-MiscTab:CreateButton{ Name = "Auto Hatch Egg", 
+local MiscTab3 = Window:CreateTab("misc", "egg") -- You can use IconID we didnt impleemnt lucid or any external icons
+MiscTab2:CreateSection("Egg Hatch")
+MiscTab2:CreateButton{ Name = "Auto Hatch Egg", 
      
      
     callback = function()
@@ -3046,7 +3046,7 @@ end)
 -- Initial load
 refreshZones("")
  end}
-MiscTab:CreateButton{ Name = "Auto Spinner Bot", 
+MiscTab2:CreateButton{ Name = "Auto Spinner Bot", 
      
      
     callback = function()
@@ -3304,7 +3304,7 @@ refreshDropdown("")
 updateToggleText()
 
 end}
-MiscTab:CreateButton{ Name = "Auto Open Chest", 
+MiscTab2:CreateButton{ Name = "Auto Open Chest", 
      
      
     callback = function()
@@ -3544,7 +3544,7 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 end}
-MiscTab:CreateButton{ Name = "Auto Mining", 
+MiscTab2:CreateButton{ Name = "Auto Mining", 
      
      
     callback = function()
