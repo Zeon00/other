@@ -5,6 +5,144 @@ local UserInputService = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 
 local GUI = {}
+
+-- ======= Helper / Compatibility shims (AUTO-ADDED) =======
+-- Fungsi-fungsi ini dibuat supaya library bisa di-load tanpa error.
+-- Mereka bersifat minimal / dummy tapi cukup untuk menjalankan UI.
+
+local function safeVector2(x,y)
+    if typeof(x) == "Vector2" then return x end
+    return Vector2.new(x or 0, y or 0)
+end
+
+local function getIcon(name)
+    -- Kembalikan asset id default kecil. Jika ingin ubah, ganti id berikut.
+    return { id = "rbxassetid://0", imageRectSize = Vector2.new(0,0), imageRectOffset = Vector2.new(0,0) }
+end
+
+local function getAssetUri(id)
+    -- Jika id sudah string seperti "rbxassetid://123", kembalikan langsung
+    return tostring(id or "")
+end
+
+local function getAutoLoad()
+    -- default false untuk menghindari akses file sistem pada executor tertentu
+    return false
+end
+
+-- Minimal implementations sebagai methods GUI (bukan full-featured)
+function GUI:CreateNotify(opts)
+    -- opts = { title = "", description = "" }
+    pcall(function()
+        if typeof(opts) == "table" then
+            print("[Notify] "..tostring(opts.title)..": "..tostring(opts.description))
+        else
+            print("[Notify] notification")
+        end
+    end)
+end
+
+function GUI:CreateParagraph(config)
+    -- buat TextLabel sederhana di parent jika tersedia
+    pcall(function()
+        local parent = config.parent
+        if parent and parent:IsA("Instance") then
+            local t = Instance.new("TextLabel")
+            t.Size = UDim2.new(1,0,0,30)
+            t.BackgroundTransparency = 1
+            t.Text = config.text or config.Text or ""
+            t.TextColor3 = Color3.fromRGB(200,200,200)
+            t.Font = Enum.Font.Gotham
+            t.TextSize = 14
+            t.Parent = parent
+        end
+    end)
+end
+
+function GUI:CreateSection(config)
+    pcall(function()
+        local parent = config.parent
+        if parent and parent:IsA("Instance") then
+            local header = Instance.new("TextLabel")
+            header.Size = UDim2.new(1,0,0,28)
+            header.BackgroundTransparency = 1
+            header.Font = Enum.Font.GothamBold
+            header.TextSize = 15
+            header.Text = config.text or config.Text or ""
+            header.TextColor3 = Color3.fromRGB(255,255,255)
+            header.Parent = parent
+        end
+    end)
+end
+
+function GUI:CreateDivider(config)
+    pcall(function()
+        local parent = config.parent
+        if parent and parent:IsA("Instance") then
+            local d = Instance.new("Frame")
+            d.Size = UDim2.new(1,0,0,2)
+            d.BackgroundTransparency = 0.6
+            d.BackgroundColor3 = Color3.fromRGB(90,90,90)
+            d.Parent = parent
+        end
+    end)
+end
+
+function GUI:Save()
+    -- dummy save (print saja)
+    print("[AshLib] Save called (dummy)")
+end
+
+function GUI:Delete()
+    print("[AshLib] Delete called (dummy)")
+end
+
+function GUI:GetFlagValue(flag)
+    return nil
+end
+
+function GUI:AutoSaveLoad(enabled)
+    print("[AshLib] AutoSaveLoad set to", enabled)
+end
+
+function GUI:CreateKeyBind(config)
+    -- Simple keybind UI placeholder: kembalikan instance frame yang cukup untuk digunakan
+    local parent = config.parent
+    local frame = Instance.new("Frame")
+    frame.Name = "KeyBind"
+    frame.Size = UDim2.new(1,0,0,35)
+    frame.BackgroundTransparency = 1
+    if parent and parent:IsA("Instance") then
+        frame.Parent = parent
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -80, 1, 0)
+        label.Position = UDim2.new(0,10,0,0)
+        label.BackgroundTransparency = 1
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 14
+        label.Text = config.text or config.Text or "KeyBind"
+        label.TextColor3 = Color3.fromRGB(200,200,200)
+        label.Parent = frame
+
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0,70,0,24)
+        btn.Position = UDim2.new(1, -80, 0.5, -12)
+        btn.Text = tostring(config.default or "")
+        btn.Font = Enum.Font.Gotham
+        btn.Parent = frame
+        btn.AutoButtonColor = false
+        btn.MouseButton1Click:Connect(function()
+            if config.callback then
+                pcall(function() config.callback(btn.Text, nil, true) end)
+            end
+        end)
+    end
+    return frame
+end
+
+-- ======================================================
+
+
 GUI.CurrentTab = nil
 GUI.Settings = {}
 
