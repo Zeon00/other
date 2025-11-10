@@ -1730,47 +1730,48 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/The-telligenc
 end})
 
 GUI:CreateButton({
-    parent = main, 
-    text = "Lds Mutate", 
+    parent = main,
+    text = "Auto Mutate",
     callback = function()
-loadstring(game:HttpGet('https://raw.githubusercontent.com/yadielsantoss/full-script/refs/heads/main/MUTATE%20aws'))()
+        loadstring(game:HttpGet("https://pastebin.com/raw/YourScriptHere"))()
     end
 })
+
 GUI:CreateToggle({
     parent = main,
     text = "Anti AFK",
     default = true,
     callback = function(enabled)
-        local player = game.Players.LocalPlayer
-        local vu = game:GetService("VirtualUser")
-
-        -- simpan koneksi event di luar agar bisa dimatikan nanti
-        if not _G.AntiAfkConnection then
-            _G.AntiAfkConnection = nil
-        end
-
-        -- kalau diaktifkan
         if enabled then
-            -- buat koneksi baru hanya kalau belum ada
-            if not _G.AntiAfkConnection then
-                _G.AntiAfkConnection = player.Idled:Connect(function()
-                    vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-                    task.wait(1)
-                    vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+            -- Aktifkan anti AFK
+            if not _G.AntiAFKConnection then
+                local VirtualUser = game:GetService("VirtualUser")
+                _G.AntiAFKConnection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton2(Vector2.new())
                 end)
-                print("[Anti-AFK] Aktif ✅")
-            end
 
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Anti AFK",
+                    Text = "Anti AFK activated ✅",
+                    Duration = 4
+                })
+            end
         else
-            -- kalau dimatikan, disconnect koneksi
-            if _G.AntiAfkConnection then
-                _G.AntiAfkConnection:Disconnect()
-                _G.AntiAfkConnection = nil
-                print("[Anti-AFK] Nonaktif ❌")
+            -- Matikan anti AFK
+            if _G.AntiAFKConnection then
+                _G.AntiAFKConnection:Disconnect()
+                _G.AntiAFKConnection = nil
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Anti AFK",
+                    Text = "Anti AFK deactivated ❌",
+                    Duration = 4
+                })
             end
         end
     end
 })
+
 
 
 GUI:CreateButton({
