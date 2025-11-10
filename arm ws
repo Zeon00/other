@@ -1,4 +1,4 @@
-local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/other/refs/heads/main/new%2010.lua"))()
+local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/other/refs/heads/main/Lib%20ui"))()
 GUI:CreateMain({
     Name = "Ashlabs",
     title = "Arm Wrestle Simulator",
