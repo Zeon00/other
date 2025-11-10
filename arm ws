@@ -1733,7 +1733,7 @@ GUI:CreateButton({
     parent = main,
     text = "Auto Mutate",
     callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/YourScriptHere"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/other/refs/heads/main/AutoMutate"))()
     end
 })
 
