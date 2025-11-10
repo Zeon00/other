@@ -1,0 +1,224 @@
+-- 🧬 Auto-Mutate + Cure with Multi-Target Selection (by ChatGPT GPT-5)
+
+--// Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Player = Players.LocalPlayer
+
+--// Knit
+local Knit = require(ReplicatedStorage.Packages.Knit)
+Knit.OnStart():await()
+local PetService = Knit.GetService("PetService")
+local PetCombineService = Knit.GetService("PetCombineService")
+local PetData = require(ReplicatedStorage.Data.PetData)
+
+--// GUI Setup
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoMutateGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+--// Main Frame
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 420, 0, 240)
+Frame.Position = UDim2.new(0.5, -210, 0.5, -120)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = false
+Frame.Parent = ScreenGui
+
+--// Header
+local Header = Instance.new("Frame", Frame)
+Header.Size = UDim2.new(1, 0, 0, 30)
+Header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Header.BorderSizePixel = 0
+
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 5, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🧬 Auto Mutate & Cure (Multi Target)"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextScaled = true
+
+local Close = Instance.new("TextButton", Header)
+Close.Size = UDim2.new(0, 30, 0, 30)
+Close.Position = UDim2.new(1, -30, 0, 0)
+Close.Text = "X"
+Close.TextColor3 = Color3.fromRGB(255, 100, 100)
+Close.BackgroundTransparency = 1
+Close.Font = Enum.Font.SourceSansBold
+Close.TextScaled = true
+Close.MouseButton1Click:Connect(function()
+	ScreenGui:Destroy()
+end)
+
+local Minimize = Instance.new("TextButton", Header)
+Minimize.Size = UDim2.new(0, 30, 0, 30)
+Minimize.Position = UDim2.new(1, -60, 0, 0)
+Minimize.Text = "-"
+Minimize.TextColor3 = Color3.fromRGB(200, 200, 200)
+Minimize.BackgroundTransparency = 1
+Minimize.Font = Enum.Font.SourceSansBold
+Minimize.TextScaled = true
+
+--// Smooth Drag System
+local dragging, dragStart, startPos
+local function updateDrag(input)
+	local delta = input.Position - dragStart
+	local goal = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	TweenService:Create(Frame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = goal}):Play()
+end
+
+Header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = Frame.Position
+	end
+end)
+
+Header.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+		updateDrag(input)
+	end
+end)
+
+Header.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+--// Auto Toggle
+local Toggle = Instance.new("TextButton", Frame)
+Toggle.Size = UDim2.new(1, -10, 0, 40)
+Toggle.Position = UDim2.new(0, 5, 0, 40)
+Toggle.Text = "Auto: OFF"
+Toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+Toggle.Font = Enum.Font.SourceSansBold
+Toggle.TextScaled = true
+
+--// Target Buttons
+local TargetFrame = Instance.new("Frame", Frame)
+TargetFrame.Size = UDim2.new(1, -10, 0, 60)
+TargetFrame.Position = UDim2.new(0, 5, 0, 90)
+TargetFrame.BackgroundTransparency = 1
+
+local cures = {"Glowing", "Rainbow", "Ghost", "Cosmic"}
+local selectedTargets = {}
+
+for i, name in ipairs(cures) do
+	local btn = Instance.new("TextButton", TargetFrame)
+	btn.Size = UDim2.new(0, 100, 0, 30)
+	btn.Position = UDim2.new(0, (i - 1) * 105, 0, 15)
+	btn.Text = name
+	btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Font = Enum.Font.SourceSansBold
+	btn.TextScaled = true
+	btn.AutoButtonColor = false
+
+	btn.MouseButton1Click:Connect(function()
+		if selectedTargets[name] then
+			selectedTargets[name] = nil
+			btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		else
+			selectedTargets[name] = true
+			btn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+		end
+	end)
+end
+
+--// Status Label
+local Status = Instance.new("TextLabel", Frame)
+Status.Size = UDim2.new(1, -10, 0, 40)
+Status.Position = UDim2.new(0, 5, 0, 160)
+Status.BackgroundTransparency = 1
+Status.TextColor3 = Color3.fromRGB(200, 200, 200)
+Status.TextScaled = true
+Status.Font = Enum.Font.SourceSans
+Status.Text = "Status: Waiting..."
+
+--// Auto Logic
+local running = false
+
+Toggle.MouseButton1Click:Connect(function()
+	if not next(selectedTargets) then
+		Status.Text = "❌ Please select at least one Target Cure!"
+		return
+	end
+
+	running = not running
+	Toggle.Text = "Auto: " .. (running and "ON" or "OFF")
+	Toggle.BackgroundColor3 = running and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(50, 50, 50)
+	Status.Text = running and "✅ Running..." or "⏸️ Paused"
+end)
+
+local function fetchPets()
+	local ok, pets = pcall(function()
+		return PetService:getOwned(Player):expect()
+	end)
+	return ok and pets or {}
+end
+
+task.spawn(function()
+	while task.wait(0.8) do
+		if running and next(selectedTargets) then
+			local pets = fetchPets()
+			local count = 0
+			for guid, pet in pairs(pets) do
+				if pet and pet.Key then
+					local cure = pet.Cure or "None"
+					if not selectedTargets[cure] then
+						count += 1
+						if cure ~= "None" then
+							PetCombineService:cure(guid)
+						else
+							PetCombineService:mutate(guid, {})
+						end
+						task.wait(0.01)
+					end
+				end
+			end
+			if count > 0 then
+				Status.Text = "⚙️ Mutating/Curing " .. count .. " pets..."
+			else
+				Status.Text = "✅ All pets match selected targets!"
+			end
+		end
+	end
+end)
+
+--// Minimize Logic (FINAL FIX)
+local minimized = false
+
+-- Fully hide all descendants except Header and its children
+local function hideContentRecursive(parent, visible)
+	for _, child in ipairs(parent:GetChildren()) do
+		if child ~= Header then
+			child.Visible = visible
+			hideContentRecursive(child, visible)
+		end
+	end
+end
+
+Minimize.MouseButton1Click:Connect(function()
+	minimized = not minimized
+
+	local goalSize = minimized and UDim2.new(0, 420, 0, 30) or UDim2.new(0, 420, 0, 240)
+	TweenService:Create(Frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = goalSize}):Play()
+
+	if minimized then
+		hideContentRecursive(Frame, false)
+		Minimize.Text = "+"
+	else
+		hideContentRecursive(Frame, true)
+		Minimize.Text = "-"
+	end
+end)
