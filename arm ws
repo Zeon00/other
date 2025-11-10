@@ -1,13 +1,26 @@
-local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/other/refs/heads/main/Lib%20ui"))()
+local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/BloodLetters/Ash-Libs/refs/heads/main/source.lua"))()
 GUI:CreateMain({
     Name = "Ashlabs",
     title = "Arm Wrestle Simulator",
     ToggleUI = "K",
-    WindowIcon = "home",
+    WindowIcon = "home", -- you can use lucid icons
+    -- WindowHeight = 600, -- default height
+    -- WindowWidth = 800, -- default width
     Theme = {
         Background = Color3.fromRGB(25, 25, 35),
-        NavBackground = Color3.fromRGB(35, 35, 45),
-        Text = Color3.fromRGB(255,255,255),
+        Secondary = Color3.fromRGB(35, 35, 45),
+        Accent = Color3.fromRGB(138, 43, 226),
+        Text = Color3.fromRGB(255, 255, 255),
+        TextSecondary = Color3.fromRGB(180, 180, 180),
+        Border = Color3.fromRGB(50, 50, 60),
+        NavBackground = Color3.fromRGB(20, 20, 30)
+    },
+    Blur = { -- Buggy
+        Enable = false, -- transparent option
+        value = 0.2
+    },
+    Config = { -- not implemented yet
+        Enabled = false,
     }
 })
 
