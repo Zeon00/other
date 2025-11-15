@@ -1365,7 +1365,7 @@ GUI:CreateToggle({
 
                 -- ===== MAIN LOOP =====
                 while _G.battlebot1 do
-                    AutoFight("Maskot")
+                    AutoFight("KuboAndAxel")
                     AutoCrit()
                     AutoHit()
                     task.wait() -- yields for one frame; fastest safe loop
