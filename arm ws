@@ -1291,7 +1291,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Clik",
-    default = false,
+    default = true,
     callback = function(critclik)
  --// Services
 local Players = game:GetService("Players")
