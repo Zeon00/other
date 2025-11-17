@@ -1331,7 +1331,7 @@ end})
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
-    default = false,
+    default = true,
     callback = function(battlebot)
         _G.battlebot1 = battlebot
 
