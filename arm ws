@@ -1314,13 +1314,17 @@ local RequestCritHit = ArmWrestleService:WaitForChild("RequestCritHit")
 local autoClick = false
 local autoCrit = false
 
--- Super fast loop tanpa CPS
+--// Super fast loop
 RunService.RenderStepped:Connect(function()
     if autoClick then
-        pcall(RequestClick.InvokeServer, RequestClick)
+        pcall(function()
+            RequestClick:InvokeServer()
+        end)
     end
     if autoCrit then
-        pcall(RequestCritHit.InvokeServer, RequestCritHit)
+        pcall(function()
+            RequestCritHit:InvokeServer()
+        end)
     end
 end)
 end})
