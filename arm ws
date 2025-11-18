@@ -2525,7 +2525,7 @@ end})
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Digger Claim", 
-    default = true, 
+    default = false, 
     callback = function(digger)
         if digger then	
             _G.digger1 = true
