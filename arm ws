@@ -2293,6 +2293,30 @@ createToggle("Auto Click", 4, function(on)
 		end
 	end)
 end)
+-- AUTO HATCH TECH
+local autoHatch = false
+createToggle("Auto Hatch Tech", 5, function(on)
+    autoHatch = on
+    task.spawn(function()
+        while autoHatch do
+            local args = {
+                "Tech",
+                [5] = true,
+                [4] = false
+            }
+            game:GetService("ReplicatedStorage")
+            :WaitForChild("Packages")
+            :WaitForChild("Knit")
+            :WaitForChild("Services")
+            :WaitForChild("EggService")
+            :WaitForChild("RF")
+            :WaitForChild("purchaseEgg")
+            :InvokeServer(unpack(args))
+
+            task.wait(0.1)
+        end
+    end)
+end)
 
     end
 })
