@@ -1998,7 +1998,7 @@ local toggleChest, isChest = makeToggle(container, "Auto Chest")
 -----------------------------------------------------------------------
 
 task.spawn(function()
-	while task.wait(0.15) do
+	while task.wait(0.01) do
 
 		-- AUTO SPIN
 		if isSpin() then
