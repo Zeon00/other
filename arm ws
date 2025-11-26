@@ -1781,267 +1781,175 @@ GUI:CreateButton({
     text = "Open Chest", 
     callback = function()
 -----------------------------------------------------------------------
--- MODERN 2-COLUMN SPIN + CHEST HUB (NO LOGIC CHANGED)
+-- SERVICES
 -----------------------------------------------------------------------
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UIS = game:GetService("UserInputService")
-local RS = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
 -----------------------------------------------------------------------
--- SCREEN GUI
+-- WINDOW FACTORY
 -----------------------------------------------------------------------
+local function createWindow(name, titleText, posX)
+    local gui = Instance.new("ScreenGui", player.PlayerGui)
+    gui.Name = name
+    gui.ResetOnSpawn = false
 
-local gui = Instance.new("ScreenGui", player.PlayerGui)
-gui.Name = "ModernSpinChestHub"
-gui.ResetOnSpawn = false
+    local main = Instance.new("Frame", gui)
+    main.Size = UDim2.new(0, 260, 0, 260)
+    main.Position = UDim2.new(posX, 0, 0.25, 0)
+    main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 
------------------------------------------------------------------------
--- MAIN FRAME
------------------------------------------------------------------------
+    local header = Instance.new("Frame", main)
+    header.Size = UDim2.new(1, 0, 0, 32)
+    header.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    Instance.new("UICorner", header).CornerRadius = UDim.new(0,10)
 
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 340, 0, 140)
-main.Position = UDim2.new(0.3, 0, 0.25, 0)
-main.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+    local title = Instance.new("TextLabel", header)
+    title.Size = UDim2.new(1, -60, 1, 0)
+    title.Position = UDim2.new(0, 10, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = titleText
+    title.TextSize = 14
+    title.Font = Enum.Font.GothamSemibold
+    title.TextColor3 = Color3.new(1,1,1)
 
------------------------------------------------------------------------
--- HEADER
------------------------------------------------------------------------
+    local closeX = Instance.new("TextButton", header)
+    closeX.Size = UDim2.new(0,22,0,22)
+    closeX.Position = UDim2.new(1,-30,0,5)
+    closeX.Text = "x"
+    closeX.TextSize = 14
+    closeX.Font = Enum.Font.GothamBold
+    closeX.TextColor3 = Color3.fromRGB(255,120,120)
+    closeX.BackgroundColor3 = Color3.fromRGB(60,30,30)
+    Instance.new("UICorner", closeX).CornerRadius = UDim.new(1,0)
+    closeX.MouseButton1Click:Connect(function() gui:Destroy() end)
 
-local header = Instance.new("Frame", main)
-header.Size = UDim2.new(1, 0, 0, 32)
-header.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Instance.new("UICorner", header).CornerRadius = UDim.new(0,10)
+    -- drag
+    local dragging, dragStart, startPos
+    header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = main.Position
+        end
+    end)
+    header.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if dragging then
+            local delta = input.Position - dragStart
+            main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                      startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 
-local title = Instance.new("TextLabel", header)
-title.Size = UDim2.new(1, -70, 1, 0)
-title.Position = UDim2.new(0, 10, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "Spin & Chest Hub"
-title.Font = Enum.Font.GothamSemibold
-title.TextSize = 14
-title.TextColor3 = Color3.fromRGB(255,255,255)
-
------------------------------------------------------------------------
--- MINIMIZE BUTTON
------------------------------------------------------------------------
-
-local mini = Instance.new("TextButton", header)
-mini.Size = UDim2.new(0,22,0,22)
-mini.Position = UDim2.new(1,-58,0,5)
-mini.Text = "-"
-mini.Font = Enum.Font.GothamBold
-mini.TextSize = 18
-mini.TextColor3 = Color3.fromRGB(180,255,220)
-mini.BackgroundColor3 = Color3.fromRGB(45,45,45)
-Instance.new("UICorner", mini).CornerRadius = UDim.new(1,0)
-
-local minimized = false
-
-mini.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    main.Size = minimized and UDim2.new(0,340,0,32) or UDim2.new(0,340,0,140)
-end)
-
------------------------------------------------------------------------
--- CLOSE BUTTON (X DESTROY)
------------------------------------------------------------------------
-
-local closeX = Instance.new("TextButton", header)
-closeX.Size = UDim2.new(0,22,0,22)
-closeX.Position = UDim2.new(1,-30,0,5)
-closeX.Text = "x"
-closeX.Font = Enum.Font.GothamBold
-closeX.TextSize = 14
-closeX.TextColor3 = Color3.fromRGB(255,120,120)
-closeX.BackgroundColor3 = Color3.fromRGB(60,30,30)
-Instance.new("UICorner", closeX).CornerRadius = UDim.new(1,0)
-
-closeX.MouseButton1Click:Connect(function()
-	gui:Destroy()
-end)
-
------------------------------------------------------------------------
--- LEFT-RIGHT SWITCH FACTORY
------------------------------------------------------------------------
-
-local function makeSwitch(parent, title, list)
-	local frame = Instance.new("Frame", parent)
-	frame.Size = UDim2.new(0.46, 0, 0, 40)
-	frame.BackgroundColor3 = Color3.fromRGB(32,32,32)
-	Instance.new("UICorner", frame).CornerRadius = UDim.new(0,8)
-
-	local label = Instance.new("TextLabel", frame)
-	label.Size = UDim2.new(1, 0, 0, 16)
-	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.GothamSemibold
-	label.TextSize = 12
-	label.TextColor3 = Color3.fromRGB(240,240,240)
-	label.Text = title
-
-	local left = Instance.new("TextButton", frame)
-	left.Size = UDim2.new(0, 28, 0, 18)
-	left.Position = UDim2.new(0, 6, 0, 18)
-	left.Text = "◀"
-	left.Font = Enum.Font.GothamBold
-	left.TextSize = 12
-	left.TextColor3 = Color3.new(1,1,1)
-	left.BackgroundColor3 = Color3.fromRGB(45,45,45)
-	Instance.new("UICorner", left).CornerRadius = UDim.new(1,0)
-
-	local right = Instance.new("TextButton", frame)
-	right.Size = UDim2.new(0, 28, 0, 18)
-	right.Position = UDim2.new(1,-34,0,18)
-	right.Text = "▶"
-	right.Font = Enum.Font.GothamBold
-	right.TextSize = 12
-	right.TextColor3 = Color3.new(1,1,1)
-	right.BackgroundColor3 = Color3.fromRGB(45,45,45)
-	Instance.new("UICorner", right).CornerRadius = UDim.new(1,0)
-
-	local current = Instance.new("TextLabel", frame)
-	current.Size = UDim2.new(1,-70,0,18)
-	current.Position = UDim2.new(0,35,0,18)
-	current.BackgroundTransparency = 1
-	current.Font = Enum.Font.Gotham
-	current.TextSize = 12
-	current.TextColor3 = Color3.fromRGB(255,255,255)
-
-	local index = 1
-	current.Text = list[index]
-
-	left.MouseButton1Click:Connect(function()
-		index = index - 1
-		if index < 1 then index = #list end
-		current.Text = list[index]
-	end)
-
-	right.MouseButton1Click:Connect(function()
-		index = index + 1
-		if index > #list then index = 1 end
-		current.Text = list[index]
-	end)
-
-	return frame, function() return list[index] end
+    return gui, main
 end
 
 -----------------------------------------------------------------------
 -- TOGGLE FACTORY
 -----------------------------------------------------------------------
-
 local function makeToggle(parent, label)
-	local button = Instance.new("TextButton", parent)
-	button.Size = UDim2.new(0.46, 0, 0, 40)
-	button.BackgroundColor3 = Color3.fromRGB(40,40,40)
-	button.Font = Enum.Font.Gotham
-	button.TextSize = 12
-	button.TextColor3 = Color3.fromRGB(255,255,255)
-	button.Text = label.." : OFF"
-	Instance.new("UICorner", button).CornerRadius = UDim.new(0,8)
+    local button = Instance.new("TextButton", parent)
+    button.Size = UDim2.new(1, 0, 0, 38)
+    button.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    button.Text = label.." : OFF"
+    button.TextColor3 = Color3.new(1,1,1)
+    button.TextSize = 12
+    button.Font = Enum.Font.Gotham
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
 
-	local on = false
+    local state = false
+    button.MouseButton1Click:Connect(function()
+        state = not state
+        button.Text = label .. " : " .. (state and "ON" or "OFF")
+        button.BackgroundColor3 = state and Color3.fromRGB(0,150,255) or Color3.fromRGB(40,40,40)
+    end)
 
-	button.MouseButton1Click:Connect(function()
-		on = not on
-		button.Text = label.." : "..(on and "ON" or "OFF")
-		button.BackgroundColor3 = on and Color3.fromRGB(0,150,255) or Color3.fromRGB(40,40,40)
-	end)
-
-	return button, function() return on end
+    return button, function() return state end
 end
 
 -----------------------------------------------------------------------
--- BUILD GUI LAYOUT (2 COLUMNS)
+-- LIST
 -----------------------------------------------------------------------
-
-local container = Instance.new("Frame", main)
-container.Size = UDim2.new(1, -20, 1, -40)
-container.Position = UDim2.new(0, 10, 0, 40)
-container.BackgroundTransparency = 1
-
-local grid = Instance.new("UIGridLayout", container)
-grid.CellPadding = UDim2.new(0,8,0,8)
-grid.CellSize = UDim2.new(0.48,0,0,40)
-
------------------------------------------------------------------------
--- LIST MANUAL ( bebas kamu tambah )
------------------------------------------------------------------------
-
 local chestList = {
-	"HauntedChest",
-	"MagicChest",
-	"GoldenChest"
+    "HauntedChest",
+    "MagicChest",
+    "GoldenChest",
 }
 
 local spinList = {
-	"Carnival Fortune",
-	"Underworld Fortune"
+    "Carnival Fortune",
+    "Underworld Fortune",
 }
 
 -----------------------------------------------------------------------
--- SWITCHES
+-- CHEST WINDOW
 -----------------------------------------------------------------------
+local chestGUI, chestMain = createWindow("ChestHub", "Chest Hub", 0.15)
 
-local spinSwitch, getSpin = makeSwitch(container, "Select Spin", spinList)
-local toggleSpin, isSpin = makeToggle(container, "Auto Spin")
+local chestContainer = Instance.new("Frame", chestMain)
+chestContainer.Size = UDim2.new(1,-20,1,-40)
+chestContainer.Position = UDim2.new(0,10,0,40)
+chestContainer.BackgroundTransparency = 1
 
-local chestSwitch, getChest = makeSwitch(container, "Select Chest", chestList)
-local toggleChest, isChest = makeToggle(container, "Auto Chest")
+local chestLayout = Instance.new("UIListLayout", chestContainer)
+chestLayout.Padding = UDim.new(0,6)
+
+local chestToggles = {}
+
+for _, chestName in ipairs(chestList) do
+    local button, getState = makeToggle(chestContainer, chestName)
+    chestToggles[chestName] = getState
+end
+
+-----------------------------------------------------------------------
+-- SPIN WINDOW
+-----------------------------------------------------------------------
+local spinGUI, spinMain = createWindow("SpinHub", "Spin Hub", 0.45)
+
+local spinContainer = Instance.new("Frame", spinMain)
+spinContainer.Size = UDim2.new(1,-20,1,-40)
+spinContainer.Position = UDim2.new(0,10,0,40)
+spinContainer.BackgroundTransparency = 1
+
+local spinLayout = Instance.new("UIListLayout", spinContainer)
+spinLayout.Padding = UDim.new(0,6)
+
+local spinToggles = {}
+
+for _, spinName in ipairs(spinList) do
+    local button, getState = makeToggle(spinContainer, spinName)
+    spinToggles[spinName] = getState
+end
 
 -----------------------------------------------------------------------
 -- AUTO LOOP
 -----------------------------------------------------------------------
-
 task.spawn(function()
-	while task.wait(0.01) do
+    while task.wait(0.05) do
+        
+        -- Per-Chest Toggle
+        for chestName, stateFunc in pairs(chestToggles) do
+            if stateFunc() then
+                ReplicatedStorage.Packages.Knit.Services.ChestService.RF.Open:InvokeServer(chestName)
+            end
+        end
 
-		-- AUTO SPIN
-		if isSpin() then
-			local args = { getSpin(), "x25" }
-			ReplicatedStorage.Packages.Knit.Services.SpinnerService.RF.Spin:InvokeServer(unpack(args))
-		end
+        -- Per-Spin Toggle
+        for spinName, stateFunc in pairs(spinToggles) do
+            if stateFunc() then
+                ReplicatedStorage.Packages.Knit.Services.SpinnerService.RF.Spin:InvokeServer(spinName, "x25")
+            end
+        end
 
-		-- AUTO CHEST
-		if isChest() then
-			local args = { getChest() }
-			ReplicatedStorage.Packages.Knit.Services.ChestService.RF.Open:InvokeServer(unpack(args))
-		end
-	end
+    end
 end)
-
------------------------------------------------------------------------
--- UNIVERSAL DRAG (ANDROID + PC)
------------------------------------------------------------------------
-
-local dragging, dragStart, startPos
-
-header.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = main.Position
-	end
-end)
-
-header.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-		                          startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
     end
 })
 GUI:CreateButton({
