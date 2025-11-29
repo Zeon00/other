@@ -2237,17 +2237,19 @@ end)
     end
 })
 GUI:CreateButton({
-    parent = main, 
-    text = "Event Chrismast", 
+    parent = main,
+    text = "Event Chrismast",
     callback = function()
--- Modern Arm Wrestle Hub (Final Fixed Version)
--- By ChatGPT
+
+-------------------------------
+-- Modern Arm Wrestle Hub FIXED
+-------------------------------
 
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
--- // UI
+-- UI
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.Name = "ArmHubModern"
 gui.ResetOnSpawn = false
@@ -2259,7 +2261,6 @@ main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
-
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 
 local shadow = Instance.new("ImageLabel", main)
@@ -2271,7 +2272,7 @@ shadow.Image = "rbxassetid://6894899453"
 shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
 shadow.ImageTransparency = 0.4
 
--- HEADER
+-- Header
 local header = Instance.new("Frame", main)
 header.Size = UDim2.new(1, 0, 0, 32)
 header.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -2309,53 +2310,52 @@ close.MouseButton1Click:Connect(function()
 	gui:Destroy()
 end)
 
--- Minimize Logic
+-------------------------------------------
+-- CONTENT HOLDER (biar minimize aman)
+-------------------------------------------
+local content = Instance.new("Frame", main)
+content.Size = UDim2.new(1, 0, 1, -32)
+content.Position = UDim2.new(0, 0, 0, 32)
+content.BackgroundTransparency = 1
+
+local list = Instance.new("UIListLayout", content)
+list.SortOrder = Enum.SortOrder.LayoutOrder
+list.Padding = UDim.new(0, 6)
+
+--------------------------------
+-- MINIMIZE FIXED
+--------------------------------
 local minimized = false
+
 mini.MouseButton1Click:Connect(function()
-    minimized = not minimized
+	minimized = not minimized
 
-    if minimized then
-        -- Sembunyikan semua isi kecuali header
-        for _, v in pairs(main:GetChildren()) do
-            if v ~= header and v ~= shadow then
-                v.Visible = false
-            end
-        end
-        
-        main:TweenSize(UDim2.new(0, 300, 0, 32), "Out", "Quad", 0.25, true)
-
-    else
-        main:TweenSize(UDim2.new(0, 300, 0, 260), "Out", "Quad", 0.25, true)
-
-        -- Tampilkan kembali isi
-        for _, v in pairs(main:GetChildren()) do
-            if v ~= header and v ~= shadow then
-                v.Visible = true
-            end
-        end
-    end
+	if minimized then
+		content.Visible = false
+		main:TweenSize(UDim2.new(0, 300, 0, 32), "Out", "Quad", 0.3, true)
+	else
+		main:TweenSize(UDim2.new(0, 300, 0, 260), "Out", "Quad", 0.3, true)
+		content.Visible = true
+	end
 end)
 
-
---------------------------------------------------------
--- NPC Auto Detect
---------------------------------------------------------
+-------------------------------------------
+-- NPC List
+-------------------------------------------
 local npcFolder = workspace:WaitForChild("GameObjects").ArmWrestling.NorthPole.NPC
 local npcList = {}
-
 for _, v in ipairs(npcFolder:GetChildren()) do
-	if v:IsA("Model") then
-		table.insert(npcList, v.Name)
-	end
+	if v:IsA("Model") then table.insert(npcList, v.Name) end
 end
-
 local index = 1
 
--- Selector UI
-local selector = Instance.new("Frame", main)
-selector.Size = UDim2.new(1, 0, 0, 40)
-selector.Position = UDim2.new(0, 0, 0, 40)
+-------------------------
+-- NPC SELECTOR
+-------------------------
+local selector = Instance.new("Frame", content)
+selector.Size = UDim2.new(1, -10, 0, 40)
 selector.BackgroundTransparency = 1
+selector.LayoutOrder = 1
 
 local left = Instance.new("TextButton", selector)
 left.Size = UDim2.new(0, 40, 1, 0)
@@ -2377,7 +2377,6 @@ right.TextColor3 = Color3.fromRGB(255, 255, 255)
 local nameNPC = Instance.new("TextLabel", selector)
 nameNPC.Size = UDim2.new(1, 0, 1, 0)
 nameNPC.BackgroundTransparency = 1
-nameNPC.Position = UDim2.new(0, 0, 0, 0)
 nameNPC.Font = Enum.Font.GothamBold
 nameNPC.TextSize = 16
 nameNPC.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -2395,13 +2394,12 @@ right.MouseButton1Click:Connect(function()
 	nameNPC.Text = npcList[index]
 end)
 
---------------------------------------------------------
--- Toggle Builder
---------------------------------------------------------
-local function createToggle(text, order, callback)
-	local frame = Instance.new("Frame", main)
-	frame.Size = UDim2.new(1, -20, 0, 30)
-	frame.Position = UDim2.new(0, 10, 0, 50 + (order * 35))
+-------------------------------------------
+-- TOGGLE BUILDER (auto layout)
+-------------------------------------------
+local function createToggle(text, callback)
+	local frame = Instance.new("Frame", content)
+	frame.Size = UDim2.new(1, -10, 0, 32)
 	frame.BackgroundTransparency = 1
 
 	local label = Instance.new("TextLabel", frame)
@@ -2438,16 +2436,14 @@ local function createToggle(text, order, callback)
 	end)
 end
 
---------------------------------------------------------
--- FINAL FIXED TOGGLES
---------------------------------------------------------
+-------------------------------------------
+-- FINAL FEATURES
+-------------------------------------------
 
 -- AUTO FIGHT
-local autoFight = t
-createToggle("Auto Fight", 1, function(on)
-	autoFight = on
+createToggle("Auto Fight", function(on)
 	task.spawn(function()
-		while autoFight do
+		while on do
 			local args = { npcList[index] }
 			RS.Packages.Knit.Services.ArmWrestleService.RF.RequestStartFight:InvokeServer(unpack(args))
 			RS.Packages.Knit.Services.ArmWrestleService.RF.SetAuto:InvokeServer(true)
@@ -2457,11 +2453,9 @@ createToggle("Auto Fight", 1, function(on)
 end)
 
 -- AUTO GRIPS
-local autoGrips = true
-createToggle("Auto Grips", 2, function(on)
-	autoGrips = on
+createToggle("Auto Grips", function(on)
 	task.spawn(function()
-		while autoGrips do
+		while on do
 			local args = {"NorthPole", "Grips", "NorthPole12"}
 			RS.Packages.Knit.Services.ToolService.RE.onEquipRequest:FireServer(unpack(args))
 			task.wait(30)
@@ -2470,11 +2464,9 @@ createToggle("Auto Grips", 2, function(on)
 end)
 
 -- AUTO DUMBELLS
-local autoDumb = true
-createToggle("Auto Dumbells", 3, function(on)
-	autoDumb = on
+createToggle("Auto Dumbells", function(on)
 	task.spawn(function()
-		while autoDumb do
+		while on do
 			local args = {"NorthPole", "Dumbells", "NorthPole12"}
 			RS.Packages.Knit.Services.ToolService.RE.onEquipRequest:FireServer(unpack(args))
 			task.wait(30)
@@ -2483,43 +2475,32 @@ createToggle("Auto Dumbells", 3, function(on)
 end)
 
 -- AUTO CLICK
-local autoClick = true
-createToggle("Auto Click", 4, function(on)
-	autoClick = on
+createToggle("Auto Click", function(on)
 	task.spawn(function()
-		while autoClick do
+		while on do
 			RS.Packages.Knit.Services.ToolService.RE.onClick:FireServer()
 			task.wait(0.05)
 		end
 	end)
 end)
--- AUTO HATCH TECH
-local autoHatch = false
-createToggle("Auto Hatch Ice Spikes", 5, function(on)
-    autoHatch = on
-    task.spawn(function()
-        while autoHatch do
-            local args = {
-                "IceSpikes",
-                [5] = true,
-                [4] = false
-            }
-            game:GetService("ReplicatedStorage")
-            :WaitForChild("Packages")
-            :WaitForChild("Knit")
-            :WaitForChild("Services")
-            :WaitForChild("EggService")
-            :WaitForChild("RF")
-            :WaitForChild("purchaseEgg")
-            :InvokeServer(unpack(args))
 
-            task.wait(0.1)
-        end
-    end)
+-- AUTO HATCH
+createToggle("Auto Hatch Ice Spikes", function(on)
+	task.spawn(function()
+		while on do
+			local args = {
+				"IceSpikes",
+				[5] = true,
+				[4] = false
+			}
+			RS.Packages.Knit.Services.EggService.RF.purchaseEgg:InvokeServer(unpack(args))
+			task.wait(0.1)
+		end
+	end)
 end)
 
-    end
-})
+end })
+
 local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
