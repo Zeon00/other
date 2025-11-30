@@ -2240,7 +2240,6 @@ GUI:CreateButton({
     parent = main,
     text = "Event Chrismast",
     callback = function()
-
 -------------------------------
 -- Modern Arm Wrestle Hub FIXED
 -------------------------------
@@ -2310,9 +2309,7 @@ close.MouseButton1Click:Connect(function()
 	gui:Destroy()
 end)
 
--------------------------------------------
--- CONTENT HOLDER (biar minimize aman)
--------------------------------------------
+-- Content holder
 local content = Instance.new("Frame", main)
 content.Size = UDim2.new(1, 0, 1, -32)
 content.Position = UDim2.new(0, 0, 0, 32)
@@ -2322,14 +2319,10 @@ local list = Instance.new("UIListLayout", content)
 list.SortOrder = Enum.SortOrder.LayoutOrder
 list.Padding = UDim.new(0, 6)
 
---------------------------------
--- MINIMIZE FIXED
---------------------------------
+-- Minimize
 local minimized = false
-
 mini.MouseButton1Click:Connect(function()
 	minimized = not minimized
-
 	if minimized then
 		content.Visible = false
 		main:TweenSize(UDim2.new(0, 300, 0, 32), "Out", "Quad", 0.3, true)
@@ -2339,9 +2332,7 @@ mini.MouseButton1Click:Connect(function()
 	end
 end)
 
--------------------------------------------
 -- NPC List
--------------------------------------------
 local npcFolder = workspace:WaitForChild("GameObjects").ArmWrestling.NorthPole.NPC
 local npcList = {}
 for _, v in ipairs(npcFolder:GetChildren()) do
@@ -2349,9 +2340,7 @@ for _, v in ipairs(npcFolder:GetChildren()) do
 end
 local index = 1
 
--------------------------
--- NPC SELECTOR
--------------------------
+-- NPC Selector
 local selector = Instance.new("Frame", content)
 selector.Size = UDim2.new(1, -10, 0, 40)
 selector.BackgroundTransparency = 1
@@ -2395,9 +2384,12 @@ right.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------
--- TOGGLE BUILDER (auto layout)
+-- TOGGLE SYSTEM (fixed)
 -------------------------------------------
-local function createToggle(text, callback)
+
+local toggles = {}
+
+local function createToggle(text, key, callback)
 	local frame = Instance.new("Frame", content)
 	frame.Size = UDim2.new(1, -10, 0, 32)
 	frame.BackgroundTransparency = 1
@@ -2421,85 +2413,70 @@ local function createToggle(text, callback)
 	btn.Text = "OFF"
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
-	local state = false
+	toggles[key] = false
 
 	btn.MouseButton1Click:Connect(function()
-		state = not state
-		if state then
+		toggles[key] = not toggles[key]
+		if toggles[key] then
 			btn.Text = "ON"
 			btn.BackgroundColor3 = Color3.fromRGB(25, 150, 25)
 		else
 			btn.Text = "OFF"
 			btn.BackgroundColor3 = Color3.fromRGB(90, 30, 30)
 		end
-		callback(state)
+	end)
+
+	-- spawn loop for this toggle
+	task.spawn(function()
+		while true do
+			if toggles[key] then
+				callback()
+			end
+			task.wait(0.05)
+		end
 	end)
 end
 
 -------------------------------------------
--- FINAL FEATURES
+-- FINAL FEATURES (same as original)
 -------------------------------------------
 
 -- AUTO FIGHT
-createToggle("Auto Fight", function(on)
-	task.spawn(function()
-		while on do
-			local args = { npcList[index] }
-			RS.Packages.Knit.Services.ArmWrestleService.RF.RequestStartFight:InvokeServer(unpack(args))
-			RS.Packages.Knit.Services.ArmWrestleService.RF.SetAuto:InvokeServer(true)
-			task.wait(0.05)
-		end
-	end)
+createToggle("Auto Fight", "AutoFight", function()
+	local args = { npcList[index] }
+	RS.Packages.Knit.Services.ArmWrestleService.RF.RequestStartFight:InvokeServer(unpack(args))
+	RS.Packages.Knit.Services.ArmWrestleService.RF.SetAuto:InvokeServer(true)
+	task.wait(0.05)
 end)
 
 -- AUTO GRIPS
-createToggle("Auto Grips", function(on)
-	task.spawn(function()
-		while on do
-			local args = {"NorthPole", "Grips", "NorthPole12"}
-			RS.Packages.Knit.Services.ToolService.RE.onEquipRequest:FireServer(unpack(args))
-			task.wait(30)
-		end
-	end)
+createToggle("Auto Grips", "AutoGrips", function()
+	local args = {"NorthPole", "Grips", "NorthPole12"}
+	RS.Packages.Knit.Services.ToolService.RE.onEquipRequest:FireServer(unpack(args))
+	task.wait(30)
 end)
 
 -- AUTO DUMBELLS
-createToggle("Auto Dumbells", function(on)
-	task.spawn(function()
-		while on do
-			local args = {"NorthPole", "Dumbells", "NorthPole12"}
-			RS.Packages.Knit.Services.ToolService.RE.onEquipRequest:FireServer(unpack(args))
-			task.wait(30)
-		end
-	end)
+createToggle("Auto Dumbells", "AutoDumbells", function()
+	local args = {"NorthPole", "Dumbells", "NorthPole12"}
+	RS.Packages.Knit.Services.ToolService.RE.onEquipRequest:FireServer(unpack(args))
+	task.wait(30)
 end)
 
 -- AUTO CLICK
-createToggle("Auto Click", function(on)
-	task.spawn(function()
-		while on do
-			RS.Packages.Knit.Services.ToolService.RE.onClick:FireServer()
-			task.wait(0.05)
-		end
-	end)
+createToggle("Auto Click", "AutoClick", function()
+	RS.Packages.Knit.Services.ToolService.RE.onClick:FireServer()
+	task.wait(0.05)
 end)
 
 -- AUTO HATCH
-createToggle("Auto Hatch Ice Spikes", function(on)
-	task.spawn(function()
-		while on do
-			local args = {
-				"IceSpikes",
-				[5] = true,
-				[4] = false
-			}
-			RS.Packages.Knit.Services.EggService.RF.purchaseEgg:InvokeServer(unpack(args))
-			task.wait(0.1)
-		end
-	end)
+createToggle("Auto Hatch Ice Spikes", "AutoHatch", function()
+	local args = { "IceSpikes", [5]=true, [4]=false }
+	RS.Packages.Knit.Services.EggService.RF.purchaseEgg:InvokeServer(unpack(args))
+	task.wait(0.1)
 end)
-
-end })
+    end
+})
 
 local main = GUI:CreateTab("misc", "cake") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
