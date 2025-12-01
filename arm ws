@@ -1060,7 +1060,7 @@ GUI:CreateToggle({
 
                 -- ===== MAIN LOOP =====
                 while _G.battlebot1 do
-                    AutoFight("Maskot")
+                    AutoFight("Santa")
                     AutoCrit()
                     AutoHit()
                     task.wait() -- yields for one frame; fastest safe loop
@@ -1852,19 +1852,22 @@ local function createWindow(name, titleText, posX)
 end
 
 -----------------------------------------------------------------------
--- TOGGLE FACTORY
+-- TOGGLE FACTORY (FINAL FIX)
 -----------------------------------------------------------------------
 local function makeToggle(parent, label)
-    local button = Instance.new("TextButton", parent)
+    local button = Instance.new("TextButton")
     button.Size = UDim2.new(1, 0, 0, 38)
     button.BackgroundColor3 = Color3.fromRGB(40,40,40)
     button.Text = label.." : OFF"
     button.TextColor3 = Color3.new(1,1,1)
     button.TextSize = 12
     button.Font = Enum.Font.Gotham
+    button.Parent = parent
     Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
 
+    -- toggle state
     local state = false
+
     button.MouseButton1Click:Connect(function()
         state = not state
         button.Text = label .. " : " .. (state and "ON" or "OFF")
@@ -2473,7 +2476,7 @@ end)
 createToggle("Auto Hatch Ice Spikes", "AutoHatch", function()
 	local args = { "IceSpikes", [5]=true, [4]=false }
 	RS.Packages.Knit.Services.EggService.RF.purchaseEgg:InvokeServer(unpack(args))
-	task.wait(0.1)
+	task.wait()
 end)
     end
 })
