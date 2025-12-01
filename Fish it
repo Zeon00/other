@@ -84,6 +84,64 @@ closeBtn.Parent = frame
 closeBtn.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 end)
+-- MINIMIZE BUTTON
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0, 28, 0, 28)
+minBtn.Position = UDim2.new(1, -65, 0, 2)
+minBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
+minBtn.Font = Enum.Font.GothamBold
+minBtn.TextColor3 = Color3.fromRGB(255,255,255)
+minBtn.TextSize = 20
+minBtn.Text = "-"
+minBtn.BorderSizePixel = 0
+minBtn.Parent = frame
+
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0, 28, 0, 28)
+minBtn.Position = UDim2.new(1, -65, 0, 2)
+minBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
+minBtn.Font = Enum.Font.GothamBold
+minBtn.TextColor3 = Color3.fromRGB(255,255,255)
+minBtn.TextSize = 20
+minBtn.Text = "-"
+minBtn.BorderSizePixel = 0
+minBtn.Parent = frame
+
+local isMinimized = false
+local savedSize = frame.Size
+
+-- daftar yang TIDAK disembunyikan saat minimize
+local keepVisible = {minBtn, closeBtn}
+
+local function setVisibleAll(state)
+	for _, obj in ipairs(frame:GetChildren()) do
+		if table.find(keepVisible, obj) then
+			-- tetap muncul
+		else
+			if obj:IsA("GuiObject") then
+				obj.Visible = state
+			end
+		end
+	end
+end
+
+minBtn.MouseButton1Click:Connect(function()
+	if not isMinimized then
+		isMinimized = true
+		savedSize = frame.Size
+		frame.Size = UDim2.new(0, 80, 0, 40) -- jadi icon kecil
+		minBtn.Text = "🎉"
+		setVisibleAll(false)
+	else
+		isMinimized = false
+		frame.Size = savedSize
+		minBtn.Text = "-"
+		setVisibleAll(true)
+	end
+end)
+
+
+minBtn.MouseButton1Click:Connect(minimizeUI)
 
 local function makeButton(text, color, position)
 	local btn = Instance.new("TextButton")
@@ -150,7 +208,7 @@ local function doFish()
 	if busy or not autoFish then return end
 	busy = true
 	status.Text = "Status: Casting..."
-	task.wait(0.8)
+	task.wait(0.5)
 
 	if not RF_Charge or not RF_Start or not RE_Complete then
 		warn("Fishing remotes missing!")
@@ -159,7 +217,7 @@ local function doFish()
 	end
 
 	RF_Charge:InvokeServer(tick())
-	task.wait(1) -- lebih lama dari 0.3
+	task.wait(0.5) -- lebih lama dari 0.3
 
 	local randomX = math.random(-2, 2)
 	local randomY = math.random(-2, 2)
@@ -168,7 +226,7 @@ local function doFish()
 	task.wait(3 + math.random()) -- delay lebih aman
 	RE_Complete:FireServer()
 	status.Text = "Status: Fish caught!"
-	task.wait(0.5)
+	task.wait(0.8)
 	busy = false
 end
 
@@ -189,7 +247,7 @@ end
 
 -- 💸 Auto Sell logic
 task.spawn(function()
-	while task.wait(10) do
+	while task.wait(60) do
 		if autoSell and RF_SellAll then
 			RF_SellAll:InvokeServer()
 			status.Text = "Status: Sold all items!"
