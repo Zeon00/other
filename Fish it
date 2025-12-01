@@ -1,0 +1,259 @@
+-- 🌈 AutoFishing GUI (with Rarity Detector) - All default ON + Anti AFK
+-- ⚠️ Place this LocalScript inside StarterGui
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+-- 🐟 Load area data (FishingAreas)
+local FishingAreas = require(ReplicatedStorage:WaitForChild("Items", 5) or ReplicatedStorage:WaitForChild("FishingAreas", 5))
+
+-- 🎣 Rare fish list (customize freely)
+local RareFishes = {
+	"Lochness Monster", "Robot Kraken", "King Jelly", "Orca",
+	"Viperangler Fish", "Mosasaur Shark", "Ancient Arapaima",
+	"Sacred Guardian Squid", "Bone Whale"
+}
+
+-- 🎣 Load remotes safely
+local function getRemote(path)
+	local node = ReplicatedStorage
+	for seg in string.gmatch(path, "[^/]+") do
+		node = node:FindFirstChild(seg)
+		if not node then
+			warn("Missing:", path)
+			return nil
+		end
+	end
+	return node
+end
+
+local baseNet = getRemote("Packages/_Index/sleitnick_net@0.2.0/net")
+local RF_Charge = baseNet and baseNet:FindFirstChild("RF/ChargeFishingRod")
+local RF_Start = baseNet and baseNet:FindFirstChild("RF/RequestFishingMinigameStarted")
+local RE_Complete = baseNet and baseNet:FindFirstChild("RE/FishingCompleted")
+local RF_Radar = baseNet and baseNet:FindFirstChild("RF/UpdateFishingRadar")
+local RF_SellAll = baseNet and baseNet:FindFirstChild("RF/SellAllItems")
+local RE_Equip = baseNet and baseNet:FindFirstChild("RE/EquipToolFromHotbar")
+
+-- 🧱 GUI SETUP
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AutoSystemUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 320, 0, 260)
+frame.Position = UDim2.new(0.02, 0, 0.65, 0)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Thickness = 2
+uiStroke.Color = Color3.fromRGB(255, 200, 100)
+uiStroke.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -40, 0, 30)
+title.Position = UDim2.new(0, 10, 0, 5)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.Text = "🎣 Auto System"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = frame
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 28, 0, 28)
+closeBtn.Position = UDim2.new(1, -32, 0, 2)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.TextSize = 20
+closeBtn.Text = "X"
+closeBtn.BorderSizePixel = 0
+closeBtn.Parent = frame
+closeBtn.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+end)
+
+local function makeButton(text, color, position)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.9, 0, 0, 40)
+	btn.Position = position
+	btn.BackgroundColor3 = color
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 18
+	btn.Text = text
+	btn.BorderSizePixel = 0
+	btn.Parent = frame
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = btn
+
+	return btn
+end
+
+local autoFishBtn = makeButton("🎣 Auto Fishing: ON", Color3.fromRGB(70,180,80), UDim2.new(0.05, 0, 0, 50))
+local radarBtn = makeButton("📡 Radar: ON", Color3.fromRGB(70,180,255), UDim2.new(0.05, 0, 0, 100))
+local sellBtn = makeButton("💰 Auto Sell: ON", Color3.fromRGB(250,220,100), UDim2.new(0.05, 0, 0, 150))
+local rarityBtn = makeButton("🌈 Rarity Detector: ON", Color3.fromRGB(150,80,255), UDim2.new(0.05, 0, 0, 200))
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -20, 0, 25)
+status.Position = UDim2.new(0, 10, 1, -30)
+status.BackgroundTransparency = 1
+status.Text = "Status: Preparing fishing..."
+status.TextColor3 = Color3.fromRGB(255,255,255)
+status.TextSize = 16
+status.Font = Enum.Font.Gotham
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.Parent = frame
+
+local autoFish = true
+local radar = true
+local autoSell = true
+local rarityDetect = true
+local busy = false
+
+-- 🔹 TELEPORT & EQUIP ROD before Auto Fishing with delays
+local function prepareFishing()
+	local char = player.Character or player.CharacterAdded:Wait()
+	if char:FindFirstChild("HumanoidRootPart") then
+		-- Teleport
+		char.HumanoidRootPart.CFrame = CFrame.new(-3600.504, -283.126, -1610.098)
+		status.Text = "Status: Teleported to fishing spot..."
+		task.wait(5) -- delay 5 detik setelah teleport
+	end
+	-- Equip rod
+	if RE_Equip then
+		local args = {1} -- hotbar slot
+		RE_Equip:FireServer(unpack(args))
+		status.Text = "Status: Fishing rod equipped..."
+		task.wait(5) -- delay 5 detik setelah equip
+	end
+	status.Text = "Status: Ready to auto fish!"
+end
+
+-- 🌊 Auto Fishing logic
+local function doFish()
+	if busy or not autoFish then return end
+	busy = true
+	status.Text = "Status: Casting..."
+	task.wait(0.8)
+
+	if not RF_Charge or not RF_Start or not RE_Complete then
+		warn("Fishing remotes missing!")
+		busy = false
+		return
+	end
+
+	RF_Charge:InvokeServer(tick())
+	task.wait(1) -- lebih lama dari 0.3
+
+	local randomX = math.random(-2, 2)
+	local randomY = math.random(-2, 2)
+	RF_Start:InvokeServer(randomX, randomY)
+
+	task.wait(3 + math.random()) -- delay lebih aman
+	RE_Complete:FireServer()
+	status.Text = "Status: Fish caught!"
+	task.wait(0.5)
+	busy = false
+end
+
+
+-- 💎 Rarity Detector logic
+local function checkRarity()
+	if not rarityDetect then return end
+	status.Text = "Status: Scanning rare fish..."
+	for areaName, data in pairs(FishingAreas) do
+		for _, fish in ipairs(data.Items) do
+			if table.find(RareFishes, fish) then
+				print("🌈 Rare fish found in ["..areaName.."]: "..fish)
+			end
+		end
+	end
+	status.Text = "Status: Rarity scan done!"
+end
+
+-- 💸 Auto Sell logic
+task.spawn(function()
+	while task.wait(10) do
+		if autoSell and RF_SellAll then
+			RF_SellAll:InvokeServer()
+			status.Text = "Status: Sold all items!"
+		end
+	end
+end)
+
+-- Buttons
+autoFishBtn.MouseButton1Click:Connect(function()
+	autoFish = not autoFish
+	autoFishBtn.Text = autoFish and "🎣 Auto Fishing: ON" or "🎣 Auto Fishing: OFF"
+	autoFishBtn.BackgroundColor3 = autoFish and Color3.fromRGB(70,180,80) or Color3.fromRGB(180,50,50)
+	status.Text = autoFish and "Status: Preparing fishing..." or "Status: Idle"
+
+	if autoFish then
+		task.spawn(function()
+			prepareFishing()
+		end)
+	end
+end)
+
+radarBtn.MouseButton1Click:Connect(function()
+	radar = not radar
+	radarBtn.Text = radar and "📡 Radar: ON" or "📡 Radar: OFF"
+	radarBtn.BackgroundColor3 = radar and Color3.fromRGB(70,180,255) or Color3.fromRGB(60,100,180)
+	if RF_Radar then RF_Radar:InvokeServer(radar) end
+end)
+
+sellBtn.MouseButton1Click:Connect(function()
+	autoSell = not autoSell
+	sellBtn.Text = autoSell and "💰 Auto Sell: ON" or "💰 Auto Sell: OFF"
+	sellBtn.BackgroundColor3 = autoSell and Color3.fromRGB(250,220,100) or Color3.fromRGB(240,180,60)
+end)
+
+rarityBtn.MouseButton1Click:Connect(function()
+	rarityDetect = not rarityDetect
+	rarityBtn.Text = rarityDetect and "🌈 Rarity Detector: ON" or "🌈 Rarity Detector: OFF"
+	rarityBtn.BackgroundColor3 = rarityDetect and Color3.fromRGB(150,80,255) or Color3.fromRGB(180,100,255)
+	if rarityDetect then
+		checkRarity()
+	end
+end)
+
+-- 🔁 Main Auto Loop
+task.spawn(function()
+	-- prepare fishing terlebih dahulu sebelum auto fishing loop
+	prepareFishing()
+	while task.wait(0.1) do
+		if autoFish then
+			doFish()
+		end
+	end
+end)
+
+-- 🛡 Anti AFK always ON
+local VirtualUser = game:GetService('VirtualUser')
+player.Idled:Connect(function()
+	VirtualUser:CaptureController()
+	VirtualUser:ClickButton2(Vector2.new())
+end)
+
+game:GetService("StarterGui"):SetCore("SendNotification", {
+	Title = "Anti AFK loaded!",
+	Text = "Made by Tuuguu936",
+	Button1 = "Okay",
+	Duration = 5
+})
