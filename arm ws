@@ -916,7 +916,7 @@ end})
 GUI:CreateToggle({
     parent = main,
     text = "Auto Delete fight & GameUI",
-    default = false,
+    default = true,
     callback = function(delfight)
         local Players = game:GetService("Players")
         local RunService = game:GetService("RunService")
@@ -984,7 +984,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Click",
-    default = false,
+    default = true,
     callback = function(critclik)
         --// Services
         local Players = game:GetService("Players")
@@ -1026,7 +1026,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
-    default = false,
+    default = true,
     callback = function(battlebot)
         _G.battlebot1 = battlebot
 
