@@ -918,113 +918,67 @@ GUI:CreateToggle({
     text = "Auto Delete fight & GameUI",
     default = true,
     callback = function(delfight)
-       local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+      local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
 
--- Connections (buat toggle on/off)
-local heartbeatConn
-local playerAddedConn
+        -- Connections we will disconnect later
+        local heartbeatConn
+        local playerAddedConn
 
--- GUI list yang mau di-hide
-local targetGUI = {"Fighting", "GameUI"}
+        -- Function to monitor a player's PlayerGui
+        local function monitorPlayerGui(player)
+            local playerGui = player:WaitForChild("PlayerGui")
 
--- Simpan GUI yang kita sembunyikan (biar bisa di-unhide)
-local hiddenGUI = {}   -- [player][guiName] = gui
-
-local function hideGui(gui)
-    if gui:IsA("ScreenGui") or gui:IsA("Folder") then
-        gui.Enabled = false
-    elseif gui:FindFirstChild("Main") then
-        gui.Main.Visible = false
-    else
-        gui.Visible = false
-    end
-end
-
-local function showGui(gui)
-    if gui:IsA("ScreenGui") or gui:IsA("Folder") then
-        gui.Enabled = true
-    elseif gui:FindFirstChild("Main") then
-        gui.Main.Visible = true
-    else
-        gui.Visible = true
-    end
-end
-
--- Monitor GUI player
-local function monitorPlayerGui(player)
-    local playerGui = player:WaitForChild("PlayerGui")
-
-    hiddenGUI[player] = hiddenGUI[player] or {}
-
-    -- Hide existing GUIs
-    for _, guiName in ipairs(targetGUI) do
-        local gui = playerGui:FindFirstChild(guiName)
-        if gui then
-            hideGui(gui)
-            hiddenGUI[player][guiName] = gui
-        end
-    end
-
-    -- Hide new GUIs when added
-    playerGui.ChildAdded:Connect(function(child)
-        if delfight and table.find(targetGUI, child.Name) then
-            hideGui(child)
-            hiddenGUI[player][child.Name] = child
-        end
-    end)
-end
-
--- MAIN TOGGLE
-if delfight then
-    -- Apply to existing players
-    for _, player in ipairs(Players:GetPlayers()) do
-        monitorPlayerGui(player)
-    end
-
-    -- Detect new players
-    playerAddedConn = Players.PlayerAdded:Connect(monitorPlayerGui)
-
-    -- Failsafe (per-frame)
-    heartbeatConn = RunService.Heartbeat:Connect(function()
-        for _, player in ipairs(Players:GetPlayers()) do
-            local playerGui = player:FindFirstChild("PlayerGui")
-            if playerGui then
-                hiddenGUI[player] = hiddenGUI[player] or {}
-                for _, guiName in ipairs(targetGUI) do
-                    local gui = playerGui:FindFirstChild(guiName)
-                    if gui then
-                        hideGui(gui)
-                        hiddenGUI[player][guiName] = gui
-                    end
+            -- Delete existing GUIs
+            for _, guiName in ipairs({"Fighting", "GameUI"}) do
+                local gui = playerGui:FindFirstChild(guiName)
+                if gui then
+                    gui:Destroy()
                 end
             end
-        end
-    end)
 
-else
-    -- Toggle OFF -> tampilkan kembali semua GUI
-    for player, guiList in pairs(hiddenGUI) do
-        for guiName, gui in pairs(guiList) do
-            if gui and gui.Parent then
-                showGui(gui)
+            -- Delete any new GUIs when added
+            playerGui.ChildAdded:Connect(function(child)
+                if delfight and (child.Name == "Fighting" or child.Name == "GameUI") then
+                    child:Destroy()
+                end
+            end)
+        end
+
+        if delfight then
+            -- Apply to current players
+            for _, player in ipairs(Players:GetPlayers()) do
+                monitorPlayerGui(player)
+            end
+
+            -- Apply to new players
+            playerAddedConn = Players.PlayerAdded:Connect(monitorPlayerGui)
+
+            -- Continuous deletion loop (failsafe)
+            heartbeatConn = RunService.Heartbeat:Connect(function()
+                for _, player in ipairs(Players:GetPlayers()) do
+                    local playerGui = player:FindFirstChild("PlayerGui")
+                    if playerGui then
+                        for _, guiName in ipairs({"Fighting", "GameUI"}) do
+                            local gui = playerGui:FindFirstChild(guiName)
+                            if gui then
+                                gui:Destroy()
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            -- Toggle off: disconnect everything
+            if heartbeatConn then
+                heartbeatConn:Disconnect()
+                heartbeatConn = nil
+            end
+            if playerAddedConn then
+                playerAddedConn:Disconnect()
+                playerAddedConn = nil
             end
         end
-    end
-
-    hiddenGUI = {}
-
-    -- Disconnect loops
-    if heartbeatConn then
-        heartbeatConn:Disconnect()
-        heartbeatConn = nil
-    end
-    if playerAddedConn then
-        playerAddedConn:Disconnect()
-        playerAddedConn = nil
-    end
-end
-
     end
 })  
 GUI:CreateToggle({
