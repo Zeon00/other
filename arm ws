@@ -1060,7 +1060,7 @@ GUI:CreateToggle({
 
                 -- ===== MAIN LOOP =====
                 while _G.battlebot1 do
-                    AutoFight("Santa")
+                    AutoFight("SnowGentleman")
                     AutoCrit()
                     AutoHit()
                     task.wait() -- yields for one frame; fastest safe loop
@@ -2474,7 +2474,7 @@ end)
 
 -- AUTO HATCH
 createToggle("Auto Hatch Ice Spikes", "AutoHatch", function()
-	local args = { "IceSpikes", [5]=true, [4]=false }
+	local args = { "Reindeer", [5]=true, [4]=false }
 	RS.Packages.Knit.Services.EggService.RF.purchaseEgg:InvokeServer(unpack(args))
 	task.wait()
 end)
