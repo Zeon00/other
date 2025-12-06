@@ -1,21 +1,21 @@
--- 🌈 AutoFishing GUI (with Rarity Detector & Safe AutoSell) - All default ON + Anti AFK
--- ⚠️ Place this LocalScript inside StarterGui
+--🌈 AutoFishing GUI Full (with Tier-based AutoSell & Anti AFK)
+--⚠️ Place this LocalScript inside StarterGui
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
--- 🐟 Load area data (FishingAreas)
+--📦 Load Fishing Areas
 local FishingAreas = require(ReplicatedStorage:WaitForChild("Items", 5) or ReplicatedStorage:WaitForChild("FishingAreas", 5))
 
--- 🎣 Rare fish list (customize freely)
+--🎣 Rare Fish List
 local RareFishes = {
 	"Lochness Monster", "Robot Kraken", "King Jelly", "Orca",
 	"Viperangler Fish", "Mosasaur Shark", "Ancient Arapaima",
 	"Sacred Guardian Squid", "Bone Whale"
 }
 
--- 🎣 Load remotes safely
+--🧱 Load Net Remotes
 local function getRemote(path)
 	local node = ReplicatedStorage
 	for seg in string.gmatch(path, "[^/]+") do
@@ -36,7 +36,7 @@ local RF_Radar = baseNet and baseNet:FindFirstChild("RF/UpdateFishingRadar")
 local RF_SellAll = baseNet and baseNet:FindFirstChild("RF/SellAllItems")
 local RE_Equip = baseNet and baseNet:FindFirstChild("RE/EquipToolFromHotbar")
 
--- 🧱 GUI SETUP
+-- GUI Setup
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AutoSystemUI"
 screenGui.ResetOnSpawn = false
@@ -71,6 +71,7 @@ title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = frame
 
+-- Close & Minimize Buttons
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 28, 0, 28)
 closeBtn.Position = UDim2.new(1, -32, 0, 2)
@@ -85,7 +86,6 @@ closeBtn.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 end)
 
--- MINIMIZE BUTTON
 local minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0, 28, 0, 28)
 minBtn.Position = UDim2.new(1, -65, 0, 2)
@@ -124,6 +124,7 @@ minBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- Button Creator
 local function makeButton(text, color, position)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0.9, 0, 0, 40)
@@ -158,34 +159,35 @@ status.Font = Enum.Font.Gotham
 status.TextXAlignment = Enum.TextXAlignment.Left
 status.Parent = frame
 
+-- Toggle variables
 local autoFish = true
 local radar = true
 local autoSell = true
 local rarityDetect = true
 local busy = false
 
--- 🔹 Prepare Fishing
+-- Prepare Fishing
 local function prepareFishing()
 	local char = player.Character or player.CharacterAdded:Wait()
 	if char:FindFirstChild("HumanoidRootPart") then
-		char.HumanoidRootPart.CFrame = CFrame.new(-3690.525390625, -135.0744171142578, -893.020751953125)
+		char.HumanoidRootPart.CFrame = CFrame.new(-3690.525, -135.074, -893.020)
 		status.Text = "Status: Teleported to fishing spot..."
-		task.wait(5)
+		task.wait(2)
 	end
 	if RE_Equip then
 		RE_Equip:FireServer(1)
 		status.Text = "Status: Fishing rod equipped..."
-		task.wait(5)
+		task.wait(2)
 	end
 	status.Text = "Status: Ready to auto fish!"
 end
 
--- 🌊 Auto Fishing
+-- Auto Fishing
 local function doFish()
 	if busy or not autoFish then return end
 	busy = true
 	status.Text = "Status: Casting..."
-	task.wait(0.5)
+	task.wait(0.2)
 
 	if not RF_Charge or not RF_Start or not RE_Complete then
 		warn("Fishing remotes missing!")
@@ -194,16 +196,16 @@ local function doFish()
 	end
 
 	RF_Charge:InvokeServer(tick())
-	task.wait(0.5)
+	task.wait(0.2)
 	RF_Start:InvokeServer(math.random(-2,2), math.random(-2,2))
-	task.wait(3 + math.random())
+	task.wait(2 + math.random())
 	RE_Complete:FireServer()
 	status.Text = "Status: Fish caught!"
-	task.wait(0.8)
+	task.wait(0.3)
 	busy = false
 end
 
--- 💎 Rarity Detector
+-- Rarity Detector
 local function checkRarity()
 	if not rarityDetect then return end
 	status.Text = "Status: Scanning rare fish..."
@@ -217,28 +219,25 @@ local function checkRarity()
 	status.Text = "Status: Rarity scan done!"
 end
 
--- 💸 Auto Sell (skip SECRET & MYTHIC)
-local SellTiers = {"COMMON","UNCOMMON","RARE","EPIC"}
-local SkipTiers = {"SECRET","MYTHIC"}
+
+-- Auto Sell All (tanpa filter)
+local function autoSellItems()
+	if RF_SellAll then
+		RF_SellAll:InvokeServer()
+		status.Text = "Status: Sold all items!"
+	end
+end
+
 
 task.spawn(function()
-	while task.wait(60) do
-		if autoSell and RF_SellAll then
-			local inv = player:FindFirstChild("Backpack") or player:FindFirstChild("Inventory")
-			if inv then
-				for _, item in pairs(inv:GetChildren()) do
-					local tier = item:FindFirstChild("Tier")
-					if tier and table.find(SellTiers, tier.Value) and not table.find(SkipTiers, tier.Value) then
-						pcall(function() RF_SellAll:InvokeServer(item) end)
-					end
-				end
-				status.Text = "Status: Sold all non-SECRET/MYTHIC items!"
-			end
+	while task.wait(30) do
+		if autoSell then
+			autoSellItems()
 		end
 	end
 end)
 
--- BUTTONS
+-- Button Events
 autoFishBtn.MouseButton1Click:Connect(function()
 	autoFish = not autoFish
 	autoFishBtn.Text = autoFish and "🎣 Auto Fishing: ON" or "🎣 Auto Fishing: OFF"
@@ -267,7 +266,7 @@ rarityBtn.MouseButton1Click:Connect(function()
 	if rarityDetect then checkRarity() end
 end)
 
--- 🔁 Main Loop
+-- Main Loop
 task.spawn(function()
 	prepareFishing()
 	while task.wait(0.1) do
@@ -275,7 +274,7 @@ task.spawn(function()
 	end
 end)
 
--- 🛡 Anti AFK always ON
+-- Anti AFK
 local VirtualUser = game:GetService('VirtualUser')
 player.Idled:Connect(function()
 	VirtualUser:CaptureController()
