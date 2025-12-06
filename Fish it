@@ -1,4 +1,4 @@
--- 🌈 AutoFishing GUI (with Rarity Detector) - All default ON + Anti AFK
+-- 🌈 AutoFishing GUI (with Rarity Detector & Safe AutoSell) - All default ON + Anti AFK
 -- ⚠️ Place this LocalScript inside StarterGui
 
 local Players = game:GetService("Players")
@@ -84,18 +84,8 @@ closeBtn.Parent = frame
 closeBtn.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 end)
--- MINIMIZE BUTTON
-local minBtn = Instance.new("TextButton")
-minBtn.Size = UDim2.new(0, 28, 0, 28)
-minBtn.Position = UDim2.new(1, -65, 0, 2)
-minBtn.BackgroundColor3 = Color3.fromRGB(80, 160, 255)
-minBtn.Font = Enum.Font.GothamBold
-minBtn.TextColor3 = Color3.fromRGB(255,255,255)
-minBtn.TextSize = 20
-minBtn.Text = "-"
-minBtn.BorderSizePixel = 0
-minBtn.Parent = frame
 
+-- MINIMIZE BUTTON
 local minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0, 28, 0, 28)
 minBtn.Position = UDim2.new(1, -65, 0, 2)
@@ -109,18 +99,12 @@ minBtn.Parent = frame
 
 local isMinimized = false
 local savedSize = frame.Size
-
--- daftar yang TIDAK disembunyikan saat minimize
 local keepVisible = {minBtn, closeBtn}
 
 local function setVisibleAll(state)
 	for _, obj in ipairs(frame:GetChildren()) do
-		if table.find(keepVisible, obj) then
-			-- tetap muncul
-		else
-			if obj:IsA("GuiObject") then
-				obj.Visible = state
-			end
+		if not table.find(keepVisible, obj) and obj:IsA("GuiObject") then
+			obj.Visible = state
 		end
 	end
 end
@@ -129,7 +113,7 @@ minBtn.MouseButton1Click:Connect(function()
 	if not isMinimized then
 		isMinimized = true
 		savedSize = frame.Size
-		frame.Size = UDim2.new(0, 80, 0, 40) -- jadi icon kecil
+		frame.Size = UDim2.new(0, 80, 0, 40)
 		minBtn.Text = "🎉"
 		setVisibleAll(false)
 	else
@@ -139,9 +123,6 @@ minBtn.MouseButton1Click:Connect(function()
 		setVisibleAll(true)
 	end
 end)
-
-
-minBtn.MouseButton1Click:Connect(minimizeUI)
 
 local function makeButton(text, color, position)
 	local btn = Instance.new("TextButton")
@@ -158,7 +139,6 @@ local function makeButton(text, color, position)
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 8)
 	corner.Parent = btn
-
 	return btn
 end
 
@@ -184,26 +164,23 @@ local autoSell = true
 local rarityDetect = true
 local busy = false
 
--- 🔹 TELEPORT & EQUIP ROD before Auto Fishing with delays
+-- 🔹 Prepare Fishing
 local function prepareFishing()
 	local char = player.Character or player.CharacterAdded:Wait()
 	if char:FindFirstChild("HumanoidRootPart") then
-		-- Teleport
-		char.HumanoidRootPart.CFrame = CFrame.new(-3600.504, -283.126, -1610.098)
+		char.HumanoidRootPart.CFrame = CFrame.new(-3690.525390625, -135.0744171142578, -893.020751953125)
 		status.Text = "Status: Teleported to fishing spot..."
-		task.wait(5) -- delay 5 detik setelah teleport
+		task.wait(5)
 	end
-	-- Equip rod
 	if RE_Equip then
-		local args = {1} -- hotbar slot
-		RE_Equip:FireServer(unpack(args))
+		RE_Equip:FireServer(1)
 		status.Text = "Status: Fishing rod equipped..."
-		task.wait(5) -- delay 5 detik setelah equip
+		task.wait(5)
 	end
 	status.Text = "Status: Ready to auto fish!"
 end
 
--- 🌊 Auto Fishing logic
+-- 🌊 Auto Fishing
 local function doFish()
 	if busy or not autoFish then return end
 	busy = true
@@ -217,21 +194,16 @@ local function doFish()
 	end
 
 	RF_Charge:InvokeServer(tick())
-	task.wait(0.5) -- lebih lama dari 0.3
-
-	local randomX = math.random(-2, 2)
-	local randomY = math.random(-2, 2)
-	RF_Start:InvokeServer(randomX, randomY)
-
-	task.wait(3 + math.random()) -- delay lebih aman
+	task.wait(0.5)
+	RF_Start:InvokeServer(math.random(-2,2), math.random(-2,2))
+	task.wait(3 + math.random())
 	RE_Complete:FireServer()
 	status.Text = "Status: Fish caught!"
 	task.wait(0.8)
 	busy = false
 end
 
-
--- 💎 Rarity Detector logic
+-- 💎 Rarity Detector
 local function checkRarity()
 	if not rarityDetect then return end
 	status.Text = "Status: Scanning rare fish..."
@@ -245,28 +217,34 @@ local function checkRarity()
 	status.Text = "Status: Rarity scan done!"
 end
 
--- 💸 Auto Sell logic
+-- 💸 Auto Sell (skip SECRET & MYTHIC)
+local SellTiers = {"COMMON","UNCOMMON","RARE","EPIC"}
+local SkipTiers = {"SECRET","MYTHIC"}
+
 task.spawn(function()
 	while task.wait(60) do
 		if autoSell and RF_SellAll then
-			RF_SellAll:InvokeServer()
-			status.Text = "Status: Sold all items!"
+			local inv = player:FindFirstChild("Backpack") or player:FindFirstChild("Inventory")
+			if inv then
+				for _, item in pairs(inv:GetChildren()) do
+					local tier = item:FindFirstChild("Tier")
+					if tier and table.find(SellTiers, tier.Value) and not table.find(SkipTiers, tier.Value) then
+						pcall(function() RF_SellAll:InvokeServer(item) end)
+					end
+				end
+				status.Text = "Status: Sold all non-SECRET/MYTHIC items!"
+			end
 		end
 	end
 end)
 
--- Buttons
+-- BUTTONS
 autoFishBtn.MouseButton1Click:Connect(function()
 	autoFish = not autoFish
 	autoFishBtn.Text = autoFish and "🎣 Auto Fishing: ON" or "🎣 Auto Fishing: OFF"
 	autoFishBtn.BackgroundColor3 = autoFish and Color3.fromRGB(70,180,80) or Color3.fromRGB(180,50,50)
 	status.Text = autoFish and "Status: Preparing fishing..." or "Status: Idle"
-
-	if autoFish then
-		task.spawn(function()
-			prepareFishing()
-		end)
-	end
+	if autoFish then task.spawn(prepareFishing) end
 end)
 
 radarBtn.MouseButton1Click:Connect(function()
@@ -286,19 +264,14 @@ rarityBtn.MouseButton1Click:Connect(function()
 	rarityDetect = not rarityDetect
 	rarityBtn.Text = rarityDetect and "🌈 Rarity Detector: ON" or "🌈 Rarity Detector: OFF"
 	rarityBtn.BackgroundColor3 = rarityDetect and Color3.fromRGB(150,80,255) or Color3.fromRGB(180,100,255)
-	if rarityDetect then
-		checkRarity()
-	end
+	if rarityDetect then checkRarity() end
 end)
 
--- 🔁 Main Auto Loop
+-- 🔁 Main Loop
 task.spawn(function()
-	-- prepare fishing terlebih dahulu sebelum auto fishing loop
 	prepareFishing()
 	while task.wait(0.1) do
-		if autoFish then
-			doFish()
-		end
+		if autoFish then doFish() end
 	end
 end)
 
