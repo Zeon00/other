@@ -162,7 +162,7 @@ status.Parent = frame
 -- Toggle variables
 local autoFish = true
 local radar = true
-local autoSell = true
+local autoSell = false
 local rarityDetect = true
 local busy = false
 
