@@ -262,10 +262,10 @@ local RE_Complete = baseNet:FindFirstChild("RE/FishingCompleted")
 local RE_Equip = baseNet:FindFirstChild("RE/EquipToolFromHotbar")
 local busy=false
 local TELEPORT_POS = Vector3.new(-3704.14, -135.07, -889.28)
-
+local TELEPORT_POSS = Vector3.new(1765.95, 5.66, -378.87)
 local function prepareFishing()
     local char = player.Character or player.CharacterAdded:Wait()
-    if char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.CFrame = CFrame.new(TELEPORT_POS) task.wait(1) end
+    if char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.CFrame = CFrame.new(TELEPORT_POSS) task.wait(1) end
     if RE_Equip then RE_Equip:FireServer(1) task.wait(1) end
 end
 
