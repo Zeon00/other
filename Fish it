@@ -170,7 +170,7 @@ local busy = false
 local function prepareFishing()
 	local char = player.Character or player.CharacterAdded:Wait()
 	if char:FindFirstChild("HumanoidRootPart") then
-		char.HumanoidRootPart.CFrame = CFrame.new(1453, -22.125001907348633, -636)
+		char.HumanoidRootPart.CFrame = CFrame.new(-3704.140869140625, -135.0744171142578, -889.2853393554688)
 		status.Text = "Status: Teleported to fishing spot..."
 		task.wait(2)
 	end
