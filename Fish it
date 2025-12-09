@@ -1,5 +1,5 @@
 -- =========================================================
--- Auto Fishing Hub Compact FULL (Default ON hijau)
+-- Auto Fishing Hub Compact FULL (Fix AutoSell default OFF)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -8,11 +8,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- STATES (default ON)
+-- STATES (default ON / OFF)
 local AutoFish = true
 local AutoFavorite = true
 local FavoriteRarity = "Mythic"
-local AutoSell = true
+local AutoSell = false  -- fix default OFF
 local SellDelay = 30
 local favoritedItems = {}
 
@@ -50,7 +50,6 @@ end
 -- AUTO FAVORITE
 local function autoFavoriteByRarity()
     local targetValue = FavoriteRarity == "Mythic" and 6 or 7
-    local favoritedCount = 0
     pcall(function()
         local items = PlayerData:GetExpect("Inventory").Items
         if not items or #items==0 then return end
@@ -61,7 +60,6 @@ local function autoFavoriteByRarity()
                 if rarityValue >= targetValue and not isItemFavorited(item.UUID) and not favoritedItems[item.UUID] then
                     Events.favorite:FireServer(item.UUID)
                     favoritedItems[item.UUID] = true
-                    favoritedCount = favoritedCount + 1
                     task.wait(0.2)
                 end
             end
@@ -108,7 +106,7 @@ ScreenGui.Name = "Fisher_GUI_Compact"
 ScreenGui.ResetOnSpawn = false
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 260, 0, 380)
+Frame.Size = UDim2.new(0, 260, 0, 340)
 Frame.Position = UDim2.new(0.7,0,0.25,0)
 Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 Frame.Active = true
@@ -116,9 +114,9 @@ Frame.Draggable = true
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,12)
 
 local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1,0,0,35)
+Title.Size = UDim2.new(0.75,0,0,34)
 Title.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Title.Text = "🎣 Auto Fishing Hub"
+Title.Text = "🎣 Auto Fishing"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
@@ -148,6 +146,7 @@ local hiddenElements = {}
 local function updateButtonVisual(btn,state)
     btn.BackgroundColor3 = state and Color3.fromRGB(40,180,60) or Color3.fromRGB(180,50,50)
     btn.Text = string.gsub(btn.Text, ": ON", ": "..(state and "ON" or "OFF"))
+    btn.Text = string.gsub(btn.Text, ": OFF", ": "..(state and "ON" or "OFF"))
 end
 
 local function CreateToggle(name,posY,defaultVar)
@@ -157,9 +156,12 @@ local function CreateToggle(name,posY,defaultVar)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 16
     btn.TextColor3 = Color3.fromRGB(255,255,255)
-    btn.Text = name.." : ON"
-    btn.BackgroundColor3 = Color3.fromRGB(40,180,60)
     table.insert(hiddenElements, btn)
+
+    -- set text awal sesuai defaultVar
+    btn.Text = name.." : "..(defaultVar[1] and "ON" or "OFF")
+    updateButtonVisual(btn, defaultVar[1])
+
     btn.MouseButton1Click:Connect(function()
         defaultVar[1] = not defaultVar[1]
         updateButtonVisual(btn, defaultVar[1])
@@ -288,5 +290,4 @@ player.Idled:Connect(function()
 	VirtualUser:ClickButton2(Vector2.new())
 end)
 
-
-print("🎣 Auto Fishing Hub COMPACT Loaded! Semua toggle default ON (hijau).")
+print("🎣 Auto Fishing Hub COMPACT Loaded! AutoSell default OFF (merah).")
