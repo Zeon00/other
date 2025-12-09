@@ -1,5 +1,5 @@
 -- =========================================================
--- Auto Fishing Hub Compact FULL (Fix AutoSell default OFF)
+-- Auto Fishing Hub Compact FULL (Fix AutoSell default OFF + Safe Sell)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -84,9 +84,30 @@ local function favoriteAllNow()
     end)
 end
 
--- AUTO SELL
+-- AUTO SELL (SAFE: skip Mythic & Secret)
 local function simpleSell()
-    pcall(function() Events.sell:InvokeServer() end)
+    pcall(function()
+        local items = PlayerData:GetExpect("Inventory").Items
+        if not items then return end
+        for _, item in ipairs(items) do
+            local data = ItemUtility:GetItemData(item.Id)
+            if data and data.Data then
+                local skip = false
+                if item.TextLabel then
+                    local color = item.TextLabel.TextColor3
+                    -- Mythic (255,24,24), Secret (23,255,151)
+                    if (math.floor(color.R*255) == 255 and math.floor(color.G*255) == 24 and math.floor(color.B*255) == 24) or
+                       (math.floor(color.R*255) == 23 and math.floor(color.G*255) == 255 and math.floor(color.B*255) == 151) then
+                        skip = true
+                    end
+                end
+                if not skip then
+                    Events.sell:InvokeServer(item.UUID)
+                    task.wait(0.2)
+                end
+            end
+        end
+    end)
 end
 
 -- AUTO LOOP FAVORITE & SELL
@@ -95,6 +116,13 @@ task.spawn(function()
         if AutoFavorite then autoFavoriteByRarity() end
         if AutoSell then simpleSell() end
         task.wait(10)
+    end
+end)
+-- AUTO SELL ALL NOW LOOP SETIAP 15 MENIT
+task.spawn(function()
+    while true do
+        task.wait(150) -- 900 detik = 15 menit
+        simpleSell()
     end
 end)
 
@@ -290,4 +318,4 @@ player.Idled:Connect(function()
 	VirtualUser:ClickButton2(Vector2.new())
 end)
 
-print("🎣 Auto Fishing Hub COMPACT Loaded! AutoSell default OFF (merah).")
+print("🎣 Auto Fishing Hub COMPACT Loaded! AutoSell default OFF (merah). Mythic & Secret aman.")
