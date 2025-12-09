@@ -288,11 +288,5 @@ player.Idled:Connect(function()
 	VirtualUser:ClickButton2(Vector2.new())
 end)
 
-game:GetService("StarterGui"):SetCore("SendNotification", {
-	Title = "Anti AFK loaded!",
-	Text = "Made by Tuuguu936",
-	Button1 = "Okay",
-	Duration = 5
-}
 
 print("🎣 Auto Fishing Hub COMPACT Loaded! Semua toggle default ON (hijau).")
