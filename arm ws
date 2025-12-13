@@ -984,7 +984,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Click",
-    default = false,
+    default = true,
     callback = function(critclik)
         --// Services
         local Players = game:GetService("Players")
@@ -1026,7 +1026,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
-    default = false,
+    default = true,
     callback = function(battlebot)
         _G.battlebot1 = battlebot
 
@@ -1060,7 +1060,7 @@ GUI:CreateToggle({
 
                 -- ===== MAIN LOOP =====
                 while _G.battlebot1 do
-                    AutoFight("SnowGentleman")
+                    AutoFight("ChristmasTree")
                     AutoCrit()
                     AutoHit()
                     task.wait() -- yields for one frame; fastest safe loop
@@ -2336,7 +2336,7 @@ mini.MouseButton1Click:Connect(function()
 end)
 
 -- NPC List
-local npcFolder = workspace:WaitForChild("GameObjects").ArmWrestling.NorthPole.NPC
+local npcFolder = workspace:WaitForChild("GameObjects").ArmWrestling.ToyFactory.NPC
 local npcList = {}
 for _, v in ipairs(npcFolder:GetChildren()) do
 	if v:IsA("Model") then table.insert(npcList, v.Name) end
