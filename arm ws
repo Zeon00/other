@@ -1768,7 +1768,12 @@ redeem:FireServer("brainrot")
 redeem:FireServer("21iscoming")
 redeem:FireServer("welovemining")
 redeem:FireServer("sorryfordelay")
-
+redeem:FireServer("iceycode")
+redeem:FireServer("toyfactory")
+redeem:FireServer("christmaspart2")
+redeem:FireServer("weds67")
+redeem:FireServer("sorryaboutthat")
+redeem:FireServer("northpole")
 end})
 
 local main = GUI:CreateTab("New Event", "squircle") -- You can use IconID we didnt impleemnt lucid or any external icons
