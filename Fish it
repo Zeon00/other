@@ -1,321 +1,244 @@
--- =========================================================
--- Auto Fishing Hub Compact FULL (Fix AutoSell default OFF + Safe Sell)
--- =========================================================
+--🌈 AutoFishing GUI Full + Dropdown Spot + Go Button
+--⚠️ Place this LocalScript inside StarterGui
 
+-- SERVICES
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
+local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
 
--- STATES (default ON / OFF)
-local AutoFish = true
-local AutoFavorite = true
-local FavoriteRarity = "Mythic"
-local AutoSell = false  -- fix default OFF
-local SellDelay = 30
-local favoritedItems = {}
+-- LOAD FISHING AREAS (safe)
+local FishingAreas
+pcall(function()
+	FishingAreas = require(
+		ReplicatedStorage:WaitForChild("Items",5)
+		or ReplicatedStorage:WaitForChild("FishingAreas",5)
+	)
+end)
 
--- MODULES
-local ItemUtility = require(ReplicatedStorage.Shared.ItemUtility)
-local Replion = require(ReplicatedStorage.Packages.Replion)
-local PlayerData = Replion.Client:WaitReplion("Data")
+-- RARE FISH LIST
+local RareFishes = {
+	"Lochness Monster","Robot Kraken","King Jelly","Orca",
+	"Viperangler Fish","Mosasaur Shark","Ancient Arapaima",
+	"Sacred Guardian Squid","Bone Whale"
+}
 
--- NETWORK EVENTS
-local Events = {}
-do
-    local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
-    Events.favorite = net:WaitForChild("RE/FavoriteItem")
-    Events.sell = net:WaitForChild("RF/SellAllItems")
+-- GET REMOTE
+local function getRemote(path)
+	local node = ReplicatedStorage
+	for seg in string.gmatch(path,"[^/]+") do
+		node = node:FindFirstChild(seg)
+		if not node then return nil end
+	end
+	return node
 end
 
--- RARITY SYSTEM
-local RarityTiers = {Common=1,Uncommon=2,Rare=3,Epic=4,Legendary=5,Mythic=6,Secret=7}
-local function getRarityValue(rarity) return RarityTiers[rarity] or 0 end
-local function getFishRarity(itemData)
-    if not itemData or not itemData.Data then return "Common" end
-    return itemData.Data.Rarity or "Common"
-end
-local function isItemFavorited(uuid)
-    local success, result = pcall(function()
-        local items = PlayerData:GetExpect("Inventory").Items
-        for _, item in ipairs(items or {}) do
-            if item.UUID == uuid then return item.Favorited==true end
-        end
-        return false
-    end)
-    return success and result or false
+local baseNet = getRemote("Packages/_Index/sleitnick_net@0.2.0/net")
+local RF_Charge = baseNet and baseNet:FindFirstChild("RF/ChargeFishingRod")
+local RF_Start = baseNet and baseNet:FindFirstChild("RF/RequestFishingMinigameStarted")
+local RE_Complete = baseNet and baseNet:FindFirstChild("RE/FishingCompleted")
+local RF_Radar = baseNet and baseNet:FindFirstChild("RF/UpdateFishingRadar")
+local RF_SellAll = baseNet and baseNet:FindFirstChild("RF/SellAllItems")
+local RE_Equip = baseNet and baseNet:FindFirstChild("RE/EquipToolFromHotbar")
+
+-- ================= TELEPORT SPOTS =================
+local FishingSpots = {
+	["ancient jungle"] = {pos=Vector3.new(1489.0378,9.5185,-295.1205), look=Vector3.new(1490,9.5,-290)},
+	["underground stellar"] = {pos=Vector3.new(2136,-91.1986,-699), look=Vector3.new(2136,-91.2,-695)},
+	["tropical grove highland"] = {pos=Vector3.new(-2148.4575,53.4864,3671.7077), look=Vector3.new(-2145,53.5,3672)},
+	["tropical grove cave"] = {pos=Vector3.new(-2151,2.3749,3669), look=Vector3.new(-2148,2.37,3669)},
+	["tropical grove"] = {pos=Vector3.new(-2042.7248,4.5206,3817.3659), look=Vector3.new(-2040,4.5,3815)},
+	["sisyphus statue"] = {pos=Vector3.new(-3704.1408,-135.0744,-889.2853), look=Vector3.new(-3700,-135,-885)},
+	["sacred temple"] = {pos=Vector3.new(1453,-22.125,-636), look=Vector3.new(1455,-22,-630)},
+	["spot 1 secret temple"] = {pos=Vector3.new(1832.5667,6.4981,-315.4451), look=Vector3.new(1835,6.5,-310)},
+	["spot 2 secret temple"] = {pos=Vector3.new(875,3.5851,-368), look=Vector3.new(878,3.5,-365)},
+	["spot 3 secret temple"] = {pos=Vector3.new(1461.3182,6.1932,-852.8835), look=Vector3.new(1465,6.2,-850)},
+	["spot 4 secret temple"] = {pos=Vector3.new(1388.1042,6.2891,112.7097), look=Vector3.new(1390,6.28,115)},
+}
+
+local function teleportToSpot(name)
+	local char = player.Character or player.CharacterAdded:Wait()
+	local hrp = char:WaitForChild("HumanoidRootPart")
+	local spot = FishingSpots[name]
+	if spot then
+		hrp.CFrame = CFrame.new(spot.pos, spot.look)
+	end
 end
 
--- AUTO FAVORITE
-local function autoFavoriteByRarity()
-    local targetValue = FavoriteRarity == "Mythic" and 6 or 7
-    pcall(function()
-        local items = PlayerData:GetExpect("Inventory").Items
-        if not items or #items==0 then return end
-        for _, item in ipairs(items) do
-            local data = ItemUtility:GetItemData(item.Id)
-            if data and data.Data then
-                local rarityValue = getRarityValue(getFishRarity(data))
-                if rarityValue >= targetValue and not isItemFavorited(item.UUID) and not favoritedItems[item.UUID] then
-                    Events.favorite:FireServer(item.UUID)
-                    favoritedItems[item.UUID] = true
-                    task.wait(0.2)
-                end
-            end
-        end
-    end)
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "AutoFishingUI"
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,320,0,400)
+frame.Position = UDim2.new(0.02,0,0.6,0)
+frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner",frame).CornerRadius = UDim.new(0,12)
+Instance.new("UIStroke",frame).Color = Color3.fromRGB(255,200,100)
+
+local function makeButton(text,color,y)
+	local b = Instance.new("TextButton",frame)
+	b.Size = UDim2.new(0.9,0,0,40)
+	b.Position = UDim2.new(0.05,0,0,y)
+	b.Text = text
+	b.BackgroundColor3 = color
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 18
+	b.TextColor3 = Color3.new(1,1,1)
+	b.BorderSizePixel = 0
+	Instance.new("UICorner",b).CornerRadius = UDim.new(0,8)
+	return b
 end
 
-local function favoriteAllNow()
-    pcall(function()
-        local items = PlayerData:GetExpect("Inventory").Items
-        if not items then return end
-        for _, item in ipairs(items) do
-            local data = ItemUtility:GetItemData(item.Id)
-            if data and data.Data then
-                if not isItemFavorited(item.UUID) and not favoritedItems[item.UUID] then
-                    Events.favorite:FireServer(item.UUID)
-                    favoritedItems[item.UUID] = true
-                    task.wait(0.2)
-                end
-            end
-        end
-    end)
+local title = Instance.new("TextLabel",frame)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "🎣 Auto Fishing System"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextColor3 = Color3.new(1,1,1)
+
+-- CLOSE BUTTON (X)
+local closeBtn = Instance.new("TextButton", frame)
+closeBtn.Size = UDim2.new(0,28,0,28)
+closeBtn.Position = UDim2.new(1,-32,0,2)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 18
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255,80,80)
+closeBtn.BorderSizePixel = 0
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
+
+closeBtn.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+-- MINIMIZE BUTTON
+local minBtn = Instance.new("TextButton", frame)
+minBtn.Size = UDim2.new(0,28,0,28)
+minBtn.Position = UDim2.new(1,-64,0,2)
+minBtn.Text = "-"
+minBtn.Font = Enum.Font.GothamBold
+minBtn.TextSize = 18
+minBtn.TextColor3 = Color3.new(1,1,1)
+minBtn.BackgroundColor3 = Color3.fromRGB(80,160,255)
+minBtn.BorderSizePixel = 0
+Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0,6)
+
+local minimized = false
+local fullSize = frame.Size
+
+local function setContentVisible(state)
+	for _,v in ipairs(frame:GetChildren()) do
+		if v:IsA("GuiObject") and v ~= minBtn and v ~= closeBtn then
+			v.Visible = state
+		end
+	end
 end
 
--- AUTO SELL (SAFE: skip Mythic & Secret)
-local function simpleSell()
-    pcall(function()
-        local items = PlayerData:GetExpect("Inventory").Items
-        if not items then return end
-        for _, item in ipairs(items) do
-            local data = ItemUtility:GetItemData(item.Id)
-            if data and data.Data then
-                local skip = false
-                if item.TextLabel then
-                    local color = item.TextLabel.TextColor3
-                    -- Mythic (255,24,24), Secret (23,255,151)
-                    if (math.floor(color.R*255) == 255 and math.floor(color.G*255) == 24 and math.floor(color.B*255) == 24) or
-                       (math.floor(color.R*255) == 23 and math.floor(color.G*255) == 255 and math.floor(color.B*255) == 151) then
-                        skip = true
-                    end
-                end
-                if not skip then
-                    Events.sell:InvokeServer(item.UUID)
-                    task.wait(0.2)
-                end
-            end
-        end
-    end)
-end
+minBtn.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	if minimized then
+		fullSize = frame.Size
+		frame.Size = UDim2.new(0,70,0,40)
+		minBtn.Text = "🎣"
+		setContentVisible(false)
+	else
+		frame.Size = fullSize
+		minBtn.Text = "-"
+		setContentVisible(true)
+	end
+end)
 
--- AUTO LOOP FAVORITE & SELL
+local autoFishBtn = makeButton("🎣 Auto Fishing: ON",Color3.fromRGB(70,180,80),40)
+local radarBtn = makeButton("📡 Radar: ON",Color3.fromRGB(70,180,255),90)
+local sellBtn = makeButton("💰 Auto Sell: OFF",Color3.fromRGB(240,180,60),140)
+
+-- DROPDOWN
+local spotNames = {}
+for n in pairs(FishingSpots) do table.insert(spotNames,n) end
+table.sort(spotNames)
+local spotIndex = 1
+local selectedSpot = spotNames[spotIndex]
+
+local spotBtn = makeButton("📍 Spot: "..selectedSpot,Color3.fromRGB(100,160,255),190)
+local goBtn = makeButton("🚀 Go To Place",Color3.fromRGB(80,200,120),240)
+
+local status = Instance.new("TextLabel",frame)
+status.Size = UDim2.new(1,-20,0,25)
+status.Position = UDim2.new(0,10,1,-30)
+status.BackgroundTransparency = 1
+status.Text = "Status: Ready"
+status.Font = Enum.Font.Gotham
+status.TextSize = 16
+status.TextColor3 = Color3.new(1,1,1)
+
+-- ================= STATES =================
+local autoFish = true
+local radar = true
+local autoSell = false
+local busy = false
+
+-- ================= LOGIC =================
+spotBtn.MouseButton1Click:Connect(function()
+	spotIndex += 1
+	if spotIndex > #spotNames then spotIndex = 1 end
+	selectedSpot = spotNames[spotIndex]
+	spotBtn.Text = "📍 Spot: "..selectedSpot
+end)
+
+goBtn.MouseButton1Click:Connect(function()
+	teleportToSpot(selectedSpot)
+	status.Text = "Status: Teleported to "..selectedSpot
+end)
+
+autoFishBtn.MouseButton1Click:Connect(function()
+	autoFish = not autoFish
+	autoFishBtn.Text = autoFish and "🎣 Auto Fishing: ON" or "🎣 Auto Fishing: OFF"
+	autoFishBtn.BackgroundColor3 = autoFish and Color3.fromRGB(70,180,80) or Color3.fromRGB(180,50,50)
+end)
+
+radarBtn.MouseButton1Click:Connect(function()
+	radar = not radar
+	radarBtn.Text = radar and "📡 Radar: ON" or "📡 Radar: OFF"
+	if RF_Radar then RF_Radar:InvokeServer(radar) end
+end)
+
+sellBtn.MouseButton1Click:Connect(function()
+	autoSell = not autoSell
+	sellBtn.Text = autoSell and "💰 Auto Sell: ON" or "💰 Auto Sell: OFF"
+end)
+
+-- AUTO FISH LOOP
 task.spawn(function()
-    while true do
-        if AutoFavorite then autoFavoriteByRarity() end
-        if AutoSell then simpleSell() end
-        task.wait(10)
-    end
+	while task.wait(0.05) do
+		if autoFish and not busy and RF_Charge then
+			busy = true
+			RF_Charge:InvokeServer(tick())
+			task.wait(0.05)
+			RF_Start:InvokeServer(0,0)
+			task.wait(1.25)
+			RE_Complete:FireServer()		
+			busy = false
+		end
+	end
 end)
--- AUTO SELL ALL NOW LOOP SETIAP 15 MENIT
+
+-- AUTO SELL
 task.spawn(function()
-    while true do
-        task.wait(150) -- 900 detik = 15 menit
-        simpleSell()
-    end
+	while task.wait(30) do
+		if autoSell and RF_SellAll then
+			RF_SellAll:InvokeServer()
+		end
+	end
 end)
 
-----------------------------------------------------------------
--- GUI Compact
-----------------------------------------------------------------
-local ScreenGui = Instance.new("ScreenGui", playerGui)
-ScreenGui.Name = "Fisher_GUI_Compact"
-ScreenGui.ResetOnSpawn = false
-
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 260, 0, 340)
-Frame.Position = UDim2.new(0.7,0,0.25,0)
-Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Frame.Active = true
-Frame.Draggable = true
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,12)
-
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(0.75,0,0,34)
-Title.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Title.Text = "🎣 Auto Fishing"
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-
-local CloseBtn = Instance.new("TextButton", Frame)
-CloseBtn.Size = UDim2.new(0,28,0,28)
-CloseBtn.Position = UDim2.new(1,-32,0,2)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(255,80,80)
-CloseBtn.Text = "X"
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextColor3 = Color3.fromRGB(255,255,255)
-CloseBtn.TextSize = 18
-CloseBtn.BorderSizePixel = 0
-
-local MinBtn = Instance.new("TextButton", Frame)
-MinBtn.Size = UDim2.new(0,28,0,28)
-MinBtn.Position = UDim2.new(1,-70,0,2)
-MinBtn.BackgroundColor3 = Color3.fromRGB(80,160,255)
-MinBtn.Text = "-"
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextColor3 = Color3.fromRGB(255,255,255)
-MinBtn.TextSize = 18
-MinBtn.BorderSizePixel = 0
-
-local hiddenElements = {}
-
-local function updateButtonVisual(btn,state)
-    btn.BackgroundColor3 = state and Color3.fromRGB(40,180,60) or Color3.fromRGB(180,50,50)
-    btn.Text = string.gsub(btn.Text, ": ON", ": "..(state and "ON" or "OFF"))
-    btn.Text = string.gsub(btn.Text, ": OFF", ": "..(state and "ON" or "OFF"))
-end
-
-local function CreateToggle(name,posY,defaultVar)
-    local btn = Instance.new("TextButton", Frame)
-    btn.Size = UDim2.new(0.9,0,0,35)
-    btn.Position = UDim2.new(0.05,0,0,posY)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 16
-    btn.TextColor3 = Color3.fromRGB(255,255,255)
-    table.insert(hiddenElements, btn)
-
-    -- set text awal sesuai defaultVar
-    btn.Text = name.." : "..(defaultVar[1] and "ON" or "OFF")
-    updateButtonVisual(btn, defaultVar[1])
-
-    btn.MouseButton1Click:Connect(function()
-        defaultVar[1] = not defaultVar[1]
-        updateButtonVisual(btn, defaultVar[1])
-    end)
-    return btn
-end
-
-local function CreateButton(name,posY,callback)
-    local btn = Instance.new("TextButton", Frame)
-    btn.Size = UDim2.new(0.9,0,0,35)
-    btn.Position = UDim2.new(0.05,0,0,posY)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 16
-    btn.TextColor3 = Color3.fromRGB(255,255,255)
-    btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
-    btn.Text = name
-    table.insert(hiddenElements, btn)
-    btn.MouseButton1Click:Connect(callback)
-    return btn
-end
-
-local function CreateInput(name,posY,default,callback)
-    local input = Instance.new("TextBox", Frame)
-    input.Size = UDim2.new(0.9,0,0,35)
-    input.Position = UDim2.new(0.05,0,0,posY)
-    input.TextSize = 16
-    input.Font = Enum.Font.Gotham
-    input.TextColor3 = Color3.fromRGB(255,255,255)
-    input.PlaceholderText = name
-    input.Text = tostring(default)
-    input.BackgroundColor3 = Color3.fromRGB(80,80,80)
-    table.insert(hiddenElements, input)
-
-    input.FocusLost:Connect(function(enter)
-        if enter then
-            local val = tonumber(input.Text)
-            if val and val >= 1 and val <= 300 then
-                callback(val)
-            else input.Text = tostring(default) end
-        end
-    end)
-    return input
-end
-
--- Minimize Logic
-local minimized=false
-MinBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    for _,obj in ipairs(hiddenElements) do
-        obj.Visible = not minimized
-    end
-    Frame.Size = minimized and UDim2.new(0,Frame.Size.X.Offset,0,40) or UDim2.new(0,Frame.Size.X.Offset,0,380)
-    MinBtn.Text = minimized and "🎉" or "-"
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    AutoFish=false
-    AutoFavorite=false
-    AutoSell=false
-    ScreenGui:Destroy()
-end)
-
-----------------------------------------------------------------
--- AUTO FISH REMOTES
-----------------------------------------------------------------
-local baseNet = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-local RF_Charge = baseNet:FindFirstChild("RF/ChargeFishingRod")
-local RF_Start = baseNet:FindFirstChild("RF/RequestFishingMinigameStarted")
-local RE_Complete = baseNet:FindFirstChild("RE/FishingCompleted")
-local RE_Equip = baseNet:FindFirstChild("RE/EquipToolFromHotbar")
-local busy=false
-local TELEPORT_POS = Vector3.new(-3704.14, -135.07, -889.28)
-local TELEPORT_POSS = Vector3.new(1765.95, 5.66, -378.87)
-local function prepareFishing()
-    local char = player.Character or player.CharacterAdded:Wait()
-    if char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.CFrame = CFrame.new(TELEPORT_POSS) task.wait(1) end
-    if RE_Equip then RE_Equip:FireServer(1) task.wait(1) end
-end
-
-local function doFishNew()
-    if busy or not AutoFish then return end
-    busy=true
-    if not RF_Charge or not RF_Start or not RE_Complete then
-        warn("Fishing remotes missing!")
-        busy=false
-        return
-    end
-    RF_Charge:InvokeServer(tick())
-    task.wait(0.2)
-    RF_Start:InvokeServer(math.random(-2,2), math.random(-2,2))
-    task.wait(2+math.random())
-    RE_Complete:FireServer()
-    busy=false
-end
-
-task.spawn(function()
-    prepareFishing()
-    while true do
-        task.wait(0.3)
-        if AutoFish then doFishNew() end
-    end
-end)
-
-----------------------------------------------------------------
--- CREATE BUTTONS/TOGGLES
-----------------------------------------------------------------
-local y=50
-local tAutoFish = {AutoFish}
-local tAutoFavorite = {AutoFavorite}
-local tAutoSell = {AutoSell}
-
-CreateToggle("Auto Fish", y,tAutoFish); y=y+40
-CreateToggle("Auto Favorite", y,tAutoFavorite); y=y+40
-CreateButton("⭐ Favorite by Rarity Now", y,function() task.spawn(autoFavoriteByRarity) end); y=y+40
-CreateButton("⭐ Favorite All Now (0-7)", y,function() task.spawn(favoriteAllNow) end); y=y+40
-CreateToggle("💰 Auto Sell", y,tAutoSell); y=y+40
-CreateInput("Sell Delay (1-300s)", y,SellDelay,function(val) SellDelay=val end); y=y+40
-CreateButton("💰 Sell All Now", y,simpleSell)
-
-----------------------------------------------------------------
 -- ANTI AFK
-----------------------------------------------------------------
-local VirtualUser = game:GetService('VirtualUser')
 player.Idled:Connect(function()
 	VirtualUser:CaptureController()
 	VirtualUser:ClickButton2(Vector2.new())
 end)
-
-print("🎣 Auto Fishing Hub COMPACT Loaded! AutoSell default OFF (merah). Mythic & Secret aman.")
