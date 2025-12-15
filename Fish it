@@ -1,258 +1,255 @@
---🌈 AutoFishing GUI FULL + Spot Dropdown + Delay Input + Minimize + Close
---⚠️ LocalScript → StarterGui
+-- 🌈 AUTO FISHING GUI FULL (FINAL PATCH)
+-- copas langsung | clean | no missing
 
+--------------------
 -- SERVICES
+--------------------
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
 
--- ================= REMOTES =================
+--------------------
+-- REMOTES
+--------------------
 local function getRemote(path)
-	local node = ReplicatedStorage
-	for seg in string.gmatch(path,"[^/]+") do
-		node = node:FindFirstChild(seg)
-		if not node then return nil end
+	local n = ReplicatedStorage
+	for s in path:gmatch("[^/]+") do
+		n = n:FindFirstChild(s)
+		if not n then return nil end
 	end
-	return node
+	return n
 end
 
 local baseNet = getRemote("Packages/_Index/sleitnick_net@0.2.0/net")
 local RF_Charge   = baseNet and baseNet:FindFirstChild("RF/ChargeFishingRod")
 local RF_Start    = baseNet and baseNet:FindFirstChild("RF/RequestFishingMinigameStarted")
 local RE_Complete = baseNet and baseNet:FindFirstChild("RE/FishingCompleted")
-local RF_Radar    = baseNet and baseNet:FindFirstChild("RF/UpdateFishingRadar")
-local RF_SellAll  = baseNet and baseNet:FindFirstChild("RF/SellAllItems")
 local RE_Equip    = baseNet and baseNet:FindFirstChild("RE/EquipToolFromHotbar")
 
--- ================= TELEPORT SPOTS =================
-local FishingSpots = {
-	["ancient jungle"] = {pos=Vector3.new(1489.03,9.51,-295.12), look=Vector3.new(1490,9.5,-290)},
-	["underground stellar"] = {pos=Vector3.new(2136,-91.19,-699), look=Vector3.new(2136,-91,-695)},
-	["tropical grove highland"] = {pos=Vector3.new(-2148.45,53.48,3671.7), look=Vector3.new(-2145,53.5,3672)},
-	["tropical grove cave"] = {pos=Vector3.new(-2151,2.37,3669), look=Vector3.new(-2148,2.37,3669)},
-	["tropical grove"] = {pos=Vector3.new(-2042.72,4.52,3817.36), look=Vector3.new(-2040,4.5,3815)},
-	["sisyphus statue"] = {pos=Vector3.new(-3704.14,-135.07,-889.28), look=Vector3.new(-3700,-135,-885)},
-	["sacred temple"] = {pos=Vector3.new(1453,-22.12,-636), look=Vector3.new(1455,-22,-630)},
-	["spot 1 secret temple"] = {pos=Vector3.new(1832.56,6.49,-315.44), look=Vector3.new(1835,6.5,-310)},
-	["spot 2 secret temple"] = {pos=Vector3.new(875,3.58,-368), look=Vector3.new(878,3.5,-365)},
-	["spot 3 secret temple"] = {pos=Vector3.new(1461.31,6.19,-852.88), look=Vector3.new(1465,6.2,-850)},
-	["spot 4 secret temple"] = {pos=Vector3.new(1388.10,6.28,112.70), look=Vector3.new(1390,6.28,115)},
+--------------------
+-- CONFIG
+--------------------
+local autoFish = true -- DEFAULT ON
+local busy = false
+
+local DELAY_CHARGE   = 0.2
+local DELAY_START    = 0.3
+local DELAY_COMPLETE = 1.25
+
+local FacingMode = "FRONT"
+local FacingAngle = {
+	FRONT = 0,
+	RIGHT = 90,
+	LEFT  = -90,
+	BACK  = 180
 }
 
-local function teleportToSpot(name)
-	local char = player.Character or player.CharacterAdded:Wait()
-	local hrp = char:WaitForChild("HumanoidRootPart")
-	local s = FishingSpots[name]
-	if s then hrp.CFrame = CFrame.new(s.pos, s.look) end
-end
+--------------------
+-- FISHING SPOTS
+--------------------
+local FishingSpots = {
+	["ancient jungle"] = {pos = Vector3.new(1489.0378, 9.5185, -295.1205)},
+	["underground stellar"] = {pos = Vector3.new(2136, -91.1986, -699)},
+	["tropical grove highland"] = {pos = Vector3.new(-2148.4575, 53.4864, 3671.7077)},
+	["tropical grove cave"] = {pos = Vector3.new(-2151, 2.37496, 3669)},
+	["tropical grove"] = {pos = Vector3.new(-2042.7248, 4.5206, 3817.3659)},
+	["sisyphus statue"] = {pos = Vector3.new(-3704.1408, -135.0744, -889.2853)},
+	["sacred temple"] = {pos = Vector3.new(1453, -22.125, -636)},
+	["spot 1 secret temple"] = {pos = Vector3.new(1832.5667, 6.49812, -315.4451)},
+	["spot 2 secret temple"] = {pos = Vector3.new(875, 3.5851, -368)},
+	["spot 3 secret temple"] = {pos = Vector3.new(1461.3182, 6.1932, -852.8835)},
+	["spot 4 secret temple"] = {pos = Vector3.new(1388.1042, 6.2891, 112.7097)},
+}
 
--- ================= GUI =================
+local spotNames = {}
+for n in pairs(FishingSpots) do table.insert(spotNames, n) end
+table.sort(spotNames)
+local spotIndex = 1
+local selectedSpot = spotNames[1]
+
+--------------------
+-- GUI
+--------------------
 local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "AutoFishingUI"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0,330,0,520)
-frame.Position = UDim2.new(0.02,0,0.6,0)
-frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
-frame.BorderSizePixel = 0
+frame.Size = UDim2.new(0, 330, 0, 470)
+frame.Position = UDim2.new(0.02, 0, 0.6, 0)
+frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
 frame.Active = true
 frame.Draggable = true
-Instance.new("UICorner",frame).CornerRadius = UDim.new(0,12)
-Instance.new("UIStroke",frame).Color = Color3.fromRGB(255,200,100)
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
 
--- CLOSE & MINIMIZE
-local closeBtn = Instance.new("TextButton",frame)
-closeBtn.Size = UDim2.new(0,28,0,28)
-closeBtn.Position = UDim2.new(1,-32,0,2)
-closeBtn.Text = "X"
-closeBtn.BackgroundColor3 = Color3.fromRGB(255,80,80)
-closeBtn.TextColor3 = Color3.new(1,1,1)
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.BorderSizePixel = 0
-Instance.new("UICorner",closeBtn)
-
-local minBtn = Instance.new("TextButton",frame)
-minBtn.Size = UDim2.new(0,28,0,28)
-minBtn.Position = UDim2.new(1,-64,0,2)
-minBtn.Text = "-"
-minBtn.BackgroundColor3 = Color3.fromRGB(80,160,255)
-minBtn.TextColor3 = Color3.new(1,1,1)
-minBtn.Font = Enum.Font.GothamBold
-minBtn.BorderSizePixel = 0
-Instance.new("UICorner",minBtn)
-
--- TITLE
-local title = Instance.new("TextLabel",frame)
-title.Size = UDim2.new(1,0,0,30)
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,-80,0,30)
+title.Position = UDim2.new(0,10,0,5)
+title.Text = "🎣 Auto Fishing"
+title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
-title.Text = "🎣 Auto Fishing System"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
-title.TextColor3 = Color3.new(1,1,1)
+title.TextXAlignment = Enum.TextXAlignment.Left
 
--- BUTTON MAKER
-local function btn(text,y,color)
-	local b = Instance.new("TextButton",frame)
-	b.Size = UDim2.new(0.9,0,0,40)
-	b.Position = UDim2.new(0.05,0,0,y)
-	b.Text = text
-	b.Font = Enum.Font.GothamBold
-	b.TextSize = 18
-	b.TextColor3 = Color3.new(1,1,1)
-	b.BackgroundColor3 = color
-	b.BorderSizePixel = 0
-	Instance.new("UICorner",b)
-	return b
-end
-
-local autoFishBtn = btn("🎣 Auto Fishing: ON",40,Color3.fromRGB(70,180,80))
-local radarBtn    = btn("📡 Radar: ON",90,Color3.fromRGB(70,180,255))
-local sellBtn     = btn("💰 Auto Sell: OFF",140,Color3.fromRGB(240,180,60))
-
--- DROPDOWN SPOT
-local names = {}
-for n in pairs(FishingSpots) do table.insert(names,n) end
-table.sort(names)
-local idx = 1
-local selected = names[idx]
-
-local spotBtn = btn("📍 Spot: "..selected,190,Color3.fromRGB(100,160,255))
-local goBtn   = btn("🚀 Go To Place",240,Color3.fromRGB(80,200,120))
-
--- INPUT BOX
-local function input(label,y,default)
-	local l = Instance.new("TextLabel",frame)
-	l.Size = UDim2.new(0.45,0,0,25)
-	l.Position = UDim2.new(0.05,0,0,y)
-	l.BackgroundTransparency = 1
-	l.Text = label
-	l.TextColor3 = Color3.new(1,1,1)
-	l.Font = Enum.Font.Gotham
-	l.TextSize = 14
-
-	local b = Instance.new("TextBox",frame)
-	b.Size = UDim2.new(0.4,0,0,28)
-	b.Position = UDim2.new(0.5,0,0,y)
-	b.Text = tostring(default)
-	b.ClearTextOnFocus = false
-	b.Font = Enum.Font.GothamBold
-	b.TextColor3 = Color3.new(1,1,1)
-	b.BackgroundColor3 = Color3.fromRGB(60,60,60)
-	b.BorderSizePixel = 0
-	Instance.new("UICorner",b)
-	return b
-end
-
--- DELAYS
-local delayCharge = 0.2
-local delayStart = 0.3
-local delayComplete = 2.0
-
-local boxCharge   = input("RF Charge Delay",300,delayCharge)
-local boxStart    = input("RF Start Delay",335,delayStart)
-local boxComplete = input("RE Complete Delay",370,delayComplete)
-
-boxCharge.FocusLost:Connect(function() delayCharge = tonumber(boxCharge.Text) or delayCharge end)
-boxStart.FocusLost:Connect(function() delayStart = tonumber(boxStart.Text) or delayStart end)
-boxComplete.FocusLost:Connect(function() delayComplete = tonumber(boxComplete.Text) or delayComplete end)
-
--- STATUS
-local status = Instance.new("TextLabel",frame)
-status.Size = UDim2.new(1,-20,0,25)
-status.Position = UDim2.new(0,10,1,-30)
-status.BackgroundTransparency = 1
-status.Text = "Status: Ready"
-status.TextColor3 = Color3.new(1,1,1)
-status.Font = Enum.Font.Gotham
-
--- STATES
-local autoFish = true
-local radar = true
-local autoSell = false
-local busy = false
-
--- BUTTON LOGIC
-spotBtn.MouseButton1Click:Connect(function()
-	idx = idx % #names + 1
-	selected = names[idx]
-	spotBtn.Text = "📍 Spot: "..selected
-end)
-
-goBtn.MouseButton1Click:Connect(function()
-	teleportToSpot(selected)
-	status.Text = "Teleported to "..selected
-end)
-
-autoFishBtn.MouseButton1Click:Connect(function()
-	autoFish = not autoFish
-	autoFishBtn.Text = autoFish and "🎣 Auto Fishing: ON" or "🎣 Auto Fishing: OFF"
-end)
-
-radarBtn.MouseButton1Click:Connect(function()
-	radar = not radar
-	if RF_Radar then RF_Radar:InvokeServer(radar) end
-end)
-
-sellBtn.MouseButton1Click:Connect(function()
-	autoSell = not autoSell
-	sellBtn.Text = autoSell and "💰 Auto Sell: ON" or "💰 Auto Sell: OFF"
-end)
-
--- MINIMIZE
-local minimized = false
-local fullSize = frame.Size
-local function setVisible(v)
-	for _,o in ipairs(frame:GetChildren()) do
-		if o:IsA("GuiObject") and o~=minBtn and o~=closeBtn then
-			o.Visible = v
-		end
-	end
-end
-
-minBtn.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	if minimized then
-		frame.Size = UDim2.new(0,70,0,40)
-		minBtn.Text = "🎣"
-		setVisible(false)
-	else
-		frame.Size = fullSize
-		minBtn.Text = "-"
-		setVisible(true)
-	end
-end)
-
-closeBtn.MouseButton1Click:Connect(function()
+-- CLOSE
+local close = Instance.new("TextButton", frame)
+close.Size = UDim2.new(0,28,0,28)
+close.Position = UDim2.new(1,-32,0,2)
+close.Text = "X"
+close.TextColor3 = Color3.new(1,1,1)
+close.BackgroundColor3 = Color3.fromRGB(200,70,70)
+close.MouseButton1Click:Connect(function()
 	gui:Destroy()
 end)
 
+-- MINIMIZE
+local min = Instance.new("TextButton", frame)
+min.Size = UDim2.new(0,28,0,28)
+min.Position = UDim2.new(1,-64,0,2)
+min.Text = "-"
+min.TextColor3 = Color3.new(1,1,1)
+min.BackgroundColor3 = Color3.fromRGB(80,150,255)
+
+local minimized = false
+local savedSize = frame.Size
+min.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	if minimized then
+		frame.Size = UDim2.new(0,80,0,40)
+		for _,v in ipairs(frame:GetChildren()) do
+			if v:IsA("GuiObject") and v ~= min and v ~= close then
+				v.Visible = false
+			end
+		end
+	else
+		frame.Size = savedSize
+		for _,v in ipairs(frame:GetChildren()) do
+			if v:IsA("GuiObject") then v.Visible = true end
+		end
+	end
+end)
+
+-- BUTTON MAKER
+local function makeButton(text, y, color)
+	local b = Instance.new("TextButton", frame)
+	b.Size = UDim2.new(0.9,0,0,36)
+	b.Position = UDim2.new(0.05,0,0,y)
+	b.Text = text
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 16
+	b.TextColor3 = Color3.new(1,1,1)
+	b.BackgroundColor3 = color
+	Instance.new("UICorner", b)
+	return b
+end
+
+--------------------
+-- BUTTONS
+--------------------
+local spotBtn   = makeButton("📍 Spot: "..selectedSpot, 50, Color3.fromRGB(100,160,255))
+local facingBtn = makeButton("🧭 Facing: "..FacingMode, 100, Color3.fromRGB(180,140,255))
+local goBtn     = makeButton("🚀 Go To Place", 150, Color3.fromRGB(80,200,120))
+local autoBtn   = makeButton("🎣 Auto Fishing: ON", 200, Color3.fromRGB(80,180,120))
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,-20,0,25)
+status.Position = UDim2.new(0,10,1,-30)
+status.BackgroundTransparency = 1
+status.TextColor3 = Color3.new(1,1,1)
+status.Font = Enum.Font.Gotham
+status.TextSize = 15
+status.Text = "Status: Ready"
+
+--------------------
+-- DROPDOWNS
+--------------------
+spotBtn.MouseButton1Click:Connect(function()
+	spotIndex += 1
+	if spotIndex > #spotNames then spotIndex = 1 end
+	selectedSpot = spotNames[spotIndex]
+	spotBtn.Text = "📍 Spot: "..selectedSpot
+end)
+
+local facingOrder = {"FRONT","RIGHT","LEFT","BACK"}
+local facingIndex = 1
+facingBtn.MouseButton1Click:Connect(function()
+	facingIndex += 1
+	if facingIndex > #facingOrder then facingIndex = 1 end
+	FacingMode = facingOrder[facingIndex]
+	facingBtn.Text = "🧭 Facing: "..FacingMode
+end)
+
+--------------------
+-- TOGGLE AUTO FISH
+--------------------
+autoBtn.MouseButton1Click:Connect(function()
+	autoFish = not autoFish
+	autoBtn.Text = autoFish and "🎣 Auto Fishing: ON" or "🎣 Auto Fishing: OFF"
+	autoBtn.BackgroundColor3 = autoFish
+		and Color3.fromRGB(80,180,120)
+		or Color3.fromRGB(180,70,70)
+	status.Text = autoFish and "Status: Auto Fishing ON" or "Status: Auto Fishing OFF"
+end)
+
+--------------------
+-- TELEPORT + EQUIP
+--------------------
+local function getFacingCFrame(pos)
+	return CFrame.new(pos) * CFrame.Angles(0, math.rad(FacingAngle[FacingMode]), 0)
+end
+
+local function prepareFishing()
+	local char = player.Character or player.CharacterAdded:Wait()
+	local hrp = char:WaitForChild("HumanoidRootPart")
+	local spot = FishingSpots[selectedSpot]
+
+	hrp.CFrame = getFacingCFrame(spot.pos)
+	status.Text = "Status: Teleported"
+
+	task.wait(1)
+	if RE_Equip then RE_Equip:FireServer(1) end
+	status.Text = "Status: Rod Equipped"
+end
+
+goBtn.MouseButton1Click:Connect(function()
+	task.spawn(prepareFishing)
+end)
+
+--------------------
 -- AUTO FISH LOOP
+--------------------
 task.spawn(function()
 	while task.wait(0.1) do
-		if autoFish and not busy and RF_Charge and RF_Start and RE_Complete then
-			busy = true
-			RF_Charge:InvokeServer(tick())
-			task.wait(delayCharge)
-			RF_Start:InvokeServer(0,0)
-			task.wait(delayStart)
-			task.wait(delayComplete)
-			RE_Complete:FireServer()
-			busy = false
-		end
+		if not autoFish or busy then continue end
+		busy = true
+
+		if RF_Charge then RF_Charge:InvokeServer(tick()) end
+		task.wait(DELAY_CHARGE)
+
+		if RF_Start then RF_Start:InvokeServer(0,0) end
+		task.wait(DELAY_COMPLETE)
+
+		if RE_Complete then RE_Complete:FireServer() end
+		status.Text = "Status: Fish Caught"
+
+		task.wait(DELAY_START)
+		busy = false
 	end
 end)
 
--- AUTO SELL
+--------------------
+-- AUTO START
+--------------------
 task.spawn(function()
-	while task.wait(30) do
-		if autoSell and RF_SellAll then
-			RF_SellAll:InvokeServer()
-		end
-	end
+	task.wait(1)
+	prepareFishing()
 end)
 
+--------------------
 -- ANTI AFK
+--------------------
 player.Idled:Connect(function()
 	VirtualUser:CaptureController()
 	VirtualUser:ClickButton2(Vector2.new())
