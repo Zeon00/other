@@ -984,7 +984,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Click",
-    default = true,
+    default = false,
     callback = function(critclik)
         --// Services
         local Players = game:GetService("Players")
@@ -1026,7 +1026,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
-    default = true,
+    default = false,
     callback = function(battlebot)
         _G.battlebot1 = battlebot
 
