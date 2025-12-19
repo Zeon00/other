@@ -1,0 +1,102 @@
+-- ===== SAFE GUI PARENT =====
+local parent =
+	gethui and gethui()
+	or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
+task.wait(1)
+
+-- ===== SERVICES =====
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Knit = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
+local ClaimRF = Knit.Services.GiftMachineService.RF.Claim
+local CraftRF = Knit.Services.PresentCraftingService.RF.CraftAll
+
+-- ===== CLEAN OLD =====
+pcall(function()
+	parent.ToyFactoryGUI:Destroy()
+end)
+
+-- ===== STATE =====
+local AutoClaim = false
+local Factory = {false,false,false,false,false,false,false}
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui", parent)
+gui.Name = "ToyFactoryGUI"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,300,0,360)
+frame.Position = UDim2.new(0.5,-150,0.5,-180)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Active = true
+frame.Draggable = true
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "Toy Factory Hub"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+
+-- ===== BUTTON CREATOR (MANUAL) =====
+local function makeBtn(text, y)
+	local b = Instance.new("TextButton", frame)
+	b.Size = UDim2.new(0,260,0,35)
+	b.Position = UDim2.new(0,20,0,y)
+	b.Text = text.." : OFF"
+	b.BackgroundColor3 = Color3.fromRGB(80,80,80)
+	b.TextColor3 = Color3.new(1,1,1)
+	b.TextSize = 14
+	b.Font = Enum.Font.Gotham
+	return b
+end
+
+-- ===== AUTO CLAIM BUTTON =====
+local btnAuto = makeBtn("Auto Claim (90m)", 40)
+btnAuto.MouseButton1Click:Connect(function()
+	AutoClaim = not AutoClaim
+	btnAuto.Text = "Auto Claim (90m) : "..(AutoClaim and "ON" or "OFF")
+	btnAuto.BackgroundColor3 = AutoClaim and Color3.fromRGB(0,160,0) or Color3.fromRGB(80,80,80)
+end)
+
+-- ===== FACTORY BUTTONS =====
+local factoryBtn = {}
+
+for i = 1,7 do
+	factoryBtn[i] = makeBtn("Factory "..i, 40 + i*40)
+	factoryBtn[i].MouseButton1Click:Connect(function()
+		Factory[i] = not Factory[i]
+		factoryBtn[i].Text = "Factory "..i.." : "..(Factory[i] and "ON" or "OFF")
+		factoryBtn[i].BackgroundColor3 = Factory[i] and Color3.fromRGB(0,160,0) or Color3.fromRGB(80,80,80)
+	end)
+end
+
+-- ===== AUTO CLAIM LOOP =====
+task.spawn(function()
+	while true do
+		if AutoClaim then
+			pcall(function()
+				ClaimRF:InvokeServer("ToyFactory")
+			end)
+			task.wait(5400) -- 90 menit
+		else
+			task.wait(0.5)
+		end
+	end
+end)
+
+-- ===== FACTORY LOOP =====
+task.spawn(function()
+	while true do
+		for i = 1,7 do
+			if Factory[i] then
+				pcall(function()
+					CraftRF:InvokeServer("ToyFactory", i)
+				end)
+				task.wait(0.3)
+			end
+		end
+		task.wait(1)
+	end
+end)
