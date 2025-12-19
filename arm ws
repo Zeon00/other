@@ -2459,14 +2459,14 @@ end)
 
 -- AUTO GRIPS
 createToggle("Auto Grips", "AutoGrips", function()
-	local args = {"NorthPole", "Grips", "NorthPole12"}
+	local args = {"ToyFactory", "Grips", "NorthPole12"}
 	RS.Packages.Knit.Services.ToolService.RE.onEquipRequest:FireServer(unpack(args))
 	task.wait(30)
 end)
 
 -- AUTO DUMBELLS
 createToggle("Auto Dumbells", "AutoDumbells", function()
-	local args = {"NorthPole", "Dumbells", "NorthPole12"}
+	local args = {"ToyFactory", "Dumbells", "NorthPole12"}
 	RS.Packages.Knit.Services.ToolService.RE.onEquipRequest:FireServer(unpack(args))
 	task.wait(30)
 end)
@@ -2479,7 +2479,7 @@ end)
 
 -- AUTO HATCH
 createToggle("Auto Hatch Ice Spikes", "AutoHatch", function()
-	local args = { "Reindeer", [5]=true, [4]=false }
+	local args = { "Ornament", [5]=true, [4]=false }
 	RS.Packages.Knit.Services.EggService.RF.purchaseEgg:InvokeServer(unpack(args))
 	task.wait()
 end)
