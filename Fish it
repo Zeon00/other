@@ -34,8 +34,8 @@ local RF_Special = baseNet and baseNet:FindFirstChild("RF/SpecialDialogueEvent")
 local autoFish = true -- DEFAULT ON
 local busy = false
 
-local DELAY_CHARGE   = 0.2
-local DELAY_START    = 0.3
+local DELAY_CHARGE   = 0.22
+local DELAY_START    = 0.45
 local DELAY_COMPLETE = 1.15
 
 local FacingMode = "FRONT"
