@@ -34,8 +34,8 @@ local RF_Special = baseNet and baseNet:FindFirstChild("RF/SpecialDialogueEvent")
 local autoFish = true -- DEFAULT ON
 local busy = false
 
-local DELAY_CHARGE   = 0.2
-local DELAY_START    = 0.3
+local DELAY_CHARGE   = 0.05
+local DELAY_START    = 0.05
 local DELAY_COMPLETE = 1.25
 
 local FacingMode = "FRONT"
@@ -64,7 +64,7 @@ local FishingSpots = {
 	["tropical grove"] = {pos = Vector3.new(-2042.7248, 4.5206, 3817.3659)},
 	["sisyphus statue"] = {pos = Vector3.new(-3704.1408, -135.0744, -889.2853)},
 	["sacred temple"] = {pos = Vector3.new(1453, -22.125, -636)},
-	["Chrismast city"] = {pos = Vector3.new(1100.6292, 23.7596, 1565.4722)},
+	["Chrismast city"] = {pos = Vector3.new(1159.2276, 23.6343, 1574.0349)},
 	["chrismast Gift"] = {pos = Vector3.new(1026.1018, 27.4306, 1669.4001)},
 	["Chrismast Cave"] = {pos = Vector3.new(546.9803, -581.0207, 8859.9501)},
 	["enchant 1"] = {pos = Vector3.new(3257.9155, -1300.6547, 1390.3266)},
@@ -257,7 +257,7 @@ local function prepareFishing()
 	status.Text = "Status: Teleported"
 
 	task.wait(1)
-	if RE_Equip then RE_Equip:FireServer(1) end
+	if RE_Equip then RE_Equip:FireServer(0.51) end
 	status.Text = "Status: Rod Equipped"
 end
 
@@ -269,7 +269,7 @@ end)
 -- AUTO FISH LOOP
 --------------------
 task.spawn(function()
-	while task.wait(0.1) do
+	while task.wait(0.05) do
 		if not autoFish or busy then continue end
 		busy = true
 
