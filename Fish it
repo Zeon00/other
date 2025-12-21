@@ -33,7 +33,6 @@ local RF_Special  = baseNet and baseNet:FindFirstChild("RF/SpecialDialogueEvent"
 --------------------
 local autoFish = true
 local busy = false
-
 local DELAY_CHARGE = 0.05
 local DELAY_START  = 0.05
 
@@ -43,7 +42,6 @@ local DELAY_START  = 0.05
 local function getDelayByRod()
 	local char = player.Character
 	if not char then return 1.25 end
-
 	for _,tool in ipairs(char:GetChildren()) do
 		if tool:IsA("Tool") then
 			local name = tool.Name:lower()
@@ -132,17 +130,29 @@ min.BackgroundColor3 = Color3.fromRGB(80,150,255)
 
 local minimized = false
 local savedSize = frame.Size
+
+-- ICON KECIL MINIMIZE
+local miniIcon = Instance.new("TextButton", gui)
+miniIcon.Size = UDim2.new(0,50,0,50)
+miniIcon.Position = UDim2.new(0,10,0,10)
+miniIcon.Text = "🎣"
+miniIcon.TextSize = 24
+miniIcon.Font = Enum.Font.GothamBold
+miniIcon.TextColor3 = Color3.new(1,1,1)
+miniIcon.BackgroundColor3 = Color3.fromRGB(80,150,255)
+miniIcon.Visible = false
+Instance.new("UICorner", miniIcon)
+
 min.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	if minimized then
-		frame.Size = UDim2.new(0,80,0,40)
-		for _,v in ipairs(frame:GetChildren()) do
-			if v:IsA("GuiObject") and v ~= min and v ~= close and v ~= title then v.Visible = false end
-		end
-	else
-		frame.Size = savedSize
-		for _,v in ipairs(frame:GetChildren()) do v.Visible = true end
-	end
+	minimized = true
+	frame.Visible = false
+	miniIcon.Visible = true
+end)
+
+miniIcon.MouseButton1Click:Connect(function()
+	minimized = false
+	frame.Visible = true
+	miniIcon.Visible = false
 end)
 
 -- BUTTON MAKER
@@ -159,9 +169,7 @@ local function makeButton(text,y,color)
 	return b
 end
 
---------------------
 -- BUTTONS
---------------------
 local spotBtn   = makeButton("📍 Spot: "..selectedSpot, 50, Color3.fromRGB(100,160,255))
 local facingBtn = makeButton("🧭 Facing: "..FacingMode, 100, Color3.fromRGB(180,140,255))
 local goBtn     = makeButton("🚀 Go To Place", 150, Color3.fromRGB(80,200,120))
@@ -178,9 +186,7 @@ status.Font = Enum.Font.Gotham
 status.TextSize = 15
 status.Text = "Status: Ready"
 
---------------------
 -- DROPDOWN SPOT
---------------------
 local dropdownOpen = false
 local dropdownFrame = Instance.new("Frame", frame)
 dropdownFrame.Size = UDim2.new(0.9,0,0,0)
@@ -204,7 +210,6 @@ spotBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Generate dropdown buttons
 for i, name in ipairs(spotNames) do
 	local b = Instance.new("TextButton", dropdownCanvas)
 	b.Size = UDim2.new(1,0,0,36)
@@ -225,9 +230,7 @@ for i, name in ipairs(spotNames) do
 	end)
 end
 
---------------------
 -- FACING TOGGLE
---------------------
 local facingOrder = {"FRONT","RIGHT","LEFT","BACK"}
 local facingIndex = 1
 facingBtn.MouseButton1Click:Connect(function()
@@ -237,9 +240,7 @@ facingBtn.MouseButton1Click:Connect(function()
 	facingBtn.Text = "🧭 Facing: "..FacingMode
 end)
 
---------------------
 -- AUTO FISH TOGGLE
---------------------
 autoBtn.MouseButton1Click:Connect(function()
 	autoFish = not autoFish
 	autoBtn.Text = autoFish and "🎣 Auto Fishing: ON" or "🎣 Auto Fishing: OFF"
@@ -254,9 +255,7 @@ presentBtn.MouseButton1Click:Connect(function()
 	status.Text = autoPresent and "Status: Auto Present ON" or "Status: Auto Present OFF"
 end)
 
---------------------
 -- MERCHANT SHOP
---------------------
 local MerchantGui
 local shopOpen = false
 local function ToggleShop()
@@ -276,9 +275,7 @@ local function ToggleShop()
 end
 shopBtn.MouseButton1Click:Connect(ToggleShop)
 
---------------------
 -- TELEPORT + EQUIP
---------------------
 local function getFacingCFrame(pos)
 	return CFrame.new(pos) * CFrame.Angles(0, math.rad(FacingAngle[FacingMode]), 0)
 end
@@ -298,9 +295,7 @@ goBtn.MouseButton1Click:Connect(function()
 	task.spawn(prepareFishing)
 end)
 
---------------------
 -- AUTO FISH LOOP
---------------------
 task.spawn(function()
 	while task.wait(0.05) do
 		if not autoFish or busy then continue end
@@ -316,9 +311,7 @@ task.spawn(function()
 	end
 end)
 
---------------------
 -- AUTO PRESENT
---------------------
 task.spawn(function()
 	while true do
 		if autoPresent and RF_Special then
@@ -334,9 +327,7 @@ task.spawn(function()
 	end
 end)
 
---------------------
 -- ANTI AFK
---------------------
 player.Idled:Connect(function()
 	VirtualUser:CaptureController()
 	VirtualUser:ClickButton2(Vector2.new())
