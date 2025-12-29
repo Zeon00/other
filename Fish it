@@ -65,7 +65,7 @@ local PresentNPCs = {
 -- FISHING SPOTS
 --------------------
 local FishingSpots = {
-	["ancient jungle"] = {pos = Vector3.new(1489.0378, 9.5185, -295.1205)},
+	["ancient jungle"] = {pos = Vector3.new(1494.9523, 14.7926, -293.6116)},
 	["underground stellar"] = {pos = Vector3.new(2136, -91.1986, -699)},
 	["tropical grove highland"] = {pos = Vector3.new(-2148.4575, 53.4864, 3671.7077)},
 	["tropical grove cave"] = {pos = Vector3.new(-2151, 2.37496, 3669)},
@@ -74,7 +74,7 @@ local FishingSpots = {
 	["sacred temple"] = {pos = Vector3.new(1453, -22.125, -636)},
 	["Chrismast city"] = {pos = Vector3.new(1159.2276, 23.6343, 1574.0349)},
 	["chrismast Gift"] = {pos = Vector3.new(1026.1018, 27.4306, 1669.4001)},
-	["Chrismast Cave"] = {pos = Vector3.new(546.9803, -581.0207, 8859.9501)},
+	["Chrismast Cave"] = {pos = Vector3.new(569.9031, -580.5813, 8935)},
 	["enchant 1"] = {pos = Vector3.new(3257.9155, -1300.6547, 1390.3266)},
 	["enchant 2"] = {pos = Vector3.new(1478.2979, 130.7095, -613.5200)},
 	["Santa Doge"] = {pos = Vector3.new(766.6422, 19.6314, 1508.2357)},
