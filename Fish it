@@ -343,7 +343,7 @@ local TextChatService = game:GetService("TextChatService")
 local RETURN_MODE = "SPOT"
 -- =========================================
 
-local CAVE_POS = Vector3.new(546.9803, -581.0207, 8859.9501)
+local CAVE_POS = Vector3.new(569.9031, -580.5813, 8935)
 local CITY_POS = Vector3.new(1159.2276, 23.6343, 1574.0349)
 local RETURN_DELAY = 1800 -- 30 menit
 
