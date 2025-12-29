@@ -333,21 +333,38 @@ player.Idled:Connect(function()
 	VirtualUser:ClickButton2(Vector2.new())
 end)
 --------------------------------------------------
--- 🎄 AUTO CHRISTMAS CAVE + RETURN (ADD-ON ONLY)
--- ALWAYS ON | NO GUI | NO MODIFY OLD SCRIPT
+-- 🎄 AUTO CHRISTMAS CAVE + RETURN (SPOT MODE)
+-- ALWAYS ON | NO GUI | SAFE ADD-ON
 --------------------------------------------------
 
 local TextChatService = game:GetService("TextChatService")
 
+-- ================= CONFIG =================
+local RETURN_MODE = "SPOT"
+-- =========================================
+
 local CAVE_POS = Vector3.new(546.9803, -581.0207, 8859.9501)
+local CITY_POS = Vector3.new(1159.2276, 23.6343, 1574.0349)
 local RETURN_DELAY = 1800 -- 30 menit
 
-local savedCFrame = nil
 local teleporting = false
 
 local function getHRP()
 	local char = player.Character or player.CharacterAdded:Wait()
 	return char:WaitForChild("HumanoidRootPart")
+end
+
+local function getReturnCFrame()
+	-- BALIK KE SPOT YANG DIPILIH DI GUI
+	if typeof(FishingSpots) == "table"
+		and typeof(selectedSpot) == "string"
+		and FishingSpots[selectedSpot]
+	then
+		return CFrame.new(FishingSpots[selectedSpot].pos)
+	end
+
+	-- FALLBACK ANTI BUG
+	return CFrame.new(CITY_POS)
 end
 
 local function teleportToCaveWithReturn()
@@ -356,16 +373,13 @@ local function teleportToCaveWithReturn()
 
 	local hrp = getHRP()
 
-	-- SIMPAN POSISI AWAL
-	savedCFrame = hrp.CFrame
-
 	-- TELEPORT KE CAVE
 	hrp.CFrame = CFrame.new(CAVE_POS)
 
 	-- RETURN SETELAH 30 MENIT
 	task.delay(RETURN_DELAY, function()
-		if savedCFrame and hrp and hrp.Parent then
-			hrp.CFrame = savedCFrame
+		if hrp and hrp.Parent then
+			hrp.CFrame = getReturnCFrame()
 		end
 		teleporting = false
 	end)
@@ -376,10 +390,9 @@ TextChatService.OnIncomingMessage = function(msg)
 	if not msg or not msg.Text then return end
 	local t = msg.Text:lower()
 
-	-- SESUAI EVENT SERVER (AMAN)
 	if t:find("christmas") and t:find("cave") then
 		teleportToCaveWithReturn()
 	end
 end
 
-print("✅ AUTO CHRISTMAS CAVE + RETURN ACTIVE")
+print("✅ AUTO CHRISTMAS CAVE ACTIVE | RETURN → SPOT")
