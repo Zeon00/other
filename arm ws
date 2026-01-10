@@ -916,7 +916,7 @@ end})
 GUI:CreateToggle({
     parent = main,
     text = "Auto Delete fight & GameUI",
-    default = false,
+    default = true,
     callback = function(delfight)
       local Players = game:GetService("Players")
         local RunService = game:GetService("RunService")
@@ -984,7 +984,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Crit/Click",
-    default = false,
+    default = true,
     callback = function(critclik)
         --// Services
         local Players = game:GetService("Players")
@@ -1026,7 +1026,7 @@ GUI:CreateToggle({
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
-    default = false,
+    default = true,
     callback = function(battlebot)
         _G.battlebot1 = battlebot
 
@@ -1060,7 +1060,7 @@ GUI:CreateToggle({
 
                 -- ===== MAIN LOOP =====
                 while _G.battlebot1 do
-                    AutoFight("Rudolph")
+                    AutoFight("Frost Guard")
                     AutoCrit()
                     AutoHit()
                     task.wait() -- yields for one frame; fastest safe loop
@@ -2822,4 +2822,48 @@ local main = GUI:CreateTab("misc", "egg") -- You can use IconID we didnt impleem
 GUI:CreateSection({
     parent = main, 
     text = "Egg Hatch"
+})
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Claim Gift", 
+    default = true, 
+    callback = function(leave)
+      --==================================================
+-- 🎁 AUTO CLAIM GIFT (30 MINUTE)
+-- NO GUI | NO EGG | AUTO RUN
+--==================================================
+
+-- WAIT PLAYER
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+repeat task.wait() until Player and Player:FindFirstChild("PlayerGui")
+
+-- INTERVAL
+local CLAIM_INTERVAL = 1800 -- 30 menit (1800 detik)
+
+-- REMOTE
+local GiftRemote = game:GetService("ReplicatedStorage")
+	:WaitForChild("Packages")
+	:WaitForChild("Knit")
+	:WaitForChild("Services")
+	:WaitForChild("GiftMachineService")
+	:WaitForChild("RF")
+	:WaitForChild("Claim")
+
+-- FUNCTION
+local function claimGift()
+	pcall(function()
+		GiftRemote:InvokeServer("ToyFactory")
+		print("[AUTO GIFT] Claimed at", os.date("%X"))
+	end)
+end
+
+-- LOOP
+task.spawn(function()
+	while true do
+		claimGift()
+		task.wait(CLAIM_INTERVAL)
+	end
+end)
+   end
 })
