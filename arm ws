@@ -2219,12 +2219,12 @@ createToggle("Auto Click", 4, function(on)
 end)
 -- AUTO HATCH TECH
 local autoHatch = false
-createToggle("Auto Hatch Tech", 5, function(on)
+createToggle("Auto Hatch Dungeon egg", 5, function(on)
     autoHatch = on
     task.spawn(function()
         while autoHatch do
             local args = {
-                "Tech",
+                "DungeonGate",
                 [5] = true,
                 [4] = false
             }
