@@ -1,1 +1,143 @@
+--==================================================
+-- AUTO FISHING GUI FINAL FIXED
+--==================================================
+
+-- SERVICES
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+-- NET
+local Net = require(ReplicatedStorage.Packages.Net)
+
+local ChargeRF   = Net:RemoteFunction("ChargeFishingRod")
+local StartRF    = Net:RemoteFunction("RequestFishingMinigameStarted")
+local CompleteRE = Net:RemoteEvent("FishingCompleted")
+
+-- STATE
+local AutoFish = false
+local Alive = true
+
+--==================================================
+-- GUI
+--==================================================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "AutoFishingGUI"
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.fromOffset(260,180)
+main.Position = UDim2.fromScale(0.5,0.5)
+main.AnchorPoint = Vector2.new(0.5,0.5)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,14)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,40)
+title.BackgroundTransparency = 1
+title.Text = "🎣 Auto Fishing"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+
+local function btn(txt,y)
+	local b = Instance.new("TextButton", main)
+	b.Size = UDim2.new(1,-30,0,38)
+	b.Position = UDim2.fromOffset(15,y)
+	b.Text = txt
+	b.Font = Enum.Font.Gotham
+	b.TextSize = 14
+	b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	b.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0,10)
+	return b
+end
+
+local toggle = btn("AUTO FISH : OFF", 60)
+
+-- CLOSE
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.fromOffset(26,26)
+close.Position = UDim2.fromOffset(225,7)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(170,50,50)
+close.TextColor3 = Color3.new(1,1,1)
+close.Font = Enum.Font.GothamBold
+Instance.new("UICorner", close).CornerRadius = UDim.new(1,0)
+
+-- MINIMIZE ICON (FIXED)
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.fromOffset(50,50)
+icon.Position = UDim2.fromOffset(20,300)
+icon.Text = "🎣"
+icon.Font = Enum.Font.GothamBold
+icon.TextSize = 22
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.TextColor3 = Color3.new(1,1,1)
+icon.Visible = false
+Instance.new("UICorner", icon).CornerRadius = UDim.new(1,0)
+
+-- TOGGLE
+toggle.MouseButton1Click:Connect(function()
+	AutoFish = not AutoFish
+	toggle.Text = AutoFish and "AUTO FISH : ON" or "AUTO FISH : OFF"
+end)
+
+-- CLOSE
+close.MouseButton1Click:Connect(function()
+	Alive = false
+	gui:Destroy()
+end)
+
+-- MINIMIZE / RESTORE
+title.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 then
+		main.Visible = false
+		icon.Visible = true
+	end
+end)
+
+icon.MouseButton1Click:Connect(function()
+	icon.Visible = false
+	main.Visible = true
+end)
+
+--==================================================
+-- AUTO FISH CORE (VALID SERVER FLOW)
+--==================================================
+task.spawn(function()
+	while Alive do
+		task.wait(0.1)
+		if not AutoFish then continue end
+
+		-- CHARGE
+		pcall(function()
+			ChargeRF:InvokeServer()
+		end)
+
+		task.wait(0.25)
+
+		-- THROW (RANDOM)
+		local args = {
+			math.random(10,13) + math.random(),
+			math.random(),
+			os.clock()
+		}
+
+		pcall(function()
+			StartRF:InvokeServer(unpack(args))
+		end)
+
+		-- WAIT IKAN MAKAN (INI KUNCI)
+		task.wait(math.random(80,150)/100)
+
+		-- COMPLETE
+		pcall(function()
+			CompleteRE:FireServer()
+		end)
+	end
+end)
 
