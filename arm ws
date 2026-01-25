@@ -434,8 +434,28 @@ GUI:CreateToggle({
     text = "Auto Battle Bot",
     default = false,
     callback = function(battlebot)
-  local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/Arm-wrestling/refs/heads/main/battle%20bot"))()        
-    end})
+        _G.battlebot1 = battlebot
+
+        if battlebot then
+            -- anti double load
+            if _G.battlebot_loaded then return end
+            _G.battlebot_loaded = true
+
+            loadstring(game:HttpGet(
+                "https://raw.githubusercontent.com/Zeon00/Arm-wrestling/refs/heads/main/battle%20bot"
+            ))()
+        else
+            -- stop + cleanup
+            _G.battlebot1 = false
+            _G.battlebot_loaded = false
+
+            pcall(function()
+                game:GetService("CoreGui"):FindFirstChild("BattleBotGUI"):Destroy()
+            end)
+        end
+    end
+})
+
 GUI:CreateButton({
     parent = main, 
     text = "Auto Tower Bot", 
