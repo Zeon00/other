@@ -196,7 +196,7 @@ RunService.Heartbeat:Connect(function()
             RF_Charge:InvokeServer()
             RF_Start:InvokeServer(
                 -911.1024780273438,
-                1.00000,
+                0.9626249185108583,
                 os.clock()
             )
         end)
