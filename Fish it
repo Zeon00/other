@@ -1,143 +1,223 @@
---==================================================
--- AUTO FISHING GUI FINAL FIXED
---==================================================
+-- =================================================
+-- AUTO FISHING (REMOTE + CLICK FAST BAR)
+-- FULL VERSION FINAL
+-- =================================================
 
 -- SERVICES
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local VIM = game:GetService("VirtualInputManager")
+local RS = game:GetService("ReplicatedStorage")
+
 local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
 
 -- NET
-local Net = require(ReplicatedStorage.Packages.Net)
+local Net = RS:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
 
-local ChargeRF   = Net:RemoteFunction("ChargeFishingRod")
-local StartRF    = Net:RemoteFunction("RequestFishingMinigameStarted")
-local CompleteRE = Net:RemoteEvent("FishingCompleted")
+local RF_Charge = Net:WaitForChild("RF/ChargeFishingRod")
+local RF_Start  = Net:WaitForChild("RF/RequestFishingMinigameStarted")
+local RE_Done   = Net:WaitForChild("RE/FishingCompleted")
 
--- STATE
-local AutoFish = false
-local Alive = true
+-- CLEAN GUI
+pcall(function()
+    PlayerGui:FindFirstChild("AutoFishingGUI"):Destroy()
+end)
 
---==================================================
+-- =========================
+-- CONFIG
+-- =========================
+local LOOP_DELAY  = 0.6
+local CLICK_DELAY = 0.035 -- FAST & AMAN
+
+-- =========================
 -- GUI
---==================================================
-local gui = Instance.new("ScreenGui", player.PlayerGui)
+-- =========================
+local gui = Instance.new("ScreenGui", PlayerGui)
 gui.Name = "AutoFishingGUI"
 gui.ResetOnSpawn = false
 
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.fromOffset(260,180)
-main.Position = UDim2.fromScale(0.5,0.5)
-main.AnchorPoint = Vector2.new(0.5,0.5)
-main.BackgroundColor3 = Color3.fromRGB(25,25,25)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,14)
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,260,0,140)
+frame.Position = UDim2.new(0.5,-130,0.5,-70)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
 
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,0,0,40)
-title.BackgroundTransparency = 1
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,-70,0,35)
+title.Position = UDim2.new(0,10,0,0)
 title.Text = "🎣 Auto Fishing"
-title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 18
+title.TextSize = 15
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
 
-local function btn(txt,y)
-	local b = Instance.new("TextButton", main)
-	b.Size = UDim2.new(1,-30,0,38)
-	b.Position = UDim2.fromOffset(15,y)
-	b.Text = txt
-	b.Font = Enum.Font.Gotham
-	b.TextSize = 14
-	b.BackgroundColor3 = Color3.fromRGB(40,40,40)
-	b.TextColor3 = Color3.new(1,1,1)
-	Instance.new("UICorner", b).CornerRadius = UDim.new(0,10)
-	return b
-end
+local minimize = Instance.new("TextButton", frame)
+minimize.Size = UDim2.new(0,28,0,28)
+minimize.Position = UDim2.new(1,-64,0,4)
+minimize.Text = "▢"
+minimize.BackgroundTransparency = 1
+minimize.TextColor3 = Color3.fromRGB(255,200,100)
 
-local toggle = btn("AUTO FISH : OFF", 60)
-
--- CLOSE
-local close = Instance.new("TextButton", main)
-close.Size = UDim2.fromOffset(26,26)
-close.Position = UDim2.fromOffset(225,7)
+local close = Instance.new("TextButton", frame)
+close.Size = UDim2.new(0,28,0,28)
+close.Position = UDim2.new(1,-32,0,4)
 close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(170,50,50)
-close.TextColor3 = Color3.new(1,1,1)
-close.Font = Enum.Font.GothamBold
-Instance.new("UICorner", close).CornerRadius = UDim.new(1,0)
+close.BackgroundTransparency = 1
+close.TextColor3 = Color3.fromRGB(255,90,90)
 
--- MINIMIZE ICON (FIXED)
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,-20,0,30)
+status.Position = UDim2.new(0,10,0,40)
+status.Text = "Status : OFF"
+status.Font = Enum.Font.Gotham
+status.TextSize = 13
+status.TextColor3 = Color3.fromRGB(200,200,200)
+status.BackgroundTransparency = 1
+status.TextXAlignment = Enum.TextXAlignment.Left
+
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(1,-40,0,40)
+toggle.Position = UDim2.new(0,20,0,80)
+toggle.Text = "AUTO FISHING : OFF"
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 14
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.BackgroundColor3 = Color3.fromRGB(60,60,60)
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,10)
+
+-- ICON
 local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.fromOffset(50,50)
-icon.Position = UDim2.fromOffset(20,300)
+icon.Size = UDim2.new(0,46,0,46)
+icon.Position = UDim2.new(0.02,0,0.5,-23)
 icon.Text = "🎣"
-icon.Font = Enum.Font.GothamBold
 icon.TextSize = 22
+icon.Visible = false
+icon.Active = true
+icon.Draggable = true
 icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
 icon.TextColor3 = Color3.new(1,1,1)
-icon.Visible = false
-Instance.new("UICorner", icon).CornerRadius = UDim.new(1,0)
+Instance.new("UICorner", icon).CornerRadius = UDim.new(0,23)
 
--- TOGGLE
+-- =========================
+-- STATE
+-- =========================
+local Enabled = false
+local lastClick = 0
+
+local function Refresh()
+    toggle.Text = Enabled and "AUTO FISHING : ON" or "AUTO FISHING : OFF"
+    toggle.BackgroundColor3 = Enabled and Color3.fromRGB(0,170,100) or Color3.fromRGB(60,60,60)
+    icon.BackgroundColor3 = toggle.BackgroundColor3
+end
+
+-- =========================
+-- BUTTONS
+-- =========================
 toggle.MouseButton1Click:Connect(function()
-	AutoFish = not AutoFish
-	toggle.Text = AutoFish and "AUTO FISH : ON" or "AUTO FISH : OFF"
+    Enabled = not Enabled
+    Refresh()
 end)
 
--- CLOSE
-close.MouseButton1Click:Connect(function()
-	Alive = false
-	gui:Destroy()
-end)
-
--- MINIMIZE / RESTORE
-title.InputBegan:Connect(function(i)
-	if i.UserInputType == Enum.UserInputType.MouseButton1 then
-		main.Visible = false
-		icon.Visible = true
-	end
+minimize.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    icon.Visible = true
 end)
 
 icon.MouseButton1Click:Connect(function()
-	icon.Visible = false
-	main.Visible = true
+    frame.Visible = true
+    icon.Visible = false
 end)
 
---==================================================
--- AUTO FISH CORE (VALID SERVER FLOW)
---==================================================
+icon.MouseButton2Click:Connect(function()
+    Enabled = not Enabled
+    Refresh()
+end)
+
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+-- =========================
+-- MINIGAME DETECTOR
+-- =========================
+local function IsClickFastBarActive()
+    for _,gui in ipairs(PlayerGui:GetChildren()) do
+        if gui:IsA("ScreenGui") and gui.Enabled then
+            for _,v in ipairs(gui:GetDescendants()) do
+                if v:IsA("TextLabel") and string.find(v.Text, "Click Fast") then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+local function FastClick()
+    VIM:SendMouseButtonEvent(0,0,0,true,game,0)
+    VIM:SendMouseButtonEvent(0,0,0,false,game,0)
+end
+
+-- =========================
+-- AUTO FISH LOOP (FINAL)
+-- =========================
 task.spawn(function()
-	while Alive do
-		task.wait(0.1)
-		if not AutoFish then continue end
+    while task.wait(LOOP_DELAY) do
+        if not Enabled then
+            status.Text = "Status : OFF"
+            continue
+        end
 
-		-- CHARGE
-		pcall(function()
-			ChargeRF:InvokeServer()
-		end)
+        status.Text = "Status : Charging"
+        pcall(function()
+            RF_Charge:InvokeServer()
+        end)
 
-		task.wait(0.25)
+        task.wait(0.15)
 
-		-- THROW (RANDOM)
-		local args = {
-			math.random(10,13) + math.random(),
-			math.random(),
-			os.clock()
-		}
+        status.Text = "Status : Casting"
+        pcall(function()
+            RF_Start:InvokeServer(
+                -911.1024780273438,
+                0.5626249185108583,
+                os.clock()
+            )
+        end)
 
-		pcall(function()
-			StartRF:InvokeServer(unpack(args))
-		end)
+        status.Text = "Status : Waiting Click Bar"
 
-		-- WAIT IKAN MAKAN (INI KUNCI)
-		task.wait(math.random(80,150)/100)
+        -- WAIT BAR
+        local timeout = tick() + 6
+        while tick() < timeout and Enabled do
+            if IsClickFastBarActive() then
+                break
+            end
+            task.wait(0.05)
+        end
 
-		-- COMPLETE
-		pcall(function()
-			CompleteRE:FireServer()
-		end)
-	end
+        -- CLICK FAST
+        status.Text = "Status : CLICK FAST!"
+        while IsClickFastBarActive() and Enabled do
+            if tick() - lastClick >= CLICK_DELAY then
+                FastClick()
+                lastClick = tick()
+            end
+            task.wait()
+        end
+
+        -- FINISH
+        status.Text = "Status : Finish"
+        pcall(function()
+            RE_Done:FireServer()
+        end)
+
+        task.wait(0.4)
+    end
 end)
-
