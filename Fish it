@@ -1,54 +1,42 @@
 -- =================================================
--- AUTO FISH + QUEST (FULL FIX, MINIMIZE & DESTROY OK)
+-- AUTO FISHING (PURE REMOTE / FUNCTION BASED)
+-- FULL + MINIMIZE TO ICON + X DESTROY
 -- =================================================
 
 -- SERVICES
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local VIM = game:GetService("VirtualInputManager")
 local RS = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
 
--- NET
-local Net = RS:WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
+-- MODULES
+local FishingController = require(RS.Controllers.FishingController)
+local AreaUtility = require(RS.Shared.AreaUtility)
 
-local RF_Charge = Net:WaitForChild("RF/ChargeFishingRod")
-local RF_Start  = Net:WaitForChild("RF/RequestFishingMinigameStarted")
-local RE_Done   = Net:WaitForChild("RE/FishingCompleted")
-local RE_Dialog = Net:WaitForChild("RE/DialogueEnded")
-
--- CLEAN
+-- CLEAN GUI
 pcall(function()
     PlayerGui:FindFirstChild("AutoFishingGUI"):Destroy()
 end)
 
--- CONFIG
-local CLICK_DELAY = 0.05
-local START_DELAY = 0.8
-
 -- GUI
-local gui = Instance.new("ScreenGui")
+local gui = Instance.new("ScreenGui", PlayerGui)
 gui.Name = "AutoFishingGUI"
 gui.ResetOnSpawn = false
-gui.Parent = PlayerGui
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0,280,0,260)
-frame.Position = UDim2.new(0.5,-140,0.5,-130)
+frame.Size = UDim2.new(0,260,0,150)
+frame.Position = UDim2.new(0.5,-130,0.5,-75)
 frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 frame.Active = true
 frame.Draggable = true
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
 
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1,-80,0,35)
+title.Size = UDim2.new(1,-70,0,35)
 title.Position = UDim2.new(0,10,0,0)
-title.Text = "🎣 Auto Fish + Quest"
+title.Text = "🎣 Auto Fishing"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 15
 title.TextColor3 = Color3.new(1,1,1)
@@ -58,17 +46,19 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 local minimize = Instance.new("TextButton", frame)
 minimize.Size = UDim2.new(0,28,0,28)
 minimize.Position = UDim2.new(1,-64,0,4)
-minimize.Text = "-"
+minimize.Text = "▢"
 minimize.BackgroundTransparency = 1
+minimize.TextColor3 = Color3.fromRGB(255,200,100)
 
 local close = Instance.new("TextButton", frame)
 close.Size = UDim2.new(0,28,0,28)
 close.Position = UDim2.new(1,-32,0,4)
 close.Text = "X"
 close.BackgroundTransparency = 1
+close.TextColor3 = Color3.fromRGB(255,90,90)
 
 local status = Instance.new("TextLabel", frame)
-status.Size = UDim2.new(1,-20,0,25)
+status.Size = UDim2.new(1,-20,0,30)
 status.Position = UDim2.new(0,10,0,40)
 status.Text = "Status : OFF"
 status.Font = Enum.Font.Gotham
@@ -79,42 +69,13 @@ status.TextXAlignment = Enum.TextXAlignment.Left
 
 local toggle = Instance.new("TextButton", frame)
 toggle.Size = UDim2.new(1,-40,0,40)
-toggle.Position = UDim2.new(0,20,0,70)
-toggle.Text = "AUTO FISH : OFF"
+toggle.Position = UDim2.new(0,20,0,80)
+toggle.Text = "AUTO FISHING : OFF"
 toggle.Font = Enum.Font.GothamBold
 toggle.TextSize = 14
 toggle.TextColor3 = Color3.new(1,1,1)
 toggle.BackgroundColor3 = Color3.fromRGB(60,60,60)
 Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,10)
-
--- QUEST BUTTONS (ONCE)
-local function QuestButton(text, y, cb)
-    local b = Instance.new("TextButton", frame)
-    b.Size = UDim2.new(1,-40,0,30)
-    b.Position = UDim2.new(0,20,0,y)
-    b.Text = text
-    b.Font = Enum.Font.GothamBold
-    b.TextSize = 13
-    b.TextColor3 = Color3.new(1,1,1)
-    b.BackgroundColor3 = Color3.fromRGB(70,70,70)
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
-    b.MouseButton1Click:Connect(function()
-        cb()
-        b.Text = text .. " ✔"
-        b.BackgroundColor3 = Color3.fromRGB(40,120,60)
-        b.Active = false
-    end)
-end
-
-QuestButton("Quest Suit Up", 120, function()
-    RE_Dialog:FireServer("Hazmat Leader",1,2)
-end)
-QuestButton("Quest Pickaxe", 155, function()
-    RE_Dialog:FireServer("Hank",1,2)
-end)
-QuestButton("Quest Umpan", 190, function()
-    RE_Dialog:FireServer("Ghastly Pirate",1,1)
-end)
 
 -- ICON
 local icon = Instance.new("TextButton", gui)
@@ -131,84 +92,75 @@ Instance.new("UICorner", icon).CornerRadius = UDim.new(0,23)
 
 -- STATE
 local Enabled = false
-local GuiAlive = true
-local Minimized = false
-local lastClick = 0
-local lastStart = 0
+local AutoThread = nil
 
--- HELPERS
-local function MinigameActive()
-    for _,v in ipairs(PlayerGui:GetChildren()) do
-        if v:IsA("ScreenGui") and v.Name:lower():find("fish") then
-            return true
-        end
-    end
+local function Refresh()
+    toggle.Text = Enabled and "AUTO FISHING : ON" or "AUTO FISHING : OFF"
+    toggle.BackgroundColor3 = Enabled and Color3.fromRGB(0,170,100) or Color3.fromRGB(60,60,60)
+    icon.BackgroundColor3 = toggle.BackgroundColor3
 end
 
-local function FastClick()
-    VIM:SendMouseButtonEvent(0,0,0,true,game,0)
-    VIM:SendMouseButtonEvent(0,0,0,false,game,0)
-end
-
--- BUTTON EVENTS
+-- BUTTONS
 toggle.MouseButton1Click:Connect(function()
     Enabled = not Enabled
-    toggle.Text = Enabled and "AUTO FISH : ON" or "AUTO FISH : OFF"
-    toggle.BackgroundColor3 = Enabled and Color3.fromRGB(0,170,100) or Color3.fromRGB(60,60,60)
+    Refresh()
 end)
 
 minimize.MouseButton1Click:Connect(function()
-    if not GuiAlive then return end
-    Minimized = true
     frame.Visible = false
     icon.Visible = true
 end)
 
 icon.MouseButton1Click:Connect(function()
-    if not GuiAlive then return end
-    Minimized = false
     frame.Visible = true
     icon.Visible = false
 end)
 
-icon.MouseButton2Click:Connect(function()
-    Enabled = not Enabled
-end)
-
 close.MouseButton1Click:Connect(function()
-    GuiAlive = false
     Enabled = false
     gui:Destroy()
 end)
 
--- MAIN LOOP
-RunService.Heartbeat:Connect(function()
-    if not GuiAlive then return end
-
-    if not Enabled then
-        status.Text = "Status : OFF"
-        return
-    end
-
-    if tick() - lastStart > START_DELAY then
-        lastStart = tick()
-        pcall(function()
-            RF_Charge:InvokeServer()
-            RF_Start:InvokeServer(
-                -911.1024780273438,
-                0.9626249185108583,
-                os.clock()
-            )
-        end)
-    end
-
-    if MinigameActive() then
-        status.Text = "Status : Pulling Fish"
-        if tick() - lastClick > CLICK_DELAY then
-            FastClick()
-            lastClick = tick()
+-- AUTO FISH LOOP (REMOTE BASED)
+AutoThread = task.spawn(function()
+    while task.wait(0.05) do
+        if not Enabled then
+            status.Text = "Status : OFF"
+            continue
         end
-    else
-        status.Text = "Status : Waiting Bite"
+
+        if FishingController:OnCooldown() then
+            task.wait(0.1)
+            continue
+        end
+
+        if FishingController:GetCurrentGUID() then
+            local rarity = player:GetAttribute("SelectedRarity") or 1
+            local area = AreaUtility:GetArea(player:GetAttribute("LocationName") or "Fisherman Island") or {
+                ClickPowerMultiplier = 1
+            }
+
+            local delay
+            if rarity >= 7 then
+                delay = 0.12 * area.ClickPowerMultiplier
+            elseif rarity >= 6 then
+                delay = 0.15 * area.ClickPowerMultiplier
+            elseif rarity >= 4 then
+                delay = 0.18 * area.ClickPowerMultiplier
+            else
+                delay = 0.21 * area.ClickPowerMultiplier
+            end
+
+            status.Text = "Status : Clicking"
+            FishingController:RequestFishingMinigameClick()
+            task.wait(delay)
+        else
+            status.Text = "Status : Charging Rod"
+            FishingController:RequestChargeFishingRod(
+                Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2),
+                true
+            )
+            task.wait(0.5)
+        end
     end
 end)
