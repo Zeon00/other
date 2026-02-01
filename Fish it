@@ -108,7 +108,7 @@ Instance.new("UICorner", icon).CornerRadius = UDim.new(0,23)
 -- =========================
 -- STATE
 -- =========================
-local Enabled = false
+local Enabled = true
 local lastClick = 0
 
 local function Refresh()
