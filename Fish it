@@ -1,130 +1,178 @@
 -- =================================================
--- AUTO FISH + AUTO QUEST (FULL FIX)
+-- AUTO FISHING + QUEST (FINAL CLEAN VERSION)
 -- =================================================
 
+-- SERVICES
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local VIM = game:GetService("VirtualInputManager")
+local RS = game:GetService("ReplicatedStorage")
+
 local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
 
 -- NET
-local netRoot = ReplicatedStorage
-    :WaitForChild("Packages")
+local Net = RS:WaitForChild("Packages")
     :WaitForChild("_Index")
     :WaitForChild("sleitnick_net@0.2.0")
     :WaitForChild("net")
 
-local RF_Start = netRoot:WaitForChild("RF/Start")
-local RF_Charge = netRoot:WaitForChild("RF/ChargeFishingRod")
-local RF_Request = netRoot:WaitForChild("RF/RequestFishingMinigameStarted")
-local RE_Finish = netRoot:WaitForChild("RE/FishingCompleted")
-local RE_Dialogue = netRoot:WaitForChild("RE/DialogueEnded")
+local RF_Charge = Net:WaitForChild("RF/ChargeFishingRod")
+local RF_Start  = Net:WaitForChild("RF/RequestFishingMinigameStarted")
+local RE_Done   = Net:WaitForChild("RE/FishingCompleted")
+local RE_Dialog = Net:WaitForChild("RE/DialogueEnded")
 
--- =================================================
--- STATE
--- =================================================
-local State = {
-    AutoFish = false,
-    SuitUp = false,
-    Pickaxe = false,
-    Umpan = false
-}
-
--- =================================================
--- AUTO FISH LOOP
--- =================================================
-task.spawn(function()
-    while task.wait(0.25) do
-        if State.AutoFish then
-            pcall(function()
-                RF_Start:InvokeServer(
-                    math.random(-950, -850),
-                    math.random(),
-                    os.clock()
-                )
-
-                RF_Charge:InvokeServer()
-
-                RF_Request:InvokeServer(
-                    math.random(-950, -850),
-                    math.random(),
-                    os.clock()
-                )
-
-                RE_Finish:FireServer()
-            end)
-        end
-    end
+-- CLEAN GUI
+pcall(function()
+    PlayerGui:FindFirstChild("AutoFishingGUI"):Destroy()
 end)
 
 -- =================================================
--- AUTO QUEST LOOP
+-- CONFIG
 -- =================================================
-task.spawn(function()
-    while task.wait(1.5) do
-        pcall(function()
-            if State.SuitUp then
-                RE_Dialogue:FireServer("Hazmat Leader", 1, 2)
-            end
-            if State.Pickaxe then
-                RE_Dialogue:FireServer("Hank", 1, 2)
-            end
-            if State.Umpan then
-                RE_Dialogue:FireServer("Ghastly Pirate", 1, 1)
-            end
-        end)
-    end
-end)
+local CLICK_DELAY = 0.05
+local START_DELAY = 0.8
 
 -- =================================================
 -- GUI
 -- =================================================
-local gui = Instance.new("ScreenGui", player.PlayerGui)
-gui.Name = "AutoFishQuestGUI"
+local gui = Instance.new("ScreenGui", PlayerGui)
+gui.Name = "AutoFishingGUI"
+gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 280, 0, 260)
-frame.Position = UDim2.new(0.35, 0, 0.25, 0)
+frame.Size = UDim2.new(0,280,0,260)
+frame.Position = UDim2.new(0.5,-140,0.5,-130)
 frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 frame.Active = true
 frame.Draggable = true
-
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
 
--- TITLE
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1,0,0,36)
-title.Text = "AUTO FISH + QUEST"
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundTransparency = 1
+title.Size = UDim2.new(1,-80,0,35)
+title.Position = UDim2.new(0,10,0,0)
+title.Text = "🎣 Auto Fish + Quest"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 15
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
 
--- CLOSE
+local minimize = Instance.new("TextButton", frame)
+minimize.Size = UDim2.new(0,28,0,28)
+minimize.Position = UDim2.new(1,-64,0,4)
+minimize.Text = "▢"
+minimize.BackgroundTransparency = 1
+
 local close = Instance.new("TextButton", frame)
-close.Size = UDim2.new(0,30,0,30)
-close.Position = UDim2.new(1,-35,0,3)
+close.Size = UDim2.new(0,28,0,28)
+close.Position = UDim2.new(1,-32,0,4)
 close.Text = "X"
-close.TextColor3 = Color3.new(1,1,1)
-close.BackgroundColor3 = Color3.fromRGB(170,0,0)
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
+close.BackgroundTransparency = 1
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,-20,0,25)
+status.Position = UDim2.new(0,10,0,40)
+status.Text = "Status : OFF"
+status.Font = Enum.Font.Gotham
+status.TextSize = 13
+status.TextColor3 = Color3.fromRGB(200,200,200)
+status.BackgroundTransparency = 1
+status.TextXAlignment = Enum.TextXAlignment.Left
+
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(1,-40,0,40)
+toggle.Position = UDim2.new(0,20,0,70)
+toggle.Text = "AUTO FISH : OFF"
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 14
+toggle.BackgroundColor3 = Color3.fromRGB(60,60,60)
+toggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,10)
+
+-- =================================================
+-- QUEST BUTTON MAKER (SEKALI KLIK)
+-- =================================================
+local function QuestButton(text, y, callback)
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(1,-40,0,30)
+    btn.Position = UDim2.new(0,20,0,y)
+    btn.Text = text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+    btn.MouseButton1Click:Connect(function()
+        callback()
+        btn.Text = text .. " ✔"
+        btn.BackgroundColor3 = Color3.fromRGB(40,120,60)
+        btn.Active = false
+    end)
+end
+
+-- QUESTS
+QuestButton("Quest Suit Up", 120, function()
+    RE_Dialog:FireServer("Hazmat Leader",1,2)
 end)
 
--- MINIMIZE
-local mini = Instance.new("TextButton", frame)
-mini.Size = UDim2.new(0,30,0,30)
-mini.Position = UDim2.new(1,-70,0,3)
-mini.Text = "-"
-mini.BackgroundColor3 = Color3.fromRGB(70,70,70)
+QuestButton("Quest Pickaxe", 155, function()
+    RE_Dialog:FireServer("Hank",1,2)
+end)
 
+QuestButton("Quest Umpan", 190, function()
+    RE_Dialog:FireServer("Ghastly Pirate",1,1)
+end)
+
+-- =================================================
+-- ICON MINIMIZE
+-- =================================================
 local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.new(0,60,0,60)
-icon.Position = UDim2.new(0,20,0.5,0)
+icon.Size = UDim2.new(0,46,0,46)
+icon.Position = UDim2.new(0.02,0,0.5,-23)
 icon.Text = "🎣"
+icon.TextSize = 22
 icon.Visible = false
+icon.Active = true
+icon.Draggable = true
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", icon).CornerRadius = UDim.new(0,23)
 
-mini.MouseButton1Click:Connect(function()
+-- =================================================
+-- STATE
+-- =================================================
+local Enabled = false
+local lastClick = 0
+local lastStart = 0
+
+-- =================================================
+-- HELPERS
+-- =================================================
+local function FishingMinigameActive()
+    for _,v in ipairs(PlayerGui:GetChildren()) do
+        if v:IsA("ScreenGui") and v.Name:lower():find("fish") then
+            return true
+        end
+    end
+end
+
+local function FastClick()
+    VIM:SendMouseButtonEvent(0,0,0,true,game,0)
+    VIM:SendMouseButtonEvent(0,0,0,false,game,0)
+end
+
+-- =================================================
+-- BUTTONS
+-- =================================================
+toggle.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+    toggle.Text = Enabled and "AUTO FISH : ON" or "AUTO FISH : OFF"
+    toggle.BackgroundColor3 = Enabled and Color3.fromRGB(0,170,100) or Color3.fromRGB(60,60,60)
+end)
+
+minimize.MouseButton1Click:Connect(function()
     frame.Visible = false
     icon.Visible = true
 end)
@@ -134,34 +182,45 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- =================================================
--- TOGGLE CREATOR
--- =================================================
-local function Toggle(text, y, callback)
-    local btn = Instance.new("TextButton", frame)
-    btn.Size = UDim2.new(0.9,0,0,34)
-    btn.Position = UDim2.new(0.05,0,0,y)
-    btn.Text = text .. " : OFF"
-    btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
+icon.MouseButton2Click:Connect(function()
+    Enabled = not Enabled
+end)
 
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
-
-    local on = false
-    btn.MouseButton1Click:Connect(function()
-        on = not on
-        btn.Text = text .. (on and " : ON" or " : OFF")
-        btn.BackgroundColor3 = on and Color3.fromRGB(0,160,0) or Color3.fromRGB(60,60,60)
-        callback(on)
-    end)
-end
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
 
 -- =================================================
--- TOGGLES
+-- AUTO FISH LOOP
 -- =================================================
-Toggle("Auto Fishing", 45, function(v) State.AutoFish = v end)
-Toggle("Quest Suit Up", 85, function(v) State.SuitUp = v end)
-Toggle("Quest Pickaxe", 125, function(v) State.Pickaxe = v end)
-Toggle("Quest Umpan", 165, function(v) State.Umpan = v end)
+RunService.Heartbeat:Connect(function()
+    if not Enabled then
+        status.Text = "Status : OFF"
+        return
+    end
+
+    -- auto start fishing
+    if tick() - lastStart > START_DELAY then
+        lastStart = tick()
+
+        pcall(function()
+            RF_Charge:InvokeServer()
+            RF_Start:InvokeServer(
+                math.random(-1000,1000),
+                math.random(),
+                os.clock()
+            )
+        end)
+    end
+
+    -- click only when bar/minigame active
+    if FishingMinigameActive() then
+        status.Text = "Status : Pulling Fish"
+        if tick() - lastClick > CLICK_DELAY then
+            FastClick()
+            lastClick = tick()
+        end
+    else
+        status.Text = "Status : Waiting Bite"
+    end
+end)
