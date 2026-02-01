@@ -1,5 +1,5 @@
 -- =================================================
--- AUTO FISHING + QUEST (FINAL CLEAN VERSION)
+-- AUTO FISH + QUEST (FULL FIX, MINIMIZE & DESTROY OK)
 -- =================================================
 
 -- SERVICES
@@ -22,23 +22,20 @@ local RF_Start  = Net:WaitForChild("RF/RequestFishingMinigameStarted")
 local RE_Done   = Net:WaitForChild("RE/FishingCompleted")
 local RE_Dialog = Net:WaitForChild("RE/DialogueEnded")
 
--- CLEAN GUI
+-- CLEAN
 pcall(function()
     PlayerGui:FindFirstChild("AutoFishingGUI"):Destroy()
 end)
 
--- =================================================
 -- CONFIG
--- =================================================
 local CLICK_DELAY = 0.05
 local START_DELAY = 0.8
 
--- =================================================
 -- GUI
--- =================================================
-local gui = Instance.new("ScreenGui", PlayerGui)
+local gui = Instance.new("ScreenGui")
 gui.Name = "AutoFishingGUI"
 gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
 
 local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0,280,0,260)
@@ -61,7 +58,7 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 local minimize = Instance.new("TextButton", frame)
 minimize.Size = UDim2.new(0,28,0,28)
 minimize.Position = UDim2.new(1,-64,0,4)
-minimize.Text = "▢"
+minimize.Text = "-"
 minimize.BackgroundTransparency = 1
 
 local close = Instance.new("TextButton", frame)
@@ -86,48 +83,40 @@ toggle.Position = UDim2.new(0,20,0,70)
 toggle.Text = "AUTO FISH : OFF"
 toggle.Font = Enum.Font.GothamBold
 toggle.TextSize = 14
-toggle.BackgroundColor3 = Color3.fromRGB(60,60,60)
 toggle.TextColor3 = Color3.new(1,1,1)
+toggle.BackgroundColor3 = Color3.fromRGB(60,60,60)
 Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,10)
 
--- =================================================
--- QUEST BUTTON MAKER (SEKALI KLIK)
--- =================================================
-local function QuestButton(text, y, callback)
-    local btn = Instance.new("TextButton", frame)
-    btn.Size = UDim2.new(1,-40,0,30)
-    btn.Position = UDim2.new(0,20,0,y)
-    btn.Text = text
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 13
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
-
-    btn.MouseButton1Click:Connect(function()
-        callback()
-        btn.Text = text .. " ✔"
-        btn.BackgroundColor3 = Color3.fromRGB(40,120,60)
-        btn.Active = false
+-- QUEST BUTTONS (ONCE)
+local function QuestButton(text, y, cb)
+    local b = Instance.new("TextButton", frame)
+    b.Size = UDim2.new(1,-40,0,30)
+    b.Position = UDim2.new(0,20,0,y)
+    b.Text = text
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 13
+    b.TextColor3 = Color3.new(1,1,1)
+    b.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+    b.MouseButton1Click:Connect(function()
+        cb()
+        b.Text = text .. " ✔"
+        b.BackgroundColor3 = Color3.fromRGB(40,120,60)
+        b.Active = false
     end)
 end
 
--- QUESTS
 QuestButton("Quest Suit Up", 120, function()
     RE_Dialog:FireServer("Hazmat Leader",1,2)
 end)
-
 QuestButton("Quest Pickaxe", 155, function()
     RE_Dialog:FireServer("Hank",1,2)
 end)
-
 QuestButton("Quest Umpan", 190, function()
     RE_Dialog:FireServer("Ghastly Pirate",1,1)
 end)
 
--- =================================================
--- ICON MINIMIZE
--- =================================================
+-- ICON
 local icon = Instance.new("TextButton", gui)
 icon.Size = UDim2.new(0,46,0,46)
 icon.Position = UDim2.new(0.02,0,0.5,-23)
@@ -140,17 +129,15 @@ icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
 icon.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", icon).CornerRadius = UDim.new(0,23)
 
--- =================================================
 -- STATE
--- =================================================
 local Enabled = false
+local GuiAlive = true
+local Minimized = false
 local lastClick = 0
 local lastStart = 0
 
--- =================================================
 -- HELPERS
--- =================================================
-local function FishingMinigameActive()
+local function MinigameActive()
     for _,v in ipairs(PlayerGui:GetChildren()) do
         if v:IsA("ScreenGui") and v.Name:lower():find("fish") then
             return true
@@ -163,9 +150,7 @@ local function FastClick()
     VIM:SendMouseButtonEvent(0,0,0,false,game,0)
 end
 
--- =================================================
--- BUTTONS
--- =================================================
+-- BUTTON EVENTS
 toggle.MouseButton1Click:Connect(function()
     Enabled = not Enabled
     toggle.Text = Enabled and "AUTO FISH : ON" or "AUTO FISH : OFF"
@@ -173,11 +158,15 @@ toggle.MouseButton1Click:Connect(function()
 end)
 
 minimize.MouseButton1Click:Connect(function()
+    if not GuiAlive then return end
+    Minimized = true
     frame.Visible = false
     icon.Visible = true
 end)
 
 icon.MouseButton1Click:Connect(function()
+    if not GuiAlive then return end
+    Minimized = false
     frame.Visible = true
     icon.Visible = false
 end)
@@ -187,22 +176,22 @@ icon.MouseButton2Click:Connect(function()
 end)
 
 close.MouseButton1Click:Connect(function()
+    GuiAlive = false
+    Enabled = false
     gui:Destroy()
 end)
 
--- =================================================
--- AUTO FISH LOOP
--- =================================================
+-- MAIN LOOP
 RunService.Heartbeat:Connect(function()
+    if not GuiAlive then return end
+
     if not Enabled then
         status.Text = "Status : OFF"
         return
     end
 
-    -- auto start fishing
     if tick() - lastStart > START_DELAY then
         lastStart = tick()
-
         pcall(function()
             RF_Charge:InvokeServer()
             RF_Start:InvokeServer(
@@ -213,8 +202,7 @@ RunService.Heartbeat:Connect(function()
         end)
     end
 
-    -- click only when bar/minigame active
-    if FishingMinigameActive() then
+    if MinigameActive() then
         status.Text = "Status : Pulling Fish"
         if tick() - lastClick > CLICK_DELAY then
             FastClick()
