@@ -195,8 +195,8 @@ RunService.Heartbeat:Connect(function()
         pcall(function()
             RF_Charge:InvokeServer()
             RF_Start:InvokeServer(
-                math.random(-1000,1000),
-                math.random(),
+                -911.1024780273438,
+                1.00000,
                 os.clock()
             )
         end)
