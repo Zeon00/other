@@ -1,6 +1,6 @@
 -- =================================================
--- AUTO FISHING (PURE REMOTE / FUNCTION BASED)
--- FULL + MINIMIZE TO ICON + X DESTROY
+-- AUTO FISHING (SAFE EQUIP FIRST)
+-- DEFAULT ON + MINIMIZE ICON + X DESTROY
 -- =================================================
 
 -- SERVICES
@@ -10,6 +10,14 @@ local RS = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
+
+-- NET
+local Net = RS:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+
+local RE_Equip = Net:WaitForChild("RE/EquipToolFromHotbar")
 
 -- MODULES
 local FishingController = require(RS.Controllers.FishingController)
@@ -60,7 +68,7 @@ close.TextColor3 = Color3.fromRGB(255,90,90)
 local status = Instance.new("TextLabel", frame)
 status.Size = UDim2.new(1,-20,0,30)
 status.Position = UDim2.new(0,10,0,40)
-status.Text = "Status : OFF"
+status.Text = "Status : INIT"
 status.Font = Enum.Font.Gotham
 status.TextSize = 13
 status.TextColor3 = Color3.fromRGB(200,200,200)
@@ -70,11 +78,9 @@ status.TextXAlignment = Enum.TextXAlignment.Left
 local toggle = Instance.new("TextButton", frame)
 toggle.Size = UDim2.new(1,-40,0,40)
 toggle.Position = UDim2.new(0,20,0,80)
-toggle.Text = "AUTO FISHING : OFF"
 toggle.Font = Enum.Font.GothamBold
 toggle.TextSize = 14
 toggle.TextColor3 = Color3.new(1,1,1)
-toggle.BackgroundColor3 = Color3.fromRGB(60,60,60)
 Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,10)
 
 -- ICON
@@ -91,14 +97,16 @@ icon.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", icon).CornerRadius = UDim.new(0,23)
 
 -- STATE
-local Enabled = false
-local AutoThread = nil
+local Enabled = true -- DEFAULT ON
 
 local function Refresh()
     toggle.Text = Enabled and "AUTO FISHING : ON" or "AUTO FISHING : OFF"
-    toggle.BackgroundColor3 = Enabled and Color3.fromRGB(0,170,100) or Color3.fromRGB(60,60,60)
+    toggle.BackgroundColor3 = Enabled and Color3.fromRGB(0,170,100)
+        or Color3.fromRGB(60,60,60)
     icon.BackgroundColor3 = toggle.BackgroundColor3
 end
+
+Refresh()
 
 -- BUTTONS
 toggle.MouseButton1Click:Connect(function()
@@ -121,8 +129,24 @@ close.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
--- AUTO FISH LOOP (REMOTE BASED)
-AutoThread = task.spawn(function()
+-- AUTO EQUIP ROD (WAJIB SEBELUM FISH)
+local function EquipRod()
+    status.Text = "Status : Equip Rod"
+    pcall(function()
+        RE_Equip:FireServer(1)
+    end)
+
+    -- TUNGGU SAMPE CONTROLLER NGEH
+    local timeout = os.clock() + 3
+    repeat
+        task.wait(0.1)
+    until FishingController:GetCurrentGUID() or os.clock() > timeout
+end
+
+-- MAIN LOOP
+task.spawn(function()
+    EquipRod() -- <<<<<< KUNCI MASALAH DI SINI
+
     while task.wait(0.05) do
         if not Enabled then
             status.Text = "Status : OFF"
@@ -130,37 +154,19 @@ AutoThread = task.spawn(function()
         end
 
         if FishingController:OnCooldown() then
-            task.wait(0.1)
+            task.wait(0.05)
             continue
         end
 
         if FishingController:GetCurrentGUID() then
-            local rarity = player:GetAttribute("SelectedRarity") or 1
-            local area = AreaUtility:GetArea(player:GetAttribute("LocationName") or "Fisherman Island") or {
-                ClickPowerMultiplier = 1
-            }
-
-            local delay
-            if rarity >= 7 then
-                delay = 0.12 * area.ClickPowerMultiplier
-            elseif rarity >= 6 then
-                delay = 0.15 * area.ClickPowerMultiplier
-            elseif rarity >= 4 then
-                delay = 0.18 * area.ClickPowerMultiplier
-            else
-                delay = 0.21 * area.ClickPowerMultiplier
-            end
-
             status.Text = "Status : Clicking"
             FishingController:RequestFishingMinigameClick()
-            task.wait(delay)
         else
             status.Text = "Status : Charging Rod"
             FishingController:RequestChargeFishingRod(
                 Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2),
                 true
             )
-            task.wait(0.5)
         end
     end
 end)
