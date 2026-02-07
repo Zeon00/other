@@ -1,1 +1,185 @@
 
+-- =================================================
+-- FAST AUTO FISHING (BLATANT + STABLE)
+-- FULL GUI + MINIMIZE ICON + X DESTROY
+-- =================================================
+
+-- SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local Camera = workspace.CurrentCamera
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+-- NET
+local Net = RS:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+
+local RE_Equip = Net:WaitForChild("RE/EquipToolFromHotbar")
+
+-- MODULE
+local FishingController = require(RS.Controllers.FishingController)
+
+-- =================================================
+-- CLEAN GUI
+-- =================================================
+pcall(function()
+    PlayerGui:FindFirstChild("FastAutoFishGUI"):Destroy()
+end)
+
+-- =================================================
+-- GUI
+-- =================================================
+local gui = Instance.new("ScreenGui", PlayerGui)
+gui.Name = "FastAutoFishGUI"
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,270,0,160)
+frame.Position = UDim2.new(0.5,-135,0.5,-80)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,-70,0,32)
+title.Position = UDim2.new(0,10,0,0)
+title.Text = "🎣 Fast Auto Fishing"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local minimize = Instance.new("TextButton", frame)
+minimize.Size = UDim2.new(0,28,0,28)
+minimize.Position = UDim2.new(1,-64,0,4)
+minimize.Text = "▢"
+minimize.BackgroundTransparency = 1
+minimize.TextColor3 = Color3.fromRGB(255,200,120)
+
+local close = Instance.new("TextButton", frame)
+close.Size = UDim2.new(0,28,0,28)
+close.Position = UDim2.new(1,-32,0,4)
+close.Text = "X"
+close.BackgroundTransparency = 1
+close.TextColor3 = Color3.fromRGB(255,90,90)
+
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1,-20,0,28)
+status.Position = UDim2.new(0,10,0,36)
+status.Text = "Status : INIT"
+status.Font = Enum.Font.Gotham
+status.TextSize = 12
+status.TextColor3 = Color3.fromRGB(200,200,200)
+status.BackgroundTransparency = 1
+status.TextXAlignment = Enum.TextXAlignment.Left
+
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(1,-40,0,42)
+toggle.Position = UDim2.new(0,20,0,95)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 14
+toggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,10)
+
+-- MINIMIZE ICON
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,46,0,46)
+icon.Position = UDim2.new(0.02,0,0.5,-23)
+icon.Text = "🎣"
+icon.TextSize = 22
+icon.Visible = false
+icon.Active = true
+icon.Draggable = true
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", icon).CornerRadius = UDim.new(0,23)
+
+-- =================================================
+-- STATE
+-- =================================================
+local ENABLED = true
+local CAST_DELAY = 0.03   -- jangan 0 (anti crash)
+local CLICK_BURST = 4
+
+local function Refresh()
+    toggle.Text = ENABLED and "AUTO FISH : ON" or "AUTO FISH : OFF"
+    toggle.BackgroundColor3 = ENABLED and Color3.fromRGB(0,170,100)
+        or Color3.fromRGB(60,60,60)
+    icon.BackgroundColor3 = toggle.BackgroundColor3
+end
+
+Refresh()
+
+-- =================================================
+-- BUTTONS
+-- =================================================
+toggle.MouseButton1Click:Connect(function()
+    ENABLED = not ENABLED
+    Refresh()
+end)
+
+minimize.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = true
+    icon.Visible = false
+end)
+
+close.MouseButton1Click:Connect(function()
+    ENABLED = false
+    gui:Destroy()
+end)
+
+-- =================================================
+-- EQUIP ROD
+-- =================================================
+pcall(function()
+    status.Text = "Status : Equip Rod"
+    RE_Equip:FireServer(1)
+end)
+
+local t0 = os.clock()
+repeat task.wait() until FishingController:GetCurrentGUID() or os.clock() - t0 > 3
+
+-- =================================================
+-- MAIN LOOP
+-- =================================================
+task.spawn(function()
+    while task.wait(CAST_DELAY) do
+        if not ENABLED then
+            status.Text = "Status : OFF"
+            continue
+        end
+
+        if FishingController:OnCooldown() then
+            status.Text = "Status : Cooldown"
+            continue
+        end
+
+        if FishingController:GetCurrentGUID() then
+            status.Text = "Status : Fast Catching"
+            for i = 1, CLICK_BURST do
+                FishingController:RequestFishingMinigameClick()
+                task.wait(0.005)
+            end
+        else
+            status.Text = "Status : Casting"
+            FishingController:RequestChargeFishingRod(
+                Vector2.new(
+                    Camera.ViewportSize.X / 2,
+                    Camera.ViewportSize.Y / 2
+                ),
+                true
+            )
+        end
+    end
+end)
