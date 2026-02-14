@@ -1,0 +1,246 @@
+-- =====================================
+-- AUTO ALL MONSTERS + TRAIN + DRAWROLE + TELEPORT
+-- =====================================
+
+-- SERVICES
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local Monsters = workspace:WaitForChild("Monsters")
+
+-- REMOTES
+local Remotes = ReplicatedStorage:WaitForChild("RemoteEvents")
+local GeneralAttack = Remotes:WaitForChild("GeneralAttack")
+local SkillAttack = Remotes:WaitForChild("SkillAttack")
+local GoNextTrainLevel = Remotes:WaitForChild("GoNextTrainLevel")
+local DrawRole = Remotes:WaitForChild("DrawRole")
+
+-- STATE
+local autoFarm = false
+local autoWalk = true
+local autoTrain = false
+local drawRoleState = false
+local atkIndex = 1
+
+-- =====================================
+-- GUI
+-- =====================================
+pcall(function()
+	CoreGui.AutoAllMobGUI:Destroy()
+end)
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "AutoAllMobGUI"
+gui.IgnoreGuiInset = true
+gui.Parent = CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(260, 300)
+frame.Position = UDim2.fromScale(0.05, 0.35)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "AUTO ALL MONSTERS"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.BackgroundTransparency = 1
+title.Parent = frame
+
+-- AUTO FARM
+local farmBtn = Instance.new("TextButton")
+farmBtn.Size = UDim2.new(1,-20,0,36)
+farmBtn.Position = UDim2.fromOffset(10,40)
+farmBtn.Text = "AUTO FARM : OFF"
+farmBtn.Font = Enum.Font.GothamBold
+farmBtn.TextSize = 14
+farmBtn.TextColor3 = Color3.new(1,1,1)
+farmBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
+farmBtn.Parent = frame
+Instance.new("UICorner", farmBtn)
+
+-- AUTO WALK
+local walkBtn = Instance.new("TextButton")
+walkBtn.Size = UDim2.new(1,-20,0,34)
+walkBtn.Position = UDim2.fromOffset(10,82)
+walkBtn.Text = "AUTO WALK : ON"
+walkBtn.Font = Enum.Font.GothamBold
+walkBtn.TextSize = 14
+walkBtn.TextColor3 = Color3.new(1,1,1)
+walkBtn.BackgroundColor3 = Color3.fromRGB(60,120,170)
+walkBtn.Parent = frame
+Instance.new("UICorner", walkBtn)
+
+-- AUTO TRAIN
+local trainBtn = Instance.new("TextButton")
+trainBtn.Size = UDim2.new(1,-20,0,34)
+trainBtn.Position = UDim2.fromOffset(10,122)
+trainBtn.Text = "AUTO TRAIN : OFF"
+trainBtn.Font = Enum.Font.GothamBold
+trainBtn.TextSize = 14
+trainBtn.TextColor3 = Color3.new(1,1,1)
+trainBtn.BackgroundColor3 = Color3.fromRGB(120,120,120)
+trainBtn.Parent = frame
+Instance.new("UICorner", trainBtn)
+
+-- DRAW ROLE
+local drawBtn = Instance.new("TextButton")
+drawBtn.Size = UDim2.new(1,-20,0,34)
+drawBtn.Position = UDim2.fromOffset(10,162)
+drawBtn.Text = "DRAW ROLE : OFF"
+drawBtn.Font = Enum.Font.GothamBold
+drawBtn.TextSize = 14
+drawBtn.TextColor3 = Color3.new(1,1,1)
+drawBtn.BackgroundColor3 = Color3.fromRGB(120,120,120)
+drawBtn.Parent = frame
+Instance.new("UICorner", drawBtn)
+
+-- TELEPORT
+local tpBtn = Instance.new("TextButton")
+tpBtn.Size = UDim2.new(1,-20,0,34)
+tpBtn.Position = UDim2.fromOffset(10,202)
+tpBtn.Text = "TELEPORT"
+tpBtn.Font = Enum.Font.GothamBold
+tpBtn.TextSize = 14
+tpBtn.TextColor3 = Color3.new(1,1,1)
+tpBtn.BackgroundColor3 = Color3.fromRGB(100,80,170)
+tpBtn.Parent = frame
+Instance.new("UICorner", tpBtn)
+
+-- CLOSE
+local close = Instance.new("TextButton")
+close.Size = UDim2.fromOffset(25,25)
+close.Position = UDim2.new(1,-30,0,3)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 14
+close.TextColor3 = Color3.new(1,1,1)
+close.BackgroundColor3 = Color3.fromRGB(180,60,60)
+close.Parent = frame
+Instance.new("UICorner", close)
+
+-- =====================================
+-- LOGIC
+-- =====================================
+
+local function getNearestMonster()
+	local nearest, dist = nil, math.huge
+	for _, mob in ipairs(Monsters:GetChildren()) do
+		if mob:FindFirstChild("Humanoid")
+		and mob:FindFirstChild("HumanoidRootPart")
+		and mob.Humanoid.Health > 0 then
+			local d = (hrp.Position - mob.HumanoidRootPart.Position).Magnitude
+			if d < dist then
+				dist = d
+				nearest = mob
+			end
+		end
+	end
+	return nearest
+end
+
+-- AUTO FARM
+task.spawn(function()
+	while task.wait(0.15) do
+		if autoFarm then
+			local mob = getNearestMonster()
+			if mob then
+				if autoWalk then
+					TweenService:Create(
+						hrp,
+						TweenInfo.new(0.2, Enum.EasingStyle.Linear),
+						{CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0,0,3)}
+					):Play()
+				end
+
+				GeneralAttack:FireServer(atkIndex)
+				atkIndex = (atkIndex % 3) + 1
+				SkillAttack:FireServer(math.random(1,3))
+			end
+		end
+	end
+end)
+
+-- AUTO TRAIN
+local trainArgs = {
+	CFrame.new(-1009.0363, -1952.4598, -173.6059),
+	CFrame.new(-1008.9983, -1955.4998, -98.3676)
+}
+
+local function isAnyMonsterAlive()
+	for _, mob in ipairs(Monsters:GetChildren()) do
+		if mob:FindFirstChild("Humanoid")
+		and mob.Humanoid.Health > 0 then
+			return true
+		end
+	end
+	return false
+end
+
+task.spawn(function()
+	while task.wait(1) do
+		if autoTrain and not isAnyMonsterAlive() then
+			GoNextTrainLevel:FireServer(unpack(trainArgs))
+		end
+	end
+end)
+
+-- DRAW ROLE LOOP (1 DETIK)
+task.spawn(function()
+	while task.wait(1) do
+		if drawRoleState then
+			DrawRole:FireServer(false)
+		end
+	end
+end)
+
+-- =====================================
+-- BUTTON EVENTS
+-- =====================================
+
+farmBtn.MouseButton1Click:Connect(function()
+	autoFarm = not autoFarm
+	farmBtn.Text = autoFarm and "AUTO FARM : ON" or "AUTO FARM : OFF"
+	farmBtn.BackgroundColor3 = autoFarm and Color3.fromRGB(60,170,80) or Color3.fromRGB(170,60,60)
+end)
+
+walkBtn.MouseButton1Click:Connect(function()
+	autoWalk = not autoWalk
+	walkBtn.Text = autoWalk and "AUTO WALK : ON" or "AUTO WALK : OFF"
+	walkBtn.BackgroundColor3 = autoWalk and Color3.fromRGB(60,120,170) or Color3.fromRGB(120,120,120)
+end)
+
+trainBtn.MouseButton1Click:Connect(function()
+	autoTrain = not autoTrain
+	trainBtn.Text = autoTrain and "AUTO TRAIN : ON" or "AUTO TRAIN : OFF"
+	trainBtn.BackgroundColor3 = autoTrain and Color3.fromRGB(170,120,60) or Color3.fromRGB(120,120,120)
+end)
+
+drawBtn.MouseButton1Click:Connect(function()
+	drawRoleState = not drawRoleState
+	drawBtn.Text = drawRoleState and "DRAW ROLE : ON" or "DRAW ROLE : OFF"
+	drawBtn.BackgroundColor3 = drawRoleState and Color3.fromRGB(60,170,200) or Color3.fromRGB(120,120,120)
+end)
+
+tpBtn.MouseButton1Click:Connect(function()
+	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+		player.Character.HumanoidRootPart.CFrame =
+			CFrame.new(570.7853393554688, 27.2656192779541, 679.1387939453125)
+	end
+end)
+
+close.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
