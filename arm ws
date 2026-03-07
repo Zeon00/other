@@ -117,6 +117,14 @@ GUI:CreateToggle({
 local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/Arm-wrestling/refs/heads/main/auto%20claim%20goliath"))()      
     end
 })
+GUI:CreateToggle({
+    parent = main, 
+    text = "Auto Chop tree", 
+    default = false, 
+    callback = function(state)
+local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/other/refs/heads/main/Chop%20tree"))()      
+    end
+})
 local main = GUI:CreateTab("Machine and Shop", "webhook") -- You can use IconID we didnt impleemnt lucid or any external icons
 GUI:CreateSection({
     parent = main, 
