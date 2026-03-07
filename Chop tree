@@ -1,0 +1,76 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+local remote = ReplicatedStorage
+:WaitForChild("Packages")
+:WaitForChild("Knit")
+:WaitForChild("Services")
+:WaitForChild("ChaosBreakablesService")
+:WaitForChild("RF")
+:WaitForChild("Clicked")
+
+local treesFolder = workspace.GameObjects.ChaosBreakables:WaitForChild("Axe")
+
+local delay = 0.04
+local running = true
+
+local function moveToTree(bound)
+
+    local char = player.Character
+    if not char then return end
+
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    -- posisi di pinggir circle
+    local offset = bound.CFrame.LookVector * -3
+    local pos = bound.Position + offset + Vector3.new(0,2,0)
+
+    root.AssemblyLinearVelocity = Vector3.zero
+    root.AssemblyAngularVelocity = Vector3.zero
+
+    char:PivotTo(CFrame.new(pos, bound.Position))
+
+end
+
+task.spawn(function()
+
+while running do
+
+for _,tree in pairs(treesFolder:GetChildren()) do
+
+if not running then break end
+
+if not tree:GetAttribute("Destroyed") then
+
+local bound = tree:FindFirstChild("XZBounds")
+
+if bound then
+
+moveToTree(bound)
+
+task.wait(0.2)
+
+repeat
+
+pcall(function()
+remote:InvokeServer()
+end)
+
+task.wait(delay)
+
+until tree:GetAttribute("Destroyed") == true or not running
+
+end
+
+end
+
+end
+
+task.wait(0.1)
+
+end
+
+end)
