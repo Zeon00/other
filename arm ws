@@ -1521,7 +1521,7 @@ end)
 
 -- AUTO DUMBELLS
 createToggle("Auto Dumbells", "AutoDumbells", function()
-	local args = {"ToyFactory", "Dumbells", "NorthPole12"}
+	local args = {"ChaosIsland", "Dumbells", "ChaosIsland3"}
 	RS.Packages.Knit.Services.ToolService.RE.onEquipRequest:FireServer(unpack(args))
 	task.wait(30)
 end)
