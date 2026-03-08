@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
@@ -15,93 +15,113 @@ local remote = ReplicatedStorage
 local treesFolder = workspace.GameObjects.ChaosBreakables:WaitForChild("Axe")
 
 local delay = 0.04
-local running = true
+local running = false
+local stayRadius = 4
 
-local stayRadius = 5 -- radius supaya tetap di lingkaran
-
-local function lockInsideCircle(bound)
-
+local function getRoot()
 	local char = player.Character
-	if not char then return end
-	
-	local root = char:FindFirstChild("HumanoidRootPart")
-	if not root then return end
+	if not char then return nil end
+	return char:FindFirstChild("HumanoidRootPart")
+end
 
+local function teleportInside(bound)
+
+	local root = getRoot()
+	if not root then return end
+	
 	local center = bound.Position
+	local offset = bound.CFrame.LookVector * -2
 	
-	-- cek kalau keluar lingkaran
-	local dist = (root.Position - center).Magnitude
+	local pos = center + offset + Vector3.new(0,2,0)
 	
-	if dist > stayRadius then
-		
-		local offset = bound.CFrame.LookVector * -2
-		local pos = center + offset + Vector3.new(0,2,0)
-		
-		root.AssemblyLinearVelocity = Vector3.zero
-		root.AssemblyAngularVelocity = Vector3.zero
-		
-		char:PivotTo(CFrame.new(pos, center))
-		
-	end
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
+	
+	root.Parent:PivotTo(CFrame.new(pos, center))
 	
 end
 
-local function moveToTree(bound)
+local function keepInside(bound)
 
-	local char = player.Character
-	if not char then return end
-
-	local root = char:FindFirstChild("HumanoidRootPart")
+	local root = getRoot()
 	if not root then return end
-
-	local offset = bound.CFrame.LookVector * -2
-	local pos = bound.Position + offset + Vector3.new(0,2,0)
-
+	
+	local dist = (root.Position - bound.Position).Magnitude
+	
+	if dist > stayRadius then
+		teleportInside(bound)
+	end
+	
 	root.AssemblyLinearVelocity = Vector3.zero
 	root.AssemblyAngularVelocity = Vector3.zero
+	
+end
 
-	char:PivotTo(CFrame.new(pos, bound.Position))
+local function chopTree(tree)
 
+	local bound = tree:FindFirstChild("XZBounds")
+	if not bound then return end
+	
+	teleportInside(bound)
+	task.wait(0.15)
+	
+	repeat
+		
+		if not running then break end
+		
+		keepInside(bound)
+		
+		pcall(function()
+			remote:InvokeServer()
+		end)
+		
+		task.wait(delay)
+		
+	until tree:GetAttribute("Destroyed") == true or not running
+	
 end
 
 task.spawn(function()
 
-while running do
+	while true do
+		
+		if running then
+			
+			for _,tree in pairs(treesFolder:GetChildren()) do
+				
+				if not running then break end
+				
+				if tree.Name == "InfectedTree" and not tree:GetAttribute("Destroyed") then
+					
+					chopTree(tree)
+					
+				end
+				
+			end
+			
+		end
+		
+		task.wait(0.05)
+		
+	end
 
-for _,tree in pairs(treesFolder:GetChildren()) do
-
-if not running then break end
-
-if not tree:GetAttribute("Destroyed") then
-
-local bound = tree:FindFirstChild("XZBounds")
-
-if bound then
-
-moveToTree(bound)
-
-task.wait(0.2)
-
-repeat
-
-lockInsideCircle(bound)
-
-pcall(function()
-remote:InvokeServer()
 end)
 
-task.wait(delay)
+-- TOGGLE KEY (F)
+UserInputService.InputBegan:Connect(function(input,gameProcessed)
 
-until tree:GetAttribute("Destroyed") == true or not running
-
-end
-
-end
-
-end
-
-task.wait(0.05)
-
-end
-
+	if gameProcessed then return end
+	
+	if input.KeyCode == Enum.KeyCode.F then
+		
+		running = not running
+		
+		if running then
+			print("Auto Chop ON")
+		else
+			print("Auto Chop OFF")
+		end
+		
+	end
+	
 end)
