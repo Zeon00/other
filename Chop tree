@@ -225,7 +225,7 @@ task.spawn(function()
 								chopRunning = false
 								chopToggle.Text = "Auto Chop Axe : OFF"
 
-								task.wait(0.4)
+								task.wait(0.8)
 
 								chopRunning = true
 								chopToggle.Text = "Auto Chop Axe : ON"
