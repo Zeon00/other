@@ -36,7 +36,9 @@ local buyRunning = false
 local chopRunning = false
 local destroyed = false
 local minimized = false
+
 local chopDelay = 0.035
+local stuckTime = 3
 
 -- GUI
 local gui = Instance.new("ScreenGui")
@@ -58,7 +60,6 @@ topBar.Parent = frame
 topBar.Size = UDim2.new(1,0,0,38)
 topBar.BackgroundColor3 = Color3.fromRGB(15,15,18)
 topBar.BorderSizePixel = 0
-
 Instance.new("UICorner",topBar).CornerRadius = UDim.new(0,14)
 
 local title = Instance.new("TextLabel")
@@ -68,32 +69,28 @@ title.Position = UDim2.new(0,14,0,0)
 title.Size = UDim2.new(1,-90,1,0)
 title.Text = "Modern Auto Farm"
 title.TextColor3 = Color3.new(1,1,1)
-title.TextXAlignment = Enum.TextXAlignment.Left
 title.Font = Enum.Font.GothamBold
 title.TextSize = 15
+title.TextXAlignment = Enum.TextXAlignment.Left
 
 local minimize = Instance.new("TextButton")
 minimize.Parent = topBar
 minimize.Size = UDim2.new(0,26,0,26)
 minimize.Position = UDim2.new(1,-58,0.5,-13)
-minimize.BackgroundColor3 = Color3.fromRGB(38,38,45)
 minimize.Text = "—"
+minimize.BackgroundColor3 = Color3.fromRGB(38,38,45)
 minimize.TextColor3 = Color3.new(1,1,1)
 minimize.Font = Enum.Font.GothamBold
-minimize.TextSize = 16
-
 Instance.new("UICorner",minimize).CornerRadius = UDim.new(0,8)
 
 local close = Instance.new("TextButton")
 close.Parent = topBar
 close.Size = UDim2.new(0,26,0,26)
 close.Position = UDim2.new(1,-28,0.5,-13)
-close.BackgroundColor3 = Color3.fromRGB(60,30,35)
 close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(60,30,35)
 close.TextColor3 = Color3.new(1,1,1)
 close.Font = Enum.Font.GothamBold
-close.TextSize = 13
-
 Instance.new("UICorner",close).CornerRadius = UDim.new(0,8)
 
 local content = Instance.new("Frame")
@@ -106,24 +103,20 @@ local buyToggle = Instance.new("TextButton")
 buyToggle.Parent = content
 buyToggle.Size = UDim2.new(1,-32,0,42)
 buyToggle.Position = UDim2.new(0,16,0,34)
-buyToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
 buyToggle.Text = "Auto Buy Atomic : OFF"
+buyToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
 buyToggle.TextColor3 = Color3.new(1,1,1)
 buyToggle.Font = Enum.Font.GothamMedium
-buyToggle.TextSize = 14
-
 Instance.new("UICorner",buyToggle).CornerRadius = UDim.new(0,10)
 
 local chopToggle = Instance.new("TextButton")
 chopToggle.Parent = content
 chopToggle.Size = UDim2.new(1,-32,0,42)
 chopToggle.Position = UDim2.new(0,16,0,86)
-chopToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
 chopToggle.Text = "Auto Chop Axe : OFF"
+chopToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
 chopToggle.TextColor3 = Color3.new(1,1,1)
 chopToggle.Font = Enum.Font.GothamMedium
-chopToggle.TextSize = 14
-
 Instance.new("UICorner",chopToggle).CornerRadius = UDim.new(0,10)
 
 local expandedSize = UDim2.new(0,280,0,190)
@@ -173,7 +166,7 @@ task.spawn(function()
 	end
 end)
 
--- MOVE SAFE OUTSIDE TREE
+-- SAFE TELEPORT
 local function moveToTree(bound)
 
 	local char = player.Character
@@ -215,6 +208,8 @@ task.spawn(function()
 
 						task.wait(0.25)
 
+						local startTime = tick()
+
 						repeat
 
 							pcall(function()
@@ -222,6 +217,21 @@ task.spawn(function()
 							end)
 
 							task.wait(chopDelay)
+
+							if tick() - startTime > stuckTime then
+
+								print("Tree stuck, resetting")
+
+								chopRunning = false
+								chopToggle.Text = "Auto Chop Axe : OFF"
+
+								task.wait(0.4)
+
+								chopRunning = true
+								chopToggle.Text = "Auto Chop Axe : ON"
+
+								break
+							end
 
 						until tree:GetAttribute("Destroyed") == true or not chopRunning
 
