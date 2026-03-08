@@ -36,377 +36,202 @@ local buyRunning = false
 local chopRunning = false
 local destroyed = false
 local minimized = false
-local chopDelay = 0.04
+local chopDelay = 0.035
 
--- gui
+-- GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "AutoFarmModernGUI"
 gui.ResetOnSpawn = false
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = playerGui
 
 local frame = Instance.new("Frame")
-frame.Name = "MainFrame"
 frame.Parent = gui
-frame.Size = UDim2.new(0, 280, 0, 190)
-frame.Position = UDim2.new(0, 25, 0.3, 0)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+frame.Size = UDim2.new(0,280,0,190)
+frame.Position = UDim2.new(0,25,0.3,0)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,24)
 frame.BorderSizePixel = 0
 
-local frameCorner = Instance.new("UICorner", frame)
-frameCorner.CornerRadius = UDim.new(0, 14)
-
-local frameStroke = Instance.new("UIStroke", frame)
-frameStroke.Thickness = 1.2
-frameStroke.Color = Color3.fromRGB(55, 55, 65)
-frameStroke.Transparency = 0.15
-
-local shadow = Instance.new("ImageLabel")
-shadow.Name = "Shadow"
-shadow.Parent = frame
-shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-shadow.Position = UDim2.new(0.5, 0, 0.5, 4)
-shadow.Size = UDim2.new(1, 30, 1, 30)
-shadow.BackgroundTransparency = 1
-shadow.Image = "rbxassetid://1316045217"
-shadow.ImageTransparency = 0.55
-shadow.ScaleType = Enum.ScaleType.Slice
-shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-shadow.ZIndex = 0
-
-frame.ZIndex = 2
+Instance.new("UICorner",frame).CornerRadius = UDim.new(0,14)
 
 local topBar = Instance.new("Frame")
-topBar.Name = "TopBar"
 topBar.Parent = frame
-topBar.Size = UDim2.new(1, 0, 0, 38)
-topBar.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+topBar.Size = UDim2.new(1,0,0,38)
+topBar.BackgroundColor3 = Color3.fromRGB(15,15,18)
 topBar.BorderSizePixel = 0
-topBar.ZIndex = 3
 
-local topCorner = Instance.new("UICorner", topBar)
-topCorner.CornerRadius = UDim.new(0, 14)
-
-local topFix = Instance.new("Frame")
-topFix.Parent = topBar
-topFix.Size = UDim2.new(1, 0, 0, 14)
-topFix.Position = UDim2.new(0, 0, 1, -14)
-topFix.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-topFix.BorderSizePixel = 0
+Instance.new("UICorner",topBar).CornerRadius = UDim.new(0,14)
 
 local title = Instance.new("TextLabel")
 title.Parent = topBar
 title.BackgroundTransparency = 1
-title.Position = UDim2.new(0, 14, 0, 0)
-title.Size = UDim2.new(1, -90, 1, 0)
+title.Position = UDim2.new(0,14,0,0)
+title.Size = UDim2.new(1,-90,1,0)
 title.Text = "Modern Auto Farm"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextColor3 = Color3.new(1,1,1)
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Font = Enum.Font.GothamBold
 title.TextSize = 15
-title.ZIndex = 4
 
 local minimize = Instance.new("TextButton")
 minimize.Parent = topBar
-minimize.Size = UDim2.new(0, 26, 0, 26)
-minimize.Position = UDim2.new(1, -58, 0.5, -13)
-minimize.BackgroundColor3 = Color3.fromRGB(38, 38, 45)
-minimize.Text = "-"
-minimize.TextColor3 = Color3.fromRGB(220, 220, 220)
+minimize.Size = UDim2.new(0,26,0,26)
+minimize.Position = UDim2.new(1,-58,0.5,-13)
+minimize.BackgroundColor3 = Color3.fromRGB(38,38,45)
+minimize.Text = "—"
+minimize.TextColor3 = Color3.new(1,1,1)
 minimize.Font = Enum.Font.GothamBold
 minimize.TextSize = 16
-minimize.AutoButtonColor = false
-minimize.ZIndex = 4
 
-local minCorner = Instance.new("UICorner", minimize)
-minCorner.CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner",minimize).CornerRadius = UDim.new(0,8)
 
 local close = Instance.new("TextButton")
 close.Parent = topBar
-close.Size = UDim2.new(0, 26, 0, 26)
-close.Position = UDim2.new(1, -28, 0.5, -13)
-close.BackgroundColor3 = Color3.fromRGB(55, 30, 35)
+close.Size = UDim2.new(0,26,0,26)
+close.Position = UDim2.new(1,-28,0.5,-13)
+close.BackgroundColor3 = Color3.fromRGB(60,30,35)
 close.Text = "X"
-close.TextColor3 = Color3.fromRGB(255, 220, 220)
+close.TextColor3 = Color3.new(1,1,1)
 close.Font = Enum.Font.GothamBold
 close.TextSize = 13
-close.AutoButtonColor = false
-close.ZIndex = 4
 
-local closeCorner = Instance.new("UICorner", close)
-closeCorner.CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner",close).CornerRadius = UDim.new(0,8)
 
 local content = Instance.new("Frame")
-content.Name = "Content"
 content.Parent = frame
 content.BackgroundTransparency = 1
-content.Position = UDim2.new(0, 0, 0, 38)
-content.Size = UDim2.new(1, 0, 1, -38)
-content.ZIndex = 3
-
-local info = Instance.new("TextLabel")
-info.Parent = content
-info.BackgroundTransparency = 1
-info.Position = UDim2.new(0, 16, 0, 8)
-info.Size = UDim2.new(1, -32, 0, 18)
-info.Text = "Auto Buy + Auto Chop"
-info.TextColor3 = Color3.fromRGB(170, 170, 180)
-info.TextXAlignment = Enum.TextXAlignment.Left
-info.Font = Enum.Font.Gotham
-info.TextSize = 12
-info.ZIndex = 4
+content.Position = UDim2.new(0,0,0,38)
+content.Size = UDim2.new(1,0,1,-38)
 
 local buyToggle = Instance.new("TextButton")
 buyToggle.Parent = content
-buyToggle.Size = UDim2.new(1, -32, 0, 42)
-buyToggle.Position = UDim2.new(0, 16, 0, 34)
-buyToggle.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+buyToggle.Size = UDim2.new(1,-32,0,42)
+buyToggle.Position = UDim2.new(0,16,0,34)
+buyToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
 buyToggle.Text = "Auto Buy Atomic : OFF"
-buyToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+buyToggle.TextColor3 = Color3.new(1,1,1)
 buyToggle.Font = Enum.Font.GothamMedium
 buyToggle.TextSize = 14
-buyToggle.AutoButtonColor = false
-buyToggle.ZIndex = 4
 
-local buyCorner = Instance.new("UICorner", buyToggle)
-buyCorner.CornerRadius = UDim.new(0, 10)
-
-local buyStroke = Instance.new("UIStroke", buyToggle)
-buyStroke.Thickness = 1
-buyStroke.Color = Color3.fromRGB(65, 65, 75)
-buyStroke.Transparency = 0.2
+Instance.new("UICorner",buyToggle).CornerRadius = UDim.new(0,10)
 
 local chopToggle = Instance.new("TextButton")
 chopToggle.Parent = content
-chopToggle.Size = UDim2.new(1, -32, 0, 42)
-chopToggle.Position = UDim2.new(0, 16, 0, 86)
-chopToggle.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+chopToggle.Size = UDim2.new(1,-32,0,42)
+chopToggle.Position = UDim2.new(0,16,0,86)
+chopToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
 chopToggle.Text = "Auto Chop Axe : OFF"
-chopToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+chopToggle.TextColor3 = Color3.new(1,1,1)
 chopToggle.Font = Enum.Font.GothamMedium
 chopToggle.TextSize = 14
-chopToggle.AutoButtonColor = false
-chopToggle.ZIndex = 4
 
-local chopCorner = Instance.new("UICorner", chopToggle)
-chopCorner.CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner",chopToggle).CornerRadius = UDim.new(0,10)
 
-local chopStroke = Instance.new("UIStroke", chopToggle)
-chopStroke.Thickness = 1
-chopStroke.Color = Color3.fromRGB(65, 65, 75)
-chopStroke.Transparency = 0.2
-
-local footer = Instance.new("TextLabel")
-footer.Parent = content
-footer.BackgroundTransparency = 1
-footer.Position = UDim2.new(0, 16, 1, -22)
-footer.Size = UDim2.new(1, -32, 0, 16)
-footer.Text = "Draggable modern panel"
-footer.TextColor3 = Color3.fromRGB(110, 110, 120)
-footer.TextXAlignment = Enum.TextXAlignment.Left
-footer.Font = Enum.Font.Gotham
-footer.TextSize = 11
-footer.ZIndex = 4
-
-local function tween(obj, props, t)
-	TweenService:Create(obj, TweenInfo.new(t or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
-end
-
-local function updateBuyVisual()
-	if buyRunning then
-		buyToggle.Text = "Auto Buy Atomic : ON"
-		buyToggle.BackgroundColor3 = Color3.fromRGB(35, 85, 60)
-	else
-		buyToggle.Text = "Auto Buy Atomic : OFF"
-		buyToggle.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-	end
-end
-
-local function updateChopVisual()
-	if chopRunning then
-		chopToggle.Text = "Auto Chop Axe : ON"
-		chopToggle.BackgroundColor3 = Color3.fromRGB(35, 85, 60)
-	else
-		chopToggle.Text = "Auto Chop Axe : OFF"
-		chopToggle.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-	end
-end
-
-updateBuyVisual()
-updateChopVisual()
-
-buyToggle.MouseButton1Click:Connect(function()
-	buyRunning = not buyRunning
-	updateBuyVisual()
-end)
-
-chopToggle.MouseButton1Click:Connect(function()
-	chopRunning = not chopRunning
-	updateChopVisual()
-end)
-
-local function bindHover(btn, normalColor, hoverColor)
-	btn.MouseEnter:Connect(function()
-		tween(btn, {BackgroundColor3 = hoverColor}, 0.12)
-	end)
-	btn.MouseLeave:Connect(function()
-		if btn == buyToggle then
-			if buyRunning then
-				tween(btn, {BackgroundColor3 = Color3.fromRGB(35, 85, 60)}, 0.12)
-			else
-				tween(btn, {BackgroundColor3 = normalColor}, 0.12)
-			end
-		elseif btn == chopToggle then
-			if chopRunning then
-				tween(btn, {BackgroundColor3 = Color3.fromRGB(35, 85, 60)}, 0.12)
-			else
-				tween(btn, {BackgroundColor3 = normalColor}, 0.12)
-			end
-		else
-			tween(btn, {BackgroundColor3 = normalColor}, 0.12)
-		end
-	end)
-end
-
-bindHover(minimize, Color3.fromRGB(38, 38, 45), Color3.fromRGB(50, 50, 58))
-bindHover(close, Color3.fromRGB(55, 30, 35), Color3.fromRGB(75, 35, 45))
-bindHover(buyToggle, Color3.fromRGB(35, 35, 42), Color3.fromRGB(45, 45, 54))
-bindHover(chopToggle, Color3.fromRGB(35, 35, 42), Color3.fromRGB(45, 45, 54))
-
-local expandedSize = UDim2.new(0, 280, 0, 190)
-local minimizedSize = UDim2.new(0, 280, 0, 38)
+local expandedSize = UDim2.new(0,280,0,190)
+local minimizedSize = UDim2.new(0,280,0,38)
 
 minimize.MouseButton1Click:Connect(function()
 	minimized = not minimized
-
 	if minimized then
-		tween(frame, {Size = minimizedSize}, 0.22)
+		frame.Size = minimizedSize
 		content.Visible = false
 		minimize.Text = "+"
 	else
+		frame.Size = expandedSize
 		content.Visible = true
-		tween(frame, {Size = expandedSize}, 0.22)
 		minimize.Text = "—"
 	end
 end)
 
 close.MouseButton1Click:Connect(function()
 	destroyed = true
-	buyRunning = false
-	chopRunning = false
 	gui:Destroy()
 end)
 
--- draggable
-local dragging = false
-local dragInput
-local dragStart
-local startPos
-
-local function updateDrag(input)
-	local delta = input.Position - dragStart
-	frame.Position = UDim2.new(
-		startPos.X.Scale,
-		startPos.X.Offset + delta.X,
-		startPos.Y.Scale,
-		startPos.Y.Offset + delta.Y
-	)
-end
-
-topBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-		or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = frame.Position
-
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
+buyToggle.MouseButton1Click:Connect(function()
+	buyRunning = not buyRunning
+	buyToggle.Text = "Auto Buy Atomic : "..(buyRunning and "ON" or "OFF")
 end)
 
-topBar.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement
-		or input.UserInputType == Enum.UserInputType.Touch then
-		dragInput = input
-	end
+chopToggle.MouseButton1Click:Connect(function()
+	chopRunning = not chopRunning
+	chopToggle.Text = "Auto Chop Axe : "..(chopRunning and "ON" or "OFF")
 end)
 
-UIS.InputChanged:Connect(function(input)
-	if dragging and input == dragInput then
-		updateDrag(input)
-	end
-end)
-
--- auto buy loop
+-- AUTO BUY
 task.spawn(function()
 	while not destroyed do
 		if buyRunning then
-			for i = 1, 13 do
-				if not buyRunning or destroyed then
-					break
-				end
-
+			for i=1,13 do
+				if not buyRunning then break end
 				pcall(function()
-					buyRemote:InvokeServer("Atomic", i)
+					buyRemote:InvokeServer("Atomic",i)
 				end)
-
 				task.wait(0.15)
 			end
 		end
-
 		task.wait(0.1)
 	end
 end)
 
--- move to tree
+-- MOVE SAFE OUTSIDE TREE
 local function moveToTree(bound)
+
 	local char = player.Character
 	if not char then return end
 
 	local root = char:FindFirstChild("HumanoidRootPart")
 	if not root then return end
 
-	local offset = bound.CFrame.LookVector * -3
-	local pos = bound.Position + offset + Vector3.new(0, 2, 0)
+	local dir = (root.Position - bound.Position).Unit
+	local distance = 6
+
+	local pos = bound.Position + dir * distance + Vector3.new(0,2,0)
 
 	root.AssemblyLinearVelocity = Vector3.zero
 	root.AssemblyAngularVelocity = Vector3.zero
 
 	char:PivotTo(CFrame.new(pos, bound.Position))
+
 end
 
--- auto chop loop
+-- AUTO CHOP
 task.spawn(function()
-	while not destroyed do
-		if chopRunning then
-			for _, tree in pairs(treesFolder:GetChildren()) do
-				if not chopRunning or destroyed then
-					break
-				end
 
-				if not tree:GetAttribute("Destroyed") then
+	while not destroyed do
+
+		if chopRunning then
+
+			for _,tree in pairs(treesFolder:GetChildren()) do
+
+				if not chopRunning then break end
+
+				if tree:GetAttribute("Destroyed") ~= true then
+
 					local bound = tree:FindFirstChild("XZBounds")
 
 					if bound then
+
 						moveToTree(bound)
-						task.wait(0.15)
+
+						task.wait(0.25)
 
 						repeat
+
 							pcall(function()
 								chopRemote:InvokeServer(bound)
 							end)
 
 							task.wait(chopDelay)
-						until tree:GetAttribute("Destroyed") == true or not chopRunning or destroyed
+
+						until tree:GetAttribute("Destroyed") == true or not chopRunning
+
 					end
 				end
 			end
 		end
 
 		task.wait(0.05)
+
 	end
+
 end)
