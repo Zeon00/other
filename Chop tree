@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
@@ -16,22 +17,50 @@ local treesFolder = workspace.GameObjects.ChaosBreakables:WaitForChild("Axe")
 local delay = 0.04
 local running = true
 
+local stayRadius = 5 -- radius supaya tetap di lingkaran
+
+local function lockInsideCircle(bound)
+
+	local char = player.Character
+	if not char then return end
+	
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local center = bound.Position
+	
+	-- cek kalau keluar lingkaran
+	local dist = (root.Position - center).Magnitude
+	
+	if dist > stayRadius then
+		
+		local offset = bound.CFrame.LookVector * -2
+		local pos = center + offset + Vector3.new(0,2,0)
+		
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+		
+		char:PivotTo(CFrame.new(pos, center))
+		
+	end
+	
+end
+
 local function moveToTree(bound)
 
-    local char = player.Character
-    if not char then return end
+	local char = player.Character
+	if not char then return end
 
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
 
-    -- posisi di pinggir circle
-    local offset = bound.CFrame.LookVector * -3
-    local pos = bound.Position + offset + Vector3.new(0,2,0)
+	local offset = bound.CFrame.LookVector * -2
+	local pos = bound.Position + offset + Vector3.new(0,2,0)
 
-    root.AssemblyLinearVelocity = Vector3.zero
-    root.AssemblyAngularVelocity = Vector3.zero
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
 
-    char:PivotTo(CFrame.new(pos, bound.Position))
+	char:PivotTo(CFrame.new(pos, bound.Position))
 
 end
 
@@ -55,6 +84,8 @@ task.wait(0.2)
 
 repeat
 
+lockInsideCircle(bound)
+
 pcall(function()
 remote:InvokeServer()
 end)
@@ -69,7 +100,7 @@ end
 
 end
 
-task.wait(0.1)
+task.wait(0.05)
 
 end
 
