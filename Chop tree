@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
@@ -15,113 +14,137 @@ local remote = ReplicatedStorage
 local treesFolder = workspace.GameObjects.ChaosBreakables:WaitForChild("Axe")
 
 local delay = 0.04
-local running = false
-local stayRadius = 4
+local running = true
+local destroyed = false
 
-local function getRoot()
-	local char = player.Character
-	if not char then return nil end
-	return char:FindFirstChild("HumanoidRootPart")
-end
+-- GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "AutoChopGUI"
 
-local function teleportInside(bound)
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,180,0,90)
+frame.Position = UDim2.new(0,20,0,200)
+frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
 
-	local root = getRoot()
-	if not root then return end
-	
-	local center = bound.Position
-	local offset = bound.CFrame.LookVector * -2
-	
-	local pos = center + offset + Vector3.new(0,2,0)
-	
-	root.AssemblyLinearVelocity = Vector3.zero
-	root.AssemblyAngularVelocity = Vector3.zero
-	
-	root.Parent:PivotTo(CFrame.new(pos, center))
-	
-end
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,25)
+title.Text = "Auto Chop"
+title.BackgroundColor3 = Color3.fromRGB(25,25,25)
+title.TextColor3 = Color3.new(1,1,1)
 
-local function keepInside(bound)
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(0.6,0,0,30)
+toggle.Position = UDim2.new(0.05,0,0.45,0)
+toggle.Text = "ON"
+toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+toggle.TextColor3 = Color3.new(1,1,1)
 
-	local root = getRoot()
-	if not root then return end
+local minimize = Instance.new("TextButton", frame)
+minimize.Size = UDim2.new(0,25,0,25)
+minimize.Position = UDim2.new(1,-55,0,0)
+minimize.Text = "-"
+
+local close = Instance.new("TextButton", frame)
+close.Size = UDim2.new(0,25,0,25)
+close.Position = UDim2.new(1,-28,0,0)
+close.Text = "X"
+
+-- Toggle
+toggle.MouseButton1Click:Connect(function()
+
+	running = not running
 	
-	local dist = (root.Position - bound.Position).Magnitude
-	
-	if dist > stayRadius then
-		teleportInside(bound)
+	if running then
+		toggle.Text = "ON"
+	else
+		toggle.Text = "OFF"
 	end
 	
+end)
+
+-- Minimize
+local minimized = false
+
+minimize.MouseButton1Click:Connect(function()
+
+	minimized = not minimized
+	
+	if minimized then
+		frame.Size = UDim2.new(0,180,0,25)
+	else
+		frame.Size = UDim2.new(0,180,0,90)
+	end
+	
+end)
+
+-- Destroy
+close.MouseButton1Click:Connect(function()
+
+	destroyed = true
+	gui:Destroy()
+
+end)
+
+-- movement
+local function moveToTree(bound)
+
+	local char = player.Character
+	if not char then return end
+
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local offset = bound.CFrame.LookVector * -3
+	local pos = bound.Position + offset + Vector3.new(0,2,0)
+
 	root.AssemblyLinearVelocity = Vector3.zero
 	root.AssemblyAngularVelocity = Vector3.zero
-	
-end
 
-local function chopTree(tree)
+	char:PivotTo(CFrame.new(pos, bound.Position))
 
-	local bound = tree:FindFirstChild("XZBounds")
-	if not bound then return end
-	
-	teleportInside(bound)
-	task.wait(0.15)
-	
-	repeat
-		
-		if not running then break end
-		
-		keepInside(bound)
-		
-		pcall(function()
-			remote:InvokeServer()
-		end)
-		
-		task.wait(delay)
-		
-	until tree:GetAttribute("Destroyed") == true or not running
-	
 end
 
 task.spawn(function()
 
-	while true do
-		
-		if running then
-			
-			for _,tree in pairs(treesFolder:GetChildren()) do
-				
-				if not running then break end
-				
-				if tree.Name == "InfectedTree" and not tree:GetAttribute("Destroyed") then
-					
-					chopTree(tree)
-					
-				end
-				
-			end
-			
-		end
-		
-		task.wait(0.05)
-		
-	end
+while not destroyed do
 
+if running then
+
+for _,tree in pairs(treesFolder:GetChildren()) do
+
+if not running then break end
+if destroyed then break end
+
+if not tree:GetAttribute("Destroyed") then
+
+local bound = tree:FindFirstChild("XZBounds")
+
+if bound then
+
+moveToTree(bound)
+
+task.wait(0.15)
+
+repeat
+
+pcall(function()
+remote:InvokeServer(bound)
 end)
 
--- TOGGLE KEY (F)
-UserInputService.InputBegan:Connect(function(input,gameProcessed)
+task.wait(delay)
 
-	if gameProcessed then return end
-	
-	if input.KeyCode == Enum.KeyCode.F then
-		
-		running = not running
-		
-		if running then
-			print("Auto Chop ON")
-		else
-			print("Auto Chop OFF")
-		end
-		
-	end
-	
+until tree:GetAttribute("Destroyed") == true or not running
+
+end
+
+end
+
+end
+
+end
+
+task.wait(0.05)
+
+end
+
 end)
