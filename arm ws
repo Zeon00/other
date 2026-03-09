@@ -44,6 +44,20 @@ game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit
 })
 GUI:CreateButton({
     parent = main, 
+    text = "Auto Digger", 
+    callback = function()
+local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/other/refs/heads/main/Digger%20Shovel"))()
+    end
+})
+GUI:CreateButton({
+    parent = main, 
+    text = "Teleport to Shovel", 
+    callback = function()
+game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-7339.826171875, 5.068718433380127, 7966.89697265625)
+    end
+})
+GUI:CreateButton({
+    parent = main, 
     text = "Fast Relog", 
     callback = function()
 local TeleportService = game:GetService("TeleportService")
@@ -1571,6 +1585,7 @@ task.wait(20)
 		print("Toggle state:", dailylogin)
     end
 })
+
 GUI:CreateToggle({
     parent = main, 
     text = "Auto Open Trainer", 
