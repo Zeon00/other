@@ -36,6 +36,7 @@ local destroyed = false
 local minimized = false
 
 local chopDelay = 0.03
+local stuckTime = 3
 
 -- GUI
 local gui = Instance.new("ScreenGui")
@@ -196,24 +197,33 @@ local function getNearestTree()
 	return nearest
 end
 
--- WALK TO TREE
-local function walkToTree(bound)
+-- STABLE TELEPORT
+local function moveToTree(bound)
 
 	local char = player.Character
 	if not char then return end
 
-	local humanoid = char:FindFirstChildOfClass("Humanoid")
 	local root = char:FindFirstChild("HumanoidRootPart")
+	local humanoid = char:FindFirstChildOfClass("Humanoid")
 
-	if not humanoid or not root then return end
+	if not root then return end
 
-	local targetPos = bound.Position + Vector3.new(0,0,5)
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
 
-	humanoid:MoveTo(targetPos)
+	if humanoid then
+		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+	end
 
-	repeat
-		task.wait(0.1)
-	until (root.Position - targetPos).Magnitude < 3 or not chopRunning
+	local pos = bound.Position + Vector3.new(0,3,6)
+
+	char:PivotTo(CFrame.new(pos, bound.Position))
+
+	task.wait()
+
+	if humanoid then
+		humanoid:ChangeState(Enum.HumanoidStateType.Running)
+	end
 
 end
 
@@ -228,11 +238,12 @@ task.spawn(function()
 
 			if bound then
 
-				walkToTree(bound)
+				moveToTree(bound)
 
 				task.wait(0.2)
 
 				local tree = bound.Parent
+				local startTime = tick()
 
 				repeat
 
@@ -241,6 +252,10 @@ task.spawn(function()
 					end)
 
 					task.wait(chopDelay)
+
+					if tick() - startTime > stuckTime then
+						break
+					end
 
 				until tree:GetAttribute("Destroyed") == true or not chopRunning
 
@@ -254,18 +269,3 @@ task.spawn(function()
 	end
 
 end)
-
--- SPEED BOOST
-player.CharacterAdded:Connect(function(char)
-
-	local hum = char:WaitForChild("Humanoid")
-	hum.WalkSpeed = 60
-
-end)
-
-if player.Character then
-	local hum = player.Character:FindFirstChildOfClass("Humanoid")
-	if hum then
-		hum.WalkSpeed = 60
-	end
-end
