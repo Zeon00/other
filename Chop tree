@@ -38,6 +38,9 @@ local minimized = false
 local chopDelay = 0.03
 local stuckTime = 3
 
+-- radius supaya tidak keluar area
+local MAX_DISTANCE = 120
+
 -- GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "AutoFarmModernGUI"
@@ -121,15 +124,9 @@ local minimizedSize = UDim2.new(0,280,0,38)
 
 minimize.MouseButton1Click:Connect(function()
 	minimized = not minimized
-	if minimized then
-		frame.Size = minimizedSize
-		content.Visible = false
-		minimize.Text = "+"
-	else
-		frame.Size = expandedSize
-		content.Visible = true
-		minimize.Text = "—"
-	end
+	frame.Size = minimized and minimizedSize or expandedSize
+	content.Visible = not minimized
+	minimize.Text = minimized and "+" or "—"
 end)
 
 close.MouseButton1Click:Connect(function()
@@ -163,7 +160,7 @@ task.spawn(function()
 	end
 end)
 
--- GET NEAREST TREE
+-- GET NEAREST TREE WITH LIMIT
 local function getNearestTree()
 
 	local char = player.Character
@@ -173,7 +170,7 @@ local function getNearestTree()
 	if not root then return end
 
 	local nearest
-	local dist = math.huge
+	local dist = MAX_DISTANCE
 
 	for _,tree in pairs(treesFolder:GetChildren()) do
 
