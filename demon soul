@@ -261,7 +261,7 @@ end)
 tpBtn.MouseButton1Click:Connect(function()
 	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 		player.Character.HumanoidRootPart.CFrame =
-			CFrame.new(570.7853393554688, 27.2656192779541, 679.1387939453125)
+			CFrame.new(418.3836975097656, 27.1574649810791, 961.0191040039062)
 	end
 end)
 
