@@ -52,6 +52,7 @@ frame.Size = UDim2.new(0,280,0,190)
 frame.Position = UDim2.new(0,25,0.3,0)
 frame.BackgroundColor3 = Color3.fromRGB(20,20,24)
 frame.BorderSizePixel = 0
+
 Instance.new("UICorner",frame).CornerRadius = UDim.new(0,14)
 
 local topBar = Instance.new("Frame")
@@ -165,82 +166,115 @@ task.spawn(function()
 	end
 end)
 
--- FAST WALK (NO TELEPORT)
+-- SAFE TELEPORT
 local function moveToTree(bound)
 
 	local char = player.Character
 	if not char then return end
 
 	local root = char:FindFirstChild("HumanoidRootPart")
-	local humanoid = char:FindFirstChildOfClass("Humanoid")
+	if not root then return end
 
-	if not root or not humanoid then return end
+	local dir = (root.Position - bound.Position).Unit
+	local distance = 6
 
-	humanoid.WalkSpeed = 80
+	local pos = bound.Position + dir * distance + Vector3.new(0,2,0)
 
-	local dir = (bound.Position - root.Position).Unit
-	local targetPos = bound.Position - dir * 4
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
 
-	humanoid.WalkToPoint = targetPos
-
-	local start = tick()
-
-	repeat
-		task.wait(0.05)
-	until (root.Position - bound.Position).Magnitude < 7 or tick() - start > 1
+	char:PivotTo(CFrame.new(pos, bound.Position))
 
 end
 
--- AUTO CHOP
+-- GET NEAREST TREE
+local function getNearestTree()
+
+	local char = player.Character
+	if not char then return end
+
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local nearest = nil
+	local dist = math.huge
+
+	for _,tree in pairs(treesFolder:GetChildren()) do
+
+		if tree:GetAttribute("Destroyed") ~= true then
+
+			local bound = tree:FindFirstChild("XZBounds")
+
+			if bound then
+
+				local d = (root.Position - bound.Position).Magnitude
+
+				if d < dist then
+					dist = d
+					nearest = bound
+				end
+
+			end
+		end
+	end
+
+	return nearest
+end
+
+
+-- TELEPORT NEAR TREE
+local function moveToTree(bound)
+
+	local char = player.Character
+	if not char then return end
+
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local pos = bound.Position + Vector3.new(0,2,4)
+
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
+
+	char:PivotTo(CFrame.new(pos, bound.Position))
+
+end
+
+
+-- AUTO CHOP SMART
 task.spawn(function()
 
 	while not destroyed do
 
 		if chopRunning then
 
-			for _,tree in pairs(treesFolder:GetChildren()) do
+			local bound = getNearestTree()
 
-				if not chopRunning then break end
+			if bound then
 
-				if tree:GetAttribute("Destroyed") ~= true then
+				moveToTree(bound)
 
-					local bound = tree:FindFirstChild("XZBounds")
+				task.wait(0.2)
 
-					if bound then
+				local tree = bound.Parent
+				local startTime = tick()
 
-						moveToTree(bound)
+				repeat
 
-						task.wait(0.25)
+					pcall(function()
+						chopRemote:InvokeServer(bound)
+					end)
 
-						local startTime = tick()
+					task.wait(chopDelay)
 
-						repeat
-
-							pcall(function()
-								chopRemote:InvokeServer(bound)
-							end)
-
-							task.wait(chopDelay)
-
-							if tick() - startTime > stuckTime then
-
-								print("Tree stuck, resetting")
-
-								chopRunning = false
-								chopToggle.Text = "Auto Chop Axe : OFF"
-
-								task.wait(1.5)
-
-								chopRunning = true
-								chopToggle.Text = "Auto Chop Axe : ON"
-
-								break
-							end
-
-						until tree:GetAttribute("Destroyed") == true or not chopRunning
-
+					if tick() - startTime > stuckTime then
+						break
 					end
-				end
+
+				until tree:GetAttribute("Destroyed") == true or not chopRunning
+
+			else
+				task.wait(0.3)
 			end
 		end
 
