@@ -1,0 +1,208 @@
+-- =====================================
+-- ALL IN ONE FINAL
+-- AUTO SUMMON + AUTO CLAIM + AUTO BUY
+-- + AUTO QUEST 1-5
+-- + ANTI AFK (ALWAYS ON)
+-- + MINIMIZE TO ICON
+-- =====================================
+
+-- SERVICES
+local VIM = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+
+-- ================= ANTI AFK =================
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+pcall(function()
+    StarterGui:SetCore("SendNotification", {
+        Title = "Anti AFK",
+        Text = "Anti AFK aktif",
+        Duration = 3
+    })
+end)
+
+-- ================= REMOTES =================
+local Services = ReplicatedStorage.Scripts.Plugins.Knit.Knit.Services
+
+local ClaimRemote = Services.TycoonService.RF.ClaimTycoonRewards
+local BuyRemote   = Services.ShopService.RF.BuyShopItem
+
+local QuestRF = Services.QuestService.RF
+local RemoveQuestFocus = QuestRF.RemoveQuestGiverReplicationFocus
+local StartQuestGroup  = QuestRF.StartQuestGroup
+
+-- ================= FLAGS =================
+local summonEnabled = false
+local claimEnabled  = false
+local buyEnabled    = false
+local questEnabled  = false
+local running = true
+local minimized = false
+local questId = 1
+
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "AllInOneGui"
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.fromScale(0.26, 0.38)
+frame.Position = UDim2.fromScale(0.37, 0.31)
+frame.BackgroundColor3 = Color3.fromRGB(22,22,22)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,16)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.fromScale(1,0.12)
+title.BackgroundTransparency = 1
+title.Text = "AUTO SYSTEM"
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(230,230,230)
+
+local miniBtn = Instance.new("TextButton", frame)
+miniBtn.Size = UDim2.fromScale(0.12,0.12)
+miniBtn.Position = UDim2.fromScale(0.86,0)
+miniBtn.Text = "-"
+miniBtn.Font = Enum.Font.GothamBold
+miniBtn.TextScaled = true
+miniBtn.TextColor3 = Color3.new(1,1,1)
+miniBtn.BackgroundTransparency = 1
+
+local function makeBtn(text, y)
+    local b = Instance.new("TextButton", frame)
+    b.Size = UDim2.fromScale(0.9,0.14)
+    b.Position = UDim2.fromScale(0.05,y)
+    b.Text = text
+    b.Font = Enum.Font.GothamBold
+    b.TextScaled = true
+    b.TextColor3 = Color3.new(1,1,1)
+    b.BackgroundColor3 = Color3.fromRGB(160,60,60)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,12)
+    return b
+end
+
+local summonBtn = makeBtn("AUTO SUMMON : OFF", 0.14)
+local claimBtn  = makeBtn("AUTO CLAIM : OFF",  0.30)
+local buyBtn    = makeBtn("AUTO BUY : OFF",    0.46)
+local questBtn  = makeBtn("AUTO QUEST 1-5 : OFF", 0.62)
+
+local destroyBtn = makeBtn("DESTROY", 0.80)
+destroyBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+
+local function setToggle(btn, state, onText, offText, onColor)
+    btn.Text = state and onText or offText
+    TweenService:Create(
+        btn,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad),
+        {BackgroundColor3 = state and onColor or Color3.fromRGB(160,60,60)}
+    ):Play()
+end
+
+summonBtn.MouseButton1Click:Connect(function()
+    summonEnabled = not summonEnabled
+    setToggle(summonBtn, summonEnabled, "AUTO SUMMON : ON", "AUTO SUMMON : OFF", Color3.fromRGB(60,180,90))
+end)
+
+claimBtn.MouseButton1Click:Connect(function()
+    claimEnabled = not claimEnabled
+    setToggle(claimBtn, claimEnabled, "AUTO CLAIM : ON", "AUTO CLAIM : OFF", Color3.fromRGB(80,140,255))
+    if claimEnabled then pcall(function() ClaimRemote:InvokeServer() end) end
+end)
+
+buyBtn.MouseButton1Click:Connect(function()
+    buyEnabled = not buyEnabled
+    setToggle(buyBtn, buyEnabled, "AUTO BUY : ON", "AUTO BUY : OFF", Color3.fromRGB(255,170,60))
+end)
+
+questBtn.MouseButton1Click:Connect(function()
+    questEnabled = not questEnabled
+    setToggle(questBtn, questEnabled, "AUTO QUEST 1-5 : ON", "AUTO QUEST 1-5 : OFF", Color3.fromRGB(170,90,255))
+end)
+
+destroyBtn.MouseButton1Click:Connect(function()
+    summonEnabled = false
+    claimEnabled  = false
+    buyEnabled    = false
+    questEnabled  = false
+    running = false
+    gui:Destroy()
+end)
+
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.fromScale(0.05,0.08)
+icon.Position = UDim2.fromScale(0.02,0.45)
+icon.Text = "⚙"
+icon.Font = Enum.Font.GothamBold
+icon.TextScaled = true
+icon.Visible = false
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", icon).CornerRadius = UDim.new(1,0)
+
+miniBtn.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = true
+    icon.Visible = false
+end)
+
+-- ================= LOOPS =================
+task.spawn(function()
+    while running do
+        task.wait(0.25)
+        if summonEnabled then
+            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+            task.wait(0.5)
+            VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        end
+    end
+end)
+
+task.spawn(function()
+    while running do
+        task.wait(14400)
+        if claimEnabled then pcall(function() ClaimRemote:InvokeServer() end) end
+    end
+end)
+
+task.spawn(function()
+    while running do
+        task.wait()
+        if buyEnabled then
+            for year = 2000, 2025 do
+                if not buyEnabled or not running then break end
+                pcall(function()
+                    BuyRemote:InvokeServer(tostring(year), 1)
+                end)
+            end
+            task.wait()
+        end
+    end
+end)
+
+task.spawn(function()
+    while running do
+        task.wait(1)
+        if questEnabled then
+            pcall(function() RemoveQuestFocus:InvokeServer() end)
+            pcall(function() StartQuestGroup:InvokeServer(tostring(questId)) end)
+            questId += 1
+            if questId > 5 then questId = 1 end
+            task.wait(3)
+        end
+    end
+end)
