@@ -146,14 +146,6 @@ chopToggle.MouseButton1Click:Connect(function()
 	chopToggle.Text = "Auto Chop Axe : "..(chopRunning and "ON" or "OFF")
 end)
 
--- WALK SPEED BOOST
-player.CharacterAdded:Connect(function(char)
-
-	local hum = char:WaitForChild("Humanoid")
-	hum.WalkSpeed = 60
-
-end)
-
 -- AUTO BUY
 task.spawn(function()
 	while not destroyed do
@@ -262,3 +254,18 @@ task.spawn(function()
 	end
 
 end)
+
+-- SPEED BOOST
+player.CharacterAdded:Connect(function(char)
+
+	local hum = char:WaitForChild("Humanoid")
+	hum.WalkSpeed = 60
+
+end)
+
+if player.Character then
+	local hum = player.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.WalkSpeed = 60
+	end
+end
