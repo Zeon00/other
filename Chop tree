@@ -1,5 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -35,7 +37,8 @@ local chopRunning = false
 local destroyed = false
 local minimized = false
 
-local chopDelay = 0.03
+local chopDelay = 0.035
+local stuckTime = 3
 
 -- GUI
 local gui = Instance.new("ScreenGui")
@@ -162,57 +165,27 @@ task.spawn(function()
 	end
 end)
 
--- GET NEAREST TREE (nama bebas)
-local function getNearestTree()
+-- FAST WALK TO TREE
+local function moveToTree(bound)
 
 	local char = player.Character
 	if not char then return end
 
 	local root = char:FindFirstChild("HumanoidRootPart")
-	if not root then return end
-
-	local nearest
-	local dist = math.huge
-
-	for _,obj in pairs(treesFolder:GetDescendants()) do
-
-		if obj.Name == "XZBounds" and obj:IsA("BasePart") then
-
-			local tree = obj.Parent
-
-			if tree:GetAttribute("Destroyed") ~= true then
-
-				local d = (root.Position - obj.Position).Magnitude
-
-				if d < dist then
-					dist = d
-					nearest = obj
-				end
-
-			end
-		end
-	end
-
-	return nearest
-
-end
-
--- WALK TO TREE
-local function walkToTree(bound)
-
-	local char = player.Character
-	if not char then return end
-
 	local humanoid = char:FindFirstChildOfClass("Humanoid")
-	local root = char:FindFirstChild("HumanoidRootPart")
 
-	if not humanoid or not root then return end
+	if not root or not humanoid then return end
 
-	local target = bound.Position + Vector3.new(0,0,6)
+	humanoid.WalkSpeed = 60
 
-	humanoid:MoveTo(target)
+	local dir = (bound.Position - root.Position).Unit
+	local targetPos = bound.Position - dir * 4
 
-	humanoid.MoveToFinished:Wait()
+	humanoid:MoveTo(targetPos)
+
+	repeat
+		task.wait(0.05)
+	until (root.Position - bound.Position).Magnitude < 6 or not chopRunning
 
 end
 
@@ -223,46 +196,54 @@ task.spawn(function()
 
 		if chopRunning then
 
-			local bound = getNearestTree()
+			for _,tree in pairs(treesFolder:GetChildren()) do
 
-			if bound then
+				if not chopRunning then break end
 
-				walkToTree(bound)
+				if tree:GetAttribute("Destroyed") ~= true then
 
-				local tree = bound.Parent
+					local bound = tree:FindFirstChild("XZBounds")
 
-				repeat
+					if bound then
 
-					pcall(function()
-						chopRemote:InvokeServer(bound)
-					end)
+						moveToTree(bound)
 
-					task.wait(chopDelay)
+						task.wait(0.25)
 
-				until tree:GetAttribute("Destroyed") == true or not chopRunning
+						local startTime = tick()
 
-			else
-				task.wait(0.5)
+						repeat
+
+							pcall(function()
+								chopRemote:InvokeServer(bound)
+							end)
+
+							task.wait(chopDelay)
+
+							if tick() - startTime > stuckTime then
+
+								print("Tree stuck, resetting")
+
+								chopRunning = false
+								chopToggle.Text = "Auto Chop Axe : OFF"
+
+								task.wait(1.5)
+
+								chopRunning = true
+								chopToggle.Text = "Auto Chop Axe : ON"
+
+								break
+							end
+
+						until tree:GetAttribute("Destroyed") == true or not chopRunning
+
+					end
+				end
 			end
 		end
 
-		task.wait(0.1)
+		task.wait(0.05)
 
 	end
 
 end)
-
--- SPEED BOOST
-player.CharacterAdded:Connect(function(char)
-
-	local hum = char:WaitForChild("Humanoid")
-	hum.WalkSpeed = 60
-
-end)
-
-if player.Character then
-	local hum = player.Character:FindFirstChildOfClass("Humanoid")
-	if hum then
-		hum.WalkSpeed = 60
-	end
-end
