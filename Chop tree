@@ -36,7 +36,6 @@ local destroyed = false
 local minimized = false
 
 local chopDelay = 0.03
-local stuckTime = 3
 
 -- GUI
 local gui = Instance.new("ScreenGui")
@@ -163,7 +162,7 @@ task.spawn(function()
 	end
 end)
 
--- GET NEAREST TREE
+-- GET NEAREST TREE (nama bebas)
 local function getNearestTree()
 
 	local char = player.Character
@@ -175,19 +174,19 @@ local function getNearestTree()
 	local nearest
 	local dist = math.huge
 
-	for _,tree in pairs(treesFolder:GetChildren()) do
+	for _,obj in pairs(treesFolder:GetDescendants()) do
 
-		if tree:GetAttribute("Destroyed") ~= true then
+		if obj.Name == "XZBounds" and obj:IsA("BasePart") then
 
-			local bound = tree:FindFirstChild("XZBounds")
+			local tree = obj.Parent
 
-			if bound then
+			if tree:GetAttribute("Destroyed") ~= true then
 
-				local d = (root.Position - bound.Position).Magnitude
+				local d = (root.Position - obj.Position).Magnitude
 
 				if d < dist then
 					dist = d
-					nearest = bound
+					nearest = obj
 				end
 
 			end
@@ -195,35 +194,25 @@ local function getNearestTree()
 	end
 
 	return nearest
+
 end
 
--- STABLE TELEPORT
-local function moveToTree(bound)
+-- WALK TO TREE
+local function walkToTree(bound)
 
 	local char = player.Character
 	if not char then return end
 
-	local root = char:FindFirstChild("HumanoidRootPart")
 	local humanoid = char:FindFirstChildOfClass("Humanoid")
+	local root = char:FindFirstChild("HumanoidRootPart")
 
-	if not root then return end
+	if not humanoid or not root then return end
 
-	root.AssemblyLinearVelocity = Vector3.zero
-	root.AssemblyAngularVelocity = Vector3.zero
+	local target = bound.Position + Vector3.new(0,0,6)
 
-	if humanoid then
-		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-	end
+	humanoid:MoveTo(target)
 
-	local pos = bound.Position + Vector3.new(0,3,6)
-
-	char:PivotTo(CFrame.new(pos, bound.Position))
-
-	task.wait()
-
-	if humanoid then
-		humanoid:ChangeState(Enum.HumanoidStateType.Running)
-	end
+	humanoid.MoveToFinished:Wait()
 
 end
 
@@ -238,12 +227,9 @@ task.spawn(function()
 
 			if bound then
 
-				moveToTree(bound)
-
-				task.wait(0.2)
+				walkToTree(bound)
 
 				local tree = bound.Parent
-				local startTime = tick()
 
 				repeat
 
@@ -253,19 +239,30 @@ task.spawn(function()
 
 					task.wait(chopDelay)
 
-					if tick() - startTime > stuckTime then
-						break
-					end
-
 				until tree:GetAttribute("Destroyed") == true or not chopRunning
 
 			else
-				task.wait(0.3)
+				task.wait(0.5)
 			end
 		end
 
-		task.wait(0.05)
+		task.wait(0.1)
 
 	end
 
 end)
+
+-- SPEED BOOST
+player.CharacterAdded:Connect(function(char)
+
+	local hum = char:WaitForChild("Humanoid")
+	hum.WalkSpeed = 60
+
+end)
+
+if player.Character then
+	local hum = player.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.WalkSpeed = 60
+	end
+end
