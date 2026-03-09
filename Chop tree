@@ -36,7 +36,6 @@ local destroyed = false
 local minimized = false
 
 local chopDelay = 0.03
-local stuckTime = 3
 
 -- GUI
 local gui = Instance.new("ScreenGui")
@@ -147,6 +146,14 @@ chopToggle.MouseButton1Click:Connect(function()
 	chopToggle.Text = "Auto Chop Axe : "..(chopRunning and "ON" or "OFF")
 end)
 
+-- WALK SPEED BOOST
+player.CharacterAdded:Connect(function(char)
+
+	local hum = char:WaitForChild("Humanoid")
+	hum.WalkSpeed = 60
+
+end)
+
 -- AUTO BUY
 task.spawn(function()
 	while not destroyed do
@@ -197,21 +204,24 @@ local function getNearestTree()
 	return nearest
 end
 
--- TELEPORT NEAR TREE
-local function moveToTree(bound)
+-- WALK TO TREE
+local function walkToTree(bound)
 
 	local char = player.Character
 	if not char then return end
 
+	local humanoid = char:FindFirstChildOfClass("Humanoid")
 	local root = char:FindFirstChild("HumanoidRootPart")
-	if not root then return end
 
-	local pos = bound.Position + Vector3.new(0,2,4)
+	if not humanoid or not root then return end
 
-	root.AssemblyLinearVelocity = Vector3.zero
-	root.AssemblyAngularVelocity = Vector3.zero
+	local targetPos = bound.Position + Vector3.new(0,0,5)
 
-	char:PivotTo(CFrame.new(pos, bound.Position))
+	humanoid:MoveTo(targetPos)
+
+	repeat
+		task.wait(0.1)
+	until (root.Position - targetPos).Magnitude < 3 or not chopRunning
 
 end
 
@@ -226,12 +236,11 @@ task.spawn(function()
 
 			if bound then
 
-				moveToTree(bound)
+				walkToTree(bound)
 
 				task.wait(0.2)
 
 				local tree = bound.Parent
-				local startTime = tick()
 
 				repeat
 
@@ -240,10 +249,6 @@ task.spawn(function()
 					end)
 
 					task.wait(chopDelay)
-
-					if tick() - startTime > stuckTime then
-						break
-					end
 
 				until tree:GetAttribute("Destroyed") == true or not chopRunning
 
