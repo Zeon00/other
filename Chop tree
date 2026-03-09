@@ -165,7 +165,7 @@ task.spawn(function()
 	end
 end)
 
--- FAST WALK TO TREE
+-- FAST WALK (NO TELEPORT)
 local function moveToTree(bound)
 
 	local char = player.Character
@@ -176,16 +176,18 @@ local function moveToTree(bound)
 
 	if not root or not humanoid then return end
 
-	humanoid.WalkSpeed = 60
+	humanoid.WalkSpeed = 80
 
 	local dir = (bound.Position - root.Position).Unit
 	local targetPos = bound.Position - dir * 4
 
-	humanoid:MoveTo(targetPos)
+	humanoid.WalkToPoint = targetPos
+
+	local start = tick()
 
 	repeat
 		task.wait(0.05)
-	until (root.Position - bound.Position).Magnitude < 6 or not chopRunning
+	until (root.Position - bound.Position).Magnitude < 7 or tick() - start > 1
 
 end
 
