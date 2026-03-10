@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -12,20 +13,20 @@ end
 
 -- remotes
 local buyRemote = ReplicatedStorage
-	:WaitForChild("Packages")
-	:WaitForChild("Knit")
-	:WaitForChild("Services")
-	:WaitForChild("MerchantService")
-	:WaitForChild("RF")
-	:WaitForChild("BuyItem")
+:WaitForChild("Packages")
+:WaitForChild("Knit")
+:WaitForChild("Services")
+:WaitForChild("MerchantService")
+:WaitForChild("RF")
+:WaitForChild("BuyItem")
 
 local chopRemote = ReplicatedStorage
-	:WaitForChild("Packages")
-	:WaitForChild("Knit")
-	:WaitForChild("Services")
-	:WaitForChild("ChaosBreakablesService")
-	:WaitForChild("RF")
-	:WaitForChild("Clicked")
+:WaitForChild("Packages")
+:WaitForChild("Knit")
+:WaitForChild("Services")
+:WaitForChild("ChaosBreakablesService")
+:WaitForChild("RF")
+:WaitForChild("Clicked")
 
 local treesFolder = workspace.GameObjects.ChaosBreakables:WaitForChild("Axe")
 
@@ -37,9 +38,6 @@ local minimized = false
 
 local chopDelay = 0.03
 local stuckTime = 3
-
--- radius supaya tidak keluar area
-local MAX_DISTANCE = 120
 
 -- GUI
 local gui = Instance.new("ScreenGui")
@@ -53,6 +51,9 @@ frame.Size = UDim2.new(0,280,0,190)
 frame.Position = UDim2.new(0,25,0.3,0)
 frame.BackgroundColor3 = Color3.fromRGB(20,20,24)
 frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
 Instance.new("UICorner",frame).CornerRadius = UDim.new(0,14)
 
 local topBar = Instance.new("Frame")
@@ -80,7 +81,6 @@ minimize.Position = UDim2.new(1,-58,0.5,-13)
 minimize.Text = "—"
 minimize.BackgroundColor3 = Color3.fromRGB(38,38,45)
 minimize.TextColor3 = Color3.new(1,1,1)
-minimize.Font = Enum.Font.GothamBold
 Instance.new("UICorner",minimize).CornerRadius = UDim.new(0,8)
 
 local close = Instance.new("TextButton")
@@ -90,7 +90,6 @@ close.Position = UDim2.new(1,-28,0.5,-13)
 close.Text = "X"
 close.BackgroundColor3 = Color3.fromRGB(60,30,35)
 close.TextColor3 = Color3.new(1,1,1)
-close.Font = Enum.Font.GothamBold
 Instance.new("UICorner",close).CornerRadius = UDim.new(0,8)
 
 local content = Instance.new("Frame")
@@ -106,7 +105,6 @@ buyToggle.Position = UDim2.new(0,16,0,34)
 buyToggle.Text = "Auto Buy Atomic : OFF"
 buyToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
 buyToggle.TextColor3 = Color3.new(1,1,1)
-buyToggle.Font = Enum.Font.GothamMedium
 Instance.new("UICorner",buyToggle).CornerRadius = UDim.new(0,10)
 
 local chopToggle = Instance.new("TextButton")
@@ -116,7 +114,6 @@ chopToggle.Position = UDim2.new(0,16,0,86)
 chopToggle.Text = "Auto Chop Axe : OFF"
 chopToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
 chopToggle.TextColor3 = Color3.new(1,1,1)
-chopToggle.Font = Enum.Font.GothamMedium
 Instance.new("UICorner",chopToggle).CornerRadius = UDim.new(0,10)
 
 local expandedSize = UDim2.new(0,280,0,190)
@@ -124,9 +121,15 @@ local minimizedSize = UDim2.new(0,280,0,38)
 
 minimize.MouseButton1Click:Connect(function()
 	minimized = not minimized
-	frame.Size = minimized and minimizedSize or expandedSize
-	content.Visible = not minimized
-	minimize.Text = minimized and "+" or "—"
+	if minimized then
+		frame.Size = minimizedSize
+		content.Visible = false
+		minimize.Text = "+"
+	else
+		frame.Size = expandedSize
+		content.Visible = true
+		minimize.Text = "—"
+	end
 end)
 
 close.MouseButton1Click:Connect(function()
@@ -160,7 +163,7 @@ task.spawn(function()
 	end
 end)
 
--- GET NEAREST TREE WITH LIMIT
+-- GET NEAREST TREE
 local function getNearestTree()
 
 	local char = player.Character
@@ -169,8 +172,8 @@ local function getNearestTree()
 	local root = char:FindFirstChild("HumanoidRootPart")
 	if not root then return end
 
-	local nearest
-	local dist = MAX_DISTANCE
+	local nearest = nil
+	local dist = math.huge
 
 	for _,tree in pairs(treesFolder:GetChildren()) do
 
@@ -194,33 +197,22 @@ local function getNearestTree()
 	return nearest
 end
 
--- STABLE TELEPORT
+-- SAFE TELEPORT
 local function moveToTree(bound)
 
 	local char = player.Character
 	if not char then return end
 
 	local root = char:FindFirstChild("HumanoidRootPart")
-	local humanoid = char:FindFirstChildOfClass("Humanoid")
-
 	if not root then return end
+
+	local dir = (root.Position - bound.Position).Unit
+	local pos = bound.Position + dir * 6 + Vector3.new(0,2,0)
 
 	root.AssemblyLinearVelocity = Vector3.zero
 	root.AssemblyAngularVelocity = Vector3.zero
 
-	if humanoid then
-		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-	end
-
-	local pos = bound.Position + Vector3.new(0,3,6)
-
 	char:PivotTo(CFrame.new(pos, bound.Position))
-
-	task.wait()
-
-	if humanoid then
-		humanoid:ChangeState(Enum.HumanoidStateType.Running)
-	end
 
 end
 
@@ -237,10 +229,10 @@ task.spawn(function()
 
 				moveToTree(bound)
 
-				task.wait(0.2)
+				task.wait(0.15)
 
 				local tree = bound.Parent
-				local startTime = tick()
+				local start = tick()
 
 				repeat
 
@@ -250,14 +242,12 @@ task.spawn(function()
 
 					task.wait(chopDelay)
 
-					if tick() - startTime > stuckTime then
-						break
-					end
-
-				until tree:GetAttribute("Destroyed") == true or not chopRunning
+				until tree:GetAttribute("Destroyed") == true 
+				or tick()-start > stuckTime 
+				or not chopRunning
 
 			else
-				task.wait(0.3)
+				task.wait(0.2)
 			end
 		end
 
