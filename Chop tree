@@ -7,7 +7,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- remotes
 local Knit = ReplicatedStorage.Packages.Knit.Services
-
 local buyRemote = Knit.MerchantService.RF.BuyItem
 local chopRemote = Knit.ChaosBreakablesService.RF.Clicked
 local chestRemote = Knit.ChestService.RF.Open
@@ -28,6 +27,8 @@ local refineryAdd=false
 local refineryClaim=false
 local egyptSpin=false
 
+local destroyed=false
+
 -- GUI
 local gui = Instance.new("ScreenGui")
 gui.Parent = playerGui
@@ -40,19 +41,60 @@ frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 frame.Active = true
 frame.Draggable = true
 
-local y = 10
+-- TOP BAR
+local top = Instance.new("Frame")
+top.Parent = frame
+top.Size = UDim2.new(1,0,0,35)
+top.BackgroundColor3 = Color3.fromRGB(35,35,35)
+
+local title = Instance.new("TextLabel")
+title.Parent = top
+title.Size = UDim2.new(1,-70,1,0)
+title.Position = UDim2.new(0,10,0,0)
+title.BackgroundTransparency = 1
+title.Text = "Auto Farm"
+title.TextColor3 = Color3.new(1,1,1)
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- minimize
+local minimize = Instance.new("TextButton")
+minimize.Parent = top
+minimize.Size = UDim2.new(0,30,0,30)
+minimize.Position = UDim2.new(1,-65,0,2)
+minimize.Text = "-"
+minimize.BackgroundColor3 = Color3.fromRGB(60,60,60)
+minimize.TextColor3 = Color3.new(1,1,1)
+
+-- close
+local close = Instance.new("TextButton")
+close.Parent = top
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-33,0,2)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(120,40,40)
+close.TextColor3 = Color3.new(1,1,1)
+
+-- content
+local content = Instance.new("Frame")
+content.Parent = frame
+content.Position = UDim2.new(0,0,0,35)
+content.Size = UDim2.new(1,0,1,-35)
+content.BackgroundTransparency = 1
+
+-- toggle maker
+local y=10
 
 local function makeToggle(text,callback)
 
 	local btn = Instance.new("TextButton")
-	btn.Parent = frame
+	btn.Parent = content
 	btn.Size = UDim2.new(0,220,0,30)
 	btn.Position = UDim2.new(0,20,0,y)
-	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
 	btn.TextColor3 = Color3.new(1,1,1)
 	btn.Text = text.." : OFF"
 
-	local state = false
+	local state=false
 
 	btn.MouseButton1Click:Connect(function()
 		state = not state
@@ -73,7 +115,28 @@ makeToggle("Auto Refinery Add",function(v) refineryAdd=v end)
 makeToggle("Auto Refinery Claim",function(v) refineryClaim=v end)
 makeToggle("Auto Egyptian Spin",function(v) egyptSpin=v end)
 
--- get nearest tree
+-- minimize
+local minimized=false
+minimize.MouseButton1Click:Connect(function()
+
+	minimized = not minimized
+	content.Visible = not minimized
+
+	if minimized then
+		frame.Size = UDim2.new(0,260,0,35)
+	else
+		frame.Size = UDim2.new(0,260,0,360)
+	end
+
+end)
+
+-- destroy
+close.MouseButton1Click:Connect(function()
+	destroyed=true
+	gui:Destroy()
+end)
+
+-- nearest tree
 local function getNearestTree()
 
 	local char = player.Character
@@ -93,7 +156,7 @@ local function getNearestTree()
 
 			if bound then
 
-				local d = (root.Position - bound.Position).Magnitude
+				local d = (root.Position-bound.Position).Magnitude
 
 				if d < dist then
 					dist = d
@@ -122,10 +185,10 @@ local function moveToTree(bound)
 
 end
 
--- loop
+-- main loop
 task.spawn(function()
 
-	while true do
+	while not destroyed do
 
 		if buy then
 			for i=1,13 do
@@ -154,7 +217,7 @@ task.spawn(function()
 
 					task.wait(0.03)
 
-				until tree:GetAttribute("Destroyed") == true or not chop
+				until tree:GetAttribute("Destroyed")==true or not chop
 
 			end
 
