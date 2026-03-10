@@ -1,15 +1,13 @@
 ```lua
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- remove old gui
-local old = playerGui:FindFirstChild("ModernFarmGUI")
-if old then old:Destroy() end
-
 -- remotes
 local Knit = ReplicatedStorage.Packages.Knit.Services
+
 local buyRemote = Knit.MerchantService.RF.BuyItem
 local chopRemote = Knit.ChaosBreakablesService.RF.Clicked
 local chestRemote = Knit.ChestService.RF.Open
@@ -18,239 +16,189 @@ local giftRemote = Knit.GiftMachineService.RF.Claim
 local refineryAddRemote = Knit.RefineryService.RF.AddAll
 local refineryClaimRemote = Knit.RefineryService.RF.Claim
 
-local treesFolder = workspace.GameObjects.ChaosBreakables:WaitForChild("Axe")
+local treesFolder = workspace.GameObjects.ChaosBreakables.Axe
 
 -- states
-local states = {
-buy=false,
-chop=false,
-chest=false,
-chaosSpin=false,
-gift=false,
-refineryAdd=false,
-refineryClaim=false,
-egyptSpin=false
-}
-
-local destroyed=false
-local chopDelay=0.03
+local buy=false
+local chop=false
+local chest=false
+local chaosSpin=false
+local gift=false
+local refineryAdd=false
+local refineryClaim=false
+local egyptSpin=false
 
 -- GUI
 local gui = Instance.new("ScreenGui")
-gui.Name="ModernFarmGUI"
-gui.Parent=playerGui
-gui.ResetOnSpawn=false
+gui.Parent = playerGui
 
 local frame = Instance.new("Frame")
-frame.Parent=gui
-frame.Size=UDim2.new(0,320,0,380)
-frame.Position=UDim2.new(0,40,0.3,0)
-frame.BackgroundColor3=Color3.fromRGB(25,25,30)
-frame.Active=true
-frame.Draggable=true
-Instance.new("UICorner",frame).CornerRadius=UDim.new(0,14)
+frame.Parent = gui
+frame.Size = UDim2.new(0,260,0,360)
+frame.Position = UDim2.new(0,50,0.3,0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Active = true
+frame.Draggable = true
 
--- topbar
-local top = Instance.new("Frame",frame)
-top.Size=UDim2.new(1,0,0,40)
-top.BackgroundColor3=Color3.fromRGB(18,18,22)
-Instance.new("UICorner",top).CornerRadius=UDim.new(0,14)
+local y = 10
 
-local title = Instance.new("TextLabel",top)
-title.BackgroundTransparency=1
-title.Size=UDim2.new(1,-80,1,0)
-title.Position=UDim2.new(0,12,0,0)
-title.Font=Enum.Font.GothamBold
-title.Text="Modern Auto Farm"
-title.TextSize=16
-title.TextColor3=Color3.new(1,1,1)
-title.TextXAlignment=Enum.TextXAlignment.Left
+local function makeToggle(text,callback)
 
-local close = Instance.new("TextButton",top)
-close.Size=UDim2.new(0,28,0,28)
-close.Position=UDim2.new(1,-34,0.5,-14)
-close.Text="X"
+	local btn = Instance.new("TextButton")
+	btn.Parent = frame
+	btn.Size = UDim2.new(0,220,0,30)
+	btn.Position = UDim2.new(0,20,0,y)
+	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Text = text.." : OFF"
 
-local minimize = Instance.new("TextButton",top)
-minimize.Size=UDim2.new(0,28,0,28)
-minimize.Position=UDim2.new(1,-66,0.5,-14)
-minimize.Text="-"
+	local state = false
 
--- scroll
-local scroll = Instance.new("ScrollingFrame",frame)
-scroll.Position=UDim2.new(0,0,0,40)
-scroll.Size=UDim2.new(1,0,1,-40)
-scroll.CanvasSize=UDim2.new(0,0,0,600)
-scroll.ScrollBarThickness=6
-scroll.BackgroundTransparency=1
+	btn.MouseButton1Click:Connect(function()
+		state = not state
+		btn.Text = text.." : "..(state and "ON" or "OFF")
+		callback(state)
+	end)
 
-local layout = Instance.new("UIListLayout",scroll)
-layout.Padding=UDim.new(0,6)
-
--- toggle creator
-local function createToggle(name,key)
-
-local btn = Instance.new("TextButton")
-btn.Size=UDim2.new(1,-20,0,38)
-btn.Position=UDim2.new(0,10,0,0)
-btn.BackgroundColor3=Color3.fromRGB(40,40,48)
-btn.Text=name.." : OFF"
-btn.TextColor3=Color3.new(1,1,1)
-btn.Font=Enum.Font.GothamMedium
-btn.Parent=scroll
-Instance.new("UICorner",btn).CornerRadius=UDim.new(0,10)
-
-btn.MouseButton1Click:Connect(function()
-states[key]=not states[key]
-btn.Text=name.." : "..(states[key] and "ON" or "OFF")
-end)
+	y = y + 35
 
 end
 
-createToggle("Auto Buy Atomic","buy")
-createToggle("Auto Chop Axe","chop")
-createToggle("Auto Atomic Chest","chest")
-createToggle("Auto Chaos Spin","chaosSpin")
-createToggle("Auto Gift Claim","gift")
-createToggle("Auto Refinery Add","refineryAdd")
-createToggle("Auto Refinery Claim","refineryClaim")
-createToggle("Auto Egyptian Spin","egyptSpin")
-
--- close / minimize
-close.MouseButton1Click:Connect(function()
-destroyed=true
-gui:Destroy()
-end)
-
-minimize.MouseButton1Click:Connect(function()
-scroll.Visible = not scroll.Visible
-end)
+makeToggle("Auto Buy Atomic",function(v) buy=v end)
+makeToggle("Auto Chop Axe",function(v) chop=v end)
+makeToggle("Auto Atomic Chest",function(v) chest=v end)
+makeToggle("Auto Chaos Spin",function(v) chaosSpin=v end)
+makeToggle("Auto Gift Claim",function(v) gift=v end)
+makeToggle("Auto Refinery Add",function(v) refineryAdd=v end)
+makeToggle("Auto Refinery Claim",function(v) refineryClaim=v end)
+makeToggle("Auto Egyptian Spin",function(v) egyptSpin=v end)
 
 -- get nearest tree
 local function getNearestTree()
 
-local char=player.Character
-if not char then return end
+	local char = player.Character
+	if not char then return end
 
-local root=char:FindFirstChild("HumanoidRootPart")
-if not root then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
 
-local nearest=nil
-local dist=math.huge
+	local nearest
+	local dist = math.huge
 
-for _,tree in pairs(treesFolder:GetChildren()) do
-if tree:GetAttribute("Destroyed")~=true then
-local bound=tree:FindFirstChild("XZBounds")
-if bound then
-local d=(root.Position-bound.Position).Magnitude
-if d<dist then
-dist=d
-nearest=bound
+	for _,tree in pairs(treesFolder:GetChildren()) do
+
+		if tree:GetAttribute("Destroyed") ~= true then
+
+			local bound = tree:FindFirstChild("XZBounds")
+
+			if bound then
+
+				local d = (root.Position - bound.Position).Magnitude
+
+				if d < dist then
+					dist = d
+					nearest = bound
+				end
+
+			end
+
+		end
+
+	end
+
+	return nearest
+
 end
-end
-end
-end
 
-return nearest
-
-end
-
--- move to tree
 local function moveToTree(bound)
 
-local char=player.Character
-if not char then return end
+	local char = player.Character
+	if not char then return end
 
-local root=char:FindFirstChild("HumanoidRootPart")
-if not root then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
 
-local dir=(root.Position-bound.Position).Unit
-local pos=bound.Position+dir*6+Vector3.new(0,2,0)
-
-root.AssemblyLinearVelocity=Vector3.zero
-root.AssemblyAngularVelocity=Vector3.zero
-
-char:PivotTo(CFrame.new(pos,bound.Position))
+	root.CFrame = bound.CFrame + Vector3.new(0,2,6)
 
 end
 
--- main loop
+-- loop
 task.spawn(function()
 
-while not destroyed do
+	while true do
 
-if states.buy then
-for i=1,13 do
-pcall(function()
-buyRemote:InvokeServer("Atomic",i)
-end)
-task.wait(0.15)
-end
-end
+		if buy then
+			for i=1,13 do
+				pcall(function()
+					buyRemote:InvokeServer("Atomic",i)
+				end)
+				task.wait(0.15)
+			end
+		end
 
-if states.chop then
+		if chop then
 
-local bound=getNearestTree()
+			local bound = getNearestTree()
 
-if bound then
+			if bound then
 
-moveToTree(bound)
-task.wait(0.15)
+				moveToTree(bound)
 
-local tree=bound.Parent
+				local tree = bound.Parent
 
-repeat
+				repeat
 
-pcall(function()
-chopRemote:InvokeServer(bound)
-end)
+					pcall(function()
+						chopRemote:InvokeServer(bound)
+					end)
 
-task.wait(chopDelay)
+					task.wait(0.03)
 
-until tree:GetAttribute("Destroyed")==true or not states.chop
+				until tree:GetAttribute("Destroyed") == true or not chop
 
-end
-end
+			end
 
-if states.chest then
-pcall(function()
-chestRemote:InvokeServer("AtomicChest")
-end)
-end
+		end
 
-if states.chaosSpin then
-pcall(function()
-spinRemote:InvokeServer("Chaos Fortune","x25")
-end)
-end
+		if chest then
+			pcall(function()
+				chestRemote:InvokeServer("AtomicChest")
+			end)
+		end
 
-if states.gift then
-pcall(function()
-giftRemote:InvokeServer("23")
-end)
-end
+		if chaosSpin then
+			pcall(function()
+				spinRemote:InvokeServer("Chaos Fortune","x25")
+			end)
+		end
 
-if states.refineryAdd then
-pcall(function()
-refineryAddRemote:InvokeServer("WildWest")
-end)
-end
+		if gift then
+			pcall(function()
+				giftRemote:InvokeServer("23")
+			end)
+		end
 
-if states.refineryClaim then
-pcall(function()
-refineryClaimRemote:InvokeServer("WildWest")
-end)
-end
+		if refineryAdd then
+			pcall(function()
+				refineryAddRemote:InvokeServer("WildWest")
+			end)
+		end
 
-if states.egyptSpin then
-pcall(function()
-spinRemote:InvokeServer("Egyptian Fortune","x25")
-end)
-end
+		if refineryClaim then
+			pcall(function()
+				refineryClaimRemote:InvokeServer("WildWest")
+			end)
+		end
 
-task.wait(1)
+		if egyptSpin then
+			pcall(function()
+				spinRemote:InvokeServer("Egyptian Fortune","x25")
+			end)
+		end
 
-end
+		task.wait(1)
+
+	end
 
 end)
 ```
