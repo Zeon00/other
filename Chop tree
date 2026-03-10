@@ -1,4 +1,4 @@
-```lua
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -264,4 +264,4 @@ task.spawn(function()
 	end
 
 end)
-```
+
