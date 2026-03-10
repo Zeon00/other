@@ -1,6 +1,6 @@
+```lua
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -12,184 +12,148 @@ if oldGui then
 end
 
 -- remotes
-local buyRemote = ReplicatedStorage
-:WaitForChild("Packages")
-:WaitForChild("Knit")
-:WaitForChild("Services")
-:WaitForChild("MerchantService")
-:WaitForChild("RF")
-:WaitForChild("BuyItem")
-
-local chopRemote = ReplicatedStorage
-:WaitForChild("Packages")
-:WaitForChild("Knit")
-:WaitForChild("Services")
-:WaitForChild("ChaosBreakablesService")
-:WaitForChild("RF")
-:WaitForChild("Clicked")
+local buyRemote = ReplicatedStorage.Packages.Knit.Services.MerchantService.RF.BuyItem
+local chopRemote = ReplicatedStorage.Packages.Knit.Services.ChaosBreakablesService.RF.Clicked
+local chestRemote = ReplicatedStorage.Packages.Knit.Services.ChestService.RF.Open
+local spinRemote = ReplicatedStorage.Packages.Knit.Services.SpinnerService.RF.Spin
+local giftRemote = ReplicatedStorage.Packages.Knit.Services.GiftMachineService.RF.Claim
+local refineryAddRemote = ReplicatedStorage.Packages.Knit.Services.RefineryService.RF.AddAll
+local refineryClaimRemote = ReplicatedStorage.Packages.Knit.Services.RefineryService.RF.Claim
 
 local treesFolder = workspace.GameObjects.ChaosBreakables:WaitForChild("Axe")
 
 -- states
-local buyRunning = false
-local chopRunning = false
-local destroyed = false
-local minimized = false
+local buyRunning=false
+local chopRunning=false
+local chestRunning=false
+local chaosSpinRunning=false
+local giftRunning=false
+local refineryAddRunning=false
+local refineryClaimRunning=false
+local egyptSpinRunning=false
 
-local chopDelay = 0.03
-local stuckTime = 3
+local destroyed=false
+
+local chopDelay=0.03
+local stuckTime=3
 
 -- GUI
-local gui = Instance.new("ScreenGui")
-gui.Name = "AutoFarmModernGUI"
-gui.ResetOnSpawn = false
-gui.Parent = playerGui
+local gui=Instance.new("ScreenGui")
+gui.Name="AutoFarmModernGUI"
+gui.ResetOnSpawn=false
+gui.Parent=playerGui
 
-local frame = Instance.new("Frame")
-frame.Parent = gui
-frame.Size = UDim2.new(0,280,0,190)
-frame.Position = UDim2.new(0,25,0.3,0)
-frame.BackgroundColor3 = Color3.fromRGB(20,20,24)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
+local frame=Instance.new("Frame")
+frame.Parent=gui
+frame.Size=UDim2.new(0,300,0,360)
+frame.Position=UDim2.new(0,25,0.3,0)
+frame.BackgroundColor3=Color3.fromRGB(20,20,24)
+frame.Active=true
+frame.Draggable=true
 
-Instance.new("UICorner",frame).CornerRadius = UDim.new(0,14)
+Instance.new("UICorner",frame).CornerRadius=UDim.new(0,14)
 
-local topBar = Instance.new("Frame")
-topBar.Parent = frame
-topBar.Size = UDim2.new(1,0,0,38)
-topBar.BackgroundColor3 = Color3.fromRGB(15,15,18)
-topBar.BorderSizePixel = 0
-Instance.new("UICorner",topBar).CornerRadius = UDim.new(0,14)
+local topBar=Instance.new("Frame")
+topBar.Parent=frame
+topBar.Size=UDim2.new(1,0,0,38)
+topBar.BackgroundColor3=Color3.fromRGB(15,15,18)
+Instance.new("UICorner",topBar).CornerRadius=UDim.new(0,14)
 
-local title = Instance.new("TextLabel")
-title.Parent = topBar
-title.BackgroundTransparency = 1
-title.Position = UDim2.new(0,14,0,0)
-title.Size = UDim2.new(1,-90,1,0)
-title.Text = "Modern Auto Farm"
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 15
-title.TextXAlignment = Enum.TextXAlignment.Left
+local title=Instance.new("TextLabel")
+title.Parent=topBar
+title.BackgroundTransparency=1
+title.Position=UDim2.new(0,14,0,0)
+title.Size=UDim2.new(1,-90,1,0)
+title.Text="Modern Auto Farm"
+title.TextColor3=Color3.new(1,1,1)
+title.Font=Enum.Font.GothamBold
+title.TextSize=15
+title.TextXAlignment=Enum.TextXAlignment.Left
 
-local minimize = Instance.new("TextButton")
-minimize.Parent = topBar
-minimize.Size = UDim2.new(0,26,0,26)
-minimize.Position = UDim2.new(1,-58,0.5,-13)
-minimize.Text = "—"
-minimize.BackgroundColor3 = Color3.fromRGB(38,38,45)
-minimize.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner",minimize).CornerRadius = UDim.new(0,8)
+local minimize=Instance.new("TextButton")
+minimize.Parent=topBar
+minimize.Size=UDim2.new(0,26,0,26)
+minimize.Position=UDim2.new(1,-58,0.5,-13)
+minimize.Text="—"
 
-local close = Instance.new("TextButton")
-close.Parent = topBar
-close.Size = UDim2.new(0,26,0,26)
-close.Position = UDim2.new(1,-28,0.5,-13)
-close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(60,30,35)
-close.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner",close).CornerRadius = UDim.new(0,8)
+local close=Instance.new("TextButton")
+close.Parent=topBar
+close.Size=UDim2.new(0,26,0,26)
+close.Position=UDim2.new(1,-28,0.5,-13)
+close.Text="X"
 
-local content = Instance.new("Frame")
-content.Parent = frame
-content.BackgroundTransparency = 1
-content.Position = UDim2.new(0,0,0,38)
-content.Size = UDim2.new(1,0,1,-38)
+local content=Instance.new("Frame")
+content.Parent=frame
+content.BackgroundTransparency=1
+content.Position=UDim2.new(0,0,0,38)
+content.Size=UDim2.new(1,0,1,-38)
 
-local buyToggle = Instance.new("TextButton")
-buyToggle.Parent = content
-buyToggle.Size = UDim2.new(1,-32,0,42)
-buyToggle.Position = UDim2.new(0,16,0,34)
-buyToggle.Text = "Auto Buy Atomic : OFF"
-buyToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
-buyToggle.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner",buyToggle).CornerRadius = UDim.new(0,10)
+local layout=Instance.new("UIListLayout")
+layout.Parent=content
+layout.Padding=UDim.new(0,6)
 
-local chopToggle = Instance.new("TextButton")
-chopToggle.Parent = content
-chopToggle.Size = UDim2.new(1,-32,0,42)
-chopToggle.Position = UDim2.new(0,16,0,86)
-chopToggle.Text = "Auto Chop Axe : OFF"
-chopToggle.BackgroundColor3 = Color3.fromRGB(35,35,42)
-chopToggle.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner",chopToggle).CornerRadius = UDim.new(0,10)
+local function createToggle(text,callback)
 
-local expandedSize = UDim2.new(0,280,0,190)
-local minimizedSize = UDim2.new(0,280,0,38)
+	local btn=Instance.new("TextButton")
+	btn.Size=UDim2.new(1,-20,0,36)
+	btn.Position=UDim2.new(0,10,0,0)
+	btn.BackgroundColor3=Color3.fromRGB(35,35,42)
+	btn.TextColor3=Color3.new(1,1,1)
+	btn.Font=Enum.Font.GothamMedium
+	btn.Text=text.." : OFF"
+	btn.Parent=content
 
-minimize.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	if minimized then
-		frame.Size = minimizedSize
-		content.Visible = false
-		minimize.Text = "+"
-	else
-		frame.Size = expandedSize
-		content.Visible = true
-		minimize.Text = "—"
-	end
-end)
+	Instance.new("UICorner",btn).CornerRadius=UDim.new(0,10)
+
+	local state=false
+
+	btn.MouseButton1Click:Connect(function()
+		state=not state
+		btn.Text=text.." : "..(state and "ON" or "OFF")
+		callback(state)
+	end)
+
+end
+
+createToggle("Auto Buy Atomic",function(v) buyRunning=v end)
+createToggle("Auto Chop Axe",function(v) chopRunning=v end)
+createToggle("Auto Atomic Chest",function(v) chestRunning=v end)
+createToggle("Auto Chaos Spin",function(v) chaosSpinRunning=v end)
+createToggle("Auto Gift Claim",function(v) giftRunning=v end)
+createToggle("Auto Refinery Add",function(v) refineryAddRunning=v end)
+createToggle("Auto Refinery Claim",function(v) refineryClaimRunning=v end)
+createToggle("Auto Egyptian Spin",function(v) egyptSpinRunning=v end)
 
 close.MouseButton1Click:Connect(function()
-	destroyed = true
+	destroyed=true
 	gui:Destroy()
 end)
 
-buyToggle.MouseButton1Click:Connect(function()
-	buyRunning = not buyRunning
-	buyToggle.Text = "Auto Buy Atomic : "..(buyRunning and "ON" or "OFF")
+minimize.MouseButton1Click:Connect(function()
+	content.Visible=not content.Visible
 end)
 
-chopToggle.MouseButton1Click:Connect(function()
-	chopRunning = not chopRunning
-	chopToggle.Text = "Auto Chop Axe : "..(chopRunning and "ON" or "OFF")
-end)
-
--- AUTO BUY
-task.spawn(function()
-	while not destroyed do
-		if buyRunning then
-			for i=1,13 do
-				if not buyRunning then break end
-				pcall(function()
-					buyRemote:InvokeServer("Atomic",i)
-				end)
-				task.wait(0.15)
-			end
-		end
-		task.wait(0.1)
-	end
-end)
-
--- GET NEAREST TREE
+-- get tree
 local function getNearestTree()
 
-	local char = player.Character
+	local char=player.Character
 	if not char then return end
 
-	local root = char:FindFirstChild("HumanoidRootPart")
+	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return end
 
-	local nearest = nil
-	local dist = math.huge
+	local nearest=nil
+	local dist=math.huge
 
 	for _,tree in pairs(treesFolder:GetChildren()) do
-
-		if tree:GetAttribute("Destroyed") ~= true then
-
-			local bound = tree:FindFirstChild("XZBounds")
-
+		if tree:GetAttribute("Destroyed")~=true then
+			local bound=tree:FindFirstChild("XZBounds")
 			if bound then
-
-				local d = (root.Position - bound.Position).Magnitude
-
-				if d < dist then
-					dist = d
-					nearest = bound
+				local d=(root.Position-bound.Position).Magnitude
+				if d<dist then
+					dist=d
+					nearest=bound
 				end
-
 			end
 		end
 	end
@@ -197,33 +161,41 @@ local function getNearestTree()
 	return nearest
 end
 
--- SAFE TELEPORT
 local function moveToTree(bound)
 
-	local char = player.Character
+	local char=player.Character
 	if not char then return end
 
-	local root = char:FindFirstChild("HumanoidRootPart")
+	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return end
 
-	local dir = (root.Position - bound.Position).Unit
-	local pos = bound.Position + dir * 6 + Vector3.new(0,2,0)
+	local dir=(root.Position-bound.Position).Unit
+	local pos=bound.Position+dir*6+Vector3.new(0,2,0)
 
-	root.AssemblyLinearVelocity = Vector3.zero
-	root.AssemblyAngularVelocity = Vector3.zero
+	root.AssemblyLinearVelocity=Vector3.zero
+	root.AssemblyAngularVelocity=Vector3.zero
 
-	char:PivotTo(CFrame.new(pos, bound.Position))
+	char:PivotTo(CFrame.new(pos,bound.Position))
 
 end
 
--- AUTO CHOP
+-- main loop
 task.spawn(function()
 
 	while not destroyed do
 
+		if buyRunning then
+			for i=1,13 do
+				pcall(function()
+					buyRemote:InvokeServer("Atomic",i)
+				end)
+				task.wait(0.15)
+			end
+		end
+
 		if chopRunning then
 
-			local bound = getNearestTree()
+			local bound=getNearestTree()
 
 			if bound then
 
@@ -231,8 +203,8 @@ task.spawn(function()
 
 				task.wait(0.15)
 
-				local tree = bound.Parent
-				local start = tick()
+				local tree=bound.Parent
+				local start=tick()
 
 				repeat
 
@@ -242,17 +214,51 @@ task.spawn(function()
 
 					task.wait(chopDelay)
 
-				until tree:GetAttribute("Destroyed") == true 
-				or tick()-start > stuckTime 
-				or not chopRunning
+				until tree:GetAttribute("Destroyed")==true
+				or tick()-start>stuckTime
 
-			else
-				task.wait(0.2)
 			end
 		end
 
-		task.wait(0.05)
+		if chestRunning then
+			pcall(function()
+				chestRemote:InvokeServer("AtomicChest")
+			end)
+		end
+
+		if chaosSpinRunning then
+			pcall(function()
+				spinRemote:InvokeServer("Chaos Fortune","x25")
+			end)
+		end
+
+		if giftRunning then
+			pcall(function()
+				giftRemote:InvokeServer("23")
+			end)
+		end
+
+		if refineryAddRunning then
+			pcall(function()
+				refineryAddRemote:InvokeServer("WildWest")
+			end)
+		end
+
+		if refineryClaimRunning then
+			pcall(function()
+				refineryClaimRemote:InvokeServer("WildWest")
+			end)
+		end
+
+		if egyptSpinRunning then
+			pcall(function()
+				spinRemote:InvokeServer("Egyptian Fortune","x25")
+			end)
+		end
+
+		task.wait(1)
 
 	end
 
 end)
+```
