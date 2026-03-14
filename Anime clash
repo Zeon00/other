@@ -1,0 +1,174 @@
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local remote = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Events"):WaitForChild("RemoteEvent")
+
+-- remove old gui
+if playerGui:FindFirstChild("FarmControllerGUI") then
+	playerGui.FarmControllerGUI:Destroy()
+end
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "FarmControllerGUI"
+gui.Parent = playerGui
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame",gui)
+frame.Size = UDim2.new(0,240,0,170)
+frame.Position = UDim2.new(0.4,0,0.4,0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner",frame)
+
+local title = Instance.new("TextLabel",frame)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "Farm Controller"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+
+-- destroy
+local destroy = Instance.new("TextButton",frame)
+destroy.Size = UDim2.new(0,30,0,30)
+destroy.Position = UDim2.new(1,-30,0,0)
+destroy.Text = "X"
+destroy.BackgroundColor3 = Color3.fromRGB(170,50,50)
+destroy.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner",destroy)
+
+destroy.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+-- minimize
+local minimize = Instance.new("TextButton",frame)
+minimize.Size = UDim2.new(0,30,0,30)
+minimize.Position = UDim2.new(1,-60,0,0)
+minimize.Text = "-"
+minimize.BackgroundColor3 = Color3.fromRGB(70,70,70)
+minimize.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner",minimize)
+
+local minimized=false
+
+minimize.MouseButton1Click:Connect(function()
+
+	minimized = not minimized
+
+	if minimized then
+		frame.Size = UDim2.new(0,240,0,30)
+	else
+		frame.Size = UDim2.new(0,240,0,170)
+	end
+
+end)
+
+-- TELEPORT TOGGLE
+local tpToggle = Instance.new("TextButton",frame)
+tpToggle.Size = UDim2.new(0,180,0,40)
+tpToggle.Position = UDim2.new(0.5,-90,0.35,0)
+tpToggle.Text = "Teleport OFF"
+tpToggle.BackgroundColor3 = Color3.fromRGB(170,70,70)
+tpToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner",tpToggle)
+
+local tpRunning=false
+
+tpToggle.MouseButton1Click:Connect(function()
+
+	tpRunning = not tpRunning
+
+	if tpRunning then
+		tpToggle.Text="Teleport ON"
+		tpToggle.BackgroundColor3 = Color3.fromRGB(60,170,90)
+	else
+		tpToggle.Text="Teleport OFF"
+		tpToggle.BackgroundColor3 = Color3.fromRGB(170,70,70)
+	end
+
+end)
+
+-- ATTACK TOGGLE
+local atkToggle = Instance.new("TextButton",frame)
+atkToggle.Size = UDim2.new(0,180,0,40)
+atkToggle.Position = UDim2.new(0.5,-90,0.65,0)
+atkToggle.Text = "Attack OFF"
+atkToggle.BackgroundColor3 = Color3.fromRGB(170,70,70)
+atkToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner",atkToggle)
+
+local atkRunning=false
+
+atkToggle.MouseButton1Click:Connect(function()
+
+	atkRunning = not atkRunning
+
+	if atkRunning then
+		atkToggle.Text="Attack ON"
+		atkToggle.BackgroundColor3 = Color3.fromRGB(60,170,90)
+	else
+		atkToggle.Text="Attack OFF"
+		atkToggle.BackgroundColor3 = Color3.fromRGB(170,70,70)
+	end
+
+end)
+
+-- TELEPORT LOOP
+task.spawn(function()
+
+	while task.wait(0.5) do
+
+		if tpRunning then
+
+			for _,enemy in pairs(workspace.Enemies:GetChildren()) do
+
+				local root = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("PrimaryPart")
+
+				if root then
+					hrp.CFrame = root.CFrame * CFrame.new(0,0,3)
+					task.wait(0.5)
+				end
+
+			end
+
+		end
+
+	end
+
+end)
+
+-- ATTACK LOOP
+task.spawn(function()
+
+	while task.wait(0.05) do
+
+		if atkRunning then
+
+			local args = {
+				{
+					{
+						Params = {},
+						Path = "Attack"
+					}
+				}
+			}
+
+			for i=1,40 do
+				remote:FireServer(unpack(args))
+			end
+
+		end
+
+	end
+
+end)
