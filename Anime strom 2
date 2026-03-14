@@ -1,0 +1,233 @@
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local inputRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Input")
+local bossRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("BossRush"):WaitForChild("BossRushStart")
+
+-- remove old gui
+if playerGui:FindFirstChild("FarmGUI") then
+	playerGui.FarmGUI:Destroy()
+end
+
+-- states
+local autoStrength = false
+local autoHit = false
+local bossFarm = false
+local trialTeleport = false
+
+-- uuid cache
+local uuidCache = {}
+
+-- GUI
+local gui = Instance.new("ScreenGui",playerGui)
+gui.Name = "FarmGUI"
+
+local frame = Instance.new("Frame",gui)
+frame.Size = UDim2.new(0,250,0,200)
+frame.Position = UDim2.new(0.5,-125,0.5,-100)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Active = true
+frame.Draggable = true
+
+local title = Instance.new("TextLabel",frame)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundColor3 = Color3.fromRGB(40,40,40)
+title.Text = "All Farm Panel"
+title.TextColor3 = Color3.new(1,1,1)
+
+local function makeToggle(text,pos)
+	local b = Instance.new("TextButton",frame)
+	b.Size = UDim2.new(1,-20,0,35)
+	b.Position = UDim2.new(0,10,0,pos)
+	b.Text = text.." OFF"
+	b.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	b.TextColor3 = Color3.new(1,1,1)
+	return b
+end
+
+local strengthToggle = makeToggle("Auto Strength",40)
+local hitToggle = makeToggle("Auto Hit Monster",80)
+local bossToggle = makeToggle("Auto BossRush",120)
+local trialToggle = makeToggle("Teleport Trial Mob",160)
+
+local close = Instance.new("TextButton",frame)
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-30,0,0)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(120,0,0)
+close.TextColor3 = Color3.new(1,1,1)
+
+close.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+-- toggles
+strengthToggle.MouseButton1Click:Connect(function()
+	autoStrength = not autoStrength
+	if autoStrength then
+		autoHit = false
+		hitToggle.Text = "Auto Hit Monster OFF"
+	end
+	strengthToggle.Text = "Auto Strength "..(autoStrength and "ON" or "OFF")
+end)
+
+hitToggle.MouseButton1Click:Connect(function()
+	autoHit = not autoHit
+	if autoHit then
+		autoStrength = false
+		strengthToggle.Text = "Auto Strength OFF"
+	end
+	hitToggle.Text = "Auto Hit Monster "..(autoHit and "ON" or "OFF")
+end)
+
+bossToggle.MouseButton1Click:Connect(function()
+	bossFarm = not bossFarm
+	bossToggle.Text = "Auto BossRush "..(bossFarm and "ON" or "OFF")
+end)
+
+trialToggle.MouseButton1Click:Connect(function()
+	trialTeleport = not trialTeleport
+	trialToggle.Text = "Teleport Trial Mob "..(trialTeleport and "ON" or "OFF")
+end)
+
+-- uuid scan
+task.spawn(function()
+	while task.wait(3) do
+		table.clear(uuidCache)
+		for _,v in pairs(workspace:GetDescendants()) do
+			local id = v:GetAttribute("UniqueId")
+			if id then
+				table.insert(uuidCache,id)
+			end
+		end
+	end
+end)
+
+-- teleport trial mobs
+local function teleportTrial()
+
+	local char = player.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+	local trial = workspace:FindFirstChild("TrialRoomNpc")
+	if not trial or not hrp then return end
+
+	local easy = trial:FindFirstChild("EasyTrial")
+	if not easy then return end
+
+	for _,mob in pairs(easy:GetDescendants()) do
+
+		if mob:IsA("Model") and mob:FindFirstChild("HumanoidRootPart") then
+			hrp.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0,0,-6)
+			task.wait(0.4)
+		end
+
+	end
+
+end
+
+-- get boss
+local function getBoss()
+
+	local path = workspace:FindFirstChild("BossRushNpc")
+	if not path then return end
+
+	local mode = path:FindFirstChild("DbzBossRush")
+	if not mode then return end
+
+	local folder = mode:FindFirstChild("SsjRoseGoku")
+	if not folder then return end
+
+	return folder:FindFirstChild("SsjRoseGoku")
+
+end
+
+local function teleportBoss()
+
+	local char = player.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	local boss = getBoss()
+
+	if hrp and boss and boss:FindFirstChild("HumanoidRootPart") then
+		hrp.CFrame = boss.HumanoidRootPart.CFrame * CFrame.new(0,0,-6)
+	end
+
+end
+
+-- main loop
+task.spawn(function()
+
+	while task.wait(0.1) do
+
+		if autoStrength then
+			pcall(function()
+				inputRemote:FireServer("GainStrength")
+			end)
+		end
+
+		if autoHit and #uuidCache > 0 then
+			pcall(function()
+				inputRemote:FireServer("GainStrength",uuidCache)
+			end)
+		end
+
+	end
+
+end)
+
+-- boss farm loop
+task.spawn(function()
+
+	while task.wait(1) do
+
+		if bossFarm then
+
+			bossRemote:FireServer("StartUi","DbzBossRush")
+
+			task.wait(3)
+
+			bossRemote:FireServer("ForceStart","DbzBossRush")
+
+			task.wait(5)
+
+			teleportBoss()
+
+			local boss = getBoss()
+
+			while boss and boss.Parent and bossFarm do
+
+				if boss:FindFirstChild("Humanoid") then
+					if boss.Humanoid.Health <= 0 then
+						break
+					end
+				end
+
+				task.wait(0.5)
+
+			end
+
+			task.wait(3)
+
+		end
+
+	end
+
+end)
+
+-- trial teleport loop
+task.spawn(function()
+
+	while task.wait(1) do
+
+		if trialTeleport then
+			teleportTrial()
+		end
+
+	end
+
+end)
