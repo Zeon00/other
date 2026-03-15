@@ -51,6 +51,13 @@ local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/ot
 })
 GUI:CreateButton({
     parent = main, 
+    text = "Auto egg Intermission", 
+    callback = function()
+local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/other/refs/heads/main/egg%20arm"))()
+    end
+})
+GUI:CreateButton({
+    parent = main, 
     text = "Teleport to Shovel", 
     callback = function()
 game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-7339.826171875, 5.068718433380127, 7966.89697265625)
