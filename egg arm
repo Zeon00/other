@@ -1,0 +1,142 @@
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- remove old gui
+if playerGui:FindFirstChild("SpinnerEggGUI") then
+	playerGui.SpinnerEggGUI:Destroy()
+end
+
+-- variables
+local spinToggle = false
+local eggToggle = false
+
+--// GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "SpinnerEggGUI"
+gui.Parent = playerGui
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame")
+frame.Parent = gui
+frame.Size = UDim2.new(0,260,0,150)
+frame.Position = UDim2.new(0.5,-130,0.4,0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
+local corner = Instance.new("UICorner",frame)
+corner.CornerRadius = UDim.new(0,8)
+
+-- title
+local title = Instance.new("TextLabel")
+title.Parent = frame
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "Spinner & Egg GUI"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+
+-- destroy button
+local close = Instance.new("TextButton")
+close.Parent = frame
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-30,0,0)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(170,0,0)
+close.TextColor3 = Color3.new(1,1,1)
+close.Font = Enum.Font.GothamBold
+close.TextSize = 14
+Instance.new("UICorner",close)
+
+close.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+-- minimize
+local minimize = Instance.new("TextButton")
+minimize.Parent = frame
+minimize.Size = UDim2.new(0,30,0,30)
+minimize.Position = UDim2.new(1,-60,0,0)
+minimize.Text = "-"
+minimize.BackgroundColor3 = Color3.fromRGB(60,60,60)
+minimize.TextColor3 = Color3.new(1,1,1)
+minimize.Font = Enum.Font.GothamBold
+minimize.TextSize = 16
+Instance.new("UICorner",minimize)
+
+-- container
+local container = Instance.new("Frame")
+container.Parent = frame
+container.Position = UDim2.new(0,0,0,35)
+container.Size = UDim2.new(1,0,1,-35)
+container.BackgroundTransparency = 1
+
+-- spin toggle
+local spinBtn = Instance.new("TextButton")
+spinBtn.Parent = container
+spinBtn.Size = UDim2.new(0.9,0,0,35)
+spinBtn.Position = UDim2.new(0.05,0,0,10)
+spinBtn.Text = "Spin x25 : OFF"
+spinBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+spinBtn.TextColor3 = Color3.new(1,1,1)
+spinBtn.Font = Enum.Font.Gotham
+spinBtn.TextSize = 14
+Instance.new("UICorner",spinBtn)
+
+-- egg toggle
+local eggBtn = Instance.new("TextButton")
+eggBtn.Parent = container
+eggBtn.Size = UDim2.new(0.9,0,0,35)
+eggBtn.Position = UDim2.new(0.05,0,0,55)
+eggBtn.Text = "Auto Egg : OFF"
+eggBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+eggBtn.TextColor3 = Color3.new(1,1,1)
+eggBtn.Font = Enum.Font.Gotham
+eggBtn.TextSize = 14
+Instance.new("UICorner",eggBtn)
+
+-- minimize logic
+local minimized = false
+minimize.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	container.Visible = not minimized
+	frame.Size = minimized and UDim2.new(0,260,0,35) or UDim2.new(0,260,0,150)
+end)
+
+-- spin toggle
+spinBtn.MouseButton1Click:Connect(function()
+	spinToggle = not spinToggle
+	spinBtn.Text = "Spin x25 : "..(spinToggle and "ON" or "OFF")
+	
+	while spinToggle do
+		local args = {
+			"Timed Fortune",
+			"x25"
+		}
+		ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("SpinnerService"):WaitForChild("RF"):WaitForChild("Spin"):InvokeServer(unpack(args))
+		task.wait(0.2)
+	end
+end)
+
+-- egg toggle
+eggBtn.MouseButton1Click:Connect(function()
+	eggToggle = not eggToggle
+	eggBtn.Text = "Auto Egg : "..(eggToggle and "ON" or "OFF")
+
+	while eggToggle do
+		local args = {
+			"Intermission",
+			[5] = true,
+			[4] = false
+		}
+		ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("EggService"):WaitForChild("RF"):WaitForChild("purchaseEgg"):InvokeServer(unpack(args))
+		task.wait(0.2)
+	end
+end)
