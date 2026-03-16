@@ -1,6 +1,6 @@
 -- =====================================
--- AUTO ALL MONSTERS + TRAIN + DRAWROLE + TELEPORT
--- WITH MINIMIZE TO ICON
+-- AUTO ALL MONSTERS + TRAIN + DRAWROLE
+-- + TELEPORT + VACUUM
 -- =====================================
 
 -- SERVICES
@@ -27,40 +27,42 @@ local autoFarm = false
 local autoWalk = true
 local autoTrain = false
 local drawRoleState = false
+local vacuumMobs = false
 local atkIndex = 1
 
 -- =====================================
 -- GUI
 -- =====================================
+
 pcall(function()
 	CoreGui.AutoAllMobGUI:Destroy()
 end)
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "AutoAllMobGUI"
-gui.IgnoreGuiInset = true
 gui.Parent = CoreGui
+gui.IgnoreGuiInset = true
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.fromOffset(260, 300)
-frame.Position = UDim2.fromScale(0.05, 0.35)
+frame.Size = UDim2.fromOffset(260,340)
+frame.Position = UDim2.fromScale(0.05,0.35)
 frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 frame.BorderSizePixel = 0
 frame.Parent = gui
 frame.Active = true
 frame.Draggable = true
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0,10)
+Instance.new("UICorner",frame)
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1,0,0,30)
 title.Text = "AUTO ALL MONSTERS"
-title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 14
+title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
 title.Parent = frame
 
--- MINIMIZE BUTTON
+-- MINIMIZE
 local minimize = Instance.new("TextButton")
 minimize.Size = UDim2.fromOffset(25,25)
 minimize.Position = UDim2.new(1,-60,0,3)
@@ -70,9 +72,9 @@ minimize.TextSize = 16
 minimize.TextColor3 = Color3.new(1,1,1)
 minimize.BackgroundColor3 = Color3.fromRGB(80,80,80)
 minimize.Parent = frame
-Instance.new("UICorner", minimize)
+Instance.new("UICorner",minimize)
 
--- CLOSE BUTTON
+-- CLOSE
 local close = Instance.new("TextButton")
 close.Size = UDim2.fromOffset(25,25)
 close.Position = UDim2.new(1,-30,0,3)
@@ -82,9 +84,9 @@ close.TextSize = 14
 close.TextColor3 = Color3.new(1,1,1)
 close.BackgroundColor3 = Color3.fromRGB(180,60,60)
 close.Parent = frame
-Instance.new("UICorner", close)
+Instance.new("UICorner",close)
 
--- ICON (HIDDEN DEFAULT)
+-- ICON
 local icon = Instance.new("TextButton")
 icon.Size = UDim2.fromOffset(50,50)
 icon.Position = frame.Position
@@ -97,71 +99,34 @@ icon.Visible = false
 icon.Parent = gui
 icon.Active = true
 icon.Draggable = true
-Instance.new("UICorner", icon)
+Instance.new("UICorner",icon)
 
--- AUTO FARM
-local farmBtn = Instance.new("TextButton")
-farmBtn.Size = UDim2.new(1,-20,0,36)
-farmBtn.Position = UDim2.fromOffset(10,40)
-farmBtn.Text = "AUTO FARM : OFF"
-farmBtn.Font = Enum.Font.GothamBold
-farmBtn.TextSize = 14
-farmBtn.TextColor3 = Color3.new(1,1,1)
-farmBtn.BackgroundColor3 = Color3.fromRGB(170,60,60)
-farmBtn.Parent = frame
-Instance.new("UICorner", farmBtn)
+-- BUTTON FUNCTION
+local function createButton(text,y)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(1,-20,0,34)
+	b.Position = UDim2.fromOffset(10,y)
+	b.Text = text
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 14
+	b.TextColor3 = Color3.new(1,1,1)
+	b.BackgroundColor3 = Color3.fromRGB(120,120,120)
+	b.Parent = frame
+	Instance.new("UICorner",b)
+	return b
+end
 
--- AUTO WALK
-local walkBtn = Instance.new("TextButton")
-walkBtn.Size = UDim2.new(1,-20,0,34)
-walkBtn.Position = UDim2.fromOffset(10,82)
-walkBtn.Text = "AUTO WALK : ON"
-walkBtn.Font = Enum.Font.GothamBold
-walkBtn.TextSize = 14
-walkBtn.TextColor3 = Color3.new(1,1,1)
-walkBtn.BackgroundColor3 = Color3.fromRGB(60,120,170)
-walkBtn.Parent = frame
-Instance.new("UICorner", walkBtn)
-
--- AUTO TRAIN
-local trainBtn = Instance.new("TextButton")
-trainBtn.Size = UDim2.new(1,-20,0,34)
-trainBtn.Position = UDim2.fromOffset(10,122)
-trainBtn.Text = "AUTO TRAIN : OFF"
-trainBtn.Font = Enum.Font.GothamBold
-trainBtn.TextSize = 14
-trainBtn.TextColor3 = Color3.new(1,1,1)
-trainBtn.BackgroundColor3 = Color3.fromRGB(120,120,120)
-trainBtn.Parent = frame
-Instance.new("UICorner", trainBtn)
-
--- DRAW ROLE
-local drawBtn = Instance.new("TextButton")
-drawBtn.Size = UDim2.new(1,-20,0,34)
-drawBtn.Position = UDim2.fromOffset(10,162)
-drawBtn.Text = "DRAW ROLE : OFF"
-drawBtn.Font = Enum.Font.GothamBold
-drawBtn.TextSize = 14
-drawBtn.TextColor3 = Color3.new(1,1,1)
-drawBtn.BackgroundColor3 = Color3.fromRGB(120,120,120)
-drawBtn.Parent = frame
-Instance.new("UICorner", drawBtn)
-
--- TELEPORT
-local tpBtn = Instance.new("TextButton")
-tpBtn.Size = UDim2.new(1,-20,0,34)
-tpBtn.Position = UDim2.fromOffset(10,202)
-tpBtn.Text = "TELEPORT"
-tpBtn.Font = Enum.Font.GothamBold
-tpBtn.TextSize = 14
-tpBtn.TextColor3 = Color3.new(1,1,1)
-tpBtn.BackgroundColor3 = Color3.fromRGB(100,80,170)
-tpBtn.Parent = frame
-Instance.new("UICorner", tpBtn)
+local farmBtn = createButton("AUTO FARM : OFF",40)
+local walkBtn = createButton("AUTO WALK : ON",80)
+local trainBtn = createButton("AUTO TRAIN : OFF",120)
+local drawBtn = createButton("DRAW ROLE : OFF",160)
+local tpBtn = createButton("TELEPORT",200)
+local vacuumBtn = createButton("VACUUM MOBS : OFF",240)
 
 -- =====================================
 -- MINIMIZE LOGIC
 -- =====================================
+
 minimize.MouseButton1Click:Connect(function()
 	frame.Visible = false
 	icon.Visible = true
@@ -175,48 +140,93 @@ icon.MouseButton1Click:Connect(function()
 end)
 
 -- =====================================
--- LOGIC LOOPS
+-- MONSTER FINDER
 -- =====================================
 
 local function getNearestMonster()
-	local nearest, dist = nil, math.huge
-	for _, mob in ipairs(Monsters:GetChildren()) do
+	local nearest,dist=nil,math.huge
+
+	for _,mob in ipairs(Monsters:GetChildren()) do
 		if mob:FindFirstChild("Humanoid")
 		and mob:FindFirstChild("HumanoidRootPart")
-		and mob.Humanoid.Health > 0 then
-			local d = (hrp.Position - mob.HumanoidRootPart.Position).Magnitude
-			if d < dist then
-				dist = d
-				nearest = mob
+		and mob.Humanoid.Health>0 then
+
+			local d=(hrp.Position-mob.HumanoidRootPart.Position).Magnitude
+
+			if d<dist then
+				dist=d
+				nearest=mob
 			end
 		end
 	end
+
 	return nearest
 end
 
+-- =====================================
+-- AUTO FARM LOOP
+-- =====================================
+
 task.spawn(function()
-	while task.wait(0.05) do
+	while task.wait(0.15) do
 		if autoFarm then
 			local mob = getNearestMonster()
+
 			if mob then
+
 				if autoWalk then
 					TweenService:Create(
 						hrp,
-						TweenInfo.new(0.2, Enum.EasingStyle.Linear),
+						TweenInfo.new(0.2),
 						{CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0,0,3)}
 					):Play()
 				end
 
-				for i = 1,20 do
+				for i = 1,25 do
 					GeneralAttack:FireServer(atkIndex)
 					atkIndex = (atkIndex % 3) + 1
 				end
 
 				SkillAttack:FireServer(math.random(1,3))
+
 			end
 		end
 	end
 end)
+
+-- =====================================
+-- VACUUM MOBS
+-- =====================================
+
+task.spawn(function()
+	while task.wait() do
+		if vacuumMobs then
+
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+
+				local pos = char.HumanoidRootPart.CFrame
+
+				for _,mob in pairs(Monsters:GetChildren()) do
+
+					local hrpMob = mob:FindFirstChild("HumanoidRootPart")
+					local hum = mob:FindFirstChild("Humanoid")
+
+					if hrpMob and hum and hum.Health > 0 then
+						hrpMob.CFrame = pos * CFrame.new(math.random(-4,4),0,math.random(-4,4))
+					end
+
+				end
+
+			end
+
+		end
+	end
+end)
+
+-- =====================================
+-- AUTO TRAIN
+-- =====================================
 
 task.spawn(function()
 	while task.wait(1) do
@@ -225,6 +235,10 @@ task.spawn(function()
 		end
 	end
 end)
+
+-- =====================================
+-- DRAW ROLE
+-- =====================================
 
 task.spawn(function()
 	while task.wait(1) do
@@ -241,31 +255,32 @@ end)
 farmBtn.MouseButton1Click:Connect(function()
 	autoFarm = not autoFarm
 	farmBtn.Text = autoFarm and "AUTO FARM : ON" or "AUTO FARM : OFF"
-	farmBtn.BackgroundColor3 = autoFarm and Color3.fromRGB(60,170,80) or Color3.fromRGB(170,60,60)
 end)
 
 walkBtn.MouseButton1Click:Connect(function()
 	autoWalk = not autoWalk
 	walkBtn.Text = autoWalk and "AUTO WALK : ON" or "AUTO WALK : OFF"
-	walkBtn.BackgroundColor3 = autoWalk and Color3.fromRGB(60,120,170) or Color3.fromRGB(120,120,120)
 end)
 
 trainBtn.MouseButton1Click:Connect(function()
 	autoTrain = not autoTrain
 	trainBtn.Text = autoTrain and "AUTO TRAIN : ON" or "AUTO TRAIN : OFF"
-	trainBtn.BackgroundColor3 = autoTrain and Color3.fromRGB(170,120,60) or Color3.fromRGB(120,120,120)
 end)
 
 drawBtn.MouseButton1Click:Connect(function()
 	drawRoleState = not drawRoleState
 	drawBtn.Text = drawRoleState and "DRAW ROLE : ON" or "DRAW ROLE : OFF"
-	drawBtn.BackgroundColor3 = drawRoleState and Color3.fromRGB(60,170,200) or Color3.fromRGB(120,120,120)
+end)
+
+vacuumBtn.MouseButton1Click:Connect(function()
+	vacuumMobs = not vacuumMobs
+	vacuumBtn.Text = vacuumMobs and "VACUUM MOBS : ON" or "VACUUM MOBS : OFF"
 end)
 
 tpBtn.MouseButton1Click:Connect(function()
 	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
 		player.Character.HumanoidRootPart.CFrame =
-			CFrame.new(418.3836975097656, 27.1574649810791, 961.0191040039062)
+		CFrame.new(418.3837,27.1574,961.0191)
 	end
 end)
 
