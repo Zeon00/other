@@ -422,41 +422,48 @@ GUI:CreateToggle({
     default = false,
     callback = function(critclik)
         --// Services
-        local Players = game:GetService("Players")
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-        local player = Players.LocalPlayer
+local player = Players.LocalPlayer
 
-        --// Remote references
-        local ArmWrestleService = ReplicatedStorage:WaitForChild("Packages")
-            :WaitForChild("Knit")
-            :WaitForChild("Services")
-            :WaitForChild("ArmWrestleService")
-            :WaitForChild("RF")
+--// Remote references
+local ArmWrestleService = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("Knit")
+    :WaitForChild("Services")
+    :WaitForChild("ArmWrestleService")
+    :WaitForChild("RF")
 
-        local RequestClick = ArmWrestleService:WaitForChild("RequestClick")
-        local RequestCritHit = ArmWrestleService:WaitForChild("RequestCritHit")
+local RequestClick = ArmWrestleService:WaitForChild("RequestClick")
+local RequestCritHit = ArmWrestleService:WaitForChild("RequestCritHit")
 
-        --// Toggle states
-        local autoClick = critclik
-        local autoCrit = critclik
+--// Toggle states (langsung ON)
+local autoClick = true
+local autoCrit = true
 
-        --// Super fast loop
-        RunService.RenderStepped:Connect(function()
-            if autoClick then
-                pcall(function()
-                    RequestClick:InvokeServer()
-                end)
-            end
-            if autoCrit then
-                pcall(function()
-                    RequestCritHit:InvokeServer()
-                end)
-            end
-        end)
-    end
-})
+--// SUPER FAST LOOP (STABLE)
+task.spawn(function()
+	while true do
+
+		if autoClick then
+			for i = 1,10 do
+				pcall(function()
+					RequestClick:InvokeServer()
+				end)
+			end
+		end
+
+		if autoCrit then
+			for i = 1,10 do
+				pcall(function()
+					RequestCritHit:InvokeServer()
+				end)
+			end
+		end
+
+		task.wait() -- biar ga freeze
+	end
+end)
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
