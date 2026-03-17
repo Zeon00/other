@@ -464,6 +464,8 @@ task.spawn(function()
 		task.wait() -- biar ga freeze
 	end
 end)
+   end
+})
 GUI:CreateToggle({
     parent = main,
     text = "Auto Battle Bot",
