@@ -416,55 +416,46 @@ GUI:CreateToggle({
         end
     end
 })  
+local autoClick = false
+local autoCrit = false
+local running = false
+
 GUI:CreateToggle({
-    parent = main,
-    text = "Auto Crit/Click",
-    default = false,
-    callback = function(critclik)
-        --// Services
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	parent = main,
+	text = "Auto Crit/Click",
+	default = false,
+	callback = function(critclik)
 
-local player = Players.LocalPlayer
+		autoClick = critclik
+		autoCrit = critclik
 
---// Remote references
-local ArmWrestleService = ReplicatedStorage:WaitForChild("Packages")
-    :WaitForChild("Knit")
-    :WaitForChild("Services")
-    :WaitForChild("ArmWrestleService")
-    :WaitForChild("RF")
+		if running then return end
+		running = true
 
-local RequestClick = ArmWrestleService:WaitForChild("RequestClick")
-local RequestCritHit = ArmWrestleService:WaitForChild("RequestCritHit")
+		task.spawn(function()
+			while true do
 
---// Toggle states (langsung ON)
-local autoClick = true
-local autoCrit = true
+				if autoClick then
+					for i = 1,10 do
+						pcall(function()
+							RequestClick:InvokeServer()
+						end)
+					end
+				end
 
---// SUPER FAST LOOP (STABLE)
-task.spawn(function()
-	while true do
+				if autoCrit then
+					for i = 1,10 do
+						pcall(function()
+							RequestCritHit:InvokeServer()
+						end)
+					end
+				end
 
-		if autoClick then
-			for i = 1,10 do
-				pcall(function()
-					RequestClick:InvokeServer()
-				end)
+				task.wait()
 			end
-		end
+		end)
 
-		if autoCrit then
-			for i = 1,10 do
-				pcall(function()
-					RequestCritHit:InvokeServer()
-				end)
-			end
-		end
-
-		task.wait() -- biar ga freeze
 	end
-end)
-   end
 })
 GUI:CreateToggle({
     parent = main,
