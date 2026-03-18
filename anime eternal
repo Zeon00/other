@@ -1,0 +1,199 @@
+--// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local Remote = RS:WaitForChild("Events"):WaitForChild("To_Server")
+
+--// STATE
+local aura = false
+local vacuum = false
+local running = false
+
+--// GET MOB TERDEKAT
+local function getClosestMob()
+	local closest = nil
+	local dist = math.huge
+
+	for _, mob in pairs(Workspace:WaitForChild("Debris"):WaitForChild("Monsters"):GetChildren()) do
+		if mob:FindFirstChild("HumanoidRootPart") then
+			local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
+			if d < dist then
+				dist = d
+				closest = mob
+			end
+		end
+	end
+
+	return closest
+end
+
+--// VACUUM (SMOOTH)
+local function vacuumMob(mob)
+	if mob and mob:FindFirstChild("HumanoidRootPart") then
+		local targetPos = mob.HumanoidRootPart.Position
+		local distance = (hrp.Position - targetPos).Magnitude
+
+		if distance > 4 then
+			local targetCFrame = CFrame.new(targetPos + Vector3.new(0,0,3))
+			hrp.CFrame = hrp.CFrame:Lerp(targetCFrame, 0.25)
+		end
+	end
+end
+
+--// HIT
+local function hitMob(mob)
+	if not mob or not mob:FindFirstChild("HumanoidRootPart") then return end
+	
+	local distance = (hrp.Position - mob.HumanoidRootPart.Position).Magnitude
+	
+	if distance > 3 then
+		hrp.CFrame = CFrame.lookAt(hrp.Position, mob.HumanoidRootPart.Position)
+	end
+
+	for i = 1,15 do
+		Remote:FireServer({
+			Id = mob.Name,
+			Action = "_Mouse_Click"
+		})
+	end
+end
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+
+-- MAIN FRAME
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0,230,0,150)
+Frame.Position = UDim2.new(0.4,0,0.4,0)
+Frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Instance.new("UICorner", Frame)
+
+local Stroke = Instance.new("UIStroke", Frame)
+Stroke.Color = Color3.fromRGB(60,60,60)
+
+-- TITLE
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1,0,0,30)
+Title.Text = "Aura Farm"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundTransparency = 1
+
+-- AURA BUTTON
+local AuraBtn = Instance.new("TextButton", Frame)
+AuraBtn.Size = UDim2.new(1,-20,0,40)
+AuraBtn.Position = UDim2.new(0,10,0,40)
+AuraBtn.Text = "Aura Kill : OFF"
+AuraBtn.Font = Enum.Font.Gotham
+AuraBtn.TextSize = 13
+AuraBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+AuraBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", AuraBtn)
+
+-- VACUUM BUTTON
+local VacBtn = Instance.new("TextButton", Frame)
+VacBtn.Size = UDim2.new(1,-20,0,40)
+VacBtn.Position = UDim2.new(0,10,0,90)
+VacBtn.Text = "Vacuum : OFF"
+VacBtn.Font = Enum.Font.Gotham
+VacBtn.TextSize = 13
+VacBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+VacBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", VacBtn)
+
+-- CLOSE
+local Close = Instance.new("TextButton", Frame)
+Close.Size = UDim2.new(0,25,0,25)
+Close.Position = UDim2.new(1,-30,0,5)
+Close.Text = "X"
+Close.Font = Enum.Font.GothamBold
+Close.TextSize = 12
+Close.BackgroundColor3 = Color3.fromRGB(80,0,0)
+Close.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Close)
+
+-- MINIMIZE BUTTON
+local MinBtn = Instance.new("TextButton", Frame)
+MinBtn.Size = UDim2.new(0,25,0,25)
+MinBtn.Position = UDim2.new(1,-60,0,5)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 14
+MinBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+MinBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", MinBtn)
+
+-- ICON (MINIMIZED)
+local Icon = Instance.new("TextButton", ScreenGui)
+Icon.Size = UDim2.new(0,50,0,50)
+Icon.Position = UDim2.new(0,20,0,200)
+Icon.Text = "⚔️"
+Icon.Font = Enum.Font.GothamBold
+Icon.TextSize = 20
+Icon.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Icon.TextColor3 = Color3.new(1,1,1)
+Icon.Visible = false
+Icon.Active = true
+Icon.Draggable = true
+Instance.new("UICorner", Icon)
+
+--// BUTTON ACTION
+AuraBtn.MouseButton1Click:Connect(function()
+	aura = not aura
+	AuraBtn.Text = "Aura Kill : " .. (aura and "ON" or "OFF")
+end)
+
+VacBtn.MouseButton1Click:Connect(function()
+	vacuum = not vacuum
+	VacBtn.Text = "Vacuum : " .. (vacuum and "ON" or "OFF")
+end)
+
+Close.MouseButton1Click:Connect(function()
+	running = false
+	ScreenGui:Destroy()
+end)
+
+MinBtn.MouseButton1Click:Connect(function()
+	Frame.Visible = false
+	Icon.Visible = true
+end)
+
+Icon.MouseButton1Click:Connect(function()
+	Frame.Visible = true
+	Icon.Visible = false
+end)
+
+--// LOOP
+local function start()
+	if running then return end
+	running = true
+
+	while running do
+		if aura or vacuum then
+			local mob = getClosestMob()
+
+			if mob then
+				if vacuum then
+					vacuumMob(mob)
+				end
+
+				if aura then
+					hitMob(mob)
+				end
+			end
+		end
+
+		task.wait(0.08)
+	end
+end
+
+start()
