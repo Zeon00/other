@@ -1,6 +1,7 @@
 --// SERVICES
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
 
 local player = Players.LocalPlayer
 local Remote = RS:WaitForChild("Bridge")
@@ -13,6 +14,11 @@ local AutoTrain = false
 local EnemyTP = false
 local AutoRoll = false
 local AntiAFK = false
+
+-- 🔥 CRYSTAL
+local CrystalHit = false
+local CrystalPet = false
+
 local lastEnemy = nil
 local HIT_MULTIPLIER = 2
 
@@ -27,7 +33,23 @@ local function GetRoot()
     end
 end
 
--- ✅ FIX: ambil enemy server + posisi aman
+-- 🔥 AMBIL SEMUA CRYSTAL (SERVER SIDE FIX)
+local function GetCrystalEnemies()
+    local list = {}
+
+    local raid = workspace.Server.Enemies.Raids:FindFirstChild("Raid_Crystal")
+    if not raid then return list end
+
+    for _, mob in pairs(raid:GetChildren()) do
+        if mob:GetAttribute("Health") and mob:GetAttribute("Health") > 0 then
+            table.insert(list, mob)
+        end
+    end
+
+    return list
+end
+
+-- NORMAL ENEMY
 local function GetNearestEnemy()
     local root = GetRoot()
     if not root then return end
@@ -35,24 +57,15 @@ local function GetNearestEnemy()
     local closest = nil
     local dist = math.huge
 
-    local enemies = workspace.Server.Enemies
-
     for _, typeFolder in pairs({"World","Raids","WorldBoss"}) do
-        local main = enemies:FindFirstChild(typeFolder)
+        local main = workspace.Server.Enemies:FindFirstChild(typeFolder)
         if main then
             for _, world in pairs(main:GetChildren()) do
                 for _, mob in pairs(world:GetChildren()) do
 
                     local hp = mob:GetAttribute("Health")
                     if hp and hp > 0 then
-
-                        local pos = mob.Position
-                        if not pos then
-                            local hrp = mob:FindFirstChild("HumanoidRootPart")
-                            if hrp then
-                                pos = hrp.Position
-                            end
-                        end
+                        local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
 
                         if pos then
                             local d = (root.Position - pos).Magnitude
@@ -64,7 +77,6 @@ local function GetNearestEnemy()
                                 }
                             end
                         end
-
                     end
 
                 end
@@ -89,7 +101,7 @@ local function GetPets()
 end
 
 ----------------------------------------------------------------
--- TP (TETEP LOGIC LU)
+-- TP
 ----------------------------------------------------------------
 
 local function TeleportToEnemy(mob)
@@ -97,11 +109,9 @@ local function TeleportToEnemy(mob)
     if root then
         local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
         if pos then
-            
-            local offset = Vector3.new(0,0,-3) -- jarak dari mob
+            local offset = Vector3.new(0,0,-3)
             local myPos = pos + offset
-            
-            root.CFrame = CFrame.lookAt(myPos, pos) -- 🔥 ini fixnya
+            root.CFrame = CFrame.lookAt(myPos, pos)
             root.Velocity = Vector3.new(0,0,0)
         end
     end
@@ -114,20 +124,56 @@ end
 task.spawn(function()
     while task.wait(0.08) do
 
-        local target = GetNearestEnemy()
+        -- 🔥 CRYSTAL MODE (HIT SEMUA)
+        if CrystalHit or CrystalPet then
+            local crystals = GetCrystalEnemies()
 
-        if target then
+            for _, mob in pairs(crystals) do
 
-            -- TP ONLY IF ENEMY CHANGE
-            if EnemyTP then
-                if lastEnemy ~= target.Enemy then
-                    TeleportToEnemy(target.Enemy)
-                    lastEnemy = target.Enemy
+                if EnemyTP then
+                    if lastEnemy ~= mob then
+                        TeleportToEnemy(mob)
+                        lastEnemy = mob
+                    end
+                end
+
+                for i = 1, HIT_MULTIPLIER do
+
+                    if CrystalHit then
+                        Remote:FireServer("Attack","Click", {
+                            Type = "Raids",
+                            Enemy = mob
+                        })
+                    end
+
+                    if CrystalPet then
+                        for _, petID in pairs(GetPets()) do
+                            Remote:FireServer("Attack","UnitAttack", {
+                                {
+                                    Type = "Raids",
+                                    Enemy = mob
+                                },
+                                petID
+                            })
+                        end
+                    end
+
                 end
             end
 
-            -- ✅ FIX HIT & PET
-            if AutoHit or AutoPet then
+        else
+            -- 🔥 NORMAL MODE
+            local target = GetNearestEnemy()
+
+            if target then
+
+                if EnemyTP then
+                    if lastEnemy ~= target.Enemy then
+                        TeleportToEnemy(target.Enemy)
+                        lastEnemy = target.Enemy
+                    end
+                end
+
                 for i = 1, HIT_MULTIPLIER do
 
                     if AutoHit then
@@ -138,8 +184,7 @@ task.spawn(function()
                     end
 
                     if AutoPet then
-                        local pets = GetPets()
-                        for _, petID in pairs(pets) do
+                        for _, petID in pairs(GetPets()) do
                             Remote:FireServer("Attack","UnitAttack", {
                                 {
                                     Type = target.Type,
@@ -152,7 +197,6 @@ task.spawn(function()
 
                 end
             end
-
         end
 
         -- TRAIN
@@ -166,13 +210,12 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- AUTO COLLECT (BYPASS JARAK)
+-- AUTO COLLECT
 ----------------------------------------------------------------
 
 task.spawn(function()
     while task.wait(0.01) do
         if AutoCollect then
-
             local drops = workspace:FindFirstChild("Drops")
             if drops then
                 for _, d in pairs(drops:GetDescendants()) do
@@ -181,7 +224,6 @@ task.spawn(function()
                     end
                 end
             end
-
         end
     end
 end)
@@ -200,10 +242,10 @@ task.spawn(function()
         end
     end
 end)
+
 ----------------------------------------------------------------
 -- ANTI AFK
 ----------------------------------------------------------------
-local VirtualUser = game:GetService("VirtualUser")
 
 player.Idled:Connect(function()
     if AntiAFK then
@@ -211,47 +253,21 @@ player.Idled:Connect(function()
         VirtualUser:ClickButton2(Vector2.new())
     end
 end)
+
 ----------------------------------------------------------------
--- GUI (SAMA KAYAK PUNYA LU)
+-- GUI
 ----------------------------------------------------------------
 
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,270,0,340)
-main.Position = UDim2.new(0.5,-135,0.5,-170)
+main.Size = UDim2.new(0,270,0,420)
+main.Position = UDim2.new(0.5,-135,0.5,-210)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
-
-local top = Instance.new("Frame", main)
-top.Size = UDim2.new(1,0,0,32)
-top.BackgroundColor3 = Color3.fromRGB(12,12,12)
-
-local title = Instance.new("TextLabel", top)
-title.Size = UDim2.new(1,-70,1,0)
-title.Position = UDim2.new(0,10,0,0)
-title.Text = "Aura Farm FIXED"
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundTransparency = 1
-
-local close = Instance.new("TextButton", top)
-close.Size = UDim2.new(0,32,1,0)
-close.Position = UDim2.new(1,-32,0,0)
-close.Text = "X"
-
-local mini = Instance.new("TextButton", top)
-mini.Size = UDim2.new(0,32,1,0)
-mini.Position = UDim2.new(1,-64,0,0)
-mini.Text = "-"
-
-local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.new(0,50,0,50)
-icon.Position = UDim2.new(0,15,0.5,0)
-icon.Text = "OPEN"
-icon.Visible = false
 
 local function Toggle(name,pos,callback)
     local btn = Instance.new("TextButton", main)
@@ -277,16 +293,6 @@ Toggle("TP Enemy",4,function(v) EnemyTP=v end)
 Toggle("Auto Roll",5,function(v) AutoRoll=v end)
 Toggle("Anti AFK",6,function(v) AntiAFK=v end)
 
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
-
-mini.MouseButton1Click:Connect(function()
-    main.Visible = false
-    icon.Visible = true
-end)
-
-icon.MouseButton1Click:Connect(function()
-    main.Visible = true
-    icon.Visible = false
-end)
+-- 🔥 CRYSTAL RAID
+Toggle("Crystal Hit",7,function(v) CrystalHit=v end)
+Toggle("Crystal Pet",8,function(v) CrystalPet=v end)
