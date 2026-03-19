@@ -15,7 +15,7 @@ local EnemyTP = false
 local AutoRoll = false
 local AntiAFK = false
 
--- 🔥 CRYSTAL
+-- CRYSTAL
 local CrystalHit = false
 local CrystalPet = false
 
@@ -33,7 +33,7 @@ local function GetRoot()
     end
 end
 
--- 🔥 AMBIL SEMUA CRYSTAL (SERVER SIDE FIX)
+-- CRYSTAL RAID (SERVER)
 local function GetCrystalEnemies()
     local list = {}
 
@@ -124,7 +124,7 @@ end
 task.spawn(function()
     while task.wait(0.08) do
 
-        -- 🔥 CRYSTAL MODE (HIT SEMUA)
+        -- 🔥 CRYSTAL MODE
         if CrystalHit or CrystalPet then
             local crystals = GetCrystalEnemies()
 
@@ -162,7 +162,7 @@ task.spawn(function()
             end
 
         else
-            -- 🔥 NORMAL MODE
+            -- NORMAL MODE
             local target = GetNearestEnemy()
 
             if target then
@@ -269,19 +269,19 @@ main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
 
--- TOP BAR
+-- TOP
 local top = Instance.new("Frame", main)
 top.Size = UDim2.new(1,0,0,32)
 top.BackgroundColor3 = Color3.fromRGB(12,12,12)
 
 local title = Instance.new("TextLabel", top)
-title.Size = UDim2.new(1,-70,1,0)
+title.Size = UDim2.new(1,-10,1,0)
 title.Position = UDim2.new(0,10,0,0)
 title.Text = "Aura Farm FIXED"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
 
--- SCROLL AREA
+-- SCROLL
 local scroll = Instance.new("ScrollingFrame", main)
 scroll.Size = UDim2.new(1,0,1,-32)
 scroll.Position = UDim2.new(0,0,0,32)
@@ -296,7 +296,7 @@ layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
 end)
 
--- TOGGLE FUNCTION
+-- TOGGLE
 local function Toggle(name,callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1,-20,0,45)
