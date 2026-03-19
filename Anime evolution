@@ -5,15 +5,7 @@ local RS = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local Remote = RS:WaitForChild("Bridge")
 
--- WAIT CHAR
-local function GetRoot()
-    local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        return char.HumanoidRootPart
-    end
-end
-
--- STATES
+--// STATES
 local AutoHit = false
 local AutoPet = false
 local AutoCollect = false
@@ -21,47 +13,60 @@ local AutoTrain = false
 local EnemyTP = false
 local AutoRoll = false
 
-local HIT_MULTIPLIER = 25
 local lastEnemy = nil
+local HIT_MULTIPLIER = 1
 
 ----------------------------------------------------------------
--- GET ENEMY
+-- CORE
 ----------------------------------------------------------------
 
+local function GetRoot()
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        return char.HumanoidRootPart
+    end
+end
+
+-- ✅ FIX: ambil enemy server + posisi aman
 local function GetNearestEnemy()
     local root = GetRoot()
-    if not root then return nil end
+    if not root then return end
 
     local closest = nil
     local dist = math.huge
 
-    local enemies = workspace:FindFirstChild("Server")
-    if enemies then
-        enemies = enemies:FindFirstChild("Enemies")
-    end
+    local enemies = workspace.Server.Enemies
 
-    if enemies then
-        for _, typeFolder in pairs({"World","Raids","WorldBoss"}) do
-            local main = enemies:FindFirstChild(typeFolder)
-            if main then
-                for _, world in pairs(main:GetChildren()) do
-                    for _, mob in pairs(world:GetChildren()) do
-                        if mob:GetAttribute("Health") and mob:GetAttribute("Health") > 0 then
-                            
+    for _, typeFolder in pairs({"World","Raids","WorldBoss"}) do
+        local main = enemies:FindFirstChild(typeFolder)
+        if main then
+            for _, world in pairs(main:GetChildren()) do
+                for _, mob in pairs(world:GetChildren()) do
+
+                    local hp = mob:GetAttribute("Health")
+                    if hp and hp > 0 then
+
+                        local pos = mob.Position
+                        if not pos then
                             local hrp = mob:FindFirstChild("HumanoidRootPart")
                             if hrp then
-                                local d = (root.Position - hrp.Position).Magnitude
-                                if d < dist then
-                                    dist = d
-                                    closest = {
-                                        Enemy = mob,
-                                        Type = typeFolder
-                                    }
-                                end
+                                pos = hrp.Position
                             end
-
                         end
+
+                        if pos then
+                            local d = (root.Position - pos).Magnitude
+                            if d < dist then
+                                dist = d
+                                closest = {
+                                    Enemy = mob,
+                                    Type = typeFolder
+                                }
+                            end
+                        end
+
                     end
+
                 end
             end
         end
@@ -70,21 +75,9 @@ local function GetNearestEnemy()
     return closest
 end
 
-----------------------------------------------------------------
--- PETS
-----------------------------------------------------------------
-
 local function GetPets()
     local pets = {}
-    local folder = workspace:FindFirstChild("Server")
-
-    if folder then
-        folder = folder:FindFirstChild("Pets")
-    end
-
-    if folder then
-        folder = folder:FindFirstChild(tostring(player.UserId))
-    end
+    local folder = workspace.Server.Pets:FindFirstChild(tostring(player.UserId))
 
     if folder then
         for _, pet in pairs(folder:GetChildren()) do
@@ -96,15 +89,16 @@ local function GetPets()
 end
 
 ----------------------------------------------------------------
--- TP
+-- TP (TETEP LOGIC LU)
 ----------------------------------------------------------------
 
 local function TeleportToEnemy(mob)
     local root = GetRoot()
     if root then
-        local hrp = mob:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            root.CFrame = CFrame.new(hrp.Position + Vector3.new(0,0,-3))
+        local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
+        if pos then
+            root.CFrame = CFrame.new(pos + Vector3.new(0,0,-3))
+            root.Velocity = Vector3.new(0,0,0)
         end
     end
 end
@@ -120,6 +114,7 @@ task.spawn(function()
 
         if target then
 
+            -- TP ONLY IF ENEMY CHANGE
             if EnemyTP then
                 if lastEnemy ~= target.Enemy then
                     TeleportToEnemy(target.Enemy)
@@ -127,18 +122,25 @@ task.spawn(function()
                 end
             end
 
+            -- ✅ FIX HIT & PET
             if AutoHit or AutoPet then
                 for i = 1, HIT_MULTIPLIER do
 
                     if AutoHit then
-                        Remote:FireServer("Attack","Click", target)
+                        Remote:FireServer("Attack","Click", {
+                            Type = target.Type,
+                            Enemy = target.Enemy
+                        })
                     end
 
                     if AutoPet then
                         local pets = GetPets()
                         for _, petID in pairs(pets) do
                             Remote:FireServer("Attack","UnitAttack", {
-                                target,
+                                {
+                                    Type = target.Type,
+                                    Enemy = target.Enemy
+                                },
                                 petID
                             })
                         end
@@ -149,6 +151,7 @@ task.spawn(function()
 
         end
 
+        -- TRAIN
         if AutoTrain then
             for i = 1, HIT_MULTIPLIER do
                 Remote:FireServer("Attack","Click",{})
@@ -159,26 +162,19 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- AUTO COLLECT
+-- AUTO COLLECT (BYPASS JARAK)
 ----------------------------------------------------------------
 
 task.spawn(function()
-    while task.wait(0.12) do
+    while task.wait(0.01) do
         if AutoCollect then
 
-            local root = GetRoot()
-            if root then
-
-                local debris = workspace:FindFirstChild("Debris")
-                if debris then
-
-                    for _, drop in pairs(debris:GetDescendants()) do
-                        if drop:IsA("BasePart") then
-                            drop.CFrame = root.CFrame * CFrame.new(0,0,-2)
-                            Remote:FireServer("Drops","Collect", drop.Name)
-                        end
+            local drops = workspace:FindFirstChild("Drops")
+            if drops then
+                for _, d in pairs(drops:GetDescendants()) do
+                    if d:IsA("BasePart") then
+                        Remote:FireServer("Drops","Collect", d.Name)
                     end
-
                 end
             end
 
@@ -202,52 +198,53 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- GUI
+-- GUI (SAMA KAYAK PUNYA LU)
 ----------------------------------------------------------------
 
-local gui = Instance.new("ScreenGui")
-gui.Parent = player.PlayerGui
+local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,270,0,370)
-main.Position = UDim2.new(0.5,-135,0.5,-185)
-main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+main.Size = UDim2.new(0,270,0,340)
+main.Position = UDim2.new(0.5,-135,0.5,-170)
+main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
 main.Draggable = true
+Instance.new("UICorner", main)
 
 local top = Instance.new("Frame", main)
-top.Size = UDim2.new(1,0,0,30)
-top.BackgroundColor3 = Color3.fromRGB(15,15,15)
+top.Size = UDim2.new(1,0,0,32)
+top.BackgroundColor3 = Color3.fromRGB(12,12,12)
 
 local title = Instance.new("TextLabel", top)
 title.Size = UDim2.new(1,-70,1,0)
 title.Position = UDim2.new(0,10,0,0)
-title.Text = "Aura Farm FULL"
+title.Text = "Aura Farm FIXED"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
-title.TextXAlignment = Enum.TextXAlignment.Left
 
 local close = Instance.new("TextButton", top)
-close.Size = UDim2.new(0,30,1,0)
-close.Position = UDim2.new(1,-30,0,0)
+close.Size = UDim2.new(0,32,1,0)
+close.Position = UDim2.new(1,-32,0,0)
 close.Text = "X"
 
 local mini = Instance.new("TextButton", top)
-mini.Size = UDim2.new(0,30,1,0)
-mini.Position = UDim2.new(1,-60,0,0)
+mini.Size = UDim2.new(0,32,1,0)
+mini.Position = UDim2.new(1,-64,0,0)
 mini.Text = "-"
 
 local icon = Instance.new("TextButton", gui)
 icon.Size = UDim2.new(0,50,0,50)
-icon.Position = UDim2.new(0,10,0.5,0)
+icon.Position = UDim2.new(0,15,0.5,0)
 icon.Text = "OPEN"
 icon.Visible = false
 
 local function Toggle(name,pos,callback)
     local btn = Instance.new("TextButton", main)
-    btn.Size = UDim2.new(1,-20,0,40)
-    btn.Position = UDim2.new(0,10,0,40 + pos*45)
+    btn.Size = UDim2.new(1,-20,0,45)
+    btn.Position = UDim2.new(0,10,0,40 + pos*50)
+    btn.BackgroundColor3 = Color3.fromRGB(28,28,28)
+    btn.TextColor3 = Color3.new(1,1,1)
     btn.Text = name.." : OFF"
 
     local state = false
