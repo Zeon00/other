@@ -194,7 +194,7 @@ task.spawn(function()
     while task.wait(0.2) do
         if AutoRoll then
             Remote:FireServer("Stars","Roll",{
-                Map = "Shadow Castle",
+                Map = "Frozen Forest",
                 Type = "Multi"
             })
         end
