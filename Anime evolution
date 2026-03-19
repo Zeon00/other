@@ -14,7 +14,7 @@ local EnemyTP = false
 local AutoRoll = false
 
 local lastEnemy = nil
-local HIT_MULTIPLIER = 1
+local HIT_MULTIPLIER = 2
 
 ----------------------------------------------------------------
 -- CORE
@@ -105,7 +105,7 @@ local function TeleportToEnemy(mob)
             root.Velocity = Vector3.new(0,0,0)
         end
     end
-endd
+end
 
 ----------------------------------------------------------------
 -- MAIN LOOP
