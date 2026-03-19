@@ -14,6 +14,7 @@ local EnemyTP = false
 local AutoRoll = false
 local AntiAFK = false
 local lastEnemy = nil
+local AutoRankUp = false
 local HIT_MULTIPLIER = 2
 
 ----------------------------------------------------------------
@@ -98,10 +99,13 @@ local function TeleportToEnemy(mob)
         local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
         if pos then
             
-            local offset = Vector3.new(0,0,-3) -- jarak dari mob
+            -- ❌ ANTI VOID
+            if pos.Y < 1 then return end
+
+            local offset = Vector3.new(0,2,-3) -- dikit dinaikin biar aman
             local myPos = pos + offset
             
-            root.CFrame = CFrame.lookAt(myPos, pos) -- 🔥 ini fixnya
+            root.CFrame = CFrame.lookAt(myPos, pos)
             root.Velocity = Vector3.new(0,0,0)
         end
     end
@@ -201,6 +205,20 @@ task.spawn(function()
     end
 end)
 ----------------------------------------------------------------
+-- AUTO RANK UP (5 MENIT)
+----------------------------------------------------------------
+task.spawn(function()
+    while task.wait(300) do
+        if AutoRankUp then
+            local args = {
+                "RankUp",
+                "Evolve"
+            }
+            Remote:FireServer(unpack(args))
+        end
+    end
+end)
+----------------------------------------------------------------
 -- ANTI AFK
 ----------------------------------------------------------------
 local VirtualUser = game:GetService("VirtualUser")
@@ -219,7 +237,7 @@ local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,270,0,340)
+main.Size = UDim2.new(0,270,0,480)
 main.Position = UDim2.new(0.5,-135,0.5,-170)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
@@ -276,6 +294,7 @@ Toggle("Auto Train",3,function(v) AutoTrain=v end)
 Toggle("TP Enemy",4,function(v) EnemyTP=v end)
 Toggle("Auto Roll",5,function(v) AutoRoll=v end)
 Toggle("Anti AFK",6,function(v) AntiAFK=v end)
+Toggle("Auto RankUp",7,function(v) AutoRankUp=v end)
 
 close.MouseButton1Click:Connect(function()
     gui:Destroy()
