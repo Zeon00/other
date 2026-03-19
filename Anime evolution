@@ -97,11 +97,15 @@ local function TeleportToEnemy(mob)
     if root then
         local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
         if pos then
-            root.CFrame = CFrame.new(pos + Vector3.new(0,0,-3))
+            
+            local offset = Vector3.new(0,0,-3) -- jarak dari mob
+            local myPos = pos + offset
+            
+            root.CFrame = CFrame.lookAt(myPos, pos) -- 🔥 ini fixnya
             root.Velocity = Vector3.new(0,0,0)
         end
     end
-end
+endd
 
 ----------------------------------------------------------------
 -- MAIN LOOP
