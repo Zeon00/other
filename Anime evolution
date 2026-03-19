@@ -255,27 +255,55 @@ player.Idled:Connect(function()
 end)
 
 ----------------------------------------------------------------
--- GUI
+-- GUI (SCROLL FIX)
 ----------------------------------------------------------------
 
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,270,0,420)
-main.Position = UDim2.new(0.5,-135,0.5,-210)
+main.Size = UDim2.new(0,270,0,340)
+main.Position = UDim2.new(0.5,-135,0.5,-170)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
 
-local function Toggle(name,pos,callback)
-    local btn = Instance.new("TextButton", main)
+-- TOP BAR
+local top = Instance.new("Frame", main)
+top.Size = UDim2.new(1,0,0,32)
+top.BackgroundColor3 = Color3.fromRGB(12,12,12)
+
+local title = Instance.new("TextLabel", top)
+title.Size = UDim2.new(1,-70,1,0)
+title.Position = UDim2.new(0,10,0,0)
+title.Text = "Aura Farm FIXED"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+
+-- SCROLL AREA
+local scroll = Instance.new("ScrollingFrame", main)
+scroll.Size = UDim2.new(1,0,1,-32)
+scroll.Position = UDim2.new(0,0,0,32)
+scroll.CanvasSize = UDim2.new(0,0,0,0)
+scroll.ScrollBarThickness = 6
+scroll.BackgroundTransparency = 1
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0,5)
+
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
+end)
+
+-- TOGGLE FUNCTION
+local function Toggle(name,callback)
+    local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1,-20,0,45)
-    btn.Position = UDim2.new(0,10,0,40 + pos*50)
     btn.BackgroundColor3 = Color3.fromRGB(28,28,28)
     btn.TextColor3 = Color3.new(1,1,1)
     btn.Text = name.." : OFF"
+    btn.Parent = scroll
 
     local state = false
     btn.MouseButton1Click:Connect(function()
@@ -285,14 +313,13 @@ local function Toggle(name,pos,callback)
     end)
 end
 
-Toggle("Auto Hit",0,function(v) AutoHit=v end)
-Toggle("Auto Pet",1,function(v) AutoPet=v end)
-Toggle("Auto Collect",2,function(v) AutoCollect=v end)
-Toggle("Auto Train",3,function(v) AutoTrain=v end)
-Toggle("TP Enemy",4,function(v) EnemyTP=v end)
-Toggle("Auto Roll",5,function(v) AutoRoll=v end)
-Toggle("Anti AFK",6,function(v) AntiAFK=v end)
-
--- 🔥 CRYSTAL RAID
-Toggle("Crystal Hit",7,function(v) CrystalHit=v end)
-Toggle("Crystal Pet",8,function(v) CrystalPet=v end)
+-- TOGGLES
+Toggle("Auto Hit",function(v) AutoHit=v end)
+Toggle("Auto Pet",function(v) AutoPet=v end)
+Toggle("Auto Collect",function(v) AutoCollect=v end)
+Toggle("Auto Train",function(v) AutoTrain=v end)
+Toggle("TP Enemy",function(v) EnemyTP=v end)
+Toggle("Auto Roll",function(v) AutoRoll=v end)
+Toggle("Anti AFK",function(v) AntiAFK=v end)
+Toggle("Crystal Hit",function(v) CrystalHit=v end)
+Toggle("Crystal Pet",function(v) CrystalPet=v end)
