@@ -14,6 +14,7 @@ local EnemyTP = false
 local AutoRoll = false
 local AntiAFK = false
 local lastEnemy = nil
+local AutoRankUp = false
 local HIT_MULTIPLIER = 2
 
 ----------------------------------------------------------------
@@ -194,9 +195,23 @@ task.spawn(function()
     while task.wait(0.2) do
         if AutoRoll then
             Remote:FireServer("Stars","Roll",{
-                Map = "Ant Island",
+                Map = "Orc Sanctuary",
                 Type = "Multi"
             })
+        end
+    end
+end)
+----------------------------------------------------------------
+-- AUTO RANK UP (5 MENIT)
+----------------------------------------------------------------
+task.spawn(function()
+    while task.wait(120) do
+        if AutoRankUp then
+            local args = {
+                "RankUp",
+                "Evolve"
+            }
+            Remote:FireServer(unpack(args))
         end
     end
 end)
@@ -219,7 +234,7 @@ local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,270,0,340)
+main.Size = UDim2.new(0,270,0,480)
 main.Position = UDim2.new(0.5,-135,0.5,-170)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
@@ -276,6 +291,7 @@ Toggle("Auto Train",3,function(v) AutoTrain=v end)
 Toggle("TP Enemy",4,function(v) EnemyTP=v end)
 Toggle("Auto Roll",5,function(v) AutoRoll=v end)
 Toggle("Anti AFK",6,function(v) AntiAFK=v end)
+Toggle("Auto RankUp",7,function(v) AutoRankUp=v end)
 
 close.MouseButton1Click:Connect(function()
     gui:Destroy()
