@@ -13,7 +13,6 @@ local AutoTrain = false
 local EnemyTP = false
 local AutoRoll = false
 local AutoRankUp = false
-local Vacuum = false
 local lastEnemy = nil
 local HIT_MULTIPLIER = 2
 
