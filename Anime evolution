@@ -1,6 +1,7 @@
 --// SERVICES
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
 
 local player = Players.LocalPlayer
 local Remote = RS:WaitForChild("Bridge")
@@ -8,13 +9,12 @@ local Remote = RS:WaitForChild("Bridge")
 --// STATES
 local AutoHit = false
 local AutoPet = false
-local AutoCollect = false
 local AutoTrain = false
 local EnemyTP = false
 local AutoRoll = false
-local AntiAFK = false
-local lastEnemy = nil
 local AutoRankUp = false
+local Vacuum = false
+local lastEnemy = nil
 local HIT_MULTIPLIER = 2
 
 ----------------------------------------------------------------
@@ -28,7 +28,7 @@ local function GetRoot()
     end
 end
 
--- ✅ FIX: ambil enemy server + posisi aman
+-- ✅ SUPPORT WORLD + RAID
 local function GetNearestEnemy()
     local root = GetRoot()
     if not root then return end
@@ -38,8 +38,15 @@ local function GetNearestEnemy()
 
     local enemies = workspace.Server.Enemies
 
-    for _, typeFolder in pairs({"World","Raids","WorldBoss"}) do
-        local main = enemies:FindFirstChild(typeFolder)
+    for _, typeFolder in pairs({"World","Raid","WorldBoss"}) do
+        local main
+
+        if typeFolder == "Raid" then
+            main = enemies:FindFirstChild("Raids")
+        else
+            main = enemies:FindFirstChild(typeFolder)
+        end
+
         if main then
             for _, world in pairs(main:GetChildren()) do
                 for _, mob in pairs(world:GetChildren()) do
@@ -47,13 +54,7 @@ local function GetNearestEnemy()
                     local hp = mob:GetAttribute("Health")
                     if hp and hp > 0 then
 
-                        local pos = mob.Position
-                        if not pos then
-                            local hrp = mob:FindFirstChild("HumanoidRootPart")
-                            if hrp then
-                                pos = hrp.Position
-                            end
-                        end
+                        local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
 
                         if pos then
                             local d = (root.Position - pos).Magnitude
@@ -90,7 +91,7 @@ local function GetPets()
 end
 
 ----------------------------------------------------------------
--- TP (TETEP LOGIC LU)
+-- TP
 ----------------------------------------------------------------
 
 local function TeleportToEnemy(mob)
@@ -98,18 +99,16 @@ local function TeleportToEnemy(mob)
     if root then
         local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
         if pos then
-            
-            local offset = Vector3.new(0,0,-3) -- jarak dari mob
+            local offset = Vector3.new(0,0,-3)
             local myPos = pos + offset
-            
-            root.CFrame = CFrame.lookAt(myPos, pos) -- 🔥 ini fixnya
+            root.CFrame = CFrame.lookAt(myPos, pos)
             root.Velocity = Vector3.new(0,0,0)
         end
     end
 end
 
 ----------------------------------------------------------------
--- MAIN LOOP
+-- MAIN LOOP (HIT + PET)
 ----------------------------------------------------------------
 
 task.spawn(function()
@@ -119,7 +118,6 @@ task.spawn(function()
 
         if target then
 
-            -- TP ONLY IF ENEMY CHANGE
             if EnemyTP then
                 if lastEnemy ~= target.Enemy then
                     TeleportToEnemy(target.Enemy)
@@ -127,7 +125,6 @@ task.spawn(function()
                 end
             end
 
-            -- ✅ FIX HIT & PET
             if AutoHit or AutoPet then
                 for i = 1, HIT_MULTIPLIER do
 
@@ -156,34 +153,12 @@ task.spawn(function()
 
         end
 
-        -- TRAIN
         if AutoTrain then
             for i = 1, HIT_MULTIPLIER do
                 Remote:FireServer("Attack","Click",{})
             end
         end
 
-    end
-end)
-
-----------------------------------------------------------------
--- AUTO COLLECT (BYPASS JARAK)
-----------------------------------------------------------------
-
-task.spawn(function()
-    while task.wait(0.01) do
-        if AutoCollect then
-
-            local drops = workspace:FindFirstChild("Drops")
-            if drops then
-                for _, d in pairs(drops:GetDescendants()) do
-                    if d:IsA("BasePart") then
-                        Remote:FireServer("Drops","Collect", d.Name)
-                    end
-                end
-            end
-
-        end
     end
 end)
 
@@ -195,46 +170,43 @@ task.spawn(function()
     while task.wait(0.2) do
         if AutoRoll then
             Remote:FireServer("Stars","Roll",{
-                Map = "Volcano",
+                Map = "Gloomridge",
                 Type = "Multi"
             })
         end
     end
 end)
+
 ----------------------------------------------------------------
--- AUTO RANK UP (5 MENIT)
+-- AUTO RANK UP
 ----------------------------------------------------------------
+
 task.spawn(function()
     while task.wait(120) do
         if AutoRankUp then
-            local args = {
-                "RankUp",
-                "Evolve"
-            }
-            Remote:FireServer(unpack(args))
+            Remote:FireServer("RankUp","Evolve")
         end
     end
 end)
+
 ----------------------------------------------------------------
--- ANTI AFK
+-- ANTI AFK (ALWAYS ON)
 ----------------------------------------------------------------
-local VirtualUser = game:GetService("VirtualUser")
 
 player.Idled:Connect(function()
-    if AntiAFK then
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
-    end
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
 end)
+
 ----------------------------------------------------------------
--- GUI (SAMA KAYAK PUNYA LU)
+-- GUI
 ----------------------------------------------------------------
 
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,270,0,480)
+main.Size = UDim2.new(0,270,0,420)
 main.Position = UDim2.new(0.5,-135,0.5,-170)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
@@ -248,7 +220,7 @@ top.BackgroundColor3 = Color3.fromRGB(12,12,12)
 local title = Instance.new("TextLabel", top)
 title.Size = UDim2.new(1,-70,1,0)
 title.Position = UDim2.new(0,10,0,0)
-title.Text = "Aura Farm FIXED"
+title.Text = "Aura Farm FINAL"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
 
@@ -286,12 +258,10 @@ end
 
 Toggle("Auto Hit",0,function(v) AutoHit=v end)
 Toggle("Auto Pet",1,function(v) AutoPet=v end)
-Toggle("Auto Collect",2,function(v) AutoCollect=v end)
-Toggle("Auto Train",3,function(v) AutoTrain=v end)
-Toggle("TP Enemy",4,function(v) EnemyTP=v end)
-Toggle("Auto Roll",5,function(v) AutoRoll=v end)
-Toggle("Anti AFK",6,function(v) AntiAFK=v end)
-Toggle("Auto RankUp",7,function(v) AutoRankUp=v end)
+Toggle("Auto Train",2,function(v) AutoTrain=v end)
+Toggle("TP Enemy",3,function(v) EnemyTP=v end)
+Toggle("Auto Roll",4,function(v) AutoRoll=v end)
+Toggle("Auto RankUp",5,function(v) AutoRankUp=v end)
 
 close.MouseButton1Click:Connect(function()
     gui:Destroy()
