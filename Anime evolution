@@ -39,51 +39,40 @@ local function GetNearestEnemy()
     local enemies = workspace.Server.Enemies
 
     for _, typeFolder in pairs({"World","Raid","WorldBoss"}) do
-        local main
+    local main
 
-        if typeFolder == "Raid" then
-            main = enemies:FindFirstChild("Raids")
-        else
-            main = enemies:FindFirstChild(typeFolder)
-        end
-
-        if main then
-            for _, world in pairs(main:GetChildren()) do
-                for _, mob in pairs(world:GetChildren()) do
-
-                   local hp = mob:GetAttribute("Health")
-local died = mob:GetAttribute("Died")
-
-local hrp = mob:FindFirstChild("HumanoidRootPart")
-
-if hrp and hp and hp > 0 and not died then
-
-    local pos = hrp.Position
-    local d = (root.Position - pos).Magnitude
-
-    -- 🔥 skip yang terlalu jauh (spawn kosong biasanya jauh)
-    if d < dist and d < 200 then
-        dist = d
-        closest = {
-            Enemy = mob,
-            Type = typeFolder
-        }
+    if typeFolder == "Raid" then
+        main = enemies:FindFirstChild("Raids")
+    else
+        main = enemies:FindFirstChild(typeFolder)
     end
 
-end
+    if main then
+        for _, world in pairs(main:GetChildren()) do
+            for _, mob in pairs(world:GetChildren()) do
+
+                local hp = mob:GetAttribute("Health")
+                local died = mob:GetAttribute("Died")
+                if hp and hp > 0 and not died then
+
+                    local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
+
+                    if pos then
+                        local d = (root.Position - pos).Magnitude
+                        if d < dist then
+                            dist = d
+                            closest = {
+                                Enemy = mob,
+                                Type = typeFolder -- 🔥 sekarang valid
+                            }
+                        end
+                    end
 
                 end
+
             end
         end
     end
-if EnemyTP then
-    if lastEnemy ~= target.Enemy then
-        TeleportToEnemy(target.Enemy)
-        lastEnemy = target.Enemy
-        task.wait(0.1) -- 🔥 anti spam TP
-    end
-end
-    return closest
 end
 
 local function GetPets()
