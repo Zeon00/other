@@ -74,7 +74,8 @@ local function GetNearestEnemy()
         end
     end
 end
-
+    return closest
+end
 local function GetPets()
     local pets = {}
     local folder = workspace.Server.Pets:FindFirstChild(tostring(player.UserId))
