@@ -51,18 +51,18 @@ local function GetNearestEnemy()
             for _, world in pairs(main:GetChildren()) do
                 for _, mob in pairs(world:GetChildren()) do
 
-                    local hp = mob:GetAttribute("Health")
+                   local hp = mob:GetAttribute("Health")
 local died = mob:GetAttribute("Died")
 
 local hrp = mob:FindFirstChild("HumanoidRootPart")
-local hum = mob:FindFirstChildOfClass("Humanoid")
 
-if hrp and hum and hp and hp > 0 and hum.Health > 0 and not died then
+if hrp and hp and hp > 0 and not died then
 
     local pos = hrp.Position
     local d = (root.Position - pos).Magnitude
 
-    if d < dist then
+    -- 🔥 skip yang terlalu jauh (spawn kosong biasanya jauh)
+    if d < dist and d < 200 then
         dist = d
         closest = {
             Enemy = mob,
@@ -76,7 +76,13 @@ end
             end
         end
     end
-
+if EnemyTP then
+    if lastEnemy ~= target.Enemy then
+        TeleportToEnemy(target.Enemy)
+        lastEnemy = target.Enemy
+        task.wait(0.1) -- 🔥 anti spam TP
+    end
+end
     return closest
 end
 
