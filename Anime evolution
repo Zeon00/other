@@ -6,18 +6,23 @@ local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
 local Remote = RS:WaitForChild("Bridge")
 
---// STATES
+--// STATES (SEMUA TETAP)
 local AutoHit = false
 local AutoPet = false
 local AutoTrain = false
 local EnemyTP = false
 local AutoRoll = false
 local AutoRankUp = false
+
 local lastEnemy = nil
-local HIT_MULTIPLIER = 2
+local HIT_MULTIPLIER = 3
+
+-- 🔥 TAMBAHAN
+local UseSelected = false
+local SelectedEnemy = nil
 
 ----------------------------------------------------------------
--- CORE
+-- CORE (TETAP)
 ----------------------------------------------------------------
 
 local function GetRoot()
@@ -27,7 +32,38 @@ local function GetRoot()
     end
 end
 
--- ✅ SUPPORT WORLD + RAID
+----------------------------------------------------------------
+-- 🔥 GET ENEMY NAME DARI CLIENT (FIX UUID)
+----------------------------------------------------------------
+
+local function GetAllEnemyNames()
+    local list = {}
+    local enemies = workspace:FindFirstChild("Client") and workspace.Client:FindFirstChild("Enemies")
+    if not enemies then return list end
+
+    for _, v in pairs(enemies:GetDescendants()) do
+        if v.Name and v.Parent and v.Parent.Name == "HumanoidRootPart" then
+            local exist = false
+            for _, n in pairs(list) do
+                if n == v.Name then
+                    exist = true
+                    break
+                end
+            end
+            if not exist then
+                table.insert(list, v.Name)
+            end
+        end
+    end
+
+    table.sort(list)
+    return list
+end
+
+----------------------------------------------------------------
+-- 🔥 TARGET (FILTER NAME)
+----------------------------------------------------------------
+
 local function GetNearestEnemy()
     local root = GetRoot()
     if not root then return end
@@ -38,43 +74,49 @@ local function GetNearestEnemy()
     local enemies = workspace.Server.Enemies
 
     for _, typeFolder in pairs({"World","Raid","WorldBoss"}) do
-    local main
+        local main = (typeFolder=="Raid" and enemies:FindFirstChild("Raids")) or enemies:FindFirstChild(typeFolder)
 
-    if typeFolder == "Raid" then
-        main = enemies:FindFirstChild("Raids")
-    else
-        main = enemies:FindFirstChild(typeFolder)
-    end
+        if main then
+            for _, world in pairs(main:GetChildren()) do
+                for _, mob in pairs(world:GetChildren()) do
 
-    if main then
-        for _, world in pairs(main:GetChildren()) do
-            for _, mob in pairs(world:GetChildren()) do
+                    local hp = mob:GetAttribute("Health")
+                    local died = mob:GetAttribute("Died")
 
-                local hp = mob:GetAttribute("Health")
-                local died = mob:GetAttribute("Died")
-                if hp and hp > 0 and not died then
+                    if hp and hp > 0 and not died then
 
-                    local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
-
-                    if pos then
-                        local d = (root.Position - pos).Magnitude
-                        if d < dist then
-                            dist = d
-                            closest = {
-                                Enemy = mob,
-                                Type = typeFolder -- 🔥 sekarang valid
-                            }
+                        local valid = true
+                        if UseSelected and SelectedEnemy then
+                            if mob.Name ~= SelectedEnemy then
+                                valid = false
+                            end
                         end
+
+                        if valid then
+                            local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
+
+                            if pos then
+                                local d = (root.Position - pos).Magnitude
+                                if d < dist then
+                                    dist = d
+                                    closest = {Enemy = mob, Type = typeFolder}
+                                end
+                            end
+                        end
+
                     end
-
                 end
-
             end
         end
     end
-end
+
     return closest
 end
+
+----------------------------------------------------------------
+-- PET (TETAP)
+----------------------------------------------------------------
+
 local function GetPets()
     local pets = {}
     local folder = workspace.Server.Pets:FindFirstChild(tostring(player.UserId))
@@ -89,7 +131,7 @@ local function GetPets()
 end
 
 ----------------------------------------------------------------
--- TP
+-- TP (TETAP)
 ----------------------------------------------------------------
 
 local function TeleportToEnemy(mob)
@@ -97,58 +139,48 @@ local function TeleportToEnemy(mob)
     if root then
         local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
         if pos then
-            local offset = Vector3.new(0,0,-3)
-            local myPos = pos + offset
-            root.CFrame = CFrame.lookAt(myPos, pos)
-            root.Velocity = Vector3.new(0,0,0)
+            root.CFrame = CFrame.lookAt(pos + Vector3.new(0,0,-3), pos)
         end
     end
 end
 
 ----------------------------------------------------------------
--- MAIN LOOP (HIT + PET)
+-- MAIN LOOP (TETAP + FILTER)
 ----------------------------------------------------------------
 
 task.spawn(function()
-    while task.wait(0.08) do
+    while task.wait(0.5) do
 
         local target = GetNearestEnemy()
 
         if target then
-
-            if EnemyTP then
-                if lastEnemy ~= target.Enemy then
-                    TeleportToEnemy(target.Enemy)
-                    lastEnemy = target.Enemy
-                end
+            if EnemyTP and lastEnemy ~= target.Enemy then
+                TeleportToEnemy(target.Enemy)
+                lastEnemy = target.Enemy
             end
 
-            if AutoHit or AutoPet then
-                for i = 1, HIT_MULTIPLIER do
+            for i = 1, HIT_MULTIPLIER do
 
-                    if AutoHit then
-                        Remote:FireServer("Attack","Click", {
-                            Type = target.Type,
-                            Enemy = target.Enemy
+                if AutoHit then
+                    Remote:FireServer("Attack","Click",{
+                        Type = target.Type,
+                        Enemy = target.Enemy
+                    })
+                end
+
+                if AutoPet then
+                    for _, petID in pairs(GetPets()) do
+                        Remote:FireServer("Attack","UnitAttack",{
+                            {
+                                Type = target.Type,
+                                Enemy = target.Enemy
+                            },
+                            petID
                         })
                     end
-
-                    if AutoPet then
-                        local pets = GetPets()
-                        for _, petID in pairs(pets) do
-                            Remote:FireServer("Attack","UnitAttack", {
-                                {
-                                    Type = target.Type,
-                                    Enemy = target.Enemy
-                                },
-                                petID
-                            })
-                        end
-                    end
-
                 end
-            end
 
+            end
         end
 
         if AutoTrain then
@@ -161,23 +193,16 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- AUTO ROLL
+-- AUTO ROLL & RANK (TETAP GA DIHAPUS)
 ----------------------------------------------------------------
 
 task.spawn(function()
     while task.wait(0.2) do
         if AutoRoll then
-            Remote:FireServer("Stars","Roll",{
-                Map = "Gloomridge",
-                Type = "Multi"
-            })
+            Remote:FireServer("Stars","Roll",{Map="Gloomridge",Type="Multi"})
         end
     end
 end)
-
-----------------------------------------------------------------
--- AUTO RANK UP
-----------------------------------------------------------------
 
 task.spawn(function()
     while task.wait(120) do
@@ -188,7 +213,7 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- ANTI AFK (ALWAYS ON)
+-- ANTI AFK (TETAP)
 ----------------------------------------------------------------
 
 player.Idled:Connect(function()
@@ -197,73 +222,50 @@ player.Idled:Connect(function()
 end)
 
 ----------------------------------------------------------------
--- GUI
+-- GUI (FIX SESUAI MAU LU)
 ----------------------------------------------------------------
 
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,270,0,420)
-main.Position = UDim2.new(0.5,-135,0.5,-170)
-main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+main.Size = UDim2.new(0,420,0,400)
+main.Position = UDim2.new(0.5,-210,0.5,-200)
+main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.Active = true
 main.Draggable = true
-Instance.new("UICorner", main)
 
+-- TOP
 local top = Instance.new("Frame", main)
-top.Size = UDim2.new(1,0,0,32)
-top.BackgroundColor3 = Color3.fromRGB(12,12,12)
+top.Size = UDim2.new(1,0,0,30)
+top.BackgroundColor3 = Color3.fromRGB(15,15,15)
 
 local title = Instance.new("TextLabel", top)
-title.Size = UDim2.new(1,-70,1,0)
-title.Position = UDim2.new(0,10,0,0)
-title.Text = "Aura Farm FINAL"
+title.Size = UDim2.new(1,-60,1,0)
+title.Text = "Aura Farm"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
 
+-- CLOSE X
 local close = Instance.new("TextButton", top)
-close.Size = UDim2.new(0,32,1,0)
-close.Position = UDim2.new(1,-32,0,0)
+close.Size = UDim2.new(0,30,1,0)
+close.Position = UDim2.new(1,-30,0,0)
 close.Text = "X"
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
 
+-- MINIMIZE
 local mini = Instance.new("TextButton", top)
-mini.Size = UDim2.new(0,32,1,0)
-mini.Position = UDim2.new(1,-64,0,0)
+mini.Size = UDim2.new(0,30,1,0)
+mini.Position = UDim2.new(1,-60,0,0)
 mini.Text = "-"
 
 local icon = Instance.new("TextButton", gui)
 icon.Size = UDim2.new(0,50,0,50)
-icon.Position = UDim2.new(0,15,0.5,0)
+icon.Position = UDim2.new(0,10,0.5,0)
 icon.Text = "OPEN"
 icon.Visible = false
-
-local function Toggle(name,pos,callback)
-    local btn = Instance.new("TextButton", main)
-    btn.Size = UDim2.new(1,-20,0,45)
-    btn.Position = UDim2.new(0,10,0,40 + pos*50)
-    btn.BackgroundColor3 = Color3.fromRGB(28,28,28)
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Text = name.." : OFF"
-
-    local state = false
-    btn.MouseButton1Click:Connect(function()
-        state = not state
-        btn.Text = name.." : "..(state and "ON" or "OFF")
-        callback(state)
-    end)
-end
-
-Toggle("Auto Hit",0,function(v) AutoHit=v end)
-Toggle("Auto Pet",1,function(v) AutoPet=v end)
-Toggle("Auto Train",2,function(v) AutoTrain=v end)
-Toggle("TP Enemy",3,function(v) EnemyTP=v end)
-Toggle("Auto Roll",4,function(v) AutoRoll=v end)
-Toggle("Auto RankUp",5,function(v) AutoRankUp=v end)
-
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
 
 mini.MouseButton1Click:Connect(function()
     main.Visible = false
@@ -273,4 +275,97 @@ end)
 icon.MouseButton1Click:Connect(function()
     main.Visible = true
     icon.Visible = false
+end)
+
+-- LEFT (TOGGLES)
+local left = Instance.new("Frame", main)
+left.Size = UDim2.new(0.5,0,1,-30)
+left.Position = UDim2.new(0,0,0,30)
+
+local layout = Instance.new("UIListLayout", left)
+
+local function Toggle(name, cb)
+    local b = Instance.new("TextButton", left)
+    b.Size = UDim2.new(1,0,0,40)
+    b.Text = name.." : OFF"
+
+    local s=false
+    b.MouseButton1Click:Connect(function()
+        s=not s
+        b.Text=name.." : "..(s and "ON" or "OFF")
+        cb(s)
+    end)
+end
+
+Toggle("Use Selected", function(v) UseSelected=v end)
+Toggle("Auto Hit", function(v) AutoHit=v end)
+Toggle("Auto Pet", function(v) AutoPet=v end)
+Toggle("Auto Train", function(v) AutoTrain=v end)
+Toggle("TP Enemy", function(v) EnemyTP=v end)
+Toggle("Auto Roll", function(v) AutoRoll=v end)
+Toggle("Auto RankUp", function(v) AutoRankUp=v end)
+
+-- RIGHT (LIST NAMA BENER)
+local right = Instance.new("ScrollingFrame", main)
+right.Size = UDim2.new(0.5,0,1,-30)
+right.Position = UDim2.new(0.5,0,0,30)
+
+local layout2 = Instance.new("UIListLayout", right)
+
+for _, name in pairs(GetAllEnemyNames()) do
+    local b = Instance.new("TextButton", right)
+    b.Size = UDim2.new(1,0,0,30)
+    b.Text = name
+
+    b.MouseButton1Click:Connect(function()
+        SelectedEnemy = name
+    end)
+end
+-- 🔥 MAP HASH (DETECT PERUBAHAN MAP)
+local function GetMapHash()
+    local enemies = workspace:FindFirstChild("Client") and workspace.Client:FindFirstChild("Enemies")
+    if not enemies then return "" end
+
+    local str = ""
+    for _, v in pairs(enemies:GetDescendants()) do
+        str = str .. v.Name
+    end
+    return str
+end
+
+local currentHash = GetMapHash()
+
+-- 🔥 REFRESH LIST FUNCTION
+local function RefreshEnemyList()
+    for _, v in pairs(right:GetChildren()) do
+        if v:IsA("TextButton") then
+            v:Destroy()
+        end
+    end
+
+    local list = GetAllEnemyNames()
+
+    for _, name in pairs(list) do
+        local b = Instance.new("TextButton", right)
+        b.Size = UDim2.new(1,0,0,30)
+        b.Text = name
+
+        b.MouseButton1Click:Connect(function()
+            SelectedEnemy = name
+        end)
+    end
+
+    right.CanvasSize = UDim2.new(0,0,0,#list * 30)
+end
+
+-- 🔥 AUTO DETECT PINDAH MAP
+task.spawn(function()
+    while task.wait(2) do
+        local newHash = GetMapHash()
+
+        if newHash ~= currentHash then
+            currentHash = newHash
+            RefreshEnemyList()
+        end
+    end
 end)
