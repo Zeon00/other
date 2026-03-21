@@ -6,7 +6,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
 local Remote = RS:WaitForChild("Bridge")
 
---// STATES (SEMUA TETAP)
+--// STATES
 local AutoHit = false
 local AutoPet = false
 local AutoTrain = false
@@ -20,9 +20,10 @@ local HIT_MULTIPLIER = 3
 -- 🔥 TAMBAHAN
 local UseSelected = false
 local SelectedEnemy = nil
+local TP_DISTANCE = 350 -- 🔥 BATAS TP
 
 ----------------------------------------------------------------
--- CORE (TETAP)
+-- CORE
 ----------------------------------------------------------------
 
 local function GetRoot()
@@ -33,7 +34,7 @@ local function GetRoot()
 end
 
 ----------------------------------------------------------------
--- 🔥 GET ENEMY NAME DARI CLIENT (FIX UUID)
+-- ENEMY LIST
 ----------------------------------------------------------------
 
 local function GetAllEnemyNames()
@@ -43,14 +44,7 @@ local function GetAllEnemyNames()
 
     for _, v in pairs(enemies:GetDescendants()) do
         if v.Name and v.Parent and v.Parent.Name == "HumanoidRootPart" then
-            local exist = false
-            for _, n in pairs(list) do
-                if n == v.Name then
-                    exist = true
-                    break
-                end
-            end
-            if not exist then
+            if not table.find(list, v.Name) then
                 table.insert(list, v.Name)
             end
         end
@@ -61,7 +55,7 @@ local function GetAllEnemyNames()
 end
 
 ----------------------------------------------------------------
--- 🔥 TARGET (FILTER NAME)
+-- TARGET
 ----------------------------------------------------------------
 
 local function GetNearestEnemy()
@@ -114,7 +108,7 @@ local function GetNearestEnemy()
 end
 
 ----------------------------------------------------------------
--- PET (TETAP)
+-- PET
 ----------------------------------------------------------------
 
 local function GetPets()
@@ -131,25 +125,37 @@ local function GetPets()
 end
 
 ----------------------------------------------------------------
--- TP (TETAP)
+-- 🔥 TP FIX (ANTI VOID + DISTANCE)
 ----------------------------------------------------------------
 
 local function TeleportToEnemy(mob)
     local root = GetRoot()
-    if root then
-        local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
-        if pos then
-            root.CFrame = CFrame.lookAt(pos + Vector3.new(0,0,-3), pos)
-        end
-    end
+    if not root then return end
+
+    local hrp = mob:FindFirstChild("HumanoidRootPart")
+    local pos = mob.Position or (hrp and hrp.Position)
+
+    if not pos then return end
+
+    -- ❌ anti void
+    if pos.Y < -5 then return end
+
+    -- ❌ limit distance
+    local dist = (root.Position - pos).Magnitude
+    if dist > TP_DISTANCE then return end
+
+    -- ✅ posisi aman
+    local safePos = pos + Vector3.new(0,3,5)
+
+    root.CFrame = CFrame.lookAt(safePos, pos)
 end
 
 ----------------------------------------------------------------
--- MAIN LOOP (TETAP + FILTER)
+-- MAIN LOOP
 ----------------------------------------------------------------
 
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(0.2) do
 
         local target = GetNearestEnemy()
 
@@ -193,7 +199,7 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- AUTO ROLL & RANK (TETAP GA DIHAPUS)
+-- AUTO ROLL & RANK
 ----------------------------------------------------------------
 
 task.spawn(function()
@@ -213,7 +219,7 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- ANTI AFK (TETAP)
+-- ANTI AFK (CLICK + GERAK)
 ----------------------------------------------------------------
 
 player.Idled:Connect(function()
@@ -221,9 +227,25 @@ player.Idled:Connect(function()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
+-- 🔥 GERAK DIKIT
+task.spawn(function()
+    while task.wait(60) do
+        local root = GetRoot()
+        if root then
+            root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(5), 0)
+        end
+    end
+end)
+
 ----------------------------------------------------------------
--- GUI (FIX SESUAI MAU LU)
+-- GUI GOTHAM FIX (NO KOSONG)
 ----------------------------------------------------------------
+
+local function Round(obj,r)
+    local u = Instance.new("UICorner")
+    u.CornerRadius = UDim.new(0,r or 6)
+    u.Parent = obj
+end
 
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
@@ -231,35 +253,45 @@ gui.ResetOnSpawn = false
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0,420,0,400)
 main.Position = UDim2.new(0.5,-210,0.5,-200)
-main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
+Round(main,10)
 
--- TOP
 local top = Instance.new("Frame", main)
-top.Size = UDim2.new(1,0,0,30)
-top.BackgroundColor3 = Color3.fromRGB(15,15,15)
+top.Size = UDim2.new(1,0,0,32)
+top.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Round(top,10)
 
 local title = Instance.new("TextLabel", top)
 title.Size = UDim2.new(1,-60,1,0)
-title.Text = "Aura Farm"
-title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 15
+title.Text = "Aura Farm"
+title.TextColor3 = Color3.fromRGB(220,220,220)
 
--- CLOSE X
 local close = Instance.new("TextButton", top)
 close.Size = UDim2.new(0,30,1,0)
 close.Position = UDim2.new(1,-30,0,0)
 close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(35,35,35)
+close.TextColor3 = Color3.new(1,1,1)
+close.Font = Enum.Font.Gotham
+Round(close,6)
 close.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
--- MINIMIZE
 local mini = Instance.new("TextButton", top)
 mini.Size = UDim2.new(0,30,1,0)
 mini.Position = UDim2.new(1,-60,0,0)
 mini.Text = "-"
+mini.BackgroundColor3 = Color3.fromRGB(35,35,35)
+mini.TextColor3 = Color3.new(1,1,1)
+mini.Font = Enum.Font.Gotham
+Round(mini,6)
 
 local icon = Instance.new("TextButton", gui)
 icon.Size = UDim2.new(0,50,0,50)
@@ -277,22 +309,37 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- LEFT (TOGGLES)
+-- LEFT PANEL
 local left = Instance.new("Frame", main)
-left.Size = UDim2.new(0.5,0,1,-30)
-left.Position = UDim2.new(0,0,0,30)
+left.Size = UDim2.new(0.5,0,1,-32)
+left.Position = UDim2.new(0,0,0,32)
+left.BackgroundTransparency = 1
+
+local pad1 = Instance.new("UIPadding", left)
+pad1.PaddingTop = UDim.new(0,5)
+pad1.PaddingLeft = UDim.new(0,5)
+pad1.PaddingRight = UDim.new(0,5)
 
 local layout = Instance.new("UIListLayout", left)
+layout.Padding = UDim.new(0,5)
 
+-- TOGGLE
 local function Toggle(name, cb)
     local b = Instance.new("TextButton", left)
-    b.Size = UDim2.new(1,0,0,40)
+    b.Size = UDim2.new(1,0,0,36)
+    b.BackgroundColor3 = Color3.fromRGB(28,28,28)
+    b.TextColor3 = Color3.fromRGB(220,220,220)
+    b.Font = Enum.Font.Gotham
+    b.TextSize = 14
     b.Text = name.." : OFF"
+    Round(b,8)
 
     local s=false
+
     b.MouseButton1Click:Connect(function()
         s=not s
-        b.Text=name.." : "..(s and "ON" or "OFF")
+        b.Text = name.." : "..(s and "ON" or "OFF")
+        b.BackgroundColor3 = s and Color3.fromRGB(50,50,50) or Color3.fromRGB(28,28,28)
         cb(s)
     end)
 end
@@ -305,39 +352,24 @@ Toggle("TP Enemy", function(v) EnemyTP=v end)
 Toggle("Auto Roll", function(v) AutoRoll=v end)
 Toggle("Auto RankUp", function(v) AutoRankUp=v end)
 
--- RIGHT (LIST NAMA BENER)
+-- RIGHT PANEL
 local right = Instance.new("ScrollingFrame", main)
-right.Size = UDim2.new(0.5,0,1,-30)
-right.Position = UDim2.new(0.5,0,0,30)
+right.Size = UDim2.new(0.5,0,1,-32)
+right.Position = UDim2.new(0.5,0,0,32)
+right.BackgroundTransparency = 1
+right.ScrollBarThickness = 4
+right.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local pad2 = Instance.new("UIPadding", right)
+pad2.PaddingTop = UDim.new(0,5)
+pad2.PaddingLeft = UDim.new(0,5)
+pad2.PaddingRight = UDim.new(0,5)
 
 local layout2 = Instance.new("UIListLayout", right)
+layout2.Padding = UDim.new(0,4)
 
-for _, name in pairs(GetAllEnemyNames()) do
-    local b = Instance.new("TextButton", right)
-    b.Size = UDim2.new(1,0,0,30)
-    b.Text = name
-
-    b.MouseButton1Click:Connect(function()
-        SelectedEnemy = name
-    end)
-end
--- 🔥 MAP HASH (DETECT PERUBAHAN MAP)
-local function GetMapHash()
-    local enemies = workspace:FindFirstChild("Client") and workspace.Client:FindFirstChild("Enemies")
-    if not enemies then return "" end
-
-    local str = ""
-    for _, v in pairs(enemies:GetDescendants()) do
-        str = str .. v.Name
-    end
-    return str
-end
-
-local currentHash = GetMapHash()
-
--- 🔥 REFRESH LIST FUNCTION
 local function RefreshEnemyList()
-    for _, v in pairs(right:GetChildren()) do
+    for _,v in pairs(right:GetChildren()) do
         if v:IsA("TextButton") then
             v:Destroy()
         end
@@ -345,24 +377,40 @@ local function RefreshEnemyList()
 
     local list = GetAllEnemyNames()
 
-    for _, name in pairs(list) do
+    for _,name in pairs(list) do
         local b = Instance.new("TextButton", right)
         b.Size = UDim2.new(1,0,0,30)
+        b.BackgroundColor3 = Color3.fromRGB(25,25,25)
+        b.TextColor3 = Color3.fromRGB(200,200,200)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 13
         b.Text = name
+        Round(b,6)
 
         b.MouseButton1Click:Connect(function()
             SelectedEnemy = name
         end)
     end
-
-    right.CanvasSize = UDim2.new(0,0,0,#list * 30)
 end
 
--- 🔥 AUTO DETECT PINDAH MAP
+RefreshEnemyList()
+
+-- AUTO REFRESH MAP
+local function GetMapHash()
+    local enemies = workspace:FindFirstChild("Client") and workspace.Client:FindFirstChild("Enemies")
+    if not enemies then return "" end
+    local str = ""
+    for _,v in pairs(enemies:GetDescendants()) do
+        str = str..v.Name
+    end
+    return str
+end
+
+local currentHash = GetMapHash()
+
 task.spawn(function()
     while task.wait(2) do
         local newHash = GetMapHash()
-
         if newHash ~= currentHash then
             currentHash = newHash
             RefreshEnemyList()
