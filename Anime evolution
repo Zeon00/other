@@ -149,7 +149,22 @@ local function TeleportToEnemy(mob)
 
     root.CFrame = CFrame.lookAt(safePos, pos)
 end
+----------------------------------------------------------------
+-- ROLL NEW MAP
+----------------------------------------------------------------
+local function GetCurrentMap()
+    local enemies = workspace.Server.Enemies:FindFirstChild("World")
+    if not enemies then return LastMap end
 
+    for _, map in pairs(enemies:GetChildren()) do
+        if #map:GetChildren() > 0 then
+            LastMap = map.Name -- ✅ simpan map terakhir
+            return map.Name
+        end
+    end
+
+    return LastMap -- ✅ fallback ke terakhir
+end
 ----------------------------------------------------------------
 -- MAIN LOOP
 ----------------------------------------------------------------
@@ -205,7 +220,12 @@ end)
 task.spawn(function()
     while task.wait(0.2) do
         if AutoRoll then
-            Remote:FireServer("Stars","Roll",{Map="Fiery World",Type="Multi"})
+            local mapName = GetCurrentMap()
+
+            Remote:FireServer("Stars","Roll",{
+                Map = mapName,
+                Type = "Multi"
+            })
         end
     end
 end)
