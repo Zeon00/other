@@ -139,13 +139,16 @@ end
 ----------------------------------------------------------------
 -- 🔥 TP FIX FULL (AUTO RAID / WORLD)
 ----------------------------------------------------------------
-local function TeleportToEnemy(mob)
+local lastTPTime = 0
+
+local function TeleportToEnemy(mob, enemyType)
     local root = GetRoot()
-    if not root then return end
+    if not root or not mob then return end
 
     local hrp = mob:FindFirstChild("HumanoidRootPart")
-    local pos = mob.Position or (hrp and hrp.Position)
+    if not hrp then return end
 
+    local pos = hrp.Position
     if not pos then return end
 
     -- ❌ anti void
@@ -155,10 +158,34 @@ local function TeleportToEnemy(mob)
     local dist = (root.Position - pos).Magnitude
     if dist > TP_DISTANCE then return end
 
-    -- ✅ posisi aman
-    local safePos = pos + Vector3.new(0,3,5)
+    -- ❌ anti spam
+    if tick() - lastTPTime < 0.2 then return end
+    lastTPTime = tick()
 
-    root.CFrame = CFrame.lookAt(safePos, pos)
+    -- ❌ skip kalau musuh lagi dash
+    if hrp.AssemblyLinearVelocity.Magnitude > 80 then
+        return
+    end
+
+    -- 🔥 DETECT RAID
+    local isRaid = enemyType and string.find(enemyType, "Raid")
+
+    -- 🔥 JARAK BELAKANG
+    local backDistance = isRaid and 20 or 10
+    local height = isRaid and 6 or 3
+
+    -- 🔥 HITUNG POSISI BELAKANG MUSUH
+    local look = hrp.CFrame.LookVector
+    local behindPos = pos - (look * backDistance) + Vector3.new(0, height, 0)
+
+    -- 🔥 RESET VELOCITY
+    root.AssemblyLinearVelocity = Vector3.zero
+    root.AssemblyAngularVelocity = Vector3.zero
+
+    -- 🔥 TP + HADAP KE MUSUH
+    pcall(function()
+        root.CFrame = CFrame.lookAt(behindPos, pos)
+    end)
 end
 ----------------------------------------------------------------
 -- ROLL MAP (TETAP)
