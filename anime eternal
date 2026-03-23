@@ -1,167 +1,142 @@
 --// SERVICES
 local Players = game:GetService("Players")
-local RS = game:GetService("ReplicatedStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart")
+local playerGui = player:WaitForChild("PlayerGui")
 
-local Remote = RS:WaitForChild("Events"):WaitForChild("To_Server")
+--// SETTINGS
+local MAX_DISTANCE = 525
 
---// STATE
-local aura = false
-local vacuum = false
-local running = false
+--// VARIABLES
+local AutoTrain = false
+local KillAura = false
 
---// GET MOB TERDEKAT
-local function getClosestMob()
-	local closest = nil
-	local dist = math.huge
-
-	for _, mob in pairs(Workspace:WaitForChild("Debris"):WaitForChild("Monsters"):GetChildren()) do
-		if mob:FindFirstChild("HumanoidRootPart") then
-			local d = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
-			if d < dist then
-				dist = d
-				closest = mob
-			end
-		end
-	end
-
-	return closest
-end
-
---// VACUUM (SMOOTH)
-local function vacuumMob(mob)
-	if mob and mob:FindFirstChild("HumanoidRootPart") then
-		local targetPos = mob.HumanoidRootPart.Position
-		local distance = (hrp.Position - targetPos).Magnitude
-
-		if distance > 4 then
-			local targetCFrame = CFrame.new(targetPos + Vector3.new(0,0,3))
-			hrp.CFrame = hrp.CFrame:Lerp(targetCFrame, 0.25)
-		end
-	end
-end
-
---// HIT
-local function hitMob(mob)
-	if not mob or not mob:FindFirstChild("HumanoidRootPart") then return end
-	
-	local distance = (hrp.Position - mob.HumanoidRootPart.Position).Magnitude
-	
-	if distance > 3 then
-		hrp.CFrame = CFrame.lookAt(hrp.Position, mob.HumanoidRootPart.Position)
-	end
-
-	for i = 1,15 do
-		Remote:FireServer({
-			Id = mob.Name,
-			Action = "_Mouse_Click"
-		})
-	end
-end
+local Remote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("To_Server")
 
 --// GUI
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local ScreenGui = Instance.new("ScreenGui", playerGui)
+ScreenGui.Name = "AnimeEternalGUI"
+ScreenGui.ResetOnSpawn = false
 
--- MAIN FRAME
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0,230,0,150)
-Frame.Position = UDim2.new(0.4,0,0.4,0)
-Frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+Frame.Size = UDim2.new(0, 280, 0, 170)
+Frame.Position = UDim2.new(0.5, -140, 0.5, -85)
+Frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
 Frame.BorderSizePixel = 0
-Frame.Active = true
-Frame.Draggable = true
 Instance.new("UICorner", Frame)
 
 local Stroke = Instance.new("UIStroke", Frame)
-Stroke.Color = Color3.fromRGB(60,60,60)
+Stroke.Color = Color3.fromRGB(80,80,80)
 
 -- TITLE
 local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1,0,0,30)
-Title.Text = "Aura Farm"
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
-Title.TextColor3 = Color3.new(1,1,1)
+Title.Size = UDim2.new(1, -20, 0, 30)
+Title.Position = UDim2.new(0, 10, 0, 10)
 Title.BackgroundTransparency = 1
+Title.Text = "Anime Eternal"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- AURA BUTTON
-local AuraBtn = Instance.new("TextButton", Frame)
-AuraBtn.Size = UDim2.new(1,-20,0,40)
-AuraBtn.Position = UDim2.new(0,10,0,40)
-AuraBtn.Text = "Aura Kill : OFF"
-AuraBtn.Font = Enum.Font.Gotham
-AuraBtn.TextSize = 13
-AuraBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
-AuraBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", AuraBtn)
+-- STATUS
+local Status = Instance.new("TextLabel", Frame)
+Status.Size = UDim2.new(1, -20, 0, 20)
+Status.Position = UDim2.new(0, 10, 0, 35)
+Status.BackgroundTransparency = 1
+Status.Text = "Status: Idle"
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 14
+Status.TextColor3 = Color3.fromRGB(180,180,180)
+Status.TextXAlignment = Enum.TextXAlignment.Left
 
--- VACUUM BUTTON
-local VacBtn = Instance.new("TextButton", Frame)
-VacBtn.Size = UDim2.new(1,-20,0,40)
-VacBtn.Position = UDim2.new(0,10,0,90)
-VacBtn.Text = "Vacuum : OFF"
-VacBtn.Font = Enum.Font.Gotham
-VacBtn.TextSize = 13
-VacBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
-VacBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", VacBtn)
+-- BUTTON
+local function makeButton(text, y)
+	local b = Instance.new("TextButton", Frame)
+	b.Size = UDim2.new(0, 240, 0, 40)
+	b.Position = UDim2.new(0, 20, 0, y)
+	b.Text = text
+	b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	b.TextColor3 = Color3.new(1,1,1)
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 16
+	Instance.new("UICorner", b)
+	return b
+end
 
--- CLOSE
-local Close = Instance.new("TextButton", Frame)
-Close.Size = UDim2.new(0,25,0,25)
-Close.Position = UDim2.new(1,-30,0,5)
-Close.Text = "X"
-Close.Font = Enum.Font.GothamBold
-Close.TextSize = 12
-Close.BackgroundColor3 = Color3.fromRGB(80,0,0)
-Close.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", Close)
+local Train = makeButton("Auto Train : OFF", 65)
+local Hit = makeButton("Auto Hit : OFF", 115)
 
--- MINIMIZE BUTTON
+-- MIN / CLOSE
 local MinBtn = Instance.new("TextButton", Frame)
-MinBtn.Size = UDim2.new(0,25,0,25)
-MinBtn.Position = UDim2.new(1,-60,0,5)
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -75, 0, 10)
 MinBtn.Text = "-"
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.TextSize = 14
-MinBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-MinBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", MinBtn)
+MinBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
 
--- ICON (MINIMIZED)
+local Close = Instance.new("TextButton", Frame)
+Close.Size = UDim2.new(0, 30, 0, 30)
+Close.Position = UDim2.new(1, -40, 0, 10)
+Close.Text = "X"
+Close.BackgroundColor3 = Color3.fromRGB(180,50,50)
+
+-- ICON
 local Icon = Instance.new("TextButton", ScreenGui)
-Icon.Size = UDim2.new(0,50,0,50)
-Icon.Position = UDim2.new(0,20,0,200)
-Icon.Text = "⚔️"
-Icon.Font = Enum.Font.GothamBold
-Icon.TextSize = 20
-Icon.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Icon.Size = UDim2.new(0, 50, 0, 50)
+Icon.Position = UDim2.new(0, 20, 0.5, 0)
+Icon.Text = "AE"
+Icon.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Icon.TextColor3 = Color3.new(1,1,1)
 Icon.Visible = false
-Icon.Active = true
-Icon.Draggable = true
 Instance.new("UICorner", Icon)
 
---// BUTTON ACTION
-AuraBtn.MouseButton1Click:Connect(function()
-	aura = not aura
-	AuraBtn.Text = "Aura Kill : " .. (aura and "ON" or "OFF")
+-- DRAG
+local function drag(obj)
+	local dragging = false
+	local start, pos
+
+	obj.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			start = input.Position
+			pos = obj.Position
+		end
+	end)
+
+	obj.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
+	obj.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - start
+			obj.Position = UDim2.new(pos.X.Scale, pos.X.Offset + delta.X, pos.Y.Scale, pos.Y.Offset + delta.Y)
+		end
+	end)
+end
+
+drag(Frame)
+drag(Icon)
+
+-- TOGGLES
+Train.MouseButton1Click:Connect(function()
+	AutoTrain = not AutoTrain
+	Train.Text = "Auto Train : " .. (AutoTrain and "ON" or "OFF")
+	Train.BackgroundColor3 = AutoTrain and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
 end)
 
-VacBtn.MouseButton1Click:Connect(function()
-	vacuum = not vacuum
-	VacBtn.Text = "Vacuum : " .. (vacuum and "ON" or "OFF")
+Hit.MouseButton1Click:Connect(function()
+	KillAura = not KillAura
+	Hit.Text = "Auto Hit : " .. (KillAura and "ON" or "OFF")
+	Hit.BackgroundColor3 = KillAura and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
 end)
 
-Close.MouseButton1Click:Connect(function()
-	running = false
-	ScreenGui:Destroy()
-end)
-
+-- MINIMIZE
 MinBtn.MouseButton1Click:Connect(function()
 	Frame.Visible = false
 	Icon.Visible = true
@@ -172,28 +147,94 @@ Icon.MouseButton1Click:Connect(function()
 	Icon.Visible = false
 end)
 
---// LOOP
-local function start()
-	if running then return end
-	running = true
+-- CLOSE
+Close.MouseButton1Click:Connect(function()
+	ScreenGui:Destroy()
+end)
 
-	while running do
-		if aura or vacuum then
-			local mob = getClosestMob()
+-- GET MOBS
+local function getMobs()
+	local mobs = {}
+	local folder = Workspace:FindFirstChild("Debris") and Workspace.Debris:FindFirstChild("Monsters")
+	if folder then
+		for _, m in pairs(folder:GetChildren()) do
+			if m:FindFirstChild("HumanoidRootPart") and m:FindFirstChild("Humanoid") then
+				table.insert(mobs, m)
+			end
+		end
+	end
+	return mobs
+end
 
-			if mob then
-				if vacuum then
-					vacuumMob(mob)
-				end
+-- MAIN LOOP
+RunService.RenderStepped:Connect(function()
+	if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
 
-				if aura then
-					hitMob(mob)
+	local myHRP = player.Character.HumanoidRootPart
+
+	-- PRIORITY
+	if KillAura then
+		Status.Text = "Status: Farming"
+
+		local target = nil
+		local distMin = math.huge
+
+		for _, mob in pairs(getMobs()) do
+			local hrp = mob.HumanoidRootPart
+			local hum = mob.Humanoid
+
+			if hum.Health > 0 then
+				local dist = (myHRP.Position - hrp.Position).Magnitude
+
+				if dist <= MAX_DISTANCE then
+					if dist < distMin then
+						distMin = dist
+						target = mob
+					end
 				end
 			end
 		end
 
-		task.wait(0.08)
+		if target then
+			local hrp = target.HumanoidRootPart
+
+			if distMin > 15 then
+				myHRP.CFrame = hrp.CFrame * CFrame.new(0,0,3)
+			end
+
+			for i = 1,5 do
+				Remote:FireServer(unpack({{
+					Id = target.Name,
+					Action = "_Mouse_Click"
+				}}))
+			end
+		else
+			Status.Text = "Status: No Mob Nearby"
+		end
+
+	elseif AutoTrain then
+		Status.Text = "Status: Training"
+
+		for i = 1,5 do
+			Remote:FireServer(unpack({{Action = "_Mouse_Click"}}))
+		end
+
+	else
+		Status.Text = "Status: Idle"
+	end
+end)
+----------------------------------------------------------------
+-- ANTI AFK (TETAP)
+----------------------------------------------------------------
+
+if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+	if tick() - lastAFK > AFK_DELAY then
+		local hrp = player.Character.HumanoidRootPart
+		
+		-- putar dikit (random kecil biar natural)
+		local angle = math.rad(math.random(-30,30))
+		hrp.CFrame = hrp.CFrame * CFrame.Angles(0, angle, 0)
+
+		lastAFK = tick()
 	end
 end
-
-start()
