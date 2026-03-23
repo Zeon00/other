@@ -205,7 +205,7 @@ end)
 task.spawn(function()
     while task.wait(0.2) do
         if AutoRoll then
-            Remote:FireServer("Stars","Roll",{Map="Divine Garden",Type="Multi"})
+            Remote:FireServer("Stars","Roll",{Map="Fiery World",Type="Multi"})
         end
     end
 end)
