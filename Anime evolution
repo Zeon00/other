@@ -15,12 +15,13 @@ local AutoRoll = false
 local AutoRankUp = false
 
 local lastEnemy = nil
-local HIT_MULTIPLIER = 3
+local HIT_MULTIPLIER = 1
 
 -- 🔥 TAMBAHAN
 local UseSelected = false
 local SelectedEnemy = nil
-local TP_DISTANCE = 350 -- 🔥 BATAS TP
+local TP_DISTANCE = 350
+local LastMap = "Fiery World"
 
 ----------------------------------------------------------------
 -- CORE
@@ -34,7 +35,19 @@ local function GetRoot()
 end
 
 ----------------------------------------------------------------
--- ENEMY LIST
+-- 🔥 FIX TYPE (RAID SUPPORT)
+----------------------------------------------------------------
+
+local function FixType(t)
+    if not t then return "World" end
+    if t == "Raid" or string.find(t,"Raid") then
+        return "RaidSystemServer"
+    end
+    return t
+end
+
+----------------------------------------------------------------
+-- ENEMY LIST (TETAP)
 ----------------------------------------------------------------
 
 local function GetAllEnemyNames()
@@ -55,7 +68,7 @@ local function GetAllEnemyNames()
 end
 
 ----------------------------------------------------------------
--- TARGET
+-- TARGET (🔥 FIX RAID DETECT TANPA HAPUS)
 ----------------------------------------------------------------
 
 local function GetNearestEnemy()
@@ -67,38 +80,37 @@ local function GetNearestEnemy()
 
     local enemies = workspace.Server.Enemies
 
-    for _, typeFolder in pairs({"World","Raid","WorldBoss"}) do
-        local main = (typeFolder=="Raid" and enemies:FindFirstChild("Raids")) or enemies:FindFirstChild(typeFolder)
+    for _, folder in pairs(enemies:GetChildren()) do
+        for _, world in pairs(folder:GetChildren()) do
+            for _, mob in pairs(world:GetChildren()) do
 
-        if main then
-            for _, world in pairs(main:GetChildren()) do
-                for _, mob in pairs(world:GetChildren()) do
+                local hp = mob:GetAttribute("Health")
+                local died = mob:GetAttribute("Died")
 
-                    local hp = mob:GetAttribute("Health")
-                    local died = mob:GetAttribute("Died")
+                if hp and hp > 0 and not died then
 
-                    if hp and hp > 0 and not died then
-
-                        local valid = true
-                        if UseSelected and SelectedEnemy then
-                            if mob.Name ~= SelectedEnemy then
-                                valid = false
-                            end
+                    local valid = true
+                    if UseSelected and SelectedEnemy then
+                        if mob.Name ~= SelectedEnemy then
+                            valid = false
                         end
-
-                        if valid then
-                            local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
-
-                            if pos then
-                                local d = (root.Position - pos).Magnitude
-                                if d < dist then
-                                    dist = d
-                                    closest = {Enemy = mob, Type = typeFolder}
-                                end
-                            end
-                        end
-
                     end
+
+                    if valid then
+                        local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
+
+                        if pos then
+                            local d = (root.Position - pos).Magnitude
+                            if d < dist then
+                                dist = d
+                                closest = {
+                                    Enemy = mob,
+                                    Type = folder.Name -- 🔥 biar Raid_02 dll kebaca
+                                }
+                            end
+                        end
+                    end
+
                 end
             end
         end
@@ -108,7 +120,7 @@ local function GetNearestEnemy()
 end
 
 ----------------------------------------------------------------
--- PET
+-- PET (TETAP)
 ----------------------------------------------------------------
 
 local function GetPets()
@@ -125,12 +137,12 @@ local function GetPets()
 end
 
 ----------------------------------------------------------------
--- 🔥 TP FIX (ANTI VOID + DISTANCE)
+-- 🔥 TP FIX FULL (AUTO RAID / WORLD)
 ----------------------------------------------------------------
-
-local function TeleportToEnemy(mob)
+local function TeleportToEnemy(mob, enemyType)
     local root = GetRoot()
     if not root then return end
+    if not mob then return end
 
     local hrp = mob:FindFirstChild("HumanoidRootPart")
     local pos = mob.Position or (hrp and hrp.Position)
@@ -144,29 +156,45 @@ local function TeleportToEnemy(mob)
     local dist = (root.Position - pos).Magnitude
     if dist > TP_DISTANCE then return end
 
-    -- ✅ posisi aman
-    local safePos = pos + Vector3.new(0,3,5)
+    -- 🔥 DETECT RAID / WORLD
+    local isRaid = enemyType and string.find(enemyType, "Raid") ~= nil
 
-    root.CFrame = CFrame.lookAt(safePos, pos)
+    -- 🔥 OFFSET BEDA
+    local offset
+    if isRaid then
+        offset = Vector3.new(0,25,15) -- RAID (lebih tinggi biar ga kelempar/void)
+    else
+        offset = Vector3.new(0,3,5) -- WORLD normal
+    end
+
+    local targetPos = pos + offset
+
+    -- 🔥 SAFE LOOK
+    pcall(function()
+        root.CFrame = CFrame.lookAt(targetPos, pos)
+    end)
 end
+
 ----------------------------------------------------------------
--- ROLL NEW MAP
+-- ROLL MAP (TETAP)
 ----------------------------------------------------------------
+
 local function GetCurrentMap()
     local enemies = workspace.Server.Enemies:FindFirstChild("World")
     if not enemies then return LastMap end
 
     for _, map in pairs(enemies:GetChildren()) do
         if #map:GetChildren() > 0 then
-            LastMap = map.Name -- ✅ simpan map terakhir
+            LastMap = map.Name
             return map.Name
         end
     end
 
-    return LastMap -- ✅ fallback ke terakhir
+    return LastMap
 end
+
 ----------------------------------------------------------------
--- MAIN LOOP
+-- MAIN LOOP (🔥 FIX RAID HIT + PET)
 ----------------------------------------------------------------
 
 task.spawn(function()
@@ -175,16 +203,19 @@ task.spawn(function()
         local target = GetNearestEnemy()
 
         if target then
-            if EnemyTP and lastEnemy ~= target.Enemy then
-                TeleportToEnemy(target.Enemy)
-                lastEnemy = target.Enemy
-            end
+
+if EnemyTP and lastEnemy ~= target.Enemy then
+    TeleportToEnemy(target.Enemy, target.Type)
+    lastEnemy = target.Enemy
+end
+
+            local attackType = FixType(target.Type)
 
             for i = 1, HIT_MULTIPLIER do
 
                 if AutoHit then
                     Remote:FireServer("Attack","Click",{
-                        Type = target.Type,
+                        Type = attackType,
                         Enemy = target.Enemy
                     })
                 end
@@ -193,7 +224,7 @@ task.spawn(function()
                     for _, petID in pairs(GetPets()) do
                         Remote:FireServer("Attack","UnitAttack",{
                             {
-                                Type = target.Type,
+                                Type = attackType,
                                 Enemy = target.Enemy
                             },
                             petID
@@ -214,14 +245,13 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- AUTO ROLL & RANK
+-- AUTO ROLL & RANK (TETAP)
 ----------------------------------------------------------------
 
 task.spawn(function()
     while task.wait(0.2) do
         if AutoRoll then
             local mapName = GetCurrentMap()
-
             Remote:FireServer("Stars","Roll",{
                 Map = mapName,
                 Type = "Multi"
@@ -239,7 +269,7 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- ANTI AFK (CLICK + GERAK)
+-- ANTI AFK (TETAP)
 ----------------------------------------------------------------
 
 player.Idled:Connect(function()
@@ -247,7 +277,6 @@ player.Idled:Connect(function()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- 🔥 GERAK DIKIT
 task.spawn(function()
     while task.wait(60) do
         local root = GetRoot()
@@ -256,7 +285,6 @@ task.spawn(function()
         end
     end
 end)
-
 ----------------------------------------------------------------
 -- GUI GOTHAM FIX (NO KOSONG)
 ----------------------------------------------------------------
@@ -429,7 +457,7 @@ end
 local currentHash = GetMapHash()
 
 task.spawn(function()
-    while task.wait(2) do
+    while task.wait(10) do
         local newHash = GetMapHash()
         if newHash ~= currentHash then
             currentHash = newHash
