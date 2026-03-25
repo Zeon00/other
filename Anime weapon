@@ -233,7 +233,6 @@ UIS.InputChanged:Connect(function(input)
 end)
 
 
-
 --// SERVICES
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
@@ -250,7 +249,7 @@ local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,250,0,280) -- ditambah dikit buat 4 tombol
+main.Size = UDim2.new(0,250,0,320) -- ditambah buat 5 toggle
 main.Position = UDim2.new(0.4,0,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Instance.new("UICorner", main)
@@ -295,7 +294,7 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- BUTTON (jarak dirapetin)
+-- BUTTON
 local function btn(name, y)
     local b = Instance.new("TextButton", main)
     b.Size = UDim2.new(0.8,0,0,32)
@@ -307,13 +306,14 @@ local function btn(name, y)
     return b
 end
 
--- posisi lebih rapet
-local hitBtn     = btn("AUTO HIT", 0.18)
-local targetBtn  = btn("AUTO TARGET", 0.36)
-local magnetBtn  = btn("MAGNET", 0.54)
-local auraBtn    = btn("KILL AURA", 0.72)
+-- posisi (ditambah 1 lagi)
+local hitBtn     = btn("AUTO HIT", 0.15)
+local targetBtn  = btn("AUTO TARGET", 0.30)
+local magnetBtn  = btn("MAGNET", 0.45)
+local auraBtn    = btn("KILL AURA", 0.60)
+local tpBtn      = btn("AUTO TP", 0.75)
 
-local hit, target, magnet, aura = false,false,false,false
+local hit, target, magnet, aura, tp = false,false,false,false,false
 
 local function update(b, s, n)
     b.Text = n.." "..(s and "ON" or "OFF")
@@ -338,6 +338,11 @@ end)
 auraBtn.MouseButton1Click:Connect(function()
     aura = not aura
     update(auraBtn, aura, "KILL AURA")
+end)
+
+tpBtn.MouseButton1Click:Connect(function()
+    tp = not tp
+    update(tpBtn, tp, "AUTO TP")
 end)
 
 --// AUTO HIT
@@ -389,7 +394,7 @@ task.spawn(function()
     end
 end)
 
---// KILL AURA
+--// KILL AURA (TETEP)
 local function GetEnemies()
     local t = {}
     for _,v in pairs(workspace:GetDescendants()) do
@@ -425,7 +430,51 @@ task.spawn(function()
     end
 end)
 
--- DRAG (tetep aman)
+task.spawn(function()
+    while true do
+        if tp then
+            local char = player.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+
+            if root then
+                local npc = workspace:FindFirstChild("NPCs")
+                if npc then
+                    local stageFolder = npc:FindFirstChild("StageEnemies")
+                    if stageFolder then
+
+                        for _, stage in pairs(stageFolder:GetChildren()) do
+                            if not tp then break end
+
+                            for _, mob in pairs(stage:GetChildren()) do
+                                if not tp then break end
+
+                                if mob:IsA("Model") then
+                                    local hrp = mob:FindFirstChild("HumanoidRootPart")
+                                    local hum = mob:FindFirstChild("Humanoid")
+
+                                    if hrp and hum and hum.Health > 0 then
+                                        -- TP + ngadep NPC
+                                        root.CFrame = CFrame.lookAt(
+                                            hrp.Position + Vector3.new(0,0,3),
+                                            hrp.Position
+                                        )
+
+                                        task.wait(2.08)
+                                    end
+                                end
+                            end
+                        end
+
+                    end
+                end
+            end
+        end
+
+        task.wait(2.1)
+    end
+end)
+
+-- DRAG
 local dragging, dragInput, startPos, startFrame
 
 main.InputBegan:Connect(function(input)
@@ -460,4 +509,4 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
-print("RNG AUTO FARM + KILL AURA 🔥")
+print("RNG AUTO FARM + AUTO TP 🔥")
