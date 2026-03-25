@@ -1,0 +1,443 @@
+
+ 
+--// SERVICES
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+--// REMOTES
+local GetShop = ReplicatedStorage:WaitForChild("Events"):WaitForChild("RNGGame"):WaitForChild("GetItemShopData")
+local BuyItem = ReplicatedStorage:WaitForChild("Events"):WaitForChild("RNGGame"):WaitForChild("ItemShopPurchase")
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "AutoShopGUI"
+ScreenGui.ResetOnSpawn = false
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 320, 0, 420)
+Main.Position = UDim2.new(0.5, -160, 0.5, -210)
+Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Main.BorderSizePixel = 0
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,10)
+
+-- TOP BAR
+local Top = Instance.new("Frame", Main)
+Top.Size = UDim2.new(1,0,0,35)
+Top.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Top.BorderSizePixel = 0
+Instance.new("UICorner", Top).CornerRadius = UDim.new(0,10)
+
+local Title = Instance.new("TextLabel", Top)
+Title.Size = UDim2.new(1,-70,1,0)
+Title.Position = UDim2.new(0,10,0,0)
+Title.Text = "AUTO SHOP"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- MINIMIZE
+local MinBtn = Instance.new("TextButton", Top)
+MinBtn.Size = UDim2.new(0,30,1,0)
+MinBtn.Position = UDim2.new(1,-60,0,0)
+MinBtn.Text = "-"
+MinBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+MinBtn.TextColor3 = Color3.new(1,1,1)
+MinBtn.Font = Enum.Font.GothamBold
+
+-- CLOSE
+local CloseBtn = Instance.new("TextButton", Top)
+CloseBtn.Size = UDim2.new(0,30,1,0)
+CloseBtn.Position = UDim2.new(1,-30,0,0)
+CloseBtn.Text = "X"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(120,40,40)
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.Font = Enum.Font.GothamBold
+
+-- TOGGLE
+local ToggleBtn = Instance.new("TextButton", Main)
+ToggleBtn.Size = UDim2.new(1,-20,0,30)
+ToggleBtn.Position = UDim2.new(0,10,0,45)
+ToggleBtn.Text = "AUTO BUY: OFF"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+ToggleBtn.TextColor3 = Color3.new(1,1,1)
+ToggleBtn.Font = Enum.Font.Gotham
+
+-- SCROLL
+local Scroll = Instance.new("ScrollingFrame", Main)
+Scroll.Size = UDim2.new(1,-20,1,-90)
+Scroll.Position = UDim2.new(0,10,0,80)
+Scroll.CanvasSize = UDim2.new(0,0,0,0)
+Scroll.BackgroundTransparency = 1
+Scroll.ScrollBarThickness = 4
+
+local UIList = Instance.new("UIListLayout", Scroll)
+UIList.Padding = UDim.new(0,5)
+
+--// STATE
+local AutoBuyEnabled = false
+local SelectedItems = {}
+local Minimized = false
+
+--// CREATE ITEM BUTTON
+local function createItem(name)
+    local btn = Instance.new("TextButton", Scroll)
+    btn.Size = UDim2.new(1,0,0,28)
+    btn.Text = "[ ] "..name
+    btn.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 13
+
+    SelectedItems[name] = false
+
+    btn.MouseButton1Click:Connect(function()
+        SelectedItems[name] = not SelectedItems[name]
+
+        if SelectedItems[name] then
+            btn.Text = "[✔] "..name
+            btn.BackgroundColor3 = Color3.fromRGB(60,120,60)
+        else
+            btn.Text = "[ ] "..name
+            btn.BackgroundColor3 = Color3.fromRGB(35,35,35)
+        end
+    end)
+end
+
+--// LOAD ITEMS
+local function loadItems()
+    local success, data = pcall(function()
+        return GetShop:InvokeServer()
+    end)
+
+    if not success then return end
+
+    for _, items in pairs(data) do
+        for _, item in pairs(items) do
+            if not SelectedItems[item.itemName] then
+                createItem(item.itemName)
+            end
+        end
+    end
+end
+
+loadItems()
+
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    Scroll.CanvasSize = UDim2.new(0,0,0,UIList.AbsoluteContentSize.Y)
+end)
+
+--// TOGGLE AUTO
+ToggleBtn.MouseButton1Click:Connect(function()
+    AutoBuyEnabled = not AutoBuyEnabled
+    ToggleBtn.Text = "AUTO BUY: "..(AutoBuyEnabled and "ON" or "OFF")
+end)
+
+--// MINIMIZE
+MinBtn.MouseButton1Click:Connect(function()
+    Minimized = not Minimized
+    Scroll.Visible = not Minimized
+    ToggleBtn.Visible = not Minimized
+    Main.Size = Minimized and UDim2.new(0,320,0,35) or UDim2.new(0,320,0,420)
+end)
+
+--// CLOSE
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+--// AUTO BUY LOOP
+task.spawn(function()
+    while true do
+        task.wait(3)
+
+        if AutoBuyEnabled then
+            local success, data = pcall(function()
+                return GetShop:InvokeServer()
+            end)
+
+            if success then
+                for _, items in pairs(data) do
+                    for _, item in pairs(items) do
+                        if SelectedItems[item.itemName] then
+                            if item.stock and item.stock > 0 then
+                                BuyItem:FireServer(item.itemName, item.itemType)
+                                task.wait(0.2)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+--// DRAG SMOOTH (FIX NO BUG)
+local dragging, dragInput, dragStart, startPos
+
+Top.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+Top.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+
+
+--// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+--// REMOTES
+local Damage = RS:WaitForChild("Events"):WaitForChild("DamageIncreaseOnClickEvent")
+local Target = RS:WaitForChild("Events"):WaitForChild("RNGGame"):WaitForChild("NPCs"):WaitForChild("SendNPCTarget")
+
+--// GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,250,0,280) -- ditambah dikit buat 4 tombol
+main.Position = UDim2.new(0.4,0,0.3,0)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Instance.new("UICorner", main)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "RNG AUTO FARM"
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1,1,1)
+
+-- CLOSE
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-30,0,0)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(255,60,60)
+
+-- MINIMIZE
+local mini = Instance.new("TextButton", main)
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-60,0,0)
+mini.Text = "-"
+mini.BackgroundColor3 = Color3.fromRGB(100,100,100)
+
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,60,0,60)
+icon.Position = UDim2.new(0,20,0.5,0)
+icon.Text = "OPEN"
+icon.Visible = false
+
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    main.Visible = true
+    icon.Visible = false
+end)
+
+-- BUTTON (jarak dirapetin)
+local function btn(name, y)
+    local b = Instance.new("TextButton", main)
+    b.Size = UDim2.new(0.8,0,0,32)
+    b.Position = UDim2.new(0.1,0,y,0)
+    b.Text = name.." OFF"
+    b.BackgroundColor3 = Color3.fromRGB(255,70,70)
+    b.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", b)
+    return b
+end
+
+-- posisi lebih rapet
+local hitBtn     = btn("AUTO HIT", 0.18)
+local targetBtn  = btn("AUTO TARGET", 0.36)
+local magnetBtn  = btn("MAGNET", 0.54)
+local auraBtn    = btn("KILL AURA", 0.72)
+
+local hit, target, magnet, aura = false,false,false,false
+
+local function update(b, s, n)
+    b.Text = n.." "..(s and "ON" or "OFF")
+    b.BackgroundColor3 = s and Color3.fromRGB(80,255,80) or Color3.fromRGB(255,70,70)
+end
+
+hitBtn.MouseButton1Click:Connect(function()
+    hit = not hit
+    update(hitBtn, hit, "AUTO HIT")
+end)
+
+targetBtn.MouseButton1Click:Connect(function()
+    target = not target
+    update(targetBtn, target, "AUTO TARGET")
+end)
+
+magnetBtn.MouseButton1Click:Connect(function()
+    magnet = not magnet
+    update(magnetBtn, magnet, "MAGNET")
+end)
+
+auraBtn.MouseButton1Click:Connect(function()
+    aura = not aura
+    update(auraBtn, aura, "KILL AURA")
+end)
+
+--// AUTO HIT
+task.spawn(function()
+    while true do
+        if hit then
+            pcall(function()
+                Damage:FireServer()
+            end)
+        end
+        task.wait(0.01)
+    end
+end)
+
+--// AUTO TARGET
+task.spawn(function()
+    while true do
+        if target then
+            pcall(function()
+                local args = {
+                    "all",
+                    Instance.new("Model")
+                }
+                Target:FireServer(unpack(args))
+            end)
+        end
+        task.wait(0.2)
+    end
+end)
+
+--// MAGNET
+task.spawn(function()
+    while true do
+        if magnet then
+            local folder = workspace:FindFirstChild("ClientCoinsGems")
+            if folder then
+                local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    for _,v in pairs(folder:GetChildren()) do
+                        local h = v:FindFirstChild("Hitbox")
+                        if h then
+                            h.CFrame = root.CFrame
+                        end
+                    end
+                end
+            end
+        end
+        task.wait(0.2)
+    end
+end)
+
+--// KILL AURA
+local function GetEnemies()
+    local t = {}
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and string.find(v.Name,"NPC") then
+            local hrp = v:FindFirstChild("HumanoidRootPart")
+            local hum = v:FindFirstChild("Humanoid")
+            if hrp and hum and hum.Health > 0 then
+                table.insert(t, hrp)
+            end
+        end
+    end
+    return t
+end
+
+task.spawn(function()
+    while true do
+        if aura then
+            local char = player.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                for _,hrp in pairs(GetEnemies()) do
+                    if (root.Position - hrp.Position).Magnitude <= 30 then
+                        pcall(function()
+                            for i = 1,3 do
+                                Damage:FireServer()
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+        task.wait(0.05)
+    end
+end)
+
+-- DRAG (tetep aman)
+local dragging, dragInput, startPos, startFrame
+
+main.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        startPos = input.Position
+        startFrame = main.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+main.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - startPos
+        main.Position = UDim2.new(
+            startFrame.X.Scale,
+            startFrame.X.Offset + delta.X,
+            startFrame.Y.Scale,
+            startFrame.Y.Offset + delta.Y
+        )
+    end
+end)
+
+print("RNG AUTO FARM + KILL AURA 🔥")
