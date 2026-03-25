@@ -17,9 +17,10 @@ local AutoRankUp = false
 local lastEnemy = nil
 local HIT_MULTIPLIER = 1
 
--- 🔥 TAMBAHAN
+-- 🔥 MULTI SELECT
 local UseSelected = false
-local SelectedEnemy = nil
+local SelectedEnemies = {}
+
 local TP_DISTANCE = 350
 local LastMap = "Fiery World"
 
@@ -34,10 +35,6 @@ local function GetRoot()
     end
 end
 
-----------------------------------------------------------------
--- 🔥 FIX TYPE (RAID SUPPORT)
-----------------------------------------------------------------
-
 local function FixType(t)
     if not t then return "World" end
     if t == "Raid" or string.find(t,"Raid") then
@@ -47,7 +44,7 @@ local function FixType(t)
 end
 
 ----------------------------------------------------------------
--- ENEMY LIST (TETAP)
+-- ENEMY LIST
 ----------------------------------------------------------------
 
 local function GetAllEnemyNames()
@@ -68,7 +65,7 @@ local function GetAllEnemyNames()
 end
 
 ----------------------------------------------------------------
--- TARGET (🔥 FIX RAID DETECT TANPA HAPUS)
+-- TARGET
 ----------------------------------------------------------------
 
 local function GetNearestEnemy()
@@ -90,8 +87,9 @@ local function GetNearestEnemy()
                 if hp and hp > 0 and not died then
 
                     local valid = true
-                    if UseSelected and SelectedEnemy then
-                        if mob.Name ~= SelectedEnemy then
+
+                    if UseSelected then
+                        if not SelectedEnemies[mob.Name] then
                             valid = false
                         end
                     end
@@ -105,12 +103,11 @@ local function GetNearestEnemy()
                                 dist = d
                                 closest = {
                                     Enemy = mob,
-                                    Type = folder.Name -- 🔥 biar Raid_02 dll kebaca
+                                    Type = folder.Name
                                 }
                             end
                         end
                     end
-
                 end
             end
         end
@@ -120,7 +117,7 @@ local function GetNearestEnemy()
 end
 
 ----------------------------------------------------------------
--- PET (TETAP)
+-- PET
 ----------------------------------------------------------------
 
 local function GetPets()
@@ -137,7 +134,7 @@ local function GetPets()
 end
 
 ----------------------------------------------------------------
--- 🔥 TP FIX FULL (AUTO RAID / WORLD)
+-- TP
 ----------------------------------------------------------------
 
 local function TeleportToEnemy(mob)
@@ -148,21 +145,17 @@ local function TeleportToEnemy(mob)
     local pos = mob.Position or (hrp and hrp.Position)
 
     if not pos then return end
-
-    -- ❌ anti void
     if pos.Y < -5 then return end
 
-    -- ❌ limit distance
     local dist = (root.Position - pos).Magnitude
     if dist > TP_DISTANCE then return end
 
-    -- ✅ posisi aman
     local safePos = pos + Vector3.new(0,3,5)
-
     root.CFrame = CFrame.lookAt(safePos, pos)
 end
+
 ----------------------------------------------------------------
--- ROLL MAP (TETAP)
+-- MAP
 ----------------------------------------------------------------
 
 local function GetCurrentMap()
@@ -180,7 +173,7 @@ local function GetCurrentMap()
 end
 
 ----------------------------------------------------------------
--- MAIN LOOP (🔥 FIX RAID HIT + PET)
+-- MAIN LOOP
 ----------------------------------------------------------------
 
 task.spawn(function()
@@ -198,24 +191,17 @@ task.spawn(function()
             for i = 1, HIT_MULTIPLIER do
 
                 if AutoHit then
-                    Remote:FireServer("Attack","Click",{
-                        Type = attackType,
-                        Enemy = target.Enemy
-                    })
+                    Remote:FireServer("Attack","Click",{Type = attackType, Enemy = target.Enemy})
                 end
 
                 if AutoPet then
                     for _, petID in pairs(GetPets()) do
                         Remote:FireServer("Attack","UnitAttack",{
-                            {
-                                Type = attackType,
-                                Enemy = target.Enemy
-                            },
+                            {Type = attackType, Enemy = target.Enemy},
                             petID
                         })
                     end
                 end
-
             end
         end
 
@@ -224,22 +210,17 @@ task.spawn(function()
                 Remote:FireServer("Attack","Click",{})
             end
         end
-
     end
 end)
 
 ----------------------------------------------------------------
--- AUTO ROLL & RANK (TETAP)
+-- AUTO ROLL & RANK
 ----------------------------------------------------------------
 
 task.spawn(function()
     while task.wait(0.2) do
         if AutoRoll then
-            local mapName = GetCurrentMap()
-            Remote:FireServer("Stars","Roll",{
-                Map = mapName,
-                Type = "Multi"
-            })
+            Remote:FireServer("Stars","Roll",{Map = GetCurrentMap(), Type = "Multi"})
         end
     end
 end)
@@ -253,7 +234,7 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- ANTI AFK (TETAP)
+-- ANTI AFK
 ----------------------------------------------------------------
 
 player.Idled:Connect(function()
@@ -261,21 +242,13 @@ player.Idled:Connect(function()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
-task.spawn(function()
-    while task.wait(60) do
-        local root = GetRoot()
-        if root then
-            root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(5), 0)
-        end
-    end
-end)
 ----------------------------------------------------------------
--- GUI GOTHAM FIX (NO KOSONG)
+-- GUI (MODERN GOTHAM)
 ----------------------------------------------------------------
 
 local function Round(obj,r)
     local u = Instance.new("UICorner")
-    u.CornerRadius = UDim.new(0,r or 6)
+    u.CornerRadius = UDim.new(0,r or 8)
     u.Parent = obj
 end
 
@@ -283,47 +256,40 @@ local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,420,0,400)
-main.Position = UDim2.new(0.5,-210,0.5,-200)
-main.BackgroundColor3 = Color3.fromRGB(18,18,18)
-main.BorderSizePixel = 0
+main.Size = UDim2.new(0,430,0,420)
+main.Position = UDim2.new(0.5,-215,0.5,-210)
+main.BackgroundColor3 = Color3.fromRGB(15,15,15)
 main.Active = true
 main.Draggable = true
-Round(main,10)
+Round(main,12)
 
 local top = Instance.new("Frame", main)
-top.Size = UDim2.new(1,0,0,32)
-top.BackgroundColor3 = Color3.fromRGB(25,25,25)
-Round(top,10)
+top.Size = UDim2.new(1,0,0,36)
+top.BackgroundColor3 = Color3.fromRGB(22,22,22)
+Round(top,12)
 
 local title = Instance.new("TextLabel", top)
-title.Size = UDim2.new(1,-60,1,0)
+title.Size = UDim2.new(1,-70,1,0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.TextSize = 15
 title.Text = "Aura Farm"
-title.TextColor3 = Color3.fromRGB(220,220,220)
+title.TextColor3 = Color3.fromRGB(230,230,230)
+title.TextSize = 15
 
-local close = Instance.new("TextButton", top)
-close.Size = UDim2.new(0,30,1,0)
-close.Position = UDim2.new(1,-30,0,0)
-close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(35,35,35)
-close.TextColor3 = Color3.new(1,1,1)
-close.Font = Enum.Font.Gotham
-Round(close,6)
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
+local function Button(txt,x)
+    local b = Instance.new("TextButton", top)
+    b.Size = UDim2.new(0,30,1,0)
+    b.Position = UDim2.new(1,x,0,0)
+    b.Text = txt
+    b.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.Gotham
+    Round(b,6)
+    return b
+end
 
-local mini = Instance.new("TextButton", top)
-mini.Size = UDim2.new(0,30,1,0)
-mini.Position = UDim2.new(1,-60,0,0)
-mini.Text = "-"
-mini.BackgroundColor3 = Color3.fromRGB(35,35,35)
-mini.TextColor3 = Color3.new(1,1,1)
-mini.Font = Enum.Font.Gotham
-Round(mini,6)
+local close = Button("X",-30)
+local mini = Button("-",-60)
 
 local icon = Instance.new("TextButton", gui)
 icon.Size = UDim2.new(0,50,0,50)
@@ -331,47 +297,35 @@ icon.Position = UDim2.new(0,10,0.5,0)
 icon.Text = "OPEN"
 icon.Visible = false
 
-mini.MouseButton1Click:Connect(function()
-    main.Visible = false
-    icon.Visible = true
-end)
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
+mini.MouseButton1Click:Connect(function() main.Visible=false icon.Visible=true end)
+icon.MouseButton1Click:Connect(function() main.Visible=true icon.Visible=false end)
 
-icon.MouseButton1Click:Connect(function()
-    main.Visible = true
-    icon.Visible = false
-end)
-
--- LEFT PANEL
+-- LEFT
 local left = Instance.new("Frame", main)
-left.Size = UDim2.new(0.5,0,1,-32)
-left.Position = UDim2.new(0,0,0,32)
+left.Size = UDim2.new(0.5,0,1,-36)
+left.Position = UDim2.new(0,0,0,36)
 left.BackgroundTransparency = 1
 
-local pad1 = Instance.new("UIPadding", left)
-pad1.PaddingTop = UDim.new(0,5)
-pad1.PaddingLeft = UDim.new(0,5)
-pad1.PaddingRight = UDim.new(0,5)
-
 local layout = Instance.new("UIListLayout", left)
-layout.Padding = UDim.new(0,5)
+layout.Padding = UDim.new(0,6)
 
--- TOGGLE
 local function Toggle(name, cb)
     local b = Instance.new("TextButton", left)
-    b.Size = UDim2.new(1,0,0,36)
-    b.BackgroundColor3 = Color3.fromRGB(28,28,28)
+    b.Size = UDim2.new(1,-10,0,36)
+    b.Position = UDim2.new(0,5,0,0)
+    b.BackgroundColor3 = Color3.fromRGB(25,25,25)
     b.TextColor3 = Color3.fromRGB(220,220,220)
-    b.Font = Enum.Font.Gotham
+    b.Font = Enum.Font.GothamMedium
     b.TextSize = 14
     b.Text = name.." : OFF"
     Round(b,8)
 
     local s=false
-
     b.MouseButton1Click:Connect(function()
         s=not s
         b.Text = name.." : "..(s and "ON" or "OFF")
-        b.BackgroundColor3 = s and Color3.fromRGB(50,50,50) or Color3.fromRGB(28,28,28)
+        b.BackgroundColor3 = s and Color3.fromRGB(60,60,60) or Color3.fromRGB(25,25,25)
         cb(s)
     end)
 end
@@ -384,68 +338,61 @@ Toggle("TP Enemy", function(v) EnemyTP=v end)
 Toggle("Auto Roll", function(v) AutoRoll=v end)
 Toggle("Auto RankUp", function(v) AutoRankUp=v end)
 
--- RIGHT PANEL
+-- RIGHT (MULTI SELECT)
 local right = Instance.new("ScrollingFrame", main)
-right.Size = UDim2.new(0.5,0,1,-32)
-right.Position = UDim2.new(0.5,0,0,32)
+right.Size = UDim2.new(0.5,0,1,-36)
+right.Position = UDim2.new(0.5,0,0,36)
 right.BackgroundTransparency = 1
-right.ScrollBarThickness = 4
 right.AutomaticCanvasSize = Enum.AutomaticSize.Y
-
-local pad2 = Instance.new("UIPadding", right)
-pad2.PaddingTop = UDim.new(0,5)
-pad2.PaddingLeft = UDim.new(0,5)
-pad2.PaddingRight = UDim.new(0,5)
+right.ScrollBarThickness = 4
 
 local layout2 = Instance.new("UIListLayout", right)
-layout2.Padding = UDim.new(0,4)
+layout2.Padding = UDim.new(0,5)
 
 local function RefreshEnemyList()
     for _,v in pairs(right:GetChildren()) do
-        if v:IsA("TextButton") then
-            v:Destroy()
-        end
+        if v:IsA("TextButton") then v:Destroy() end
     end
 
-    local list = GetAllEnemyNames()
-
-    for _,name in pairs(list) do
+    for _,name in pairs(GetAllEnemyNames()) do
         local b = Instance.new("TextButton", right)
-        b.Size = UDim2.new(1,0,0,30)
-        b.BackgroundColor3 = Color3.fromRGB(25,25,25)
-        b.TextColor3 = Color3.fromRGB(200,200,200)
-        b.Font = Enum.Font.Gotham
+        b.Size = UDim2.new(1,-10,0,32)
+        b.Position = UDim2.new(0,5,0,0)
+        b.Font = Enum.Font.GothamMedium
         b.TextSize = 13
         b.Text = name
-        Round(b,6)
+        b.AutoButtonColor = false
+        Round(b,8)
+
+        local function Update()
+            if SelectedEnemies[name] then
+                b.BackgroundColor3 = Color3.fromRGB(40,120,40)
+                b.TextColor3 = Color3.new(1,1,1)
+            else
+                b.BackgroundColor3 = Color3.fromRGB(22,22,22)
+                b.TextColor3 = Color3.fromRGB(200,200,200)
+            end
+        end
+
+        Update()
 
         b.MouseButton1Click:Connect(function()
-            SelectedEnemy = name
+            if SelectedEnemies[name] then
+                SelectedEnemies[name] = nil
+            else
+                SelectedEnemies[name] = true
+            end
+            Update()
         end)
+
+        b.MouseEnter:Connect(function()
+            if not SelectedEnemies[name] then
+                b.BackgroundColor3 = Color3.fromRGB(35,35,35)
+            end
+        end)
+
+        b.MouseLeave:Connect(Update)
     end
 end
 
 RefreshEnemyList()
-
--- AUTO REFRESH MAP
-local function GetMapHash()
-    local enemies = workspace:FindFirstChild("Client") and workspace.Client:FindFirstChild("Enemies")
-    if not enemies then return "" end
-    local str = ""
-    for _,v in pairs(enemies:GetDescendants()) do
-        str = str..v.Name
-    end
-    return str
-end
-
-local currentHash = GetMapHash()
-
-task.spawn(function()
-    while task.wait(10) do
-        local newHash = GetMapHash()
-        if newHash ~= currentHash then
-            currentHash = newHash
-            RefreshEnemyList()
-        end
-    end
-end)
