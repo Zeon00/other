@@ -1,0 +1,228 @@
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local VirtualUser = game:GetService("VirtualUser")
+
+local player = Players.LocalPlayer
+local Library = require(RS.Framework.Library)
+
+--// REMOTE
+local remote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
+
+--// STATES
+local AutoHatch, AutoTP, FastWalk, KillAura = false,false,false,false
+
+--// ANTI AFK
+player.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    task.wait(1)
+    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
+
+--// GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "GothamUI"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 230, 0, 250)
+main.Position = UDim2.new(0.05,0,0.3,0)
+main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+main.BorderSizePixel = 0
+
+local top = Instance.new("Frame", main)
+top.Size = UDim2.new(1,0,0,30)
+top.BackgroundColor3 = Color3.fromRGB(30,30,30)
+
+local title = Instance.new("TextLabel", top)
+title.Size = UDim2.new(1,-60,1,0)
+title.Position = UDim2.new(0,10,0,0)
+title.Text = "Gotham Hub"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local close = Instance.new("TextButton", top)
+close.Size = UDim2.new(0,30,1,0)
+close.Position = UDim2.new(1,-30,0,0)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(170,0,0)
+close.TextColor3 = Color3.new(1,1,1)
+
+local mini = Instance.new("TextButton", top)
+mini.Size = UDim2.new(0,30,1,0)
+mini.Position = UDim2.new(1,-60,0,0)
+mini.Text = "-"
+mini.BackgroundColor3 = Color3.fromRGB(60,60,60)
+mini.TextColor3 = Color3.new(1,1,1)
+
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,20,0.5,0)
+icon.Text = "⚡"
+icon.Visible = false
+icon.BackgroundColor3 = Color3.fromRGB(25,25,25)
+icon.TextColor3 = Color3.new(1,1,1)
+
+-- drag
+local dragging, dragInput, dragStart, startPos
+top.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
+    end
+end)
+
+top.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    main.Visible = true
+    icon.Visible = false
+end)
+
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+-- toggle
+local function toggle(name, pos, callback)
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(1,-20,0,35)
+    btn.Position = UDim2.new(0,10,0,pos)
+    btn.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Text = name.." : OFF"
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = name.." : "..(state and "ON" or "OFF")
+        btn.BackgroundColor3 = state and Color3.fromRGB(0,170,0) or Color3.fromRGB(35,35,35)
+        callback(state)
+    end)
+end
+
+-- button
+local function button(name, pos, callback)
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(1,-20,0,35)
+    btn.Position = UDim2.new(0,10,0,pos)
+    btn.BackgroundColor3 = Color3.fromRGB(0,120,200)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Text = name
+
+    btn.MouseButton1Click:Connect(callback)
+end
+
+-- functions
+local function getEgg()
+    local mapId = tostring(Library.PlayerData.CurrentMap)
+    local eggs = workspace._MAP[mapId].Eggs:GetChildren()
+    return eggs[1]
+end
+
+local function tpEgg(egg)
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if root and egg and egg.PrimaryPart then
+        root.CFrame = egg.PrimaryPart.CFrame * CFrame.new(0,0,2)
+    end
+end
+
+local function openEgg(name)
+    remote:FireServer({
+        {"PetSystem","Open",name,"One",n=4},
+        "\002"
+    })
+end
+
+local function clickAttack()
+    remote:FireServer({
+        {"ClickSystem","Click",n=2},
+        "\002"
+    })
+end
+
+local function rankUp()
+    remote:FireServer({
+        {"RankUpSystem","RankUp",n=2},
+        "\002"
+    })
+end
+
+-- toggles
+toggle("Auto Hatch",40,function(v) AutoHatch = v end)
+toggle("Auto TP",80,function(v) AutoTP = v end)
+toggle("Fast Walk",120,function(v) FastWalk = v end)
+toggle("Kill Aura",160,function(v) KillAura = v end)
+
+-- button rank
+button("Rank Up",200,function()
+    rankUp()
+end)
+
+-- main loop (non combat)
+RunService.Heartbeat:Connect(function()
+    local char = player.Character
+    if not char then return end
+
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local egg = getEgg()
+
+    if FastWalk and hum then
+        hum.WalkSpeed = 35
+    elseif hum then
+        hum.WalkSpeed = 16
+    end
+
+    if AutoTP and egg then
+        tpEgg(egg)
+    end
+
+    if AutoHatch and egg then
+        task.spawn(function()
+            tpEgg(egg)
+            task.wait(0.1)
+            openEgg(egg.Name)
+        end)
+    end
+end)
+
+-- 🔥 FAST KILL AURA (FIX)
+task.spawn(function()
+    while true do
+        if KillAura then
+            clickAttack()
+            task.wait(0.05) -- ubah ke 0.03 / 0.01 kalau mau lebih cepat
+        else
+            task.wait(0.2)
+        end
+    end
+end)
