@@ -1,4 +1,4 @@
--- AUTO RAID GUI (MULTI SELECT + GOTHAM STYLE)
+-- AUTO RAID GUI (CLEAN VERSION)
 
 local AutoRaid = false
 local SelectedRaids = {}
@@ -11,21 +11,21 @@ local RaidList = {
 
 -- GUI
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-ScreenGui.Name = "AutoRaidUI"
+ScreenGui.Name = "AutoRaid"
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 260, 0, 300)
-Main.Position = UDim2.new(0.5, -130, 0.5, -150)
-Main.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Main.Size = UDim2.new(0, 250, 0, 280)
+Main.Position = UDim2.new(0.5, -125, 0.5, -140)
+Main.BackgroundColor3 = Color3.fromRGB(28,28,28)
 Main.BorderSizePixel = 0
 
 -- TOP BAR
 local Top = Instance.new("Frame", Main)
 Top.Size = UDim2.new(1,0,0,30)
-Top.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Top.BackgroundColor3 = Color3.fromRGB(18,18,18)
 
 local Title = Instance.new("TextLabel", Top)
-Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Size = UDim2.new(1,-60,1,0)
 Title.Position = UDim2.new(0,10,0,0)
 Title.Text = "AUTO RAID"
 Title.Font = Enum.Font.GothamBold
@@ -34,13 +34,12 @@ Title.TextColor3 = Color3.new(1,1,1)
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- CLOSE BUTTON
+-- CLOSE
 local Close = Instance.new("TextButton", Top)
 Close.Size = UDim2.new(0,30,1,0)
 Close.Position = UDim2.new(1,-30,0,0)
 Close.Text = "X"
 Close.Font = Enum.Font.GothamBold
-Close.TextSize = 14
 Close.BackgroundColor3 = Color3.fromRGB(170,0,0)
 Close.TextColor3 = Color3.new(1,1,1)
 
@@ -54,7 +53,6 @@ Min.Size = UDim2.new(0,30,1,0)
 Min.Position = UDim2.new(1,-60,0,0)
 Min.Text = "-"
 Min.Font = Enum.Font.GothamBold
-Min.TextSize = 18
 Min.BackgroundColor3 = Color3.fromRGB(50,50,50)
 Min.TextColor3 = Color3.new(1,1,1)
 
@@ -66,12 +64,12 @@ Min.MouseButton1Click:Connect(function()
             v.Visible = not Minimized
         end
     end
-    Main.Size = Minimized and UDim2.new(0,260,0,30) or UDim2.new(0,260,0,300)
+    Main.Size = Minimized and UDim2.new(0,250,0,30) or UDim2.new(0,250,0,280)
 end)
 
--- DRAG FIX (smooth, ga bug)
+-- DRAG
 local UIS = game:GetService("UserInputService")
-local dragging, dragInput, dragStart, startPos
+local dragging, dragStart, startPos
 
 Top.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -87,14 +85,8 @@ Top.InputBegan:Connect(function(input)
     end
 end)
 
-Top.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-
 UIS.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - dragStart
         Main.Position = UDim2.new(
             startPos.X.Scale,
@@ -105,7 +97,7 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
--- TOGGLE AUTO
+-- TOGGLE
 local Toggle = Instance.new("TextButton", Main)
 Toggle.Size = UDim2.new(0.8,0,0,35)
 Toggle.Position = UDim2.new(0.1,0,0,40)
@@ -114,7 +106,7 @@ Toggle.TextSize = 14
 Toggle.TextColor3 = Color3.new(1,1,1)
 
 local function UpdateToggle()
-    Toggle.Text = AutoRaid and "AUTO RAID: ON" or "AUTO RAID: OFF"
+    Toggle.Text = AutoRaid and "AUTO: ON" or "AUTO: OFF"
     Toggle.BackgroundColor3 = AutoRaid and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 end
 
@@ -125,24 +117,22 @@ end)
 
 UpdateToggle()
 
--- SCROLL LIST
+-- SCROLL
 local Scroll = Instance.new("ScrollingFrame", Main)
-Scroll.Size = UDim2.new(0.9,0,0,180)
+Scroll.Size = UDim2.new(0.9,0,0,170)
 Scroll.Position = UDim2.new(0.05,0,0,80)
 Scroll.CanvasSize = UDim2.new(0,0,0,0)
 Scroll.ScrollBarThickness = 4
 Scroll.BackgroundColor3 = Color3.fromRGB(35,35,35)
-Scroll.BorderSizePixel = 0
 
 local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0,4)
 
--- AUTO RESIZE
 Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     Scroll.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y + 10)
 end)
 
--- CREATE CHECKBOX
+-- CHECKBOX LIST
 for _, raidName in ipairs(RaidList) do
     local btn = Instance.new("TextButton", Scroll)
     btn.Size = UDim2.new(1,-10,0,25)
@@ -164,35 +154,38 @@ for _, raidName in ipairs(RaidList) do
 end
 
 -- =========================
--- AUTO JOIN SYSTEM (AMAN)
+-- AUTO JOIN (HOOK)
 -- =========================
 
 local Framework = require(game.ReplicatedStorage:WaitForChild("Framework"))
-local RaidShared = require(game.ReplicatedStorage.SharedModules.RaidSystemShared)
 local RaidUI = require(game.ReplicatedStorage.SharedModules.RaidUIController)
+local RaidShared = require(game.ReplicatedStorage.SharedModules.RaidSystemShared)
 
-local oldFunc = RaidUI.ShowInviteWindow
+local old = RaidUI.ShowInviteWindow
 
-RaidUI.ShowInviteWindow = function(p29, p_u_30)
+RaidUI.ShowInviteWindow = function(p29, data)
     if AutoRaid then
-        local raidName = p_u_30.config.Name
+        local raidName = data and data.config and data.config.Name
+        if not raidName then return end
 
-        -- MULTI FILTER
+        -- FILTER
         if next(SelectedRaids) and not SelectedRaids[raidName] then
             return
         end
 
-        if p29.Owner and not tonumber(p29.Owner) then
-            if not Framework.LocalPlayer:GetAttribute(RaidShared.ATTRS.InRaid) then
-                task.wait(0.3)
+        -- AUTO JOIN
+        task.spawn(function()
+            pcall(function()
                 Framework.Bridge:Fire("Enemies", "Bridge", {
-                    ["Module"] = "RaidSystemServer",
-                    ["FunctionName"] = "Join",
-                    ["Args"] = raidName
+                    Module = "RaidSystemServer",
+                    FunctionName = "Join",
+                    Args = raidName
                 })
-            end
-        end
-    else
-        return oldFunc(p29, p_u_30)
+            end)
+        end)
+
+        return -- skip UI
     end
+
+    return old(p29, data)
 end
