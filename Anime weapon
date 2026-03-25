@@ -1,12 +1,18 @@
-
- 
 --// SERVICES
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
+local VirtualUser = game:GetService("VirtualUser")
 
 local player = Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
+
+--// ANTI AFK (ALWAYS ON)
+player.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    task.wait(1)
+    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
 
 --// REMOTES
 local GetShop = ReplicatedStorage:WaitForChild("Events"):WaitForChild("RNGGame"):WaitForChild("GetItemShopData")
@@ -18,66 +24,78 @@ ScreenGui.Name = "AutoShopGUI"
 ScreenGui.ResetOnSpawn = false
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 320, 0, 420)
-Main.Position = UDim2.new(0.5, -160, 0.5, -210)
-Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Main.Size = UDim2.new(0, 330, 0, 430)
+Main.Position = UDim2.new(0.5, -165, 0.5, -215)
+Main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 Main.BorderSizePixel = 0
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0,10)
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,12)
+
+-- STROKE
+local Stroke = Instance.new("UIStroke", Main)
+Stroke.Color = Color3.fromRGB(60,60,60)
+Stroke.Thickness = 1
 
 -- TOP BAR
 local Top = Instance.new("Frame", Main)
-Top.Size = UDim2.new(1,0,0,35)
-Top.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Top.Size = UDim2.new(1,0,0,38)
+Top.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Top.BorderSizePixel = 0
-Instance.new("UICorner", Top).CornerRadius = UDim.new(0,10)
+Instance.new("UICorner", Top).CornerRadius = UDim.new(0,12)
 
+-- TITLE
 local Title = Instance.new("TextLabel", Top)
-Title.Size = UDim2.new(1,-70,1,0)
-Title.Position = UDim2.new(0,10,0,0)
+Title.Size = UDim2.new(1,-90,1,0)
+Title.Position = UDim2.new(0,12,0,0)
 Title.Text = "AUTO SHOP"
-Title.TextColor3 = Color3.new(1,1,1)
+Title.TextColor3 = Color3.fromRGB(230,230,230)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
+Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- MINIMIZE
 local MinBtn = Instance.new("TextButton", Top)
-MinBtn.Size = UDim2.new(0,30,1,0)
-MinBtn.Position = UDim2.new(1,-60,0,0)
-MinBtn.Text = "-"
-MinBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-MinBtn.TextColor3 = Color3.new(1,1,1)
+MinBtn.Size = UDim2.new(0,28,0,28)
+MinBtn.Position = UDim2.new(1,-60,0.5,-14)
+MinBtn.Text = "—"
+MinBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+MinBtn.TextColor3 = Color3.fromRGB(200,200,200)
 MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 14
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1,0)
 
 -- CLOSE
 local CloseBtn = Instance.new("TextButton", Top)
-CloseBtn.Size = UDim2.new(0,30,1,0)
-CloseBtn.Position = UDim2.new(1,-30,0,0)
-CloseBtn.Text = "X"
+CloseBtn.Size = UDim2.new(0,28,0,28)
+CloseBtn.Position = UDim2.new(1,-28,0.5,-14)
+CloseBtn.Text = "✕"
 CloseBtn.BackgroundColor3 = Color3.fromRGB(120,40,40)
-CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.TextColor3 = Color3.fromRGB(255,255,255)
 CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1,0)
 
 -- TOGGLE
 local ToggleBtn = Instance.new("TextButton", Main)
-ToggleBtn.Size = UDim2.new(1,-20,0,30)
-ToggleBtn.Position = UDim2.new(0,10,0,45)
-ToggleBtn.Text = "AUTO BUY: OFF"
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-ToggleBtn.TextColor3 = Color3.new(1,1,1)
-ToggleBtn.Font = Enum.Font.Gotham
+ToggleBtn.Size = UDim2.new(1,-20,0,34)
+ToggleBtn.Position = UDim2.new(0,10,0,50)
+ToggleBtn.Text = "AUTO BUY : OFF"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(35,35,35)
+ToggleBtn.TextColor3 = Color3.fromRGB(220,220,220)
+ToggleBtn.Font = Enum.Font.GothamSemibold
+ToggleBtn.TextSize = 13
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0,8)
 
 -- SCROLL
 local Scroll = Instance.new("ScrollingFrame", Main)
-Scroll.Size = UDim2.new(1,-20,1,-90)
-Scroll.Position = UDim2.new(0,10,0,80)
+Scroll.Size = UDim2.new(1,-20,1,-100)
+Scroll.Position = UDim2.new(0,10,0,90)
 Scroll.CanvasSize = UDim2.new(0,0,0,0)
 Scroll.BackgroundTransparency = 1
-Scroll.ScrollBarThickness = 4
+Scroll.ScrollBarThickness = 3
 
 local UIList = Instance.new("UIListLayout", Scroll)
-UIList.Padding = UDim.new(0,5)
+UIList.Padding = UDim.new(0,6)
 
 --// STATE
 local AutoBuyEnabled = false
@@ -87,12 +105,13 @@ local Minimized = false
 --// CREATE ITEM BUTTON
 local function createItem(name)
     local btn = Instance.new("TextButton", Scroll)
-    btn.Size = UDim2.new(1,0,0,28)
-    btn.Text = "[ ] "..name
-    btn.BackgroundColor3 = Color3.fromRGB(35,35,35)
-    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Size = UDim2.new(1,0,0,30)
+    btn.Text = "☐ "..name
+    btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    btn.TextColor3 = Color3.fromRGB(210,210,210)
     btn.Font = Enum.Font.Gotham
     btn.TextSize = 13
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
 
     SelectedItems[name] = false
 
@@ -100,11 +119,11 @@ local function createItem(name)
         SelectedItems[name] = not SelectedItems[name]
 
         if SelectedItems[name] then
-            btn.Text = "[✔] "..name
-            btn.BackgroundColor3 = Color3.fromRGB(60,120,60)
+            btn.Text = "☑ "..name
+            btn.BackgroundColor3 = Color3.fromRGB(60,140,80)
         else
-            btn.Text = "[ ] "..name
-            btn.BackgroundColor3 = Color3.fromRGB(35,35,35)
+            btn.Text = "☐ "..name
+            btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
         end
     end)
 end
@@ -132,10 +151,11 @@ UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     Scroll.CanvasSize = UDim2.new(0,0,0,UIList.AbsoluteContentSize.Y)
 end)
 
---// TOGGLE AUTO
+--// TOGGLE
 ToggleBtn.MouseButton1Click:Connect(function()
     AutoBuyEnabled = not AutoBuyEnabled
-    ToggleBtn.Text = "AUTO BUY: "..(AutoBuyEnabled and "ON" or "OFF")
+    ToggleBtn.Text = "AUTO BUY : "..(AutoBuyEnabled and "ON" or "OFF")
+    ToggleBtn.BackgroundColor3 = AutoBuyEnabled and Color3.fromRGB(60,140,80) or Color3.fromRGB(35,35,35)
 end)
 
 --// MINIMIZE
@@ -143,7 +163,7 @@ MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     Scroll.Visible = not Minimized
     ToggleBtn.Visible = not Minimized
-    Main.Size = Minimized and UDim2.new(0,320,0,35) or UDim2.new(0,320,0,420)
+    Main.Size = Minimized and UDim2.new(0,330,0,38) or UDim2.new(0,330,0,430)
 end)
 
 --// CLOSE
@@ -177,7 +197,7 @@ task.spawn(function()
     end
 end)
 
---// DRAG SMOOTH (FIX NO BUG)
+--// DRAG
 local dragging, dragInput, dragStart, startPos
 
 Top.InputBegan:Connect(function(input)
