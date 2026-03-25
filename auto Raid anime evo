@@ -157,9 +157,7 @@ end
 -- AUTO JOIN (HOOK)
 -- =========================
 
-local Framework = require(game.ReplicatedStorage:WaitForChild("Framework"))
 local RaidUI = require(game.ReplicatedStorage.SharedModules.RaidUIController)
-local RaidShared = require(game.ReplicatedStorage.SharedModules.RaidSystemShared)
 
 local old = RaidUI.ShowInviteWindow
 
@@ -173,10 +171,14 @@ RaidUI.ShowInviteWindow = function(p29, data)
             return
         end
 
-        -- AUTO JOIN
+        print("AUTO JOIN:", raidName)
+
         task.spawn(function()
             pcall(function()
-                Framework.Bridge:Fire("Enemies", "Bridge", {
+                -- 🔥 ambil ROOT SYSTEM yang sama
+                local root = getupvalue(old, 1)
+
+                root.Bridge:Fire("Enemies", "Bridge", {
                     Module = "RaidSystemServer",
                     FunctionName = "Join",
                     Args = raidName
