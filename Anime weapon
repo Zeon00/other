@@ -442,10 +442,31 @@ task.spawn(function()
                     local stageFolder = npc:FindFirstChild("StageEnemies")
                     if stageFolder then
 
-                        for _, stage in pairs(stageFolder:GetChildren()) do
-                            if not tp then break end
+                        local closestStage = nil
+                        local closestDist = math.huge
 
-                            for _, mob in pairs(stage:GetChildren()) do
+                        -- cari stage terdekat dari player
+                        for _, stage in pairs(stageFolder:GetChildren()) do
+                            local mobs = stage:GetChildren()
+                            for _, mob in pairs(mobs) do
+                                if mob:IsA("Model") then
+                                    local hrp = mob:FindFirstChild("HumanoidRootPart")
+                                    local hum = mob:FindFirstChild("Humanoid")
+
+                                    if hrp and hum and hum.Health > 0 then
+                                        local dist = (root.Position - hrp.Position).Magnitude
+                                        if dist < closestDist then
+                                            closestDist = dist
+                                            closestStage = stage
+                                        end
+                                    end
+                                end
+                            end
+                        end
+
+                        -- kalau nemu stage terdekat → cuma loop stage itu
+                        if closestStage then
+                            for _, mob in pairs(closestStage:GetChildren()) do
                                 if not tp then break end
 
                                 if mob:IsA("Model") then
@@ -453,7 +474,6 @@ task.spawn(function()
                                     local hum = mob:FindFirstChild("Humanoid")
 
                                     if hrp and hum and hum.Health > 0 then
-                                        -- TP + ngadep NPC
                                         root.CFrame = CFrame.lookAt(
                                             hrp.Position + Vector3.new(0,0,3),
                                             hrp.Position
