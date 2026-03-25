@@ -1,0 +1,122 @@
+-- AUTO RAID GUI + SELECT RAID
+
+local AutoRaid = false
+local SelectedRaid = nil
+
+-- RAID LIST (dari config kamu)
+local RaidList = {
+    "Raid",
+    "Raid_02",
+    "Raid_03",
+    "Raid_04",
+    "Raid_Divinity",
+    "Raid_HW",
+    "Raid_Christmas",
+    "Raid_Valentine",
+    "Raid_Abuse",
+    "Raid_DemonSlayer",
+    "Raid_Crystal",
+    "Raid_Crazy",
+    "Raid_Insane"
+}
+
+-- GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 220, 0, 200)
+Main.Position = UDim2.new(0.5, -110, 0.5, -100)
+Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Main.Active = true
+Main.Draggable = true
+
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1,0,0,30)
+Title.Text = "AUTO RAID"
+Title.TextScaled = true
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.new(1,1,1)
+
+-- TOGGLE BUTTON
+local Toggle = Instance.new("TextButton", Main)
+Toggle.Size = UDim2.new(0.8,0,0,40)
+Toggle.Position = UDim2.new(0.1,0,0.25,0)
+Toggle.Text = "OFF"
+Toggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
+Toggle.TextColor3 = Color3.new(1,1,1)
+Toggle.TextScaled = true
+
+-- DROPDOWN FRAME
+local ListFrame = Instance.new("Frame", Main)
+ListFrame.Size = UDim2.new(0.8,0,0,80)
+ListFrame.Position = UDim2.new(0.1,0,0.55,0)
+ListFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+local UIList = Instance.new("UIListLayout", ListFrame)
+
+-- CREATE RAID BUTTONS
+for _, raidName in ipairs(RaidList) do
+    local btn = Instance.new("TextButton", ListFrame)
+    btn.Size = UDim2.new(1,0,0,20)
+    btn.Text = raidName
+    btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextScaled = true
+
+    btn.MouseButton1Click:Connect(function()
+        SelectedRaid = raidName
+        print("Selected Raid:", raidName)
+    end)
+end
+
+-- UPDATE TOGGLE
+local function UpdateToggle()
+    if AutoRaid then
+        Toggle.Text = "ON"
+        Toggle.BackgroundColor3 = Color3.fromRGB(0,170,0)
+    else
+        Toggle.Text = "OFF"
+        Toggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
+    end
+end
+
+Toggle.MouseButton1Click:Connect(function()
+    AutoRaid = not AutoRaid
+    UpdateToggle()
+end)
+
+UpdateToggle()
+
+-- =========================
+-- 🔥 AUTO JOIN SYSTEM
+-- =========================
+
+local Framework = require(game.ReplicatedStorage:WaitForChild("Framework")) -- sesuaikan
+local RaidShared = require(game.ReplicatedStorage.SharedModules.RaidSystemShared)
+local RaidUI = require(game.ReplicatedStorage.SharedModules.RaidUIController)
+
+local oldFunc = RaidUI.ShowInviteWindow
+
+RaidUI.ShowInviteWindow = function(p29, p_u_30)
+    if AutoRaid then
+        local raidName = p_u_30.config.Name
+        
+        -- FILTER RAID
+        if SelectedRaid and raidName ~= SelectedRaid then
+            return
+        end
+
+        if p29.Owner and not tonumber(p29.Owner) then
+            if not Framework.LocalPlayer:GetAttribute(RaidShared.ATTRS.InRaid) then
+                task.wait(0.3)
+                Framework.Bridge:Fire("Enemies", "Bridge", {
+                    ["Module"] = "RaidSystemServer",
+                    ["FunctionName"] = "Join",
+                    ["Args"] = raidName
+                })
+            end
+        end
+    else
+        return oldFunc(p29, p_u_30)
+    end
+end
