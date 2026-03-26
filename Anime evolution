@@ -256,7 +256,7 @@ local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,430,0,420)
+main.Size = UDim2.new(0,430,0,480)
 main.Position = UDim2.new(0.5,-215,0.5,-210)
 main.BackgroundColor3 = Color3.fromRGB(15,15,15)
 main.Active = true
@@ -396,3 +396,138 @@ local function RefreshEnemyList()
 end
 
 RefreshEnemyList()
+
+----------------------------------------------------------------
+-- AUTO RAID JOIN (LOOP + DROPDOWN)
+----------------------------------------------------------------
+
+local AutoRaidJoin = false
+local SelectedRaids = {}
+
+local RaidList = {
+    "Raid_Insane",
+    "Raid_Crystal",
+    "Raid_Abuse",
+    "Raid_Crazy",
+    "Raid_DemonSlayer"
+}
+
+-- LOOP JOIN
+task.spawn(function()
+    while task.wait(10.5) do
+        if AutoRaidJoin then
+            for raidName,_ in pairs(SelectedRaids) do
+                pcall(function()
+                    Remote:FireServer(
+                        "Enemies",
+                        "Bridge",
+                        {
+                            Module = "RaidSystemServer",
+                            FunctionName = "Join",
+                            Args = raidName
+                        }
+                    )
+                end)
+            end
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- GUI RAID (BAWAH)
+----------------------------------------------------------------
+
+local raidFrame = Instance.new("Frame", main)
+raidFrame.Size = UDim2.new(1,-10,0,220)
+raidFrame.Position = UDim2.new(0,5,1,-135)
+raidFrame.BackgroundColor3 = Color3.fromRGB(18,18,18)
+Round(raidFrame,10)
+
+local raidTitle = Instance.new("TextLabel", raidFrame)
+raidTitle.Size = UDim2.new(1,0,0,25)
+raidTitle.BackgroundTransparency = 1
+raidTitle.Text = "AUTO RAID JOIN"
+raidTitle.Font = Enum.Font.GothamBold
+raidTitle.TextSize = 13
+raidTitle.TextColor3 = Color3.new(1,1,1)
+
+-- TOGGLE
+local raidToggle = Instance.new("TextButton", raidFrame)
+raidToggle.Size = UDim2.new(0.9,0,0,28)
+raidToggle.Position = UDim2.new(0.05,0,0,30)
+raidToggle.Font = Enum.Font.GothamBold
+raidToggle.TextSize = 13
+raidToggle.TextColor3 = Color3.new(1,1,1)
+Round(raidToggle,6)
+
+local function UpdateRaidToggle()
+    raidToggle.Text = AutoRaidJoin and "AUTO RAID: ON" or "AUTO RAID: OFF"
+    raidToggle.BackgroundColor3 = AutoRaidJoin and Color3.fromRGB(0,170,0) or Color3.fromRGB(120,0,0)
+end
+
+raidToggle.MouseButton1Click:Connect(function()
+    AutoRaidJoin = not AutoRaidJoin
+    UpdateRaidToggle()
+end)
+
+UpdateRaidToggle()
+
+-- DROPDOWN LIST
+local raidScroll = Instance.new("ScrollingFrame", raidFrame)
+raidScroll.Size = UDim2.new(0.9,0,0,130)
+raidScroll.Position = UDim2.new(0.05,0,0,65)
+raidScroll.BackgroundColor3 = Color3.fromRGB(25,25,25)
+raidScroll.ScrollBarThickness = 5
+raidScroll.CanvasSize = UDim2.new(0,0,0,0)
+Round(raidScroll,4)
+
+local raidLayout = Instance.new("UIListLayout", raidScroll)
+raidLayout.Padding = UDim.new(0,7)
+
+raidLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    raidScroll.CanvasSize = UDim2.new(0,0,0,raidLayout.AbsoluteContentSize.Y + 5)
+end)
+
+-- CHECKBOX STYLE
+for _,raidName in ipairs(RaidList) do
+    local item = Instance.new("Frame", raidScroll)
+    item.Size = UDim2.new(1,-5,0,26)
+    item.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    Round(item,6)
+
+    local label = Instance.new("TextLabel", item)
+    label.Size = UDim2.new(1,-30,1,0)
+    label.Position = UDim2.new(0,5,0,0)
+    label.BackgroundTransparency = 1
+    label.Text = raidName
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 12
+    label.TextColor3 = Color3.fromRGB(220,220,220)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local box = Instance.new("TextButton", item)
+    box.Size = UDim2.new(0,18,0,18)
+    box.Position = UDim2.new(1,-22,0.5,-9)
+    box.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    box.Text = ""
+    Round(box,4)
+
+    local function Update()
+        if SelectedRaids[raidName] then
+            box.BackgroundColor3 = Color3.fromRGB(0,200,0)
+        else
+            box.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        end
+    end
+
+    box.MouseButton1Click:Connect(function()
+        if SelectedRaids[raidName] then
+            SelectedRaids[raidName] = nil
+        else
+            SelectedRaids[raidName] = true
+        end
+        Update()
+    end)
+
+    Update()
+end
