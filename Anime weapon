@@ -528,5 +528,44 @@ UIS.InputChanged:Connect(function(input)
         )
     end
 end)
+--// SERVICES
+local Players = game:GetService("Players")
 
+local player = Players.LocalPlayer
+
+--// 1. CAMERA GERAK (biar ga idle client)
+task.spawn(function()
+    while true do
+        task.wait(math.random(30,60))
+
+        local cam = workspace.CurrentCamera
+        if cam then
+            cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(math.random(-15,15)), 0)
+        end
+    end
+end)
+
+--// 2. LOMPAT RANDOM (ini penting di mobile)
+task.spawn(function()
+    while true do
+        task.wait(math.random(20,40))
+
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.Jump = true
+        end
+    end
+end)
+
+--// 3. GERAK DIKIT (biar dianggap aktif)
+task.spawn(function()
+    while true do
+        task.wait(math.random(40,80))
+
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char:TranslateBy(Vector3.new(math.random(-2,2),0,math.random(-2,2)))
+        end
+    end
+end)
 print("RNG AUTO FARM + AUTO TP 🔥")
