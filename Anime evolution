@@ -398,10 +398,10 @@ end
 RefreshEnemyList()
 
 ----------------------------------------------------------------
--- AUTO RAID JOIN (LOOP + DROPDOWN)
+-- AUTO RAID JOIN (AUTO ON + ALL SELECTED)
 ----------------------------------------------------------------
 
-local AutoRaidJoin = false
+local AutoRaidJoin = true -- langsung ON
 local SelectedRaids = {}
 
 local RaidList = {
@@ -411,6 +411,11 @@ local RaidList = {
     "Raid_Crazy",
     "Raid_DemonSlayer"
 }
+
+-- AUTO SELECT SEMUA RAID
+for _, raidName in ipairs(RaidList) do
+    SelectedRaids[raidName] = true
+end
 
 -- LOOP JOIN
 task.spawn(function()
@@ -434,7 +439,7 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------
--- GUI RAID (BAWAH)
+-- GUI RAID
 ----------------------------------------------------------------
 
 local raidFrame = Instance.new("Frame", main)
@@ -472,7 +477,7 @@ end)
 
 UpdateRaidToggle()
 
--- DROPDOWN LIST
+-- DROPDOWN
 local raidScroll = Instance.new("ScrollingFrame", raidFrame)
 raidScroll.Size = UDim2.new(0.9,0,0,130)
 raidScroll.Position = UDim2.new(0.05,0,0,65)
@@ -488,7 +493,7 @@ raidLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     raidScroll.CanvasSize = UDim2.new(0,0,0,raidLayout.AbsoluteContentSize.Y + 5)
 end)
 
--- CHECKBOX STYLE
+-- CHECKBOX
 for _,raidName in ipairs(RaidList) do
     local item = Instance.new("Frame", raidScroll)
     item.Size = UDim2.new(1,-5,0,26)
@@ -508,7 +513,6 @@ for _,raidName in ipairs(RaidList) do
     local box = Instance.new("TextButton", item)
     box.Size = UDim2.new(0,18,0,18)
     box.Position = UDim2.new(1,-22,0.5,-9)
-    box.BackgroundColor3 = Color3.fromRGB(50,50,50)
     box.Text = ""
     Round(box,4)
 
@@ -529,5 +533,5 @@ for _,raidName in ipairs(RaidList) do
         Update()
     end)
 
-    Update()
+    Update() -- langsung hijau semua
 end
