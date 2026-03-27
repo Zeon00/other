@@ -226,7 +226,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait(120) do
+    while task.wait(10) do
         if AutoRankUp then
             Remote:FireServer("RankUp","Evolve")
         end
