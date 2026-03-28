@@ -5,10 +5,6 @@ local RS = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local MonsterRemote = RS:WaitForChild("Remotes"):WaitForChild("MonsterEvent")
 local TaskRemote = RS:WaitForChild("Remotes"):WaitForChild("DataInterface"):WaitForChild("Task")
-local SkillRemote = RS:WaitForChild("Remotes"):WaitForChild("SkillEvent")
-
--- AUTO ON
-local ON = true
 
 --// GET TARGET
 local function getTarget()
@@ -39,12 +35,105 @@ local function getTarget()
     return closest
 end
 
---// DPS LOOP
+--// GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "AutoFarmPro"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0,240,0,180)
+Frame.Position = UDim2.new(0.4,0,0.4,0)
+Frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Frame.Active = true
+Frame.Draggable = true
+
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1,0,0,30)
+Title.Text = "AUTO FARM"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+
+-- MINIMIZE
+local Minimize = Instance.new("TextButton", Frame)
+Minimize.Size = UDim2.new(0,25,0,25)
+Minimize.Position = UDim2.new(1,-60,0,5)
+Minimize.Text = "-"
+Minimize.BackgroundColor3 = Color3.fromRGB(60,60,60)
+
+-- CLOSE
+local Close = Instance.new("TextButton", Frame)
+Close.Size = UDim2.new(0,25,0,25)
+Close.Position = UDim2.new(1,-30,0,5)
+Close.Text = "X"
+Close.BackgroundColor3 = Color3.fromRGB(120,0,0)
+
+-- ICON (MINIMIZED)
+local Icon = Instance.new("TextButton", ScreenGui)
+Icon.Size = UDim2.new(0,80,0,30)
+Icon.Position = UDim2.new(0,10,0.5,0)
+Icon.Text = "OPEN"
+Icon.Visible = false
+Icon.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+-- TOGGLE CREATOR
+local function createToggle(text, posY)
+    local btn = Instance.new("TextButton", Frame)
+    btn.Size = UDim2.new(0.8,0,0,35)
+    btn.Position = UDim2.new(0.1,0,posY,0)
+    btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = text .. ": ON"
+    return btn
+end
+
+local ToggleKill = createToggle("Kill Aura", 0.25)
+local ToggleWalk = createToggle("Fast Walk", 0.5)
+local ToggleAFK = createToggle("Anti AFK", 0.75)
+
+-- STATES (DEFAULT ON)
+local KillON = true
+local WalkON = true
+local AFKON = true
+
+-- TOGGLES
+ToggleKill.MouseButton1Click:Connect(function()
+    KillON = not KillON
+    ToggleKill.Text = "Kill Aura: " .. (KillON and "ON" or "OFF")
+end)
+
+ToggleWalk.MouseButton1Click:Connect(function()
+    WalkON = not WalkON
+    ToggleWalk.Text = "Fast Walk: " .. (WalkON and "ON" or "OFF")
+end)
+
+ToggleAFK.MouseButton1Click:Connect(function()
+    AFKON = not AFKON
+    ToggleAFK.Text = "Anti AFK: " .. (AFKON and "ON" or "OFF")
+end)
+
+-- MINIMIZE LOGIC
+Minimize.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    Icon.Visible = true
+end)
+
+Icon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    Icon.Visible = false
+end)
+
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+--// DPS LOOP (LOGIC LO TETAP)
 task.spawn(function()
     local delay = 0.04
 
     while true do
-        if ON then
+        if KillON then
             local target = getTarget()
 
             if target then
@@ -56,13 +145,11 @@ task.spawn(function()
                             damtype = "normal"
                         })
                     end)
-
                     if ok then
                         success = success + 1
                     end
                 end
 
-                -- auto adjust
                 if success < 2 then
                     delay = math.clamp(delay + 0.005, 0.03, 0.08)
                 else
@@ -75,36 +162,33 @@ task.spawn(function()
     end
 end)
 
---// 🔥 ANTI AFK REAL (INI KUNCI)
+--// FAST WALK
 task.spawn(function()
     while true do
-        pcall(function()
-            -- fake attack (dianggap aktif)
-            TaskRemote:FireServer("slash")
+        if WalkON then
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local target = getTarget()
 
-            -- fake skill (biar lebih legit)
-            SkillRemote:FireServer("skillRequest", {
-                pos = "E",
-                _tick = tick()
-            })
-        end)
+            if hum and hrp and target then
+                hum.WalkSpeed = 60
+                hum:MoveTo(target.HumanoidRootPart.Position)
+            end
+        end
 
-        task.wait(25) -- interval aman
+        task.wait(0.2)
     end
 end)
 
---// GERAK DIKIT (SUPPORT)
+--// ANTI AFK
 task.spawn(function()
     while true do
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
-        if hrp then
-            hrp.CFrame = hrp.CFrame * CFrame.new(0.2,0,0)
-            task.wait(0.2)
-            hrp.CFrame = hrp.CFrame * CFrame.new(-0.2,0,0)
+        if AFKON then
+            pcall(function()
+                TaskRemote:FireServer("slash")
+            end)
         end
-
-        task.wait(20)
+        task.wait(25)
     end
 end)
