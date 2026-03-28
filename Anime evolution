@@ -13,6 +13,8 @@ local AutoTrain = false
 local EnemyTP = false
 local AutoRoll = false
 local AutoRankUp = false
+local AutoEnchant = false
+local AutoWorldBoss = false
 
 local lastEnemy = nil
 local HIT_MULTIPLIER = 1
@@ -171,7 +173,79 @@ local function GetCurrentMap()
 
     return LastMap
 end
+----------------------------------------------------------------
+-- WORLD BOSS SYSTEM
+----------------------------------------------------------------
 
+local function FindWorldBoss()
+    local folder = workspace.Server.Enemies:FindFirstChild("WorldBoss")
+    if not folder then return end
+
+    for _, mapFolder in pairs(folder:GetChildren()) do
+        for _, boss in pairs(mapFolder:GetChildren()) do
+
+            local hp = boss:GetAttribute("Health")
+            local died = boss:GetAttribute("Died")
+
+            if hp and hp > 0 and not died then
+                return boss, mapFolder.Name
+            end
+        end
+    end
+end
+
+local function GetClientBoss()
+    local folder = workspace.Client:FindFirstChild("Enemies")
+    if not folder then return end
+
+    local wb = folder:FindFirstChild("WorldBoss")
+    if not wb then return end
+
+    for _, v in pairs(wb:GetDescendants()) do
+        if v:IsA("BasePart") then
+            return v
+        end
+    end
+end
+----------------------------------------------------------------
+-- AUTO ENCHANT (SAFE ADD-ON)
+----------------------------------------------------------------
+
+local function GetEnchantScroll()
+    local gui = player:FindFirstChild("PlayerGui")
+    if not gui then return end
+
+    local ui = gui:FindFirstChild("UI")
+    if not ui then return end
+
+    local frames = ui:FindFirstChild("Frames")
+    if not frames then return end
+
+    local enchant = frames:FindFirstChild("EnchantWeapon")
+    if not enchant then return end
+
+    local main = enchant:FindFirstChild("Main")
+    if not main then return end
+
+    local craft = main:FindFirstChild("Craft")
+    if not craft then return end
+
+    local select = craft:FindFirstChild("Select")
+    if not select then return end
+
+    return select:FindFirstChild("ScrollingFrame")
+end
+
+local function GetCurrentSword()
+    local scroll = GetEnchantScroll()
+    if not scroll then return end
+
+    for _, v in pairs(scroll:GetChildren()) do
+        if v:IsA("Frame") or v:IsA("TextButton") then
+            return v.Name, v
+        end
+    end
+end
 ----------------------------------------------------------------
 -- MAIN LOOP
 ----------------------------------------------------------------
@@ -232,7 +306,90 @@ task.spawn(function()
         end
     end
 end)
+----------------------------------------------------------------
+-- AUTO WORLD BOSS
+----------------------------------------------------------------
 
+task.spawn(function()
+    while task.wait(1) do
+        if AutoWorldBoss then
+
+            local boss, mapName = FindWorldBoss()
+
+            if boss and mapName then
+
+                -- 🚀 TP KE MAP
+                pcall(function()
+                    Remote:FireServer("Teleport","Spawn",mapName)
+                end)
+
+                -- ⏳ tunggu boss muncul di client
+                local clientBoss
+                for i = 1,10 do
+                    clientBoss = GetClientBoss()
+                    if clientBoss then break end
+                    task.wait(0.5)
+                end
+
+                if clientBoss then
+
+                    -- 🔥 TP KE BOSS
+                    if EnemyTP then
+                        TeleportToEnemy(clientBoss)
+                    end
+
+                    -- 🔥 HIT
+                    local attackType = "World"
+
+                    if AutoHit then
+                        Remote:FireServer("Attack","Click",{
+                            Type = attackType,
+                            Enemy = clientBoss
+                        })
+                    end
+
+                    -- 🔥 PET
+                    if AutoPet then
+                        for _, petID in pairs(GetPets()) do
+                            Remote:FireServer("Attack","UnitAttack",{
+                                {Type = attackType, Enemy = clientBoss},
+                                petID
+                            })
+                        end
+                    end
+
+                end
+            end
+        end
+    end
+end)
+----------------------------------------------------------------
+-- AUTO ENCHANT LOOP
+----------------------------------------------------------------
+
+task.spawn(function()
+    while task.wait(1) do
+        if AutoEnchant then
+
+            local swordName, frame = GetCurrentSword()
+
+            if swordName then
+                pcall(function()
+                    Remote:FireServer(
+                        "EnchantWeapon",
+                        "ScrollTry10",
+                        {
+                            CurrentSword = swordName,
+                            IsCraftButton10 = true,
+                            CrystalCost = 100
+                        }
+                    )
+                end)
+            end
+
+        end
+    end
+end)
 ----------------------------------------------------------------
 -- ANTI AFK
 ----------------------------------------------------------------
@@ -337,6 +494,8 @@ Toggle("Auto Train", function(v) AutoTrain=v end)
 Toggle("TP Enemy", function(v) EnemyTP=v end)
 Toggle("Auto Roll", function(v) AutoRoll=v end)
 Toggle("Auto RankUp", function(v) AutoRankUp=v end)
+Toggle("Auto World Boss", function(v) AutoWorldBoss = v end)
+Toggle("Auto Enchant", function(v) AutoEnchant = v end)
 
 -- RIGHT (MULTI SELECT)
 local right = Instance.new("ScrollingFrame", main)
@@ -444,7 +603,7 @@ end)
 
 local raidFrame = Instance.new("Frame", main)
 raidFrame.Size = UDim2.new(1,-10,0,220)
-raidFrame.Position = UDim2.new(0,5,1,-135)
+raidFrame.Position = UDim2.new(0,5,1,-75)
 raidFrame.BackgroundColor3 = Color3.fromRGB(18,18,18)
 Round(raidFrame,10)
 
