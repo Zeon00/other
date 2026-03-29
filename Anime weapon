@@ -8,13 +8,20 @@ local player = Players.LocalPlayer
 --// REMOTES
 local Damage = RS:WaitForChild("Events"):WaitForChild("DamageIncreaseOnClickEvent")
 local Target = RS:WaitForChild("Events"):WaitForChild("RNGGame"):WaitForChild("NPCs"):WaitForChild("SendNPCTarget")
+local DungeonEvent = RS:WaitForChild("Events"):WaitForChild("DungeonEvent")
+local TPDungeon = RS:WaitForChild("Events"):WaitForChild("TeleportPlayer")
+
+--// STATE
+getgenv().AutoDungeon = false
+local DungeonReady = false
+_G.InDungeon = false
 
 --// GUI
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,250,0,320) -- ditambah buat 5 toggle
+main.Size = UDim2.new(0,250,0,360)
 main.Position = UDim2.new(0.4,0,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Instance.new("UICorner", main)
@@ -25,14 +32,12 @@ title.Text = "RNG AUTO FARM"
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.new(1,1,1)
 
--- CLOSE
 local close = Instance.new("TextButton", main)
 close.Size = UDim2.new(0,30,0,30)
 close.Position = UDim2.new(1,-30,0,0)
 close.Text = "X"
 close.BackgroundColor3 = Color3.fromRGB(255,60,60)
 
--- MINIMIZE
 local mini = Instance.new("TextButton", main)
 mini.Size = UDim2.new(0,30,0,30)
 mini.Position = UDim2.new(1,-60,0,0)
@@ -59,7 +64,7 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- BUTTON
+--// BUTTON
 local function btn(name, y)
     local b = Instance.new("TextButton", main)
     b.Size = UDim2.new(0.8,0,0,32)
@@ -71,12 +76,12 @@ local function btn(name, y)
     return b
 end
 
--- posisi (ditambah 1 lagi)
-local hitBtn     = btn("AUTO HIT", 0.15)
-local targetBtn  = btn("AUTO TARGET", 0.30)
-local magnetBtn  = btn("MAGNET", 0.45)
-local auraBtn    = btn("KILL AURA", 0.60)
-local tpBtn      = btn("AUTO TP", 0.75)
+local hitBtn     = btn("AUTO HIT", 0.13)
+local targetBtn  = btn("AUTO TARGET", 0.26)
+local magnetBtn  = btn("MAGNET", 0.39)
+local auraBtn    = btn("KILL AURA", 0.52)
+local tpBtn      = btn("AUTO TP", 0.65)
+local dgBtn      = btn("AUTO DUNGEON", 0.78)
 
 local hit, target, magnet, aura, tp = false,false,false,false,false
 
@@ -110,13 +115,16 @@ tpBtn.MouseButton1Click:Connect(function()
     update(tpBtn, tp, "AUTO TP")
 end)
 
+dgBtn.MouseButton1Click:Connect(function()
+    getgenv().AutoDungeon = not getgenv().AutoDungeon
+    update(dgBtn, getgenv().AutoDungeon, "AUTO DUNGEON")
+end)
+
 --// AUTO HIT
 task.spawn(function()
     while true do
-        if hit then
-            pcall(function()
-                Damage:FireServer()
-            end)
+        if hit and not _G.InDungeon then
+            pcall(function() Damage:FireServer() end)
         end
         task.wait(0.01)
     end
@@ -125,13 +133,9 @@ end)
 --// AUTO TARGET
 task.spawn(function()
     while true do
-        if target then
+        if target and not _G.InDungeon then
             pcall(function()
-                local args = {
-                    "all",
-                    Instance.new("Model")
-                }
-                Target:FireServer(unpack(args))
+                Target:FireServer("all", Instance.new("Model"))
             end)
         end
         task.wait(0.2)
@@ -141,17 +145,13 @@ end)
 --// MAGNET
 task.spawn(function()
     while true do
-        if magnet then
+        if magnet and not _G.InDungeon then
             local folder = workspace:FindFirstChild("ClientCoinsGems")
-            if folder then
-                local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                if root then
-                    for _,v in pairs(folder:GetChildren()) do
-                        local h = v:FindFirstChild("Hitbox")
-                        if h then
-                            h.CFrame = root.CFrame
-                        end
-                    end
+            local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if folder and root then
+                for _,v in pairs(folder:GetChildren()) do
+                    local h = v:FindFirstChild("Hitbox")
+                    if h then h.CFrame = root.CFrame end
                 end
             end
         end
@@ -159,7 +159,7 @@ task.spawn(function()
     end
 end)
 
---// KILL AURA (TETEP)
+--// KILL AURA (tetep jalan di dungeon)
 local function GetEnemies()
     local t = {}
     for _,v in pairs(workspace:GetDescendants()) do
@@ -177,16 +177,13 @@ end
 task.spawn(function()
     while true do
         if aura then
-            local char = player.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
+            local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if root then
                 for _,hrp in pairs(GetEnemies()) do
                     if (root.Position - hrp.Position).Magnitude <= 30 then
-                        pcall(function()
-                            for i = 1,3 do
-                                Damage:FireServer()
-                            end
-                        end)
+                        for i=1,3 do
+                            pcall(function() Damage:FireServer() end)
+                        end
                     end
                 end
             end
@@ -195,90 +192,80 @@ task.spawn(function()
     end
 end)
 
+--// AUTO TP (FIX)
 task.spawn(function()
     while true do
-        if tp then
-            local char = player.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
+        if tp and not _G.InDungeon and not getgenv().AutoDungeon then
+            local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            local npc = workspace:FindFirstChild("NPCs")
 
-            if root then
-                local npc = workspace:FindFirstChild("NPCs")
-                if npc then
-                    local stageFolder = npc:FindFirstChild("StageEnemies")
-                    if stageFolder then
+            if root and npc then
+                local stageFolder = npc:FindFirstChild("StageEnemies")
+                if stageFolder then
+                    for _, stage in pairs(stageFolder:GetChildren()) do
+                        for _, mob in pairs(stage:GetChildren()) do
+                            if mob:IsA("Model") then
+                                local hrp = mob:FindFirstChild("HumanoidRootPart")
+                                local hum = mob:FindFirstChild("Humanoid")
 
-                        local closestStage = nil
-                        local closestDist = math.huge
-
-                        -- cari stage terdekat dari player
-                        for _, stage in pairs(stageFolder:GetChildren()) do
-                            local mobs = stage:GetChildren()
-                            for _, mob in pairs(mobs) do
-                                if mob:IsA("Model") then
-                                    local hrp = mob:FindFirstChild("HumanoidRootPart")
-                                    local hum = mob:FindFirstChild("Humanoid")
-
-                                    if hrp and hum and hum.Health > 0 then
-                                        local dist = (root.Position - hrp.Position).Magnitude
-                                        if dist < closestDist then
-                                            closestDist = dist
-                                            closestStage = stage
-                                        end
-                                    end
+                                if hrp and hum and hum.Health > 0 then
+                                    root.CFrame = CFrame.new(hrp.Position + Vector3.new(0,0,3), hrp.Position)
+                                    task.wait(2)
                                 end
                             end
                         end
-
-                        -- kalau nemu stage terdekat → cuma loop stage itu
-                        if closestStage then
-                            for _, mob in pairs(closestStage:GetChildren()) do
-                                if not tp then break end
-
-                                if mob:IsA("Model") then
-                                    local hrp = mob:FindFirstChild("HumanoidRootPart")
-                                    local hum = mob:FindFirstChild("Humanoid")
-
-                                    if hrp and hum and hum.Health > 0 then
-                                        root.CFrame = CFrame.lookAt(
-                                            hrp.Position + Vector3.new(0,0,3),
-                                            hrp.Position
-                                        )
-
-                                        task.wait(2.08)
-                                    end
-                                end
-                            end
-                        end
-
                     end
                 end
             end
         end
-
-        task.wait(2.1)
+        task.wait(2)
     end
 end)
 
--- DRAG (PC + MOBILE)
-local dragging = false
-local dragInput
-local dragStart
-local startPos
+--// AUTO DUNGEON CORE
+DungeonEvent.OnClientEvent:Connect(function(action)
+    if action == "Open" then
+        DungeonReady = true
+    elseif action == "SetupGUI" then
+        _G.InDungeon = true
+    elseif action == "ShowEndRewards" then
+        _G.InDungeon = false
+        DungeonReady = false
+    end
+end)
 
-local function update(input)
+task.spawn(function()
+    while true do
+        if getgenv().AutoDungeon and DungeonReady then
+            DungeonReady = false
+
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local pos = RS.PlotTeleportLocations.Dungeons.Position
+
+                -- TP ke dungeon
+                TPDungeon:FireServer(pos, char.HumanoidRootPart.CFrame.Rotation.Y)
+
+                task.wait(3)
+
+                -- Start dungeon
+                DungeonEvent:FireServer("StartDungeon")
+            end
+        end
+        task.wait(1)
+    end
+end)
+
+--// DRAG
+local dragging, dragInput, dragStart, startPos
+
+local function updateDrag(input)
     local delta = input.Position - dragStart
-    main.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
-    )
+    main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
 main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 
-    or input.UserInputType == Enum.UserInputType.Touch then
-        
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = main.Position
@@ -292,56 +279,15 @@ main.InputBegan:Connect(function(input)
 end)
 
 main.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement 
-    or input.UserInputType == Enum.UserInputType.Touch then
-        
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end)
 
 UIS.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
-        update(input)
-    end
-end)
---// SERVICES
-local Players = game:GetService("Players")
-
-local player = Players.LocalPlayer
-
---// 1. CAMERA GERAK (biar ga idle client)
-task.spawn(function()
-    while true do
-        task.wait(math.random(30,60))
-
-        local cam = workspace.CurrentCamera
-        if cam then
-            cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(math.random(-15,15)), 0)
-        end
+        updateDrag(input)
     end
 end)
 
---// 2. LOMPAT RANDOM (ini penting di mobile)
-task.spawn(function()
-    while true do
-        task.wait(math.random(20,40))
-
-        local char = player.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.Jump = true
-        end
-    end
-end)
-
---// 3. GERAK DIKIT (biar dianggap aktif)
-task.spawn(function()
-    while true do
-        task.wait(math.random(40,80))
-
-        local char = player.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            char:TranslateBy(Vector3.new(math.random(-2,2),0,math.random(-2,2)))
-        end
-    end
-end)
-print("RNG AUTO FARM + AUTO TP 🔥")
+print("🔥 FULL AUTO FARM + AUTO DUNGEON READY")
