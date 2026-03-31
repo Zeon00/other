@@ -514,11 +514,48 @@ Toggle("Auto RankUp", function(v) AutoRankUp=v end)
 Toggle("Auto World Boss", function(v) AutoWorldBoss=v end)
 Toggle("Auto Enchant", function(v) AutoEnchant=v end)
 
---================ AUTO RAID GUI FINAL =================--
+--================ AUTO RAID FULL (PASTE SAJA) =================--
 
-local raidGui = Instance.new("ScreenGui", player.PlayerGui)
-raidGui.ResetOnSpawn = false
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
 
+local player = Players.LocalPlayer
+local Remote = RS:WaitForChild("Bridge")
+
+-- STATE
+local AutoRaidJoin = true
+local SelectedRaids = {}
+
+local RaidList = {
+    "Raid_Insane",
+    "Raid_Crystal",
+    "Raid_Abuse",
+    "Raid_Crazy",
+    "Raid_DemonSlayer"
+}
+
+for _,v in ipairs(RaidList) do
+    SelectedRaids[v] = true
+end
+
+-- LOOP
+task.spawn(function()
+    while task.wait(10.5) do
+        if AutoRaidJoin then
+            for raidName,_ in pairs(SelectedRaids) do
+                pcall(function()
+                    Remote:FireServer("Enemies","Bridge",{
+                        Module="RaidSystemServer",
+                        FunctionName="Join",
+                        Args=raidName
+                    })
+                end)
+            end
+        end
+    end
+end)
+
+-- UI HELPER
 local function Round(obj,r)
     local u = Instance.new("UICorner")
     u.CornerRadius = UDim.new(0,r or 8)
@@ -532,19 +569,24 @@ local function TextFix(obj)
     c.MinTextSize = 10
 end
 
--- MAIN FRAME
-local raidMain = Instance.new("Frame", raidGui)
-raidMain.Size = UDim2.new(0.28,0,0.52,0)
-raidMain.Position = UDim2.new(0.7,0,0.15,0)
-raidMain.BackgroundColor3 = Color3.fromRGB(15,15,15)
-raidMain.Active = true
-raidMain.Draggable = true
-Round(raidMain,10)
+-- GUI
+local raidGui = Instance.new("ScreenGui", player.PlayerGui)
+raidGui.ResetOnSpawn = false
 
--- TOP BAR
-local top = Instance.new("Frame", raidMain)
+-- MAIN
+local main = Instance.new("Frame", raidGui)
+main.Size = UDim2.new(0.3,0,0.55,0)
+main.Position = UDim2.new(0.65,0,0.2,0)
+main.BackgroundColor3 = Color3.fromRGB(15,15,15)
+main.Active = true
+main.Draggable = true
+Round(main,10)
+
+-- TOP
+local top = Instance.new("Frame", main)
 top.Size = UDim2.new(1,0,0,32)
 top.BackgroundColor3 = Color3.fromRGB(25,25,25)
+top.ZIndex = 2
 Round(top,10)
 
 local title = Instance.new("TextLabel", top)
@@ -555,14 +597,15 @@ title.Font = Enum.Font.GothamBold
 title.TextColor3 = Color3.new(1,1,1)
 TextFix(title)
 
--- BUTTON FUNCTION
-local function Btn(txt,posX)
+-- BUTTON
+local function Btn(txt,x)
     local b = Instance.new("TextButton", top)
     b.Size = UDim2.new(0,28,0,28)
-    b.Position = UDim2.new(1,posX,0.5,-14)
+    b.Position = UDim2.new(1,x,0.5,-14)
     b.Text = txt
     b.BackgroundColor3 = Color3.fromRGB(40,40,40)
     b.TextColor3 = Color3.new(1,1,1)
+    b.ZIndex = 3
     TextFix(b)
     Round(b,6)
     return b
@@ -571,10 +614,10 @@ end
 local close = Btn("X",-5)
 local mini = Btn("-", -35)
 
--- ICON (MINIMIZE)
+-- ICON
 local icon = Instance.new("TextButton", raidGui)
 icon.Size = UDim2.new(0,45,0,45)
-icon.Position = UDim2.new(0.75,0,0.5,0)
+icon.Position = UDim2.new(0.7,0,0.5,0)
 icon.Text = "RAID"
 icon.Visible = false
 icon.BackgroundColor3 = Color3.fromRGB(20,20,20)
@@ -586,43 +629,44 @@ close.MouseButton1Click:Connect(function()
 end)
 
 mini.MouseButton1Click:Connect(function()
-    raidMain.Visible = false
+    main.Visible = false
     icon.Visible = true
 end)
 
 icon.MouseButton1Click:Connect(function()
-    raidMain.Visible = true
+    main.Visible = true
     icon.Visible = false
 end)
 
--- TOGGLE AUTO RAID
-local toggle = Instance.new("TextButton", raidMain)
+-- TOGGLE
+local toggle = Instance.new("TextButton", main)
 toggle.Size = UDim2.new(0.9,0,0,32)
-toggle.Position = UDim2.new(0.05,0,0,45)
+toggle.Position = UDim2.new(0.05,0,0,40)
+toggle.ZIndex = 3
 toggle.Font = Enum.Font.GothamBold
 toggle.TextColor3 = Color3.new(1,1,1)
 TextFix(toggle)
 Round(toggle,8)
 
-local function UpdateToggle()
+local function Update()
     toggle.Text = AutoRaidJoin and "AUTO RAID: ON" or "AUTO RAID: OFF"
     toggle.BackgroundColor3 = AutoRaidJoin and Color3.fromRGB(0,180,0) or Color3.fromRGB(120,0,0)
 end
 
 toggle.MouseButton1Click:Connect(function()
     AutoRaidJoin = not AutoRaidJoin
-    UpdateToggle()
+    Update()
 end)
 
-UpdateToggle()
+Update()
 
--- SCROLL LIST (DROPDOWN)
-local scroll = Instance.new("ScrollingFrame", raidMain)
+-- SCROLL
+local scroll = Instance.new("ScrollingFrame", main)
 scroll.Size = UDim2.new(0.9,0,0.65,0)
-scroll.Position = UDim2.new(0.05,0,0.2,0)
+scroll.Position = UDim2.new(0.05,0,0,80)
 scroll.BackgroundColor3 = Color3.fromRGB(22,22,22)
 scroll.ScrollBarThickness = 4
-scroll.BorderSizePixel = 0
+scroll.ZIndex = 1
 Round(scroll,8)
 
 local layout = Instance.new("UIListLayout", scroll)
@@ -632,11 +676,12 @@ layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
 end)
 
--- RAID LIST CHECKBOX
+-- LIST
 for _,raidName in ipairs(RaidList) do
     local item = Instance.new("Frame", scroll)
     item.Size = UDim2.new(1,-6,0,30)
     item.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    item.ZIndex = 2
     Round(item,6)
 
     local label = Instance.new("TextLabel", item)
@@ -647,12 +692,14 @@ for _,raidName in ipairs(RaidList) do
     label.Font = Enum.Font.Gotham
     label.TextColor3 = Color3.fromRGB(220,220,220)
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 3
     TextFix(label)
 
     local box = Instance.new("TextButton", item)
     box.Size = UDim2.new(0,20,0,20)
     box.Position = UDim2.new(1,-25,0.5,-10)
     box.Text = ""
+    box.ZIndex = 3
     Round(box,4)
 
     local function UpdateBox()
