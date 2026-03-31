@@ -7,7 +7,7 @@ local player = Players.LocalPlayer
 local Remote = RS:WaitForChild("Bridge")
 
 --// STATES
-local AutoHit = false
+local AutoHit = false  
 local AutoPet = false
 local AutoTrain = false
 local EnemyTP = false
@@ -26,8 +26,9 @@ local TP_DISTANCE = 350
 local LastMap = "Fiery World"
 
 ----------------------------------------------------------------
--- CORE (TIDAK DIUBAH)
+-- CORE (SAMA PERSIS)
 ----------------------------------------------------------------
+
 local function GetRoot()
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -44,12 +45,363 @@ local function FixType(t)
 end
 
 ----------------------------------------------------------------
--- (SEMUA LOGIC SAMA PERSIS - GA DIUBAH)
+-- ENEMY LIST
 ----------------------------------------------------------------
--- [SNIP: semua logic lo tetep sama, ga gue sentuh sama sekali]
--- biar ga kepanjangan di sini, anggap semua bagian atas sama persis
 
---================ GUI FIX FINAL ANDROID =================--
+local function GetAllEnemyNames()
+    local list = {}
+    local enemies = workspace:FindFirstChild("Client") and workspace.Client:FindFirstChild("Enemies")
+    if not enemies then return list end
+
+    for _, v in pairs(enemies:GetDescendants()) do
+        if v.Name and v.Parent and v.Parent.Name == "HumanoidRootPart" then
+            if not table.find(list, v.Name) then
+                table.insert(list, v.Name)
+            end
+        end
+    end
+
+    table.sort(list)
+    return list
+end
+
+----------------------------------------------------------------
+-- TARGET
+----------------------------------------------------------------
+
+local function GetNearestEnemy()
+    local root = GetRoot()
+    if not root then return end
+
+    local closest = nil
+    local dist = math.huge
+
+    local enemies = workspace.Server.Enemies
+
+    for _, folder in pairs(enemies:GetChildren()) do
+        for _, world in pairs(folder:GetChildren()) do
+            for _, mob in pairs(world:GetChildren()) do
+
+                local hp = mob:GetAttribute("Health")
+                local died = mob:GetAttribute("Died")
+
+                if hp and hp > 0 and not died then
+
+                    local valid = true
+
+                    if UseSelected then
+                        if not SelectedEnemies[mob.Name] then
+                            valid = false
+                        end
+                    end
+
+                    if valid then
+                        local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
+
+                        if pos then
+                            local d = (root.Position - pos).Magnitude
+                            if d < dist then
+                                dist = d
+                                closest = {
+                                    Enemy = mob,
+                                    Type = folder.Name
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+----------------------------------------------------------------
+-- PET
+----------------------------------------------------------------
+
+local function GetPets()
+    local pets = {}
+    local folder = workspace.Server.Pets:FindFirstChild(tostring(player.UserId))
+
+    if folder then
+        for _, pet in pairs(folder:GetChildren()) do
+            table.insert(pets, pet.Name)
+        end
+    end
+
+    return pets
+end
+
+----------------------------------------------------------------
+-- TP
+----------------------------------------------------------------
+
+local function TeleportToEnemy(mob)
+    local root = GetRoot()
+    if not root then return end
+
+    local hrp = mob:FindFirstChild("HumanoidRootPart")
+    local pos = mob.Position or (hrp and hrp.Position)
+
+    if not pos then return end
+    if pos.Y < -5 then return end
+
+    local dist = (root.Position - pos).Magnitude
+    if dist > TP_DISTANCE then return end
+
+    local safePos = pos + Vector3.new(0,3,5)
+    root.CFrame = CFrame.lookAt(safePos, pos)
+end
+
+----------------------------------------------------------------
+-- MAP
+----------------------------------------------------------------
+
+local function GetCurrentMap()
+    local enemies = workspace.Server.Enemies:FindFirstChild("World")
+    if not enemies then return LastMap end
+
+    for _, map in pairs(enemies:GetChildren()) do
+        if #map:GetChildren() > 0 then
+            LastMap = map.Name
+            return map.Name
+        end
+    end
+
+    return LastMap
+end
+----------------------------------------------------------------
+-- WORLD BOSS SYSTEM
+----------------------------------------------------------------
+
+local function FindWorldBoss()
+    local folder = workspace.Server.Enemies:FindFirstChild("WorldBoss")
+    if not folder then return end
+
+    for _, mapFolder in pairs(folder:GetChildren()) do
+        for _, boss in pairs(mapFolder:GetChildren()) do
+
+            local hp = boss:GetAttribute("Health")
+            local died = boss:GetAttribute("Died")
+
+            if hp and hp > 0 and not died then
+                return boss, mapFolder.Name
+            end
+        end
+    end
+end
+
+local function GetClientBoss()
+    local folder = workspace.Client:FindFirstChild("Enemies")
+    if not folder then return end
+
+    local wb = folder:FindFirstChild("WorldBoss")
+    if not wb then return end
+
+    for _, v in pairs(wb:GetDescendants()) do
+        if v:IsA("BasePart") then
+            return v
+        end
+    end
+end
+----------------------------------------------------------------
+-- AUTO ENCHANT (SAFE ADD-ON)
+----------------------------------------------------------------
+
+local function GetEnchantScroll()
+    local gui = player:FindFirstChild("PlayerGui")
+    if not gui then return end
+
+    local ui = gui:FindFirstChild("UI")
+    if not ui then return end
+
+    local frames = ui:FindFirstChild("Frames")
+    if not frames then return end
+
+    local enchant = frames:FindFirstChild("EnchantWeapon")
+    if not enchant then return end
+
+    local main = enchant:FindFirstChild("Main")
+    if not main then return end
+
+    local craft = main:FindFirstChild("Craft")
+    if not craft then return end
+
+    local select = craft:FindFirstChild("Select")
+    if not select then return end
+
+    return select:FindFirstChild("ScrollingFrame")
+end
+
+local function GetCurrentSword()
+    local scroll = GetEnchantScroll()
+    if not scroll then return end
+
+    for _, v in pairs(scroll:GetChildren()) do
+        if v:IsA("Frame") or v:IsA("TextButton") then
+            return v.Name, v
+        end
+    end
+end
+----------------------------------------------------------------
+-- MAIN LOOP
+----------------------------------------------------------------
+
+task.spawn(function()
+    while task.wait(0.2) do
+
+        local target = GetNearestEnemy()
+        if target then
+            if EnemyTP and lastEnemy ~= target.Enemy then
+                TeleportToEnemy(target.Enemy)
+                lastEnemy = target.Enemy
+            end
+
+            local attackType = FixType(target.Type)
+
+            for i = 1, HIT_MULTIPLIER do
+
+                if AutoHit then
+                    Remote:FireServer("Attack","Click",{Type = attackType, Enemy = target.Enemy})
+                end
+
+                if AutoPet then
+                    for _, petID in pairs(GetPets()) do
+                        Remote:FireServer("Attack","UnitAttack",{
+                            {Type = attackType, Enemy = target.Enemy},
+                            petID
+                        })
+                    end
+                end
+            end
+        end
+
+        if AutoTrain then
+            for i = 1, HIT_MULTIPLIER do
+                Remote:FireServer("Attack","Click",{})
+            end
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- AUTO ROLL & RANK
+----------------------------------------------------------------
+
+task.spawn(function()
+    while task.wait(0.2) do
+        if AutoRoll then
+            Remote:FireServer("Stars","Roll",{Map = GetCurrentMap(), Type = "Multi"})
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(10) do
+        if AutoRankUp then
+            Remote:FireServer("RankUp","Evolve")
+        end
+    end
+end)
+----------------------------------------------------------------
+-- AUTO WORLD BOSS
+----------------------------------------------------------------
+
+task.spawn(function()
+    while task.wait(1) do
+        if AutoWorldBoss then
+
+            local boss, mapName = FindWorldBoss()
+
+            if boss and mapName then
+
+                -- 🚀 TP KE MAP
+                pcall(function()
+                    Remote:FireServer("Teleport","Spawn",mapName)
+                end)
+
+                -- ⏳ tunggu boss muncul di client
+                local clientBoss
+                for i = 1,10 do
+                    clientBoss = GetClientBoss()
+                    if clientBoss then break end
+                    task.wait(0.5)
+                end
+
+                if clientBoss then
+
+                    -- 🔥 TP KE BOSS
+                    if EnemyTP then
+                        TeleportToEnemy(clientBoss)
+                    end
+
+                    -- 🔥 HIT
+                    local attackType = "World"
+
+                    if AutoHit then
+                        Remote:FireServer("Attack","Click",{
+                            Type = attackType,
+                            Enemy = clientBoss
+                        })
+                    end
+
+                    -- 🔥 PET
+                    if AutoPet then
+                        for _, petID in pairs(GetPets()) do
+                            Remote:FireServer("Attack","UnitAttack",{
+                                {Type = attackType, Enemy = clientBoss},
+                                petID
+                            })
+                        end
+                    end
+
+                end
+            end
+        end
+    end
+end)
+----------------------------------------------------------------
+-- AUTO ENCHANT LOOP
+----------------------------------------------------------------
+
+task.spawn(function()
+    while task.wait(1) do
+        if AutoEnchant then
+
+            local swordName, frame = GetCurrentSword()
+
+            if swordName then
+                pcall(function()
+                    Remote:FireServer(
+                        "EnchantWeapon",
+                        "ScrollTry10",
+                        {
+                            CurrentSword = swordName,
+                            IsCraftButton10 = true,
+                            CrystalCost = 100
+                        }
+                    )
+                end)
+            end
+
+        end
+    end
+end)
+----------------------------------------------------------------
+-- ANTI AFK
+----------------------------------------------------------------
+
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+
+----------------------------------------------------------------
+-- ================= GUI AUTO FARM (HP FIX) =================
+----------------------------------------------------------------
 
 local function Round(obj,r)
     local u = Instance.new("UICorner")
@@ -57,19 +409,18 @@ local function Round(obj,r)
     u.Parent = obj
 end
 
-local function TextFix(obj, max)
+local function TextFix(obj)
     obj.TextScaled = true
     local c = Instance.new("UITextSizeConstraint", obj)
-    c.MaxTextSize = max or 14
+    c.MaxTextSize = 14
     c.MinTextSize = 10
 end
 
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
--- MAIN
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0.4,0,0.65,0)
+main.Size = UDim2.new(0.38,0,0.6,0)
 main.Position = UDim2.new(0.5,0,0.5,0)
 main.AnchorPoint = Vector2.new(0.5,0.5)
 main.BackgroundColor3 = Color3.fromRGB(15,15,15)
@@ -77,84 +428,71 @@ main.Active = true
 main.Draggable = true
 Round(main,12)
 
--- CONTAINER (BIAR SCROLL SEMUA)
-local container = Instance.new("ScrollingFrame", main)
-container.Size = UDim2.new(1,0,1,-40)
-container.Position = UDim2.new(0,0,0,40)
-container.CanvasSize = UDim2.new(0,0,2,0)
-container.ScrollBarThickness = 5
-container.BackgroundTransparency = 1
+local scale = Instance.new("UIScale", main)
+scale.Scale = 0.9
 
-local layoutMain = Instance.new("UIListLayout", container)
-layoutMain.Padding = UDim.new(0,6)
-
--- AUTO CANVAS
-layoutMain:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    container.CanvasSize = UDim2.new(0,0,0,layoutMain.AbsoluteContentSize.Y + 10)
-end)
-
--- TOP BAR
+-- TOP
 local top = Instance.new("Frame", main)
-top.Size = UDim2.new(1,0,0,40)
+top.Size = UDim2.new(1,0,0,36)
 top.BackgroundColor3 = Color3.fromRGB(22,22,22)
 Round(top,12)
 
 local title = Instance.new("TextLabel", top)
-title.Size = UDim2.new(1,-80,1,0)
+title.Size = UDim2.new(1,-70,1,0)
 title.BackgroundTransparency = 1
-title.Text = "Aura Farm"
 title.Font = Enum.Font.GothamBold
+title.Text = "Aura Farm"
 title.TextColor3 = Color3.new(1,1,1)
-TextFix(title,16)
+TextFix(title)
 
--- BUTTON TOP
-local function TopBtn(txt,pos)
+local function Btn(txt,x)
     local b = Instance.new("TextButton", top)
-    b.Size = UDim2.new(0,35,1,0)
-    b.Position = UDim2.new(1,pos,0,0)
+    b.Size = UDim2.new(0,30,1,0)
+    b.Position = UDim2.new(1,x,0,0)
     b.Text = txt
     b.BackgroundColor3 = Color3.fromRGB(35,35,35)
     b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.GothamBold
-    TextFix(b,14)
+    TextFix(b)
     Round(b,6)
     return b
 end
 
-local close = TopBtn("X",-5)
-local mini = TopBtn("-", -45)
+local close = Btn("X",-30)
+local mini = Btn("-", -60)
 
--- ICON MINIMIZE
 local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.new(0,60,0,60)
-icon.Position = UDim2.new(0,10,0.5,-30)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,10,0.5,0)
 icon.Text = "OPEN"
 icon.Visible = false
 Round(icon,10)
 
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
+mini.MouseButton1Click:Connect(function() main.Visible=false icon.Visible=true end)
+icon.MouseButton1Click:Connect(function() main.Visible=true icon.Visible=false end)
+
+-- TOGGLES
+local left = Instance.new("ScrollingFrame", main)
+left.Size = UDim2.new(1,0,1,-36)
+left.Position = UDim2.new(0,0,0,36)
+left.BackgroundTransparency = 1
+left.ScrollBarThickness = 4
+
+local layout = Instance.new("UIListLayout", left)
+layout.Padding = UDim.new(0,5)
+
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    left.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
 end)
 
-mini.MouseButton1Click:Connect(function()
-    main.Visible = false
-    icon.Visible = true
-end)
-
-icon.MouseButton1Click:Connect(function()
-    main.Visible = true
-    icon.Visible = false
-end)
-
--- TOGGLE FUNCTION
-local function Toggle(parent,name, cb)
-    local b = Instance.new("TextButton", parent)
-    b.Size = UDim2.new(1,-10,0,40)
+local function Toggle(name, cb)
+    local b = Instance.new("TextButton", left)
+    b.Size = UDim2.new(1,-10,0,36)
     b.BackgroundColor3 = Color3.fromRGB(25,25,25)
     b.TextColor3 = Color3.fromRGB(220,220,220)
     b.Font = Enum.Font.GothamMedium
     b.Text = name.." : OFF"
-    TextFix(b,14)
+    TextFix(b)
     Round(b,8)
 
     local s=false
@@ -166,107 +504,113 @@ local function Toggle(parent,name, cb)
     end)
 end
 
--- ================= TOGGLES =================
-Toggle(container,"Use Selected", function(v) UseSelected=v end)
-Toggle(container,"Auto Hit", function(v) AutoHit=v end)
-Toggle(container,"Auto Pet", function(v) AutoPet=v end)
-Toggle(container,"Auto Train", function(v) AutoTrain=v end)
-Toggle(container,"TP Enemy", function(v) EnemyTP=v end)
-Toggle(container,"Auto Roll", function(v) AutoRoll=v end)
-Toggle(container,"Auto RankUp", function(v) AutoRankUp=v end)
-Toggle(container,"Auto World Boss", function(v) AutoWorldBoss=v end)
-Toggle(container,"Auto Enchant", function(v) AutoEnchant=v end)
+Toggle("Use Selected", function(v) UseSelected=v end)
+Toggle("Auto Hit", function(v) AutoHit=v end)
+Toggle("Auto Pet", function(v) AutoPet=v end)
+Toggle("Auto Train", function(v) AutoTrain=v end)
+Toggle("TP Enemy", function(v) EnemyTP=v end)
+Toggle("Auto Roll", function(v) AutoRoll=v end)
+Toggle("Auto RankUp", function(v) AutoRankUp=v end)
+Toggle("Auto World Boss", function(v) AutoWorldBoss=v end)
+Toggle("Auto Enchant", function(v) AutoEnchant=v end)
 
--- ================= RAID UI =================
-local raidFrame = Instance.new("Frame", container)
-raidFrame.Size = UDim2.new(1,-10,0,180)
-raidFrame.BackgroundColor3 = Color3.fromRGB(18,18,18)
-Round(raidFrame,10)
-
-local raidTitle = Instance.new("TextLabel", raidFrame)
-raidTitle.Size = UDim2.new(1,0,0,30)
-raidTitle.BackgroundTransparency = 1
-raidTitle.Text = "AUTO RAID JOIN"
-raidTitle.Font = Enum.Font.GothamBold
-raidTitle.TextColor3 = Color3.new(1,1,1)
-TextFix(raidTitle,14)
-
-local raidToggle = Instance.new("TextButton", raidFrame)
-raidToggle.Size = UDim2.new(0.9,0,0,35)
-raidToggle.Position = UDim2.new(0.05,0,0,35)
-raidToggle.Font = Enum.Font.GothamBold
-raidToggle.TextColor3 = Color3.new(1,1,1)
-TextFix(raidToggle,13)
-Round(raidToggle,6)
+----------------------------------------------------------------
+-- ================= AUTO RAID (SEPARATE GUI) =================
+----------------------------------------------------------------
 
 local AutoRaidJoin = true
+local SelectedRaids = {}
 
-local function UpdateRaidToggle()
-    raidToggle.Text = AutoRaidJoin and "AUTO RAID: ON" or "AUTO RAID: OFF"
-    raidToggle.BackgroundColor3 = AutoRaidJoin and Color3.fromRGB(0,170,0) or Color3.fromRGB(120,0,0)
+local RaidList = {
+    "Raid_Insane",
+    "Raid_Crystal",
+    "Raid_Abuse",
+    "Raid_Crazy",
+    "Raid_DemonSlayer"
+}
+
+for _, v in ipairs(RaidList) do
+    SelectedRaids[v] = true
 end
 
-raidToggle.MouseButton1Click:Connect(function()
-    AutoRaidJoin = not AutoRaidJoin
-    UpdateRaidToggle()
-end)
-
-UpdateRaidToggle()
--- DROPDOWN
-local raidScroll = Instance.new("ScrollingFrame", raidFrame)
-raidScroll.Size = UDim2.new(0.9,0,0,130)
-raidScroll.Position = UDim2.new(0.05,0,0,65)
-raidScroll.BackgroundColor3 = Color3.fromRGB(25,25,25)
-raidScroll.ScrollBarThickness = 5
-raidScroll.CanvasSize = UDim2.new(0,0,0,0)
-Round(raidScroll,4)
-
-local raidLayout = Instance.new("UIListLayout", raidScroll)
-raidLayout.Padding = UDim.new(0,7)
-
-raidLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    raidScroll.CanvasSize = UDim2.new(0,0,0,raidLayout.AbsoluteContentSize.Y + 5)
-end)
-
--- CHECKBOX
-for _,raidName in ipairs(RaidList) do
-    local item = Instance.new("Frame", raidScroll)
-    item.Size = UDim2.new(1,-5,0,26)
-    item.BackgroundColor3 = Color3.fromRGB(30,30,30)
-    Round(item,6)
-
-    local label = Instance.new("TextLabel", item)
-    label.Size = UDim2.new(1,-30,1,0)
-    label.Position = UDim2.new(0,5,0,0)
-    label.BackgroundTransparency = 1
-    label.Text = raidName
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 12
-    label.TextColor3 = Color3.fromRGB(220,220,220)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-
-    local box = Instance.new("TextButton", item)
-    box.Size = UDim2.new(0,18,0,18)
-    box.Position = UDim2.new(1,-22,0.5,-9)
-    box.Text = ""
-    Round(box,4)
-
-    local function Update()
-        if SelectedRaids[raidName] then
-            box.BackgroundColor3 = Color3.fromRGB(0,200,0)
-        else
-            box.BackgroundColor3 = Color3.fromRGB(50,50,50)
+task.spawn(function()
+    while task.wait(10.5) do
+        if AutoRaidJoin then
+            for raidName,_ in pairs(SelectedRaids) do
+                pcall(function()
+                    Remote:FireServer("Enemies","Bridge",{
+                        Module="RaidSystemServer",
+                        FunctionName="Join",
+                        Args=raidName
+                    })
+                end)
+            end
         end
     end
+end)
 
-    box.MouseButton1Click:Connect(function()
-        if SelectedRaids[raidName] then
-            SelectedRaids[raidName] = nil
-        else
-            SelectedRaids[raidName] = true
-        end
-        Update()
-    end)
+-- GUI RAID
+local raidGui = Instance.new("ScreenGui", player.PlayerGui)
+raidGui.ResetOnSpawn = false
 
-    Update() -- langsung hijau semua
+local raidMain = Instance.new("Frame", raidGui)
+raidMain.Size = UDim2.new(0.25,0,0.3,0)
+raidMain.Position = UDim2.new(0.7,0,0.2,0)
+raidMain.BackgroundColor3 = Color3.fromRGB(15,15,15)
+raidMain.Active = true
+raidMain.Draggable = true
+Round(raidMain,10)
+
+local title2 = Instance.new("TextLabel", raidMain)
+title2.Size = UDim2.new(1,-60,0,30)
+title2.BackgroundTransparency = 1
+title2.Text = "AUTO RAID"
+title2.Font = Enum.Font.GothamBold
+title2.TextColor3 = Color3.new(1,1,1)
+TextFix(title2)
+
+local function Btn2(txt,x)
+    local b = Instance.new("TextButton", raidMain)
+    b.Size = UDim2.new(0,28,0,28)
+    b.Position = UDim2.new(1,x,0,0)
+    b.Text = txt
+    b.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    b.TextColor3 = Color3.new(1,1,1)
+    TextFix(b)
+    Round(b,6)
+    return b
 end
+
+local close2 = Btn2("X",-2)
+local mini2 = Btn2("-", -32)
+
+local icon2 = Instance.new("TextButton", raidGui)
+icon2.Size = UDim2.new(0,50,0,50)
+icon2.Position = UDim2.new(0.75,0,0.5,0)
+icon2.Text = "RAID"
+icon2.Visible = false
+Round(icon2,10)
+
+close2.MouseButton1Click:Connect(function() raidGui:Destroy() end)
+mini2.MouseButton1Click:Connect(function() raidMain.Visible=false icon2.Visible=true end)
+icon2.MouseButton1Click:Connect(function() raidMain.Visible=true icon2.Visible=false end)
+
+local toggle = Instance.new("TextButton", raidMain)
+toggle.Size = UDim2.new(0.9,0,0,30)
+toggle.Position = UDim2.new(0.05,0,0,35)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextColor3 = Color3.new(1,1,1)
+TextFix(toggle)
+Round(toggle,6)
+
+local function Update()
+    toggle.Text = AutoRaidJoin and "AUTO RAID: ON" or "AUTO RAID: OFF"
+    toggle.BackgroundColor3 = AutoRaidJoin and Color3.fromRGB(0,170,0) or Color3.fromRGB(120,0,0)
+end
+
+toggle.MouseButton1Click:Connect(function()
+    AutoRaidJoin = not AutoRaidJoin
+    Update()
+end)
+
+Update()
