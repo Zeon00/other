@@ -514,62 +514,44 @@ Toggle("Auto RankUp", function(v) AutoRankUp=v end)
 Toggle("Auto World Boss", function(v) AutoWorldBoss=v end)
 Toggle("Auto Enchant", function(v) AutoEnchant=v end)
 
-----------------------------------------------------------------
--- ================= AUTO RAID (SEPARATE GUI) =================
-----------------------------------------------------------------
+--================ AUTO RAID GUI (FULL + DROPDOWN) =================--
 
-local AutoRaidJoin = true
-local SelectedRaids = {}
-
-local RaidList = {
-    "Raid_Insane",
-    "Raid_Crystal",
-    "Raid_Abuse",
-    "Raid_Crazy",
-    "Raid_DemonSlayer"
-}
-
-for _, v in ipairs(RaidList) do
-    SelectedRaids[v] = true
-end
-
-task.spawn(function()
-    while task.wait(10.5) do
-        if AutoRaidJoin then
-            for raidName,_ in pairs(SelectedRaids) do
-                pcall(function()
-                    Remote:FireServer("Enemies","Bridge",{
-                        Module="RaidSystemServer",
-                        FunctionName="Join",
-                        Args=raidName
-                    })
-                end)
-            end
-        end
-    end
-end)
-
--- GUI RAID
 local raidGui = Instance.new("ScreenGui", player.PlayerGui)
 raidGui.ResetOnSpawn = false
 
+local function Round(obj,r)
+    local u = Instance.new("UICorner")
+    u.CornerRadius = UDim.new(0,r or 8)
+    u.Parent = obj
+end
+
+local function TextFix(obj)
+    obj.TextScaled = true
+    local c = Instance.new("UITextSizeConstraint", obj)
+    c.MaxTextSize = 14
+    c.MinTextSize = 10
+end
+
+-- MAIN
 local raidMain = Instance.new("Frame", raidGui)
-raidMain.Size = UDim2.new(0.25,0,0.3,0)
+raidMain.Size = UDim2.new(0.25,0,0.38,0)
 raidMain.Position = UDim2.new(0.7,0,0.2,0)
 raidMain.BackgroundColor3 = Color3.fromRGB(15,15,15)
 raidMain.Active = true
 raidMain.Draggable = true
 Round(raidMain,10)
 
-local title2 = Instance.new("TextLabel", raidMain)
-title2.Size = UDim2.new(1,-60,0,30)
-title2.BackgroundTransparency = 1
-title2.Text = "AUTO RAID"
-title2.Font = Enum.Font.GothamBold
-title2.TextColor3 = Color3.new(1,1,1)
-TextFix(title2)
+-- TITLE
+local title = Instance.new("TextLabel", raidMain)
+title.Size = UDim2.new(1,-60,0,30)
+title.BackgroundTransparency = 1
+title.Text = "AUTO RAID"
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.new(1,1,1)
+TextFix(title)
 
-local function Btn2(txt,x)
+-- BUTTON TOP
+local function Btn(txt,x)
     local b = Instance.new("TextButton", raidMain)
     b.Size = UDim2.new(0,28,0,28)
     b.Position = UDim2.new(1,x,0,0)
@@ -581,20 +563,32 @@ local function Btn2(txt,x)
     return b
 end
 
-local close2 = Btn2("X",-2)
-local mini2 = Btn2("-", -32)
+local close = Btn("X",-2)
+local mini = Btn("-", -32)
 
-local icon2 = Instance.new("TextButton", raidGui)
-icon2.Size = UDim2.new(0,50,0,50)
-icon2.Position = UDim2.new(0.75,0,0.5,0)
-icon2.Text = "RAID"
-icon2.Visible = false
-Round(icon2,10)
+-- ICON
+local icon = Instance.new("TextButton", raidGui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0.75,0,0.5,0)
+icon.Text = "RAID"
+icon.Visible = false
+Round(icon,10)
 
-close2.MouseButton1Click:Connect(function() raidGui:Destroy() end)
-mini2.MouseButton1Click:Connect(function() raidMain.Visible=false icon2.Visible=true end)
-icon2.MouseButton1Click:Connect(function() raidMain.Visible=true icon2.Visible=false end)
+close.MouseButton1Click:Connect(function()
+    raidGui:Destroy()
+end)
 
+mini.MouseButton1Click:Connect(function()
+    raidMain.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    raidMain.Visible = true
+    icon.Visible = false
+end)
+
+-- TOGGLE
 local toggle = Instance.new("TextButton", raidMain)
 toggle.Size = UDim2.new(0.9,0,0,30)
 toggle.Position = UDim2.new(0.05,0,0,35)
@@ -614,3 +608,60 @@ toggle.MouseButton1Click:Connect(function()
 end)
 
 Update()
+
+-- DROPDOWN / LIST
+local scroll = Instance.new("ScrollingFrame", raidMain)
+scroll.Size = UDim2.new(0.9,0,0.65,0)
+scroll.Position = UDim2.new(0.05,0,0,70)
+scroll.BackgroundColor3 = Color3.fromRGB(25,25,25)
+scroll.ScrollBarThickness = 5
+Round(scroll,6)
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0,6)
+
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 5)
+end)
+
+-- CHECKBOX LIST
+for _,raidName in ipairs(RaidList) do
+    local item = Instance.new("Frame", scroll)
+    item.Size = UDim2.new(1,-5,0,28)
+    item.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    Round(item,6)
+
+    local label = Instance.new("TextLabel", item)
+    label.Size = UDim2.new(1,-30,1,0)
+    label.Position = UDim2.new(0,5,0,0)
+    label.BackgroundTransparency = 1
+    label.Text = raidName
+    label.Font = Enum.Font.Gotham
+    label.TextColor3 = Color3.fromRGB(220,220,220)
+    TextFix(label)
+
+    local box = Instance.new("TextButton", item)
+    box.Size = UDim2.new(0,18,0,18)
+    box.Position = UDim2.new(1,-22,0.5,-9)
+    box.Text = ""
+    Round(box,4)
+
+    local function UpdateBox()
+        if SelectedRaids[raidName] then
+            box.BackgroundColor3 = Color3.fromRGB(0,200,0)
+        else
+            box.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        end
+    end
+
+    box.MouseButton1Click:Connect(function()
+        if SelectedRaids[raidName] then
+            SelectedRaids[raidName] = nil
+        else
+            SelectedRaids[raidName] = true
+        end
+        UpdateBox()
+    end)
+
+    UpdateBox()
+end
