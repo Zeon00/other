@@ -49,32 +49,13 @@ end
 -- [SNIP: semua logic lo tetep sama, ga gue sentuh sama sekali]
 -- biar ga kepanjangan di sini, anggap semua bagian atas sama persis
 
-----------------------------------------------------------------
--- GUI (FIX ANDROID)
-----------------------------------------------------------------
+--================ GUI FIX FINAL ANDROID =================--
 
 local function Round(obj,r)
     local u = Instance.new("UICorner")
     u.CornerRadius = UDim.new(0,r or 8)
     u.Parent = obj
 end
-
-local gui = Instance.new("ScreenGui", player.PlayerGui)
-gui.ResetOnSpawn = false
-
--- 📱 MAIN FIX
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0.35,0,0.55,0)
-main.Position = UDim2.new(0.5,0,0.5,0)
-main.AnchorPoint = Vector2.new(0.5,0.5)
-main.BackgroundColor3 = Color3.fromRGB(15,15,15)
-main.Active = true
-main.Draggable = true
-main.ClipsDescendants = true
-Round(main,12)
-
-local uiScale = Instance.new("UIScale", main)
-uiScale.Scale = 0.9
 
 local function TextFix(obj, max)
     obj.TextScaled = true
@@ -83,63 +64,97 @@ local function TextFix(obj, max)
     c.MinTextSize = 10
 end
 
--- TOP
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+-- MAIN
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0.4,0,0.65,0)
+main.Position = UDim2.new(0.5,0,0.5,0)
+main.AnchorPoint = Vector2.new(0.5,0.5)
+main.BackgroundColor3 = Color3.fromRGB(15,15,15)
+main.Active = true
+main.Draggable = true
+Round(main,12)
+
+-- CONTAINER (BIAR SCROLL SEMUA)
+local container = Instance.new("ScrollingFrame", main)
+container.Size = UDim2.new(1,0,1,-40)
+container.Position = UDim2.new(0,0,0,40)
+container.CanvasSize = UDim2.new(0,0,2,0)
+container.ScrollBarThickness = 5
+container.BackgroundTransparency = 1
+
+local layoutMain = Instance.new("UIListLayout", container)
+layoutMain.Padding = UDim.new(0,6)
+
+-- AUTO CANVAS
+layoutMain:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    container.CanvasSize = UDim2.new(0,0,0,layoutMain.AbsoluteContentSize.Y + 10)
+end)
+
+-- TOP BAR
 local top = Instance.new("Frame", main)
-top.Size = UDim2.new(1,0,0.08,0)
+top.Size = UDim2.new(1,0,0,40)
 top.BackgroundColor3 = Color3.fromRGB(22,22,22)
 Round(top,12)
 
 local title = Instance.new("TextLabel", top)
-title.Size = UDim2.new(1,-70,1,0)
+title.Size = UDim2.new(1,-80,1,0)
 title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
 title.Text = "Aura Farm"
-title.TextColor3 = Color3.fromRGB(230,230,230)
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.new(1,1,1)
 TextFix(title,16)
 
-local function Button(txt,x)
+-- BUTTON TOP
+local function TopBtn(txt,pos)
     local b = Instance.new("TextButton", top)
-    b.Size = UDim2.new(0.08,0,1,0)
-    b.Position = UDim2.new(1,x,0,0)
+    b.Size = UDim2.new(0,35,1,0)
+    b.Position = UDim2.new(1,pos,0,0)
     b.Text = txt
     b.BackgroundColor3 = Color3.fromRGB(35,35,35)
     b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.Gotham
+    b.Font = Enum.Font.GothamBold
     TextFix(b,14)
     Round(b,6)
     return b
 end
 
-local close = Button("X",-0.08)
-local mini = Button("-",-0.16)
+local close = TopBtn("X",-5)
+local mini = TopBtn("-", -45)
 
+-- ICON MINIMIZE
 local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.new(0,50,0,50)
-icon.Position = UDim2.new(0,10,0.5,0)
+icon.Size = UDim2.new(0,60,0,60)
+icon.Position = UDim2.new(0,10,0.5,-30)
 icon.Text = "OPEN"
 icon.Visible = false
+Round(icon,10)
 
-close.MouseButton1Click:Connect(function() gui:Destroy() end)
-mini.MouseButton1Click:Connect(function() main.Visible=false icon.Visible=true end)
-icon.MouseButton1Click:Connect(function() main.Visible=true icon.Visible=false end)
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
 
--- LEFT
-local left = Instance.new("Frame", main)
-left.Size = UDim2.new(0.5,0,0.92,0)
-left.Position = UDim2.new(0,0,0.08,0)
-left.BackgroundTransparency = 1
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+    icon.Visible = true
+end)
 
-local layout = Instance.new("UIListLayout", left)
-layout.Padding = UDim.new(0,5)
+icon.MouseButton1Click:Connect(function()
+    main.Visible = true
+    icon.Visible = false
+end)
 
-local function Toggle(name, cb)
-    local b = Instance.new("TextButton", left)
-    b.Size = UDim2.new(1,-10,0.08,0)
+-- TOGGLE FUNCTION
+local function Toggle(parent,name, cb)
+    local b = Instance.new("TextButton", parent)
+    b.Size = UDim2.new(1,-10,0,40)
     b.BackgroundColor3 = Color3.fromRGB(25,25,25)
     b.TextColor3 = Color3.fromRGB(220,220,220)
     b.Font = Enum.Font.GothamMedium
-    TextFix(b,14)
     b.Text = name.." : OFF"
+    TextFix(b,14)
     Round(b,8)
 
     local s=false
@@ -151,36 +166,25 @@ local function Toggle(name, cb)
     end)
 end
 
-Toggle("Use Selected", function(v) UseSelected=v end)
-Toggle("Auto Hit", function(v) AutoHit=v end)
-Toggle("Auto Pet", function(v) AutoPet=v end)
-Toggle("Auto Train", function(v) AutoTrain=v end)
-Toggle("TP Enemy", function(v) EnemyTP=v end)
-Toggle("Auto Roll", function(v) AutoRoll=v end)
-Toggle("Auto RankUp", function(v) AutoRankUp=v end)
-Toggle("Auto World Boss", function(v) AutoWorldBoss = v end)
-Toggle("Auto Enchant", function(v) AutoEnchant = v end)
+-- ================= TOGGLES =================
+Toggle(container,"Use Selected", function(v) UseSelected=v end)
+Toggle(container,"Auto Hit", function(v) AutoHit=v end)
+Toggle(container,"Auto Pet", function(v) AutoPet=v end)
+Toggle(container,"Auto Train", function(v) AutoTrain=v end)
+Toggle(container,"TP Enemy", function(v) EnemyTP=v end)
+Toggle(container,"Auto Roll", function(v) AutoRoll=v end)
+Toggle(container,"Auto RankUp", function(v) AutoRankUp=v end)
+Toggle(container,"Auto World Boss", function(v) AutoWorldBoss=v end)
+Toggle(container,"Auto Enchant", function(v) AutoEnchant=v end)
 
--- RIGHT (SCROLL)
-local right = Instance.new("ScrollingFrame", main)
-right.Size = UDim2.new(0.5,0,0.92,0)
-right.Position = UDim2.new(0.5,0,0.08,0)
-right.BackgroundTransparency = 1
-right.AutomaticCanvasSize = Enum.AutomaticSize.Y
-right.ScrollBarThickness = 4
-
-local layout2 = Instance.new("UIListLayout", right)
-layout2.Padding = UDim.new(0,5)
-
--- RAID FRAME FIX
-local raidFrame = Instance.new("Frame", main)
-raidFrame.Size = UDim2.new(1,-10,0.28,0)
-raidFrame.Position = UDim2.new(0,5,1,-5)
+-- ================= RAID UI =================
+local raidFrame = Instance.new("Frame", container)
+raidFrame.Size = UDim2.new(1,-10,0,180)
 raidFrame.BackgroundColor3 = Color3.fromRGB(18,18,18)
 Round(raidFrame,10)
 
 local raidTitle = Instance.new("TextLabel", raidFrame)
-raidTitle.Size = UDim2.new(1,0,0.15,0)
+raidTitle.Size = UDim2.new(1,0,0,30)
 raidTitle.BackgroundTransparency = 1
 raidTitle.Text = "AUTO RAID JOIN"
 raidTitle.Font = Enum.Font.GothamBold
@@ -188,8 +192,8 @@ raidTitle.TextColor3 = Color3.new(1,1,1)
 TextFix(raidTitle,14)
 
 local raidToggle = Instance.new("TextButton", raidFrame)
-raidToggle.Size = UDim2.new(0.9,0,0.18,0)
-raidToggle.Position = UDim2.new(0.05,0,0.18,0)
+raidToggle.Size = UDim2.new(0.9,0,0,35)
+raidToggle.Position = UDim2.new(0.05,0,0,35)
 raidToggle.Font = Enum.Font.GothamBold
 raidToggle.TextColor3 = Color3.new(1,1,1)
 TextFix(raidToggle,13)
@@ -208,3 +212,61 @@ raidToggle.MouseButton1Click:Connect(function()
 end)
 
 UpdateRaidToggle()
+-- DROPDOWN
+local raidScroll = Instance.new("ScrollingFrame", raidFrame)
+raidScroll.Size = UDim2.new(0.9,0,0,130)
+raidScroll.Position = UDim2.new(0.05,0,0,65)
+raidScroll.BackgroundColor3 = Color3.fromRGB(25,25,25)
+raidScroll.ScrollBarThickness = 5
+raidScroll.CanvasSize = UDim2.new(0,0,0,0)
+Round(raidScroll,4)
+
+local raidLayout = Instance.new("UIListLayout", raidScroll)
+raidLayout.Padding = UDim.new(0,7)
+
+raidLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    raidScroll.CanvasSize = UDim2.new(0,0,0,raidLayout.AbsoluteContentSize.Y + 5)
+end)
+
+-- CHECKBOX
+for _,raidName in ipairs(RaidList) do
+    local item = Instance.new("Frame", raidScroll)
+    item.Size = UDim2.new(1,-5,0,26)
+    item.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    Round(item,6)
+
+    local label = Instance.new("TextLabel", item)
+    label.Size = UDim2.new(1,-30,1,0)
+    label.Position = UDim2.new(0,5,0,0)
+    label.BackgroundTransparency = 1
+    label.Text = raidName
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 12
+    label.TextColor3 = Color3.fromRGB(220,220,220)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local box = Instance.new("TextButton", item)
+    box.Size = UDim2.new(0,18,0,18)
+    box.Position = UDim2.new(1,-22,0.5,-9)
+    box.Text = ""
+    Round(box,4)
+
+    local function Update()
+        if SelectedRaids[raidName] then
+            box.BackgroundColor3 = Color3.fromRGB(0,200,0)
+        else
+            box.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        end
+    end
+
+    box.MouseButton1Click:Connect(function()
+        if SelectedRaids[raidName] then
+            SelectedRaids[raidName] = nil
+        else
+            SelectedRaids[raidName] = true
+        end
+        Update()
+    end)
+
+    Update() -- langsung hijau semua
+end
