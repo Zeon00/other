@@ -58,38 +58,58 @@ local function GetCurrentMap()
     local worlds = workspace.Server.Enemies:FindFirstChild("World")
     if not worlds then return end
 
-    for _,map in pairs(worlds:GetChildren()) do
-        for _,mob in pairs(map:GetChildren()) do
+    local closestMap = nil
+    local closestDist = math.huge
+
+    for _, map in pairs(worlds:GetChildren()) do
+        for _, mob in pairs(map:GetChildren()) do
+
             local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
-            if pos and (root.Position - pos).Magnitude < 200 then
-                return map.Name
+
+            if pos then
+                local dist = (root.Position - pos).Magnitude
+
+                if dist < closestDist then
+                    closestDist = dist
+                    closestMap = map.Name
+                end
             end
         end
     end
+
+    return closestMap
 end
 
+local function GetPortalByMap(portals, mapName)
+    for _, p in pairs(portals:GetChildren()) do
+        if string.lower(p.Name) == string.lower(mapName) then
+            return p
+        end
+    end
+end
 local function GoToCurrentPortal()
     local mapName = GetCurrentMap()
     if not mapName then return end
 
     local portals = workspace:FindFirstChild("Client")
     portals = portals and portals:FindFirstChild("Portals")
-
     if not portals then return end
 
-    local portal = portals:FindFirstChild(mapName)
-    if not portal or not portal:FindFirstChild("Point") then return end
+    local portal = GetPortalByMap(portals, mapName)
+    if not portal or not portal:FindFirstChild("Point") then
+        warn("Portal not found:", mapName)
+        return
+    end
 
     local root = GetRoot()
     if not root then return end
 
-    -- 🔥 tempel ke portal biar ke detect
     for i = 1,5 do
         root.CFrame = portal.Point.CFrame + Vector3.new(0,2,0)
         task.wait(0.2)
     end
 
-    print("TP TO PORTAL:", mapName)
+    print("TP TO:", mapName)
 end
 
 -- LOOP
@@ -212,23 +232,6 @@ local function TeleportToEnemy(mob)
     root.CFrame = CFrame.lookAt(safePos, pos)
 end
 
-----------------------------------------------------------------
--- MAP
-----------------------------------------------------------------
-
-local function GetCurrentMap()
-    local enemies = workspace.Server.Enemies:FindFirstChild("World")
-    if not enemies then return LastMap end
-
-    for _, map in pairs(enemies:GetChildren()) do
-        if #map:GetChildren() > 0 then
-            LastMap = map.Name
-            return map.Name
-        end
-    end
-
-    return LastMap
-end
 ----------------------------------------------------------------
 -- WORLD BOSS SYSTEM
 ----------------------------------------------------------------
