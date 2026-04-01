@@ -17,6 +17,7 @@ local AutoEnchant = false
 local AutoWorldBoss = false
 local AutoPortal = false -- 🔥 TAMBAHAN
 local SpoofFastClick = false
+local SelectedSwordName = ""
 
 local lastEnemy = nil
 local HIT_MULTIPLIER = 1
@@ -430,20 +431,22 @@ task.spawn(function()
     while task.wait(1) do
         if AutoEnchant then
 
-            local swordName, frame = GetCurrentSword()
-
-            if swordName then
+            if SelectedSwordName ~= "" then
                 pcall(function()
                     Remote:FireServer(
                         "EnchantWeapon",
                         "ScrollTry10",
                         {
-                            CurrentSword = swordName,
+                            CurrentSword = SelectedSwordName,
                             IsCraftButton10 = true,
                             CrystalCost = 100
                         }
                     )
                 end)
+
+                print("Enchanting:", SelectedSwordName)
+            else
+                warn("Isi dulu nama sword di box!")
             end
 
         end
@@ -599,7 +602,20 @@ Toggle("Auto Next World", function(v) AutoPortal=v end) -- 🔥 MASUK DI SINI
 Toggle("Fast Click (Spoof)", function(v)
     SetFastClick(v)
 end)
+local box = Instance.new("TextBox", left)
+box.Size = UDim2.new(1,-10,0,36)
+box.BackgroundColor3 = Color3.fromRGB(20,20,20)
+box.TextColor3 = Color3.new(1,1,1)
+box.PlaceholderText = "Input Sword Name..."
+box.Text = ""
+box.Font = Enum.Font.Gotham
+TextFix(box)
+Round(box,8)
 
+box.FocusLost:Connect(function()
+    SelectedSwordName = box.Text
+    print("Selected Sword:", SelectedSwordName)
+end)
 -- RIGHT (MULTI SELECT)
 local right = Instance.new("ScrollingFrame", main)
 right.Size = UDim2.new(0.5,0,1,-36)
