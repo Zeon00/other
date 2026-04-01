@@ -1,0 +1,219 @@
+--// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local Remotes = RS:WaitForChild("Remotes")
+local ClickRemote = Remotes:WaitForChild("Clicked")
+local State = require(RS.Client.State)
+
+--// STATE
+local FastHit = false
+local AutoTP = false
+local BypassAll = false
+
+local AutoFruit = false
+local AutoHaki = false
+local AutoDragon = false
+local AutoSaiyan = false
+local AutoEgg = false
+
+--// GET ENEMIES
+local function GetEnemies()
+    local data = State.GetData()
+    if not data or not data.LastArea then return {} end
+
+    local folder
+    if data.LastArea == "WisteriaRaid" or data.LastArea == "TowerRaid" then
+        local raid = workspace:FindFirstChild(data.LastArea)
+        if raid then
+            local area = raid:FindFirstChild(data.RaidArea)
+            if area then folder = area:FindFirstChild("Enemy") end
+        end
+    else
+        local world = workspace:FindFirstChild(data.LastArea)
+        if world then folder = world:FindFirstChild("Enemy") end
+    end
+
+    if not folder then return {} end
+
+    local list = {}
+    for _, enemy in pairs(folder:GetChildren()) do
+        local ehrp = enemy:FindFirstChild("HumanoidRootPart")
+        local hum = enemy:FindFirstChildOfClass("Humanoid")
+        if ehrp and hum and hum.Health > 0 then
+            table.insert(list, enemy)
+        end
+    end
+    return list
+end
+
+--// LOOP CEPAT
+local index = 1
+
+RunService.Heartbeat:Connect(function()
+    local char = player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local enemies = GetEnemies()
+    if #enemies > 0 then
+        if index > #enemies then index = 1 end
+        local enemy = enemies[index]
+        index = index + 1
+
+        if enemy then
+            local ehrp = enemy:FindFirstChild("HumanoidRootPart")
+            local hum = enemy:FindFirstChildOfClass("Humanoid")
+
+            if ehrp and hum and hum.Health > 0 then
+                if AutoTP then
+                    hrp.CFrame = ehrp.CFrame * CFrame.new(0,2,0)
+                end
+
+                if FastHit then
+                    ClickRemote:FireServer()
+                    ClickRemote:FireServer()
+                end
+            end
+        end
+    end
+
+    -- EXTRA AUTO
+    if AutoFruit then
+        Remotes.RollFruitPower:FireServer()
+    end
+
+    if AutoHaki then
+        Remotes.HakiLeveling:FireServer()
+    end
+
+    if AutoDragon then
+        Remotes.RollDragonBallPower:FireServer()
+    end
+
+    if AutoSaiyan then
+        Remotes.RollSaiyanPower:FireServer()
+    end
+
+    if AutoEgg then
+        Remotes.Eggs.Hatch:InvokeServer("Star3", 4)
+    end
+end)
+
+--// BYPASS
+local Shop = require(RS:WaitForChild("ModuleScripts"):WaitForChild("Shop"))
+local oldOwn = Shop.DoesPlayerOwnGamepass
+
+Shop.DoesPlayerOwnGamepass = function(name, data)
+    if BypassAll then return true end
+    return oldOwn(name, data)
+end
+
+--// GUI (GOTHAM CLEAN)
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "AutoFarmFull"
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0.22,0,0.42,0)
+frame.Position = UDim2.new(0.35,0,0.25,0)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame)
+
+-- TOP BAR
+local top = Instance.new("Frame", frame)
+top.Size = UDim2.new(1,0,0,28)
+top.BackgroundTransparency = 1
+
+local title = Instance.new("TextLabel", top)
+title.Size = UDim2.new(1,0,1,0)
+title.Text = "AUTO FARM"
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+
+local close = Instance.new("TextButton", top)
+close.Size = UDim2.new(0,26,1,0)
+close.Position = UDim2.new(1,-26,0,0)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextScaled = true
+close.BackgroundColor3 = Color3.fromRGB(170,0,0)
+close.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", close)
+
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+local mini = Instance.new("TextButton", top)
+mini.Size = UDim2.new(0,26,1,0)
+mini.Position = UDim2.new(1,-52,0,0)
+mini.Text = "-"
+mini.Font = Enum.Font.GothamBold
+mini.TextScaled = true
+mini.BackgroundColor3 = Color3.fromRGB(60,60,60)
+mini.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", mini)
+
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0.06,0,0.06,0)
+icon.Position = UDim2.new(0.02,0,0.5,0)
+icon.Text = "AF"
+icon.Font = Enum.Font.GothamBold
+icon.TextScaled = true
+icon.BackgroundColor3 = Color3.fromRGB(20,20,20)
+icon.TextColor3 = Color3.new(1,1,1)
+icon.Visible = false
+Instance.new("UICorner", icon)
+
+mini.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = true
+    icon.Visible = false
+end)
+
+-- LIST
+local list = Instance.new("UIListLayout", frame)
+list.Padding = UDim.new(0,4)
+list.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- TOGGLE CREATOR
+local function CreateToggle(name, callback)
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0.9,0,0,28)
+    btn.Text = name.." OFF"
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 12
+    btn.BackgroundColor3 = Color3.fromRGB(80,0,0)
+    btn.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", btn)
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = name.." "..(state and "ON" or "OFF")
+        btn.BackgroundColor3 = state and Color3.fromRGB(0,120,0) or Color3.fromRGB(80,0,0)
+        callback(state)
+    end)
+end
+
+-- 8 TOGGLE
+CreateToggle("FAST HIT", function(v) FastHit = v end)
+CreateToggle("AUTO TP", function(v) AutoTP = v end)
+CreateToggle("BYPASS", function(v) BypassAll = v end)
+CreateToggle("FRUIT", function(v) AutoFruit = v end)
+CreateToggle("HAKI", function(v) AutoHaki = v end)
+CreateToggle("DRAGON", function(v) AutoDragon = v end)
+CreateToggle("SAIYAN", function(v) AutoSaiyan = v end)
+CreateToggle("EGG", function(v) AutoEgg = v end)
