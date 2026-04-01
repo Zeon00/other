@@ -450,25 +450,29 @@ end)
 local function SetFastClick(state)
     SpoofFastClick = state
 
-    -- coba ambil client utama (sesuai struktur game lu)
-    local success, client = pcall(function()
-        return require(game.ReplicatedStorage:WaitForChild("Client"))
-    end)
-
-    if success and client and client.Data and client.Data.Gamepasses then
-        client.Data.Gamepasses["Fast Click"] = state
-    end
-
-    -- fallback kalau beda module
     pcall(function()
-        local data = client and client.Data or nil
-        if data and data.Gamepasses then
-            data.Gamepasses["Fast Click"] = state
+        local client = require(game.ReplicatedStorage:WaitForChild("Client"))
+        if client and client.Data and client.Data.Gamepasses then
+            client.Data.Gamepasses["Fast Click"] = state
         end
     end)
 
     print("Fast Click Spoof:", state)
 end
+
+-- LOOP SPOOF (JALAN TERUS)
+task.spawn(function()
+    while task.wait(0.1) do -- bisa ubah ke 0 buat lebih agresif
+        if SpoofFastClick then
+            pcall(function()
+                local client = require(game.ReplicatedStorage:WaitForChild("Client"))
+                if client and client.Data and client.Data.Gamepasses then
+                    client.Data.Gamepasses["Fast Click"] = true
+                end
+            end)
+        end
+    end
+end)
 ----------------------------------------------------------------
 -- ANTI AFK
 ----------------------------------------------------------------
