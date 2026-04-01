@@ -44,11 +44,6 @@ local function FixType(t)
     end
     return t
 end
-
-----------------------------------------------------------------
--- AUTO PORTAL SYSTEM (🔥 TAMBAHAN FULL)
-----------------------------------------------------------------
-
 ----------------------------------------------------------------
 -- AUTO PORTAL FINAL (FIX NO MODULE)
 ----------------------------------------------------------------
@@ -592,9 +587,8 @@ left.ScrollBarThickness = 4
 local layout = Instance.new("UIListLayout", left)
 layout.Padding = UDim.new(0,5)
 
-layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    left.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
-end)
+left.AutomaticCanvasSize = Enum.AutomaticSize.Y
+left.CanvasSize = UDim2.new(0,0,0,0)
 
 local function Toggle(name, cb)
     local b = Instance.new("TextButton", left)
@@ -845,9 +839,8 @@ Round(scroll,8)
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0,6)
 
-layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
-end)
+left.AutomaticCanvasSize = Enum.AutomaticSize.Y
+left.CanvasSize = UDim2.new(0,0,0,0)
 
 -- LIST
 for _,raidName in ipairs(RaidList) do
