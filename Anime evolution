@@ -16,6 +16,7 @@ local AutoRankUp = false
 local AutoEnchant = false
 local AutoWorldBoss = false
 local AutoPortal = false -- 🔥 TAMBAHAN
+local SpoofFastClick = false
 
 local lastEnemy = nil
 local HIT_MULTIPLIER = 1
@@ -445,6 +446,29 @@ task.spawn(function()
         end
     end
 end)
+
+local function SetFastClick(state)
+    SpoofFastClick = state
+
+    -- coba ambil client utama (sesuai struktur game lu)
+    local success, client = pcall(function()
+        return require(game.ReplicatedStorage:WaitForChild("Client"))
+    end)
+
+    if success and client and client.Data and client.Data.Gamepasses then
+        client.Data.Gamepasses["Fast Click"] = state
+    end
+
+    -- fallback kalau beda module
+    pcall(function()
+        local data = client and client.Data or nil
+        if data and data.Gamepasses then
+            data.Gamepasses["Fast Click"] = state
+        end
+    end)
+
+    print("Fast Click Spoof:", state)
+end
 ----------------------------------------------------------------
 -- ANTI AFK
 ----------------------------------------------------------------
@@ -565,6 +589,9 @@ Toggle("Auto RankUp", function(v) AutoRankUp=v end)
 Toggle("Auto World Boss", function(v) AutoWorldBoss=v end)
 Toggle("Auto Enchant", function(v) AutoEnchant=v end)
 Toggle("Auto Next World", function(v) AutoPortal=v end) -- 🔥 MASUK DI SINI
+Toggle("Fast Click (Spoof)", function(v)
+    SetFastClick(v)
+end)
 
 -- RIGHT (MULTI SELECT)
 local right = Instance.new("ScrollingFrame", main)
