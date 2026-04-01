@@ -99,7 +99,7 @@ RunService.Heartbeat:Connect(function()
     end
 
     if AutoEgg then
-        Remotes.Eggs.Hatch:InvokeServer("Star3", 4)
+        Remotes.Eggs.Hatch:InvokeServer("Star4", 10)
     end
 end)
 
