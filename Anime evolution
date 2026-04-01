@@ -44,112 +44,58 @@ local function FixType(t)
     end
     return t
 end
+
+
 ----------------------------------------------------------------
 -- AUTO PORTAL FINAL (FIX NO MODULE)
 ----------------------------------------------------------------
 
-local function GetNextWorld()
-    local data = game:GetService("ReplicatedStorage"):FindFirstChild("Data")
-    if not data then return end
-
-    local maps = data:FindFirstChild("Maps")
-    local inv = data:FindFirstChild("Inventory")
-    if not maps or not inv then return end
-
-    local owned = inv:FindFirstChild("Maps")
-    if not owned then return end
-
-    local highest = -1
-    local current
-
-    for _,m in pairs(maps:GetChildren()) do
-        if owned:FindFirstChild(m.Name) then
-            local index = m:GetAttribute("Index")
-            if index and index > highest then
-                highest = index
-                current = m
-            end
-        end
-    end
-
-    if not current then return end
-
-    for _,m in pairs(maps:GetChildren()) do
-        local index = m:GetAttribute("Index")
-        if index == current:GetAttribute("Index") + 1 then
-            return m
-        end
-    end
-end
-
-local function GetCoins()
-    local data = game:GetService("ReplicatedStorage"):FindFirstChild("Data")
-    if not data then return 0 end
-
-    local stats = data:FindFirstChild("Stats")
-    if stats and stats:FindFirstChild("Coins") then
-        return stats.Coins.Value
-    end
-
-    return 0
-end
-
-local function GoToPortal(portal)
+local function GetCurrentMap()
     local root = GetRoot()
-    if root and portal and portal:FindFirstChild("Point") then
-        root.CFrame = portal.Point.CFrame + Vector3.new(0,3,0)
+    if not root then return end
+
+    local worlds = workspace.Server.Enemies:FindFirstChild("World")
+    if not worlds then return end
+
+    for _,map in pairs(worlds:GetChildren()) do
+        for _,mob in pairs(map:GetChildren()) do
+            local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
+            if pos and (root.Position - pos).Magnitude < 200 then
+                return map.Name
+            end
+        end
     end
 end
 
+local function GoToCurrentPortal()
+    local mapName = GetCurrentMap()
+    if not mapName then return end
+
+    local portals = workspace:FindFirstChild("Client")
+    portals = portals and portals:FindFirstChild("Portals")
+
+    if not portals then return end
+
+    local portal = portals:FindFirstChild(mapName)
+    if not portal or not portal:FindFirstChild("Point") then return end
+
+    local root = GetRoot()
+    if not root then return end
+
+    -- 🔥 tempel ke portal biar ke detect
+    for i = 1,5 do
+        root.CFrame = portal.Point.CFrame + Vector3.new(0,2,0)
+        task.wait(0.2)
+    end
+
+    print("TP TO PORTAL:", mapName)
+end
+
+-- LOOP
 task.spawn(function()
-    while task.wait(1.5) do
+    while task.wait(2) do
         if AutoPortal then
-
-            local nextWorld = GetNextWorld()
-
-            if nextWorld then
-                local portals = workspace:FindFirstChild("Client")
-                portals = portals and portals:FindFirstChild("Portals")
-
-                local portal
-                if portals then
-                    for _,p in pairs(portals:GetChildren()) do
-                        if string.find(string.lower(p.Name), string.lower(nextWorld.Name)) then
-                            portal = p
-                            break
-                        end
-                    end
-                end
-
-                if portal and portal:FindFirstChild("Point") then
-
-                    local owned = false
-                    local data = game.ReplicatedStorage:FindFirstChild("Data")
-                    if data and data:FindFirstChild("Inventory") then
-                        local inv = data.Inventory:FindFirstChild("Maps")
-                        if inv and inv:FindFirstChild(nextWorld.Name) then
-                            owned = true
-                        end
-                    end
-
-                    local price = nextWorld:GetAttribute("Price") or 0
-                    local coins = GetCoins()
-
-                    if not owned then
-                        if coins >= price then
-                            GoToPortal(portal)
-                            task.wait(1)
-                            Remote:FireServer("Teleport","Buy",nextWorld.Id)
-                        end
-                    else
-                        GoToPortal(portal)
-                        task.wait(1)
-                        Remote:FireServer("Teleport","Spawn",nextWorld.Id)
-                    end
-
-                end
-            end
-
+            GoToCurrentPortal()
         end
     end
 end)
