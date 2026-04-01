@@ -656,87 +656,6 @@ end
 RefreshEnemyList()
 
 ----------------------------------------------------------------
--- AUTO NEXT WORLD PORTAL (SAFE ADD-ON)
-----------------------------------------------------------------
-
-local AutoPortal = false
-
-local MainModule
-pcall(function()
-    MainModule = require(game.ReplicatedStorage:WaitForChild("Client"):WaitForChild("Main"))
-end)
-
-local function GetNextWorld()
-    if not MainModule then return end
-
-    local maps = MainModule.SharedModules.Maps
-    local ownedMaps = MainModule.Data.Inventory.Maps
-
-    local highestIndex = -1
-    local currentMap
-
-    for _, map in pairs(maps) do
-        if ownedMaps[map.Id] and map.Index > highestIndex then
-            highestIndex = map.Index
-            currentMap = map
-        end
-    end
-
-    if not currentMap then return end
-
-    for _, map in pairs(maps) do
-        if map.Index == currentMap.Index + 1 then
-            return map
-        end
-    end
-end
-
-local function GetCoins()
-    if not MainModule then return 0 end
-    return MainModule.Data.Coins or 0
-end
-
-local function GoToPortal(portal)
-    local root = GetRoot()
-    if not root then return end
-    root.CFrame = portal.Point.CFrame + Vector3.new(0,3,0)
-end
-
-task.spawn(function()
-    while task.wait(1.2) do
-        if not AutoPortal then continue end
-        if not MainModule then continue end
-
-        local nextWorld = GetNextWorld()
-        if not nextWorld then continue end
-
-        local portal = workspace:FindFirstChild("Client")
-            and workspace.Client:FindFirstChild("Portals")
-            and workspace.Client.Portals:FindFirstChild(nextWorld.Name)
-
-        if not portal or not portal:FindFirstChild("Point") then continue end
-
-        local owned = MainModule.Data.Inventory.Maps[nextWorld.Id]
-        local coins = GetCoins()
-
-        if not owned then
-            if coins >= nextWorld.Price then
-                GoToPortal(portal)
-                task.wait(1)
-
-                Remote:FireServer("Teleport","Buy",nextWorld.Id)
-                task.wait(3)
-            end
-        else
-            GoToPortal(portal)
-            task.wait(1)
-
-            Remote:FireServer("Teleport","Spawn",nextWorld.Id)
-            task.wait(3)
-        end
-    end
-end)
-----------------------------------------------------------------
 -- ================= GUI AUTO FARM (HP FIX) =================
 ----------------------------------------------------------------
 
@@ -851,6 +770,66 @@ Toggle("Auto RankUp", function(v) AutoRankUp=v end)
 Toggle("Auto World Boss", function(v) AutoWorldBoss=v end)
 Toggle("Auto Enchant", function(v) AutoEnchant=v end)
 Toggle("Auto Next World", function(v) AutoPortal=v end)
+
+-- RIGHT (MULTI SELECT)
+local right = Instance.new("ScrollingFrame", main)
+right.Size = UDim2.new(0.5,0,1,-36)
+right.Position = UDim2.new(0.5,0,0,36)
+right.BackgroundTransparency = 1
+right.AutomaticCanvasSize = Enum.AutomaticSize.Y
+right.ScrollBarThickness = 4
+
+local layout2 = Instance.new("UIListLayout", right)
+layout2.Padding = UDim.new(0,5)
+
+local function RefreshEnemyList()
+    for _,v in pairs(right:GetChildren()) do
+        if v:IsA("TextButton") then v:Destroy() end
+    end
+
+    for _,name in pairs(GetAllEnemyNames()) do
+        local b = Instance.new("TextButton", right)
+        b.Size = UDim2.new(1,-10,0,32)
+        b.Position = UDim2.new(0,5,0,0)
+        b.Font = Enum.Font.GothamMedium
+        b.TextSize = 13
+        b.Text = name
+        b.AutoButtonColor = false
+        Round(b,8)
+
+        local function Update()
+            if SelectedEnemies[name] then
+                b.BackgroundColor3 = Color3.fromRGB(40,120,40)
+                b.TextColor3 = Color3.new(1,1,1)
+            else
+                b.BackgroundColor3 = Color3.fromRGB(22,22,22)
+                b.TextColor3 = Color3.fromRGB(200,200,200)
+            end
+        end
+
+        Update()
+
+        b.MouseButton1Click:Connect(function()
+            if SelectedEnemies[name] then
+                SelectedEnemies[name] = nil
+            else
+                SelectedEnemies[name] = true
+            end
+            Update()
+        end)
+
+        b.MouseEnter:Connect(function()
+            if not SelectedEnemies[name] then
+                b.BackgroundColor3 = Color3.fromRGB(35,35,35)
+            end
+        end)
+
+        b.MouseLeave:Connect(Update)
+    end
+end
+
+RefreshEnemyList()
+
 --================ AUTO RAID FULL (PASTE SAJA) =================--
 
 local Players = game:GetService("Players")
