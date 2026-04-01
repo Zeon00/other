@@ -92,33 +92,39 @@ end
 
 task.spawn(function()
     while task.wait(1.2) do
-        if not AutoPortal then continue end
-        if not MainModule then continue end
+        if AutoPortal and MainModule then
 
-        local nextWorld = GetNextWorld()
-        if not nextWorld then continue end
+            local nextWorld = GetNextWorld()
 
-        local portal = workspace:FindFirstChild("Client")
-            and workspace.Client:FindFirstChild("Portals")
-            and workspace.Client.Portals:FindFirstChild(nextWorld.Name)
+            if nextWorld then
+                local portalFolder = workspace:FindFirstChild("Client")
+                portalFolder = portalFolder and portalFolder:FindFirstChild("Portals")
+                local portal = portalFolder and portalFolder:FindFirstChild(nextWorld.Name)
 
-        if not portal or not portal:FindFirstChild("Point") then continue end
+                if portal and portal:FindFirstChild("Point") then
 
-        local owned = MainModule.Data.Inventory.Maps[nextWorld.Id]
-        local coins = GetCoins()
+                    local owned = MainModule.Data.Inventory.Maps[nextWorld.Id]
+                    local coins = GetCoins()
 
-        if not owned then
-            if coins >= nextWorld.Price then
-                GoToPortal(portal)
-                task.wait(1)
-                Remote:FireServer("Teleport","Buy",nextWorld.Id)
-                task.wait(3)
+                    if not owned then
+                        if coins >= nextWorld.Price then
+                            GoToPortal(portal)
+                            task.wait(1)
+
+                            Remote:FireServer("Teleport","Buy",nextWorld.Id)
+                            task.wait(3)
+                        end
+                    else
+                        GoToPortal(portal)
+                        task.wait(1)
+
+                        Remote:FireServer("Teleport","Spawn",nextWorld.Id)
+                        task.wait(3)
+                    end
+
+                end
             end
-        else
-            GoToPortal(portal)
-            task.wait(1)
-            Remote:FireServer("Teleport","Spawn",nextWorld.Id)
-            task.wait(3)
+
         end
     end
 end)
