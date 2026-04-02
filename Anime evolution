@@ -25,7 +25,7 @@ local HIT_MULTIPLIER = 1
 local UseSelected = false
 local SelectedEnemies = {}
 
-local TP_DISTANCE = 1350
+local TP_DISTANCE = 550
 local LastMap = "Fiery World"
 
 ----------------------------------------------------------------
@@ -224,25 +224,18 @@ local function TeleportToEnemy(mob)
     local pos = mob.Position or (hrp and hrp.Position)
 
     if not pos then return end
+
+    -- ❌ anti void
     if pos.Y < -5 then return end
 
+    -- ❌ limit distance
     local dist = (root.Position - pos).Magnitude
+    if dist > TP_DISTANCE then return end
 
-    -- 🔥 FIX: kalau jauh, deketin dulu
-    if dist > TP_DISTANCE then
-        local dir = (pos - root.Position).Unit
-        root.CFrame = root.CFrame + (dir * TP_DISTANCE)
-        return
-    end
-
+    -- ✅ posisi aman
     local safePos = pos + Vector3.new(0,3,5)
 
-    for i = 1,2 do
-        root.AssemblyLinearVelocity = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
-        root.CFrame = CFrame.lookAt(safePos, pos)
-        task.wait(0.05)
-    end
+    root.CFrame = CFrame.lookAt(safePos, pos)
 end
 
 ----------------------------------------------------------------
