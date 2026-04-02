@@ -25,7 +25,7 @@ local HIT_MULTIPLIER = 1
 local UseSelected = false
 local SelectedEnemies = {}
 
-local TP_DISTANCE = 350
+local TP_DISTANCE = 1350
 local LastMap = "Fiery World"
 
 ----------------------------------------------------------------
