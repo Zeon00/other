@@ -22,7 +22,10 @@ local AutoDemon = false
 --// AUTO RAID FUNCTION (BASIC)
 local function DoRaid()
     pcall(function()
-        Remotes:FindFirstChild("StartRaid") and Remotes.StartRaid:FireServer("TowerRaid")
+        local raid = Remotes:FindFirstChild("StartRaid")
+        if raid then
+            raid:FireServer("TowerRaid")
+        end
     end)
 end
 
@@ -75,7 +78,7 @@ RunService.Heartbeat:Connect(function()
     if #enemies > 0 then
         if index > #enemies then index = 1 end
         local enemy = enemies[index]
-        index += 1
+        index = index + 1
 
         if enemy then
             local ehrp = enemy:FindFirstChild("HumanoidRootPart")
