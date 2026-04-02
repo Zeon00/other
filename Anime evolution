@@ -216,26 +216,21 @@ end
 -- TP
 ----------------------------------------------------------------
 local function TeleportToEnemy(mob)
-
     local root = GetRoot()
-	
     if not root then return end
 
-    -- 🔥 STEP 1: FORCE LOAD AREA
-    local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
-    if not pos then return end
+    -- 🔍 cari part apapun di dalam mob
+    local targetPart = mob:FindFirstChild("HumanoidRootPart")
+        or mob:FindFirstChild("Head")
+        or mob:FindFirstChildWhichIsA("BasePart")
 
-    -- teleport ke atas dulu (biar ke-load)
-    root.CFrame = CFrame.new(pos + Vector3.new(0, 120, 0))
-    task.wait(0.15)
+    if not targetPart then return end
 
-    -- 🔥 STEP 2: ambil HRP ulang (setelah ke-load)
-    local hrp = mob:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    -- 🔥 STEP 3: TP fix (multi spam)
+    -- 🔥 langsung spam TP ke part (tanpa ke angkasa dulu)
     for i = 1,5 do
-        root.CFrame = hrp.CFrame * CFrame.new(0, 3, 2)
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        root.CFrame = targetPart.CFrame * CFrame.new(0, 3, 2)
         task.wait(0.05)
     end
 end
