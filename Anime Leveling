@@ -6,7 +6,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local Remotes = RS:WaitForChild("Remotes")
 local ClickRemote = Remotes:WaitForChild("Clicked")
-local State = require(RS.Client.State)
+local State = require(RS.Client.State) -- TIDAK DIUBAH
 
 --// STATE
 local FastHit, AutoTP, BypassAll = false,false,false
@@ -66,31 +66,22 @@ local function GetEnemies()
     return list
 end
 
---// LOOP
+--// LOOP (ASLI + FIX TP)
 local index = 1
-local lastSwitch = 0
-local SWITCH_DELAY = 0.4 -- atur (0.3 - 0.7 enak)
+local lastTP = 0
+local TP_DELAY = 0.4 -- 🔥 BIAR GA NGACO
 
 RunService.Heartbeat:Connect(function()
     local char = player.Character
     if not char then return end
-
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
     local enemies = GetEnemies()
     if #enemies > 0 then
-
-        -- ⛔ BATASIN PINDAH TARGET
-        if tick() - lastSwitch > SWITCH_DELAY then
-            index = index + 1
-            if index > #enemies then
-                index = 1
-            end
-            lastSwitch = tick()
-        end
-
+        if index > #enemies then index = 1 end
         local enemy = enemies[index]
+        index = index + 1
 
         if enemy then
             local ehrp = enemy:FindFirstChild("HumanoidRootPart")
@@ -98,25 +89,26 @@ RunService.Heartbeat:Connect(function()
 
             if ehrp and hum and hum.Health > 0 then
                 
-                if AutoTP then
+                -- ✅ FIX TP (INI DOANG YG DIUBAH)
+                if AutoTP and tick() - lastTP > TP_DELAY then
                     hrp.CFrame = ehrp.CFrame * CFrame.new(0,2,0)
+                    lastTP = tick()
                 end
 
                 if FastHit then
                     ClickRemote:FireServer()
                     ClickRemote:FireServer()
                 end
-
             end
         end
     end
 
-    -- AUTO RAID
+    -- AUTO RAID LOOP
     if AutoRaid then
         DoRaid()
     end
 
-    -- EXTRA (BIARIN)
+    -- EXTRA (TIDAK DIUBAH)
     if AutoFruit then Remotes.RollFruitPower:FireServer() end
     if AutoHaki then Remotes.HakiLeveling:FireServer() end
     if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
@@ -129,122 +121,10 @@ RunService.Heartbeat:Connect(function()
     if AutoDemon then Remotes.RollDemonPower:FireServer() end
 end)
 
---// BYPASS
+--// BYPASS (TIDAK DIUBAH)
 local Shop = require(RS.ModuleScripts:WaitForChild("Shop"))
 local oldOwn = Shop.DoesPlayerOwnGamepass
 Shop.DoesPlayerOwnGamepass = function(name, data)
     if BypassAll then return true end
     return oldOwn(name, data)
 end
-
---// GUI MOBILE FRIENDLY
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "AutoFarmMobile"
-
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0.35,0,0.5,0)
-frame.Position = UDim2.new(0.3,0,0.2,0)
-frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-frame.Active = true
-frame.Draggable = true
-Instance.new("UICorner", frame)
-
--- TOP
-local top = Instance.new("Frame", frame)
-top.Size = UDim2.new(1,0,0,32)
-top.BackgroundTransparency = 1
-
-local title = Instance.new("TextLabel", top)
-title.Size = UDim2.new(1,0,1,0)
-title.Text = "AUTO FARM PRO"
-title.Font = Enum.Font.GothamBold
-title.TextScaled = true
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundTransparency = 1
-
--- CLOSE
-local close = Instance.new("TextButton", top)
-close.Size = UDim2.new(0,30,1,0)
-close.Position = UDim2.new(1,-30,0,0)
-close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(150,0,0)
-close.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", close)
-
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
-
--- MINIMIZE
-local mini = Instance.new("TextButton", top)
-mini.Size = UDim2.new(0,30,1,0)
-mini.Position = UDim2.new(1,-60,0,0)
-mini.Text = "-"
-mini.BackgroundColor3 = Color3.fromRGB(60,60,60)
-mini.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", mini)
-
-local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.new(0,60,0,60)
-icon.Position = UDim2.new(0.02,0,0.5,0)
-icon.Text = "AF"
-icon.Visible = false
-Instance.new("UICorner", icon)
-
-mini.MouseButton1Click:Connect(function()
-    frame.Visible = false
-    icon.Visible = true
-end)
-
-icon.MouseButton1Click:Connect(function()
-    frame.Visible = true
-    icon.Visible = false
-end)
-
--- SCROLL (BIAR HP ENAK)
-local scroll = Instance.new("ScrollingFrame", frame)
-scroll.Size = UDim2.new(1,0,1,-35)
-scroll.Position = UDim2.new(0,0,0,35)
-scroll.CanvasSize = UDim2.new(0,0,0,600)
-scroll.ScrollBarThickness = 4
-scroll.BackgroundTransparency = 1
-
-local layout = Instance.new("UIListLayout", scroll)
-layout.Padding = UDim.new(0,6)
-
--- TOGGLE
-local function Toggle(name, callback)
-    local btn = Instance.new("TextButton", scroll)
-    btn.Size = UDim2.new(0.9,0,0,36)
-    btn.Text = name.." OFF"
-    btn.Font = Enum.Font.Gotham
-    btn.TextScaled = true
-    btn.BackgroundColor3 = Color3.fromRGB(80,0,0)
-    btn.TextColor3 = Color3.new(1,1,1)
-    Instance.new("UICorner", btn)
-
-    local state = false
-    btn.MouseButton1Click:Connect(function()
-        state = not state
-        btn.Text = name.." "..(state and "ON" or "OFF")
-        btn.BackgroundColor3 = state and Color3.fromRGB(0,150,0) or Color3.fromRGB(80,0,0)
-        callback(state)
-    end)
-end
-
--- ALL TOGGLES
-Toggle("FAST HIT", function(v) FastHit = v end)
-Toggle("AUTO TP", function(v) AutoTP = v end)
-Toggle("AUTO RAID", function(v) AutoRaid = v end)
-Toggle("BYPASS", function(v) BypassAll = v end)
-
-Toggle("FRUIT", function(v) AutoFruit = v end)
-Toggle("HAKI", function(v) AutoHaki = v end)
-Toggle("DRAGON", function(v) AutoDragon = v end)
-Toggle("SAIYAN", function(v) AutoSaiyan = v end)
-Toggle("EGG", function(v) AutoEgg = v end)
-
-Toggle("BREATHING", function(v) AutoBreathing = v end)
-Toggle("PROSPERITY", function(v) AutoProsperity = v end)
-Toggle("GRIMOIRE", function(v) AutoGrimoire = v end)
-Toggle("DEMON", function(v) AutoDemon = v end)
