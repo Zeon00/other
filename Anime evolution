@@ -215,25 +215,24 @@ end
 ----------------------------------------------------------------
 -- TP
 ----------------------------------------------------------------
+
 local function TeleportToEnemy(mob)
     local root = GetRoot()
     if not root then return end
 
-    -- 🔍 cari part apapun di dalam mob
-    local targetPart = mob:FindFirstChild("HumanoidRootPart")
-        or mob:FindFirstChild("Head")
-        or mob:FindFirstChildWhichIsA("BasePart")
+    local hrp = mob:FindFirstChild("HumanoidRootPart")
+    local pos = mob.Position or (hrp and hrp.Position)
 
-    if not targetPart then return end
+    if not pos then return end
+    if pos.Y < -5 then return end
 
-    -- 🔥 langsung spam TP ke part (tanpa ke angkasa dulu)
-    for i = 1,5 do
-        root.AssemblyLinearVelocity = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
-        root.CFrame = targetPart.CFrame * CFrame.new(0, 3, 2)
-        task.wait(0.05)
-    end
+    local dist = (root.Position - pos).Magnitude
+    if dist > TP_DISTANCE then return end
+
+    local safePos = pos + Vector3.new(0,3,5)
+    root.CFrame = CFrame.lookAt(safePos, pos)
 end
+
 ----------------------------------------------------------------
 -- WORLD BOSS SYSTEM
 ----------------------------------------------------------------
@@ -316,10 +315,10 @@ task.spawn(function()
 
         local target = GetNearestEnemy()
         if target then
-     if EnemyTP and target then
-    TeleportToEnemy(target.Enemy)
-
-end
+            if EnemyTP and lastEnemy ~= target.Enemy then
+                TeleportToEnemy(target.Enemy)
+                lastEnemy = target.Enemy
+            end
 
             local attackType = FixType(target.Type)
 
