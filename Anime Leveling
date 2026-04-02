@@ -67,6 +67,26 @@ local function GetEnemies()
 end
 
 --// LOOP
+local function GetNearest(enemies, hrp)
+    local closest = nil
+    local shortest = math.huge
+
+    for _, e in ipairs(enemies) do
+        local ehrp = e:FindFirstChild("HumanoidRootPart")
+        local hum = e:FindFirstChildOfClass("Humanoid")
+
+        if ehrp and hum and hum.Health > 0 then
+            local dist = (ehrp.Position - hrp.Position).Magnitude
+            if dist < shortest then
+                shortest = dist
+                closest = e
+            end
+        end
+    end
+
+    return closest
+end
+
 local currentTarget = nil
 
 RunService.Heartbeat:Connect(function()
@@ -83,7 +103,7 @@ RunService.Heartbeat:Connect(function()
     or not currentTarget:FindFirstChild("Humanoid") 
     or currentTarget.Humanoid.Health <= 0 then
         
-        currentTarget = enemies[1]
+        currentTarget = GetNearest(enemies, hrp)
     end
 
     if currentTarget then
