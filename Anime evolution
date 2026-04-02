@@ -216,16 +216,27 @@ end
 -- TP
 ----------------------------------------------------------------
 local function TeleportToEnemy(mob)
+
     local root = GetRoot()
+	
     if not root then return end
 
+    -- 🔥 STEP 1: FORCE LOAD AREA
+    local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
+    if not pos then return end
+
+    -- teleport ke atas dulu (biar ke-load)
+    root.CFrame = CFrame.new(pos + Vector3.new(0, 120, 0))
+    task.wait(0.15)
+
+    -- 🔥 STEP 2: ambil HRP ulang (setelah ke-load)
     local hrp = mob:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    -- 🔥 FORCE LOAD + ANTI MISS
-    for i = 1,3 do
-        root.CFrame = hrp.CFrame + Vector3.new(0,5,0)
-        task.wait(0.1)
+    -- 🔥 STEP 3: TP fix (multi spam)
+    for i = 1,5 do
+        root.CFrame = hrp.CFrame * CFrame.new(0, 3, 2)
+        task.wait(0.05)
     end
 end
 ----------------------------------------------------------------
@@ -310,10 +321,9 @@ task.spawn(function()
 
         local target = GetNearestEnemy()
         if target then
-            if EnemyTP and lastEnemy ~= target.Enemy then
-    ForceLoad() -- 🔥 biar mob ke-load
+     if EnemyTP and target then
     TeleportToEnemy(target.Enemy)
-    lastEnemy = target.Enemy
+
 end
 
             local attackType = FixType(target.Type)
