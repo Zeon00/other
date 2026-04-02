@@ -1,4 +1,4 @@
---// ANTI AFK PC & ANDROID
+--// ANTI AFK (PC + ANDROID)
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local VirtualUser = game:GetService("VirtualUser")
@@ -7,12 +7,10 @@ VirtualUser:CaptureController()
 task.spawn(function()
     while task.wait(math.random(50,70)) do
         pcall(function()
-            -- PC VirtualUser click
             VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
             task.wait(0.1)
             VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 
-            -- Android/Movement anti-afk
             local char = player.Character
             if char then
                 local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -86,6 +84,7 @@ local function GetEnemies()
     end
 
     if not folder then return {} end
+
     local list = {}
     for _, enemy in pairs(folder:GetChildren()) do
         local ehrp = enemy:FindFirstChild("HumanoidRootPart")
@@ -109,7 +108,7 @@ frame.Active = true
 frame.Draggable = true
 Instance.new("UICorner", frame)
 
--- TOP BAR
+-- TOP
 local top = Instance.new("Frame", frame)
 top.Size = UDim2.new(1,0,0,32)
 top.BackgroundTransparency = 1
@@ -155,7 +154,7 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- LEFT PANEL (TOGGLE)
+-- LEFT (TOGGLE)
 local left = Instance.new("Frame", frame)
 left.Size = UDim2.new(0.5,0,1,-35)
 left.Position = UDim2.new(0,0,0,35)
@@ -166,10 +165,11 @@ scrollToggle.Size = UDim2.new(1,0,1,0)
 scrollToggle.CanvasSize = UDim2.new(0,0,0,600)
 scrollToggle.ScrollBarThickness = 4
 scrollToggle.BackgroundTransparency = 1
+
 local layout1 = Instance.new("UIListLayout", scrollToggle)
 layout1.Padding = UDim.new(0,6)
 
--- RIGHT PANEL (MOB)
+-- RIGHT (MOB LIST)
 local right = Instance.new("Frame", frame)
 right.Size = UDim2.new(0.5,0,1,-35)
 right.Position = UDim2.new(0.5,0,0,35)
@@ -180,10 +180,11 @@ scrollMob.Size = UDim2.new(1,0,1,0)
 scrollMob.CanvasSize = UDim2.new(0,0,0,800)
 scrollMob.ScrollBarThickness = 4
 scrollMob.BackgroundTransparency = 1
+
 local layout2 = Instance.new("UIListLayout", scrollMob)
 layout2.Padding = UDim.new(0,6)
 
--- TOGGLE FUNCTION
+-- TOGGLE
 local function Toggle(name, callback)
     local btn = Instance.new("TextButton", scrollToggle)
     btn.Size = UDim2.new(0.9,0,0,36)
@@ -193,6 +194,7 @@ local function Toggle(name, callback)
     btn.BackgroundColor3 = Color3.fromRGB(80,0,0)
     btn.TextColor3 = Color3.new(1,1,1)
     Instance.new("UICorner", btn)
+
     local state = false
     btn.MouseButton1Click:Connect(function()
         state = not state
@@ -202,43 +204,58 @@ local function Toggle(name, callback)
     end)
 end
 
--- ENEMY LIST
+-- ENEMY LIST (NO DOUBLE NAME)
 local function UpdateEnemyList()
     local enemies = GetEnemies()
+    local used = {}
+
     for _, child in pairs(scrollMob:GetChildren()) do
         if child:IsA("Frame") and child.Name == "EnemyCheckbox" then
             child:Destroy()
         end
     end
+
     for _, enemy in pairs(enemies) do
         local name = enemy.Name
-        local f = Instance.new("Frame", scrollMob)
-        f.Name = "EnemyCheckbox"
-        f.Size = UDim2.new(0.9,0,0,30)
-        f.BackgroundColor3 = Color3.fromRGB(40,40,40)
-        Instance.new("UICorner", f)
+        if not used[name] then
+            used[name] = true
 
-        local txt = Instance.new("TextLabel", f)
-        txt.Size = UDim2.new(0.65,0,1,0)
-        txt.Text = name
-        txt.TextColor3 = Color3.new(1,1,1)
-        txt.BackgroundTransparency = 1
-        txt.Font = Enum.Font.Gotham
-        txt.TextScaled = true
+            local f = Instance.new("Frame", scrollMob)
+            f.Name = "EnemyCheckbox"
+            f.Size = UDim2.new(0.9,0,0,30)
+            f.BackgroundColor3 = Color3.fromRGB(40,40,40)
+            Instance.new("UICorner", f)
 
-        local btn = Instance.new("TextButton", f)
-        btn.Size = UDim2.new(0.35,0,1,0)
-        btn.Position = UDim2.new(0.65,0,0,0)
-        btn.Text = "OFF"
-        btn.BackgroundColor3 = Color3.fromRGB(120,0,0)
-        btn.TextColor3 = Color3.new(1,1,1)
-        Instance.new("UICorner", btn)
-        SelectedEnemies[name] = SelectedEnemies[name] or false
-        btn.MouseButton1Click:Connect(function()
-            SelectedEnemies[name] = not SelectedEnemies[name]
-            btn.Text = SelectedEnemies[name] and "ON" or "OFF"
-            btn.BackgroundColor3 = SelectedEnemies[name] and Color3.fromRGB(0,150,0) or Color3.fromRGB(120,0,0)
-        end)
+            local txt = Instance.new("TextLabel", f)
+            txt.Size = UDim2.new(0.65,0,1,0)
+            txt.Text = name
+            txt.TextColor3 = Color3.new(1,1,1)
+            txt.BackgroundTransparency = 1
+            txt.Font = Enum.Font.Gotham
+            txt.TextScaled = true
+
+            local btn = Instance.new("TextButton", f)
+            btn.Size = UDim2.new(0.35,0,1,0)
+            btn.Position = UDim2.new(0.65,0,0,0)
+            btn.TextColor3 = Color3.new(1,1,1)
+            Instance.new("UICorner", btn)
+
+            SelectedEnemies[name] = SelectedEnemies[name] or false
+
+            local function Refresh()
+                btn.Text = SelectedEnemies[name] and "ON" or "OFF"
+                btn.BackgroundColor3 = SelectedEnemies[name]
+                    and Color3.fromRGB(0,150,0)
+                    or Color3.fromRGB(120,0,0)
+            end
+
+            Refresh()
+
+            btn.MouseButton1Click:Connect(function()
+                SelectedEnemies[name] = not SelectedEnemies[name]
+                Refresh()
+            end)
+        end
     end
 end
 
@@ -258,6 +275,7 @@ RunService.Heartbeat:Connect(function()
 
     local enemies = GetEnemies()
     local targets = {}
+
     for _, enemy in pairs(enemies) do
         if SelectedEnemies[enemy.Name] then
             table.insert(targets, enemy)
@@ -267,12 +285,15 @@ RunService.Heartbeat:Connect(function()
     if #targets > 0 then
         index = index % #targets + 1
         local target = targets[index]
+
         local ehrp = target:FindFirstChild("HumanoidRootPart")
         local hum = target:FindFirstChildOfClass("Humanoid")
+
         if ehrp and hum and hum.Health > 0 then
             if AutoTP then
                 hrp.CFrame = hrp.CFrame:Lerp(ehrp.CFrame * CFrame.new(0,2,0), 0.8)
             end
+
             if FastHit then
                 ClickRemote:FireServer()
                 ClickRemote:FireServer()
@@ -305,11 +326,13 @@ Toggle("FAST HIT", function(v) FastHit = v end)
 Toggle("AUTO TP", function(v) AutoTP = v end)
 Toggle("AUTO RAID", function(v) AutoRaid = v end)
 Toggle("BYPASS", function(v) BypassAll = v end)
+
 Toggle("FRUIT", function(v) AutoFruit = v end)
 Toggle("HAKI", function(v) AutoHaki = v end)
 Toggle("DRAGON", function(v) AutoDragon = v end)
 Toggle("SAIYAN", function(v) AutoSaiyan = v end)
 Toggle("EGG", function(v) AutoEgg = v end)
+
 Toggle("BREATHING", function(v) AutoBreathing = v end)
 Toggle("PROSPERITY", function(v) AutoProsperity = v end)
 Toggle("GRIMOIRE", function(v) AutoGrimoire = v end)
