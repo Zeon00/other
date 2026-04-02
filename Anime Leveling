@@ -86,7 +86,7 @@ RunService.Heartbeat:Connect(function()
 
             if ehrp and hum and hum.Health > 0 then
                 if AutoTP then
-                    hrp.CFrame = ehrp.CFrame * CFrame.new(0,2,0)
+                    hrp.CFrame = hrp.CFrame:Lerp(ehrp.CFrame * CFrame.new(0,2,0), 0.3)
                 end
 
                 if FastHit then
