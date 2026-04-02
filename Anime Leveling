@@ -87,11 +87,7 @@ local function GetNearest(enemies, hrp)
     return closest
 end
 
---// TARGET SYSTEM (FIX)
-local currentTarget = nil
-local lastSwitch = 0
-local SWITCH_DELAY = 0.35
-
+--// TARGET SYSTEM (NO LOCK, ALWAYS NEAREST)
 RunService.Heartbeat:Connect(function()
     local char = player.Character
     if not char then return end
@@ -100,53 +96,20 @@ RunService.Heartbeat:Connect(function()
     if not hrp then return end
 
     local enemies = GetEnemies()
-    local newTarget = GetNearest(enemies, hrp)
+    local target = GetNearest(enemies, hrp)
 
-    if newTarget then
-        local needSwitch = false
-
-        if not currentTarget then
-            needSwitch = true
-        end
-
-        if currentTarget and currentTarget:FindFirstChild("Humanoid") then
-            if currentTarget.Humanoid.Health <= 0 then
-                needSwitch = true
-            end
-        end
-
-        if currentTarget and currentTarget:FindFirstChild("HumanoidRootPart") then
-            local dist = (currentTarget.HumanoidRootPart.Position - hrp.Position).Magnitude
-            if dist > 60 then
-                needSwitch = true
-            end
-        end
-
-        if currentTarget and newTarget ~= currentTarget then
-            local oldDist = (currentTarget.HumanoidRootPart.Position - hrp.Position).Magnitude
-            local newDist = (newTarget.HumanoidRootPart.Position - hrp.Position).Magnitude
-
-            if newDist + 5 < oldDist then
-                needSwitch = true
-            end
-        end
-
-        if needSwitch and tick() - lastSwitch > SWITCH_DELAY then
-            currentTarget = newTarget
-            lastSwitch = tick()
-        end
-    end
-
-    if currentTarget then
-        local ehrp = currentTarget:FindFirstChild("HumanoidRootPart")
-        local hum = currentTarget:FindFirstChildOfClass("Humanoid")
+    if target then
+        local ehrp = target:FindFirstChild("HumanoidRootPart")
+        local hum = target:FindFirstChildOfClass("Humanoid")
 
         if ehrp and hum and hum.Health > 0 then
             
+            -- TP (langsung ke target terdekat)
             if AutoTP then
                 hrp.CFrame = ehrp.CFrame * CFrame.new(0,2,0)
             end
 
+            -- HIT
             if FastHit then
                 for i = 1, 3 do
                     ClickRemote:FireServer()
@@ -161,7 +124,7 @@ RunService.Heartbeat:Connect(function()
         DoRaid()
     end
 
-    -- EXTRA
+    -- EXTRA (TIDAK DIUBAH)
     if AutoFruit then Remotes.RollFruitPower:FireServer() end
     if AutoHaki then Remotes.HakiLeveling:FireServer() end
     if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
