@@ -1,9 +1,40 @@
---// SERVICES
+--// ANTI AFK PC & ANDROID
 local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local VirtualUser = game:GetService("VirtualUser")
+VirtualUser:CaptureController()
+
+task.spawn(function()
+    while task.wait(math.random(50,70)) do
+        pcall(function()
+            -- PC VirtualUser click
+            VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(0.1)
+            VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+
+            -- Android/Movement anti-afk
+            local char = player.Character
+            if char then
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.CFrame = hrp.CFrame * CFrame.new(0,0,1)
+                    task.wait(0.1)
+                    hrp.CFrame = hrp.CFrame * CFrame.new(0,0,-1)
+                end
+            end
+        end)
+    end
+end)
+
+player.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    task.wait(0.1)
+    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
+
+--// SERVICES
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
 local Remotes = RS:WaitForChild("Remotes")
 local ClickRemote = Remotes:WaitForChild("Clicked")
 local State = require(RS.Client.State)
@@ -13,13 +44,14 @@ local FastHit, AutoTP, BypassAll = false,false,false
 local AutoFruit, AutoHaki, AutoDragon = false,false,false
 local AutoSaiyan, AutoEgg = false,false
 local AutoRaid = false
-
 local AutoBreathing = false
 local AutoProsperity = false
 local AutoGrimoire = false
 local AutoDemon = false
 
---// AUTO RAID FUNCTION (BASIC)
+local SelectedEnemies = {}
+
+--// RAID
 local function DoRaid()
     pcall(function()
         local raid = Remotes:FindFirstChild("StartRaid")
@@ -54,7 +86,6 @@ local function GetEnemies()
     end
 
     if not folder then return {} end
-
     local list = {}
     for _, enemy in pairs(folder:GetChildren()) do
         local ehrp = enemy:FindFirstChild("HumanoidRootPart")
@@ -66,76 +97,19 @@ local function GetEnemies()
     return list
 end
 
---// LOOP
-local index = 1
-RunService.Heartbeat:Connect(function()
-    local char = player.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    local enemies = GetEnemies()
-    if #enemies > 0 then
-        if index > #enemies then index = 1 end
-        local enemy = enemies[index]
-        index = index + 1
-
-        if enemy then
-            local ehrp = enemy:FindFirstChild("HumanoidRootPart")
-            local hum = enemy:FindFirstChildOfClass("Humanoid")
-
-            if ehrp and hum and hum.Health > 0 then
-                if AutoTP then
-                    hrp.CFrame = hrp.CFrame:Lerp(ehrp.CFrame * CFrame.new(0,2,0), 0.8)
-                end
-
-                if FastHit then
-                    ClickRemote:FireServer()
-                    ClickRemote:FireServer()
-                end
-            end
-        end
-    end
-
-    -- AUTO RAID LOOP
-    if AutoRaid then
-        DoRaid()
-    end
-
-    -- EXTRA
-    if AutoFruit then Remotes.RollFruitPower:FireServer() end
-    if AutoHaki then Remotes.HakiLeveling:FireServer() end
-    if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
-    if AutoSaiyan then Remotes.RollSaiyanPower:FireServer() end
-    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star4", 10) end
-
-    if AutoBreathing then Remotes.RollBreathingPower:FireServer() end
-    if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
-    if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
-    if AutoDemon then Remotes.RollDemonPower:FireServer() end
-end)
-
---// BYPASS
-local Shop = require(RS.ModuleScripts:WaitForChild("Shop"))
-local oldOwn = Shop.DoesPlayerOwnGamepass
-Shop.DoesPlayerOwnGamepass = function(name, data)
-    if BypassAll then return true end
-    return oldOwn(name, data)
-end
-
---// GUI MOBILE FRIENDLY
+--// GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "AutoFarmMobile"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0.35,0,0.5,0)
-frame.Position = UDim2.new(0.3,0,0.2,0)
+frame.Size = UDim2.new(0.5,0,0.55,0)
+frame.Position = UDim2.new(0.25,0,0.2,0)
 frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 frame.Active = true
 frame.Draggable = true
 Instance.new("UICorner", frame)
 
--- TOP
+-- TOP BAR
 local top = Instance.new("Frame", frame)
 top.Size = UDim2.new(1,0,0,32)
 top.BackgroundTransparency = 1
@@ -148,7 +122,6 @@ title.TextScaled = true
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
 
--- CLOSE
 local close = Instance.new("TextButton", top)
 close.Size = UDim2.new(0,30,1,0)
 close.Position = UDim2.new(1,-30,0,0)
@@ -156,12 +129,8 @@ close.Text = "X"
 close.BackgroundColor3 = Color3.fromRGB(150,0,0)
 close.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", close)
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
 
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
-
--- MINIMIZE
 local mini = Instance.new("TextButton", top)
 mini.Size = UDim2.new(0,30,1,0)
 mini.Position = UDim2.new(1,-60,0,0)
@@ -181,26 +150,42 @@ mini.MouseButton1Click:Connect(function()
     frame.Visible = false
     icon.Visible = true
 end)
-
 icon.MouseButton1Click:Connect(function()
     frame.Visible = true
     icon.Visible = false
 end)
 
--- SCROLL (BIAR HP ENAK)
-local scroll = Instance.new("ScrollingFrame", frame)
-scroll.Size = UDim2.new(1,0,1,-35)
-scroll.Position = UDim2.new(0,0,0,35)
-scroll.CanvasSize = UDim2.new(0,0,0,600)
-scroll.ScrollBarThickness = 4
-scroll.BackgroundTransparency = 1
+-- LEFT PANEL (TOGGLE)
+local left = Instance.new("Frame", frame)
+left.Size = UDim2.new(0.5,0,1,-35)
+left.Position = UDim2.new(0,0,0,35)
+left.BackgroundTransparency = 1
 
-local layout = Instance.new("UIListLayout", scroll)
-layout.Padding = UDim.new(0,6)
+local scrollToggle = Instance.new("ScrollingFrame", left)
+scrollToggle.Size = UDim2.new(1,0,1,0)
+scrollToggle.CanvasSize = UDim2.new(0,0,0,600)
+scrollToggle.ScrollBarThickness = 4
+scrollToggle.BackgroundTransparency = 1
+local layout1 = Instance.new("UIListLayout", scrollToggle)
+layout1.Padding = UDim.new(0,6)
 
--- TOGGLE
+-- RIGHT PANEL (MOB)
+local right = Instance.new("Frame", frame)
+right.Size = UDim2.new(0.5,0,1,-35)
+right.Position = UDim2.new(0.5,0,0,35)
+right.BackgroundTransparency = 1
+
+local scrollMob = Instance.new("ScrollingFrame", right)
+scrollMob.Size = UDim2.new(1,0,1,0)
+scrollMob.CanvasSize = UDim2.new(0,0,0,800)
+scrollMob.ScrollBarThickness = 4
+scrollMob.BackgroundTransparency = 1
+local layout2 = Instance.new("UIListLayout", scrollMob)
+layout2.Padding = UDim.new(0,6)
+
+-- TOGGLE FUNCTION
 local function Toggle(name, callback)
-    local btn = Instance.new("TextButton", scroll)
+    local btn = Instance.new("TextButton", scrollToggle)
     btn.Size = UDim2.new(0.9,0,0,36)
     btn.Text = name.." OFF"
     btn.Font = Enum.Font.Gotham
@@ -208,7 +193,6 @@ local function Toggle(name, callback)
     btn.BackgroundColor3 = Color3.fromRGB(80,0,0)
     btn.TextColor3 = Color3.new(1,1,1)
     Instance.new("UICorner", btn)
-
     local state = false
     btn.MouseButton1Click:Connect(function()
         state = not state
@@ -218,18 +202,114 @@ local function Toggle(name, callback)
     end)
 end
 
--- ALL TOGGLES
+-- ENEMY LIST
+local function UpdateEnemyList()
+    local enemies = GetEnemies()
+    for _, child in pairs(scrollMob:GetChildren()) do
+        if child:IsA("Frame") and child.Name == "EnemyCheckbox" then
+            child:Destroy()
+        end
+    end
+    for _, enemy in pairs(enemies) do
+        local name = enemy.Name
+        local f = Instance.new("Frame", scrollMob)
+        f.Name = "EnemyCheckbox"
+        f.Size = UDim2.new(0.9,0,0,30)
+        f.BackgroundColor3 = Color3.fromRGB(40,40,40)
+        Instance.new("UICorner", f)
+
+        local txt = Instance.new("TextLabel", f)
+        txt.Size = UDim2.new(0.65,0,1,0)
+        txt.Text = name
+        txt.TextColor3 = Color3.new(1,1,1)
+        txt.BackgroundTransparency = 1
+        txt.Font = Enum.Font.Gotham
+        txt.TextScaled = true
+
+        local btn = Instance.new("TextButton", f)
+        btn.Size = UDim2.new(0.35,0,1,0)
+        btn.Position = UDim2.new(0.65,0,0,0)
+        btn.Text = "OFF"
+        btn.BackgroundColor3 = Color3.fromRGB(120,0,0)
+        btn.TextColor3 = Color3.new(1,1,1)
+        Instance.new("UICorner", btn)
+        SelectedEnemies[name] = SelectedEnemies[name] or false
+        btn.MouseButton1Click:Connect(function()
+            SelectedEnemies[name] = not SelectedEnemies[name]
+            btn.Text = SelectedEnemies[name] and "ON" or "OFF"
+            btn.BackgroundColor3 = SelectedEnemies[name] and Color3.fromRGB(0,150,0) or Color3.fromRGB(120,0,0)
+        end)
+    end
+end
+
+task.spawn(function()
+    while task.wait(3) do
+        pcall(UpdateEnemyList)
+    end
+end)
+
+-- MAIN LOOP
+local index = 1
+RunService.Heartbeat:Connect(function()
+    local char = player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local enemies = GetEnemies()
+    local targets = {}
+    for _, enemy in pairs(enemies) do
+        if SelectedEnemies[enemy.Name] then
+            table.insert(targets, enemy)
+        end
+    end
+
+    if #targets > 0 then
+        index = index % #targets + 1
+        local target = targets[index]
+        local ehrp = target:FindFirstChild("HumanoidRootPart")
+        local hum = target:FindFirstChildOfClass("Humanoid")
+        if ehrp and hum and hum.Health > 0 then
+            if AutoTP then
+                hrp.CFrame = hrp.CFrame:Lerp(ehrp.CFrame * CFrame.new(0,2,0), 0.8)
+            end
+            if FastHit then
+                ClickRemote:FireServer()
+                ClickRemote:FireServer()
+            end
+        end
+    end
+
+    if AutoRaid then DoRaid() end
+    if AutoFruit then Remotes.RollFruitPower:FireServer() end
+    if AutoHaki then Remotes.HakiLeveling:FireServer() end
+    if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
+    if AutoSaiyan then Remotes.RollSaiyanPower:FireServer() end
+    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star4", 10) end
+    if AutoBreathing then Remotes.RollBreathingPower:FireServer() end
+    if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
+    if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
+    if AutoDemon then Remotes.RollDemonPower:FireServer() end
+end)
+
+-- BYPASS
+local Shop = require(RS.ModuleScripts:WaitForChild("Shop"))
+local oldOwn = Shop.DoesPlayerOwnGamepass
+Shop.DoesPlayerOwnGamepass = function(name, data)
+    if BypassAll then return true end
+    return oldOwn(name, data)
+end
+
+-- TOGGLES
 Toggle("FAST HIT", function(v) FastHit = v end)
 Toggle("AUTO TP", function(v) AutoTP = v end)
 Toggle("AUTO RAID", function(v) AutoRaid = v end)
 Toggle("BYPASS", function(v) BypassAll = v end)
-
 Toggle("FRUIT", function(v) AutoFruit = v end)
 Toggle("HAKI", function(v) AutoHaki = v end)
 Toggle("DRAGON", function(v) AutoDragon = v end)
 Toggle("SAIYAN", function(v) AutoSaiyan = v end)
 Toggle("EGG", function(v) AutoEgg = v end)
-
 Toggle("BREATHING", function(v) AutoBreathing = v end)
 Toggle("PROSPERITY", function(v) AutoProsperity = v end)
 Toggle("GRIMOIRE", function(v) AutoGrimoire = v end)
