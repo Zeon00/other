@@ -227,10 +227,22 @@ local function TeleportToEnemy(mob)
     if pos.Y < -5 then return end
 
     local dist = (root.Position - pos).Magnitude
-    if dist > TP_DISTANCE then return end
+
+    -- 🔥 FIX: kalau jauh, deketin dulu
+    if dist > TP_DISTANCE then
+        local dir = (pos - root.Position).Unit
+        root.CFrame = root.CFrame + (dir * TP_DISTANCE)
+        return
+    end
 
     local safePos = pos + Vector3.new(0,3,5)
-    root.CFrame = CFrame.lookAt(safePos, pos)
+
+    for i = 1,2 do
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        root.CFrame = CFrame.lookAt(safePos, pos)
+        task.wait(0.05)
+    end
 end
 
 ----------------------------------------------------------------
