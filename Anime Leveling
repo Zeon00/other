@@ -71,24 +71,28 @@ local index = 1
 RunService.Heartbeat:Connect(function()
     local char = player.Character
     if not char then return end
+
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
     local enemies = GetEnemies()
-    if #enemies > 0 then
-        if index > #enemies then index = 1 end
-        local enemy = enemies[index]
-        index = index + 1
 
-        if enemy then
-            local ehrp = enemy:FindFirstChild("HumanoidRootPart")
-            local hum = enemy:FindFirstChildOfClass("Humanoid")
+    for _, enemy in ipairs(enemies) do
+        local ehrp = enemy:FindFirstChild("HumanoidRootPart")
+        local hum = enemy:FindFirstChildOfClass("Humanoid")
 
-            if ehrp and hum and hum.Health > 0 then
+        if ehrp and hum and hum.Health > 0 then
+            local dist = (ehrp.Position - hrp.Position).Magnitude
+
+            -- 🔥 radius (atur sendiri)
+            if dist <= 150 then
+                
+                -- AUTO TP (optional, tapi OP)
                 if AutoTP then
                     hrp.CFrame = ehrp.CFrame * CFrame.new(0,2,0)
                 end
 
+                -- FAST HIT KE SEMUA MOB
                 if FastHit then
                     ClickRemote:FireServer()
                     ClickRemote:FireServer()
@@ -97,12 +101,12 @@ RunService.Heartbeat:Connect(function()
         end
     end
 
-    -- AUTO RAID LOOP
+    -- AUTO RAID
     if AutoRaid then
         DoRaid()
     end
 
-    -- EXTRA
+    -- EXTRA (biarin sama)
     if AutoFruit then Remotes.RollFruitPower:FireServer() end
     if AutoHaki then Remotes.HakiLeveling:FireServer() end
     if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
@@ -114,6 +118,8 @@ RunService.Heartbeat:Connect(function()
     if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
     if AutoDemon then Remotes.RollDemonPower:FireServer() end
 end)
+
+
 
 --// BYPASS
 local Shop = require(RS.ModuleScripts:WaitForChild("Shop"))
