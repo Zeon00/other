@@ -215,24 +215,19 @@ end
 ----------------------------------------------------------------
 -- TP
 ----------------------------------------------------------------
-
 local function TeleportToEnemy(mob)
     local root = GetRoot()
     if not root then return end
 
     local hrp = mob:FindFirstChild("HumanoidRootPart")
-    local pos = mob.Position or (hrp and hrp.Position)
+    if not hrp then return end
 
-    if not pos then return end
-    if pos.Y < -5 then return end
-
-    local dist = (root.Position - pos).Magnitude
-    if dist > TP_DISTANCE then return end
-
-    local safePos = pos + Vector3.new(0,3,5)
-    root.CFrame = CFrame.lookAt(safePos, pos)
+    -- 🔥 FORCE LOAD + ANTI MISS
+    for i = 1,3 do
+        root.CFrame = hrp.CFrame + Vector3.new(0,5,0)
+        task.wait(0.1)
+    end
 end
-
 ----------------------------------------------------------------
 -- WORLD BOSS SYSTEM
 ----------------------------------------------------------------
@@ -316,9 +311,10 @@ task.spawn(function()
         local target = GetNearestEnemy()
         if target then
             if EnemyTP and lastEnemy ~= target.Enemy then
-                TeleportToEnemy(target.Enemy)
-                lastEnemy = target.Enemy
-            end
+    ForceLoad() -- 🔥 biar mob ke-load
+    TeleportToEnemy(target.Enemy)
+    lastEnemy = target.Enemy
+end
 
             local attackType = FixType(target.Type)
 
