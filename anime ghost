@@ -304,44 +304,68 @@ local player = Players.LocalPlayer
 --// LIB
 local Library = require(RS:WaitForChild("Framework"):WaitForChild("Library"))
 local Remote = Library.Remote
-local MultiplierService = Library:GetService("MultiplierService")
 
 --// REMOTE
-local RaidRemote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
+local RemoteEvent = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
 
---// MAP
-local RaidMap = workspace:WaitForChild("_MAP"):WaitForChild("Gamemode"):WaitForChild("Easter Raid_8594485805")
-local SpawnPart = RaidMap:WaitForChild("Spawn")
+--// NPC
+local NPC = workspace._MAP["Easter 2026 Event"].Interactions.Gamemode.EasterLevi.HumanoidRootPart
+
+--// RAID MAP
+local RaidMap = workspace._MAP.Gamemode["Easter Raid_8594485805"]
+local SpawnPart = RaidMap.Spawn
 
 --// ENEMY
-local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
+local EnemyFolder = workspace._ENEMIES.Client
 
 --// SETTINGS
 local AutoRaid, Aura, TP = false, false, false
-local RAID_COOLDOWN = 900
+local RAID_DURATION = 900
 
-local lastRaidTime = 0
 local raidState = "Idle"
+local raidStartTime = 0
 local lastTP = 0
 
---// START RAID
-local function StartRaid()
-    pcall(function()
-        RaidRemote:FireServer({
-            {
-                "GamemodeSystem",
-                "Start",
-                "Easter Raid",
-                8594485805,
-                n = 4
-            },
-            "\002"
-        })
-    end)
+--// TP
+local function TP(cf)
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = cf
+    end
 end
 
---// STATE DETECT
-local function GetRaidState()
+--// CREATE
+local function CreateRaid()
+    RemoteEvent:FireServer({
+        {
+            "GamemodeSystem",
+            "Create",
+            "Easter Raid",
+            "ChocolateKingdom",
+            "Easy",
+            true,
+            n = 6
+        },
+        "\002"
+    })
+end
+
+--// START
+local function StartRaid()
+    RemoteEvent:FireServer({
+        {
+            "GamemodeSystem",
+            "Start",
+            "Easter Raid",
+            8594485805,
+            n = 4
+        },
+        "\002"
+    })
+end
+
+--// STATE
+local function GetState()
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then
         return "Idle"
@@ -363,34 +387,42 @@ end
 --// UPDATE STATE
 task.spawn(function()
     while task.wait(1) do
-        local newState = GetRaidState()
+        local new = GetState()
 
-        if raidState == "InRaid" and newState == "Idle" then
-            lastRaidTime = tick()
+        if new == "InRaid" and raidState ~= "InRaid" then
+            raidStartTime = tick()
         end
 
-        raidState = newState
+        raidState = new
     end
 end)
 
---// AUTO RAID LOOP
+--// AUTO RAID
 task.spawn(function()
     while task.wait(2) do
-        if AutoRaid and raidState == "Idle" then
-            local passed = tick() - lastRaidTime
+        if AutoRaid then
 
-            if passed >= RAID_COOLDOWN then
-                StartRaid()
+            -- selesai raid
+            if raidState == "InRaid" then
+                local passed = tick() - raidStartTime
+                if passed >= RAID_DURATION or #EnemyFolder:GetChildren() == 0 then
+                    raidState = "Idle"
+                    task.wait(2)
+                end
+            end
+
+            -- start baru
+            if raidState == "Idle" then
+                TP(NPC.CFrame + Vector3.new(0,3,0))
                 task.wait(1)
 
-                -- TP ke spawn
-                pcall(function()
-                    local char = player.Character
-                    if char and char:FindFirstChild("HumanoidRootPart") then
-                        char.HumanoidRootPart.CFrame = SpawnPart.CFrame + Vector3.new(0,5,0)
-                    end
-                end)
+                CreateRaid()
+                task.wait(1)
 
+                StartRaid()
+                task.wait(2)
+
+                TP(SpawnPart.CFrame + Vector3.new(0,5,0))
                 task.wait(12)
             end
         end
@@ -400,9 +432,11 @@ end)
 --// GET NEAREST
 local function GetNearest()
     local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    if not char then return end
 
-    local root = char.HumanoidRootPart
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
     local nearest, dist = nil, math.huge
 
     for _,mob in pairs(EnemyFolder:GetChildren()) do
@@ -419,41 +453,26 @@ local function GetNearest()
     return nearest
 end
 
---// TP
-local function TPTo(hrp)
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-    if tick() - lastTP < 0.2 then return end
-    lastTP = tick()
-
-    char.HumanoidRootPart.CFrame =
-        char.HumanoidRootPart.CFrame:Lerp(hrp.CFrame * CFrame.new(0,0,4), 0.6)
-end
-
---// LOOP TP
+--// TP LOOP
 task.spawn(function()
     while task.wait(0.2) do
         if TP and raidState == "InRaid" then
             local t = GetNearest()
-            if t then TPTo(t) end
+            if t and tick() - lastTP > 0.2 then
+                lastTP = tick()
+                player.Character.HumanoidRootPart.CFrame =
+                    player.Character.HumanoidRootPart.CFrame:Lerp(t.CFrame * CFrame.new(0,0,4),0.6)
+            end
         end
     end
 end)
 
---// LOOP AURA
+--// AURA LOOP
 task.spawn(function()
     while task.wait(0.03) do
         if Aura and raidState == "InRaid" then
             pcall(function()
                 Remote:Fire("ClickSystem","Execute",Library.Target)
-            end)
-
-            pcall(function()
-                local char = player.Character
-                if char and char:FindFirstChild("Humanoid") then
-                    char.Humanoid.WalkSpeed = 24
-                end
             end)
         end
     end
@@ -521,19 +540,19 @@ end)
 -- STATUS
 local status = Instance.new("TextLabel", main)
 status.Size = UDim2.new(1,0,0,30)
-status.Position = UDim2.new(0,0,0,35)
+status.Position = UDim2.new(0,0,0,40)
 status.BackgroundTransparency = 1
 status.TextColor3 = Color3.new(1,1,1)
 
 -- TIMER
 local timer = Instance.new("TextLabel", main)
 timer.Size = UDim2.new(1,0,0,30)
-timer.Position = UDim2.new(0,0,0,60)
+timer.Position = UDim2.new(0,0,0,70)
 timer.BackgroundTransparency = 1
 timer.TextColor3 = Color3.new(1,1,1)
 
 -- TOGGLE
-local function Toggle(name, pos)
+local function Toggle(name,pos)
     local btn = Instance.new("TextButton", main)
     btn.Size = UDim2.new(1,-20,0,30)
     btn.Position = UDim2.new(0,10,0,pos)
@@ -548,29 +567,29 @@ local function Toggle(name, pos)
         btn.Text = name.." "..(state and "ON" or "OFF")
         btn.BackgroundColor3 = state and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
 
-        if name == "AutoRaid" then AutoRaid = state end
-        if name == "Aura" then Aura = state end
-        if name == "TP" then TP = state end
+        if name=="AutoRaid" then AutoRaid=state end
+        if name=="Aura" then Aura=state end
+        if name=="TP" then TP=state end
     end)
 end
 
-Toggle("AutoRaid",100)
-Toggle("Aura",135)
-Toggle("TP",170)
+Toggle("AutoRaid",110)
+Toggle("Aura",145)
+Toggle("TP",180)
 
 -- UPDATE GUI
 task.spawn(function()
     while task.wait(1) do
-        if raidState == "InRaid" then
-            status.Text = "Status: In Raid"
-            timer.Text = "Running..."
-        elseif raidState == "Waiting" then
-            status.Text = "Status: Starting..."
-            timer.Text = "Wait 10s..."
+        if raidState=="InRaid" then
+            local left = math.max(0, RAID_DURATION - (tick()-raidStartTime))
+            status.Text="Status: In Raid"
+            timer.Text="Time Left: "..math.floor(left).."s"
+        elseif raidState=="Waiting" then
+            status.Text="Status: Starting..."
+            timer.Text="Wait 10s"
         else
-            local left = math.max(0, RAID_COOLDOWN - (tick() - lastRaidTime))
-            status.Text = "Status: Idle"
-            timer.Text = "Cooldown: "..math.floor(left).."s"
+            status.Text="Status: Idle"
+            timer.Text="Ready"
         end
     end
 end)
