@@ -1,0 +1,222 @@
+--// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+--// LIB
+local Library = require(RS:WaitForChild("Framework"):WaitForChild("Library"))
+local Remote = Library.Remote
+local MultiplierService = Library:GetService("MultiplierService")
+
+--// REMOTE SCROLL
+local ScrollRemote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
+
+--// ENEMY
+local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
+
+--// SETTINGS
+local Aura, TP, Skill = false, false, false
+local SelectedMobs = {}
+
+--// SKILL DELAY
+local lastSkill = 0
+local skillDelay = 2
+
+--// GET NAME
+local function GetMobName(mob)
+    return mob:GetAttribute("Name") or mob.Name
+end
+
+--// GET TARGET
+local function GetTarget()
+    for _,mob in pairs(EnemyFolder:GetChildren()) do
+        if SelectedMobs[GetMobName(mob)] then
+            local hrp = mob:FindFirstChild("HumanoidRootPart")
+            if hrp then return hrp end
+        end
+    end
+end
+
+--// TP
+local function TPTo(hrp)
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0,0,3)
+    end
+end
+
+--// LOOP TP
+task.spawn(function()
+    while task.wait(0.2) do
+        if TP then
+            local t = GetTarget()
+            if t then TPTo(t) end
+        end
+    end
+end)
+
+--// LOOP AURA + SKILL
+task.spawn(function()
+    while task.wait() do
+        if Aura then
+            -- HIT
+            pcall(function()
+                Remote:Fire("ClickSystem","Execute",Library.Target)
+            end)
+
+            -- SKILL (SCROLL)
+            if Skill and tick() - lastSkill > skillDelay then
+                lastSkill = tick()
+
+                pcall(function()
+                    local args = {
+                        {
+                            {
+                                "PetSystem",
+                                "Open",
+                                "Easter 2026 Scroll",
+                                "One",
+                                n = 4
+                            },
+                            "\002"
+                        }
+                    }
+
+                    ScrollRemote:FireServer(unpack(args))
+                end)
+            end
+
+            -- ATK SPEED FIX
+            local atkspd = 1
+            pcall(function()
+                atkspd = MultiplierService:AtkSPD(player)
+            end)
+
+            atkspd = (atkspd and atkspd > 0) and atkspd or 1
+            task.wait(math.max(0.05, 0.6 / atkspd))
+        end
+    end
+end)
+
+--// GUI
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
+
+-- MAIN
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,250,0,360)
+main.Position = UDim2.new(1,-260,0.3,0)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main)
+
+-- TITLE
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,-60,0,30)
+title.Position = UDim2.new(0,10,0,0)
+title.Text = "Aura System"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- CLOSE
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-30,0,0)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(200,50,50)
+close.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", close)
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+-- MINIMIZE
+local mini = Instance.new("TextButton", main)
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-60,0,0)
+mini.Text = "-"
+mini.BackgroundColor3 = Color3.fromRGB(80,80,80)
+mini.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", mini)
+
+-- ICON
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(1,-60,0.5,0)
+icon.Text = "OPEN"
+icon.Visible = false
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", icon)
+
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    main.Visible = true
+    icon.Visible = false
+end)
+
+-- TOGGLE MAKER
+local function createToggle(text, posY, callback)
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(1,-20,0,35)
+    btn.Position = UDim2.new(0,10,0,posY)
+    btn.Text = text.." OFF"
+    btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+    btn.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", btn)
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = text.." "..(state and "ON" or "OFF")
+        btn.BackgroundColor3 = state and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
+        callback(state)
+    end)
+end
+
+createToggle("Aura",40,function(v) Aura = v end)
+createToggle("TP",80,function(v) TP = v end)
+createToggle("Skill",120,function(v) Skill = v end)
+
+-- SCROLL LIST
+local scroll = Instance.new("ScrollingFrame", main)
+scroll.Size = UDim2.new(1,-10,1,-170)
+scroll.Position = UDim2.new(0,5,0,160)
+scroll.CanvasSize = UDim2.new(0,0,0,#EnemyFolder:GetChildren()*30)
+scroll.BackgroundTransparency = 1
+
+-- LIST
+local added = {}
+local y = 0
+
+for _,mob in pairs(EnemyFolder:GetChildren()) do
+    local name = GetMobName(mob)
+
+    if not added[name] then
+        added[name] = true
+
+        local btn = Instance.new("TextButton", scroll)
+        btn.Size = UDim2.new(1,-5,0,25)
+        btn.Position = UDim2.new(0,0,0,y)
+        btn.Text = "[ ] "..name
+        btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+        btn.TextColor3 = Color3.new(1,1,1)
+        Instance.new("UICorner", btn)
+
+        btn.MouseButton1Click:Connect(function()
+            SelectedMobs[name] = not SelectedMobs[name]
+            btn.Text = (SelectedMobs[name] and "[✔] " or "[ ] ")..name
+        end)
+
+        y = y + 30
+    end
+end kasih anti afk
