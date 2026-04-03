@@ -112,21 +112,21 @@ task.spawn(function()
                 end)
             end
 
-            local atkspd = 1
-            pcall(function()
-                atkspd = MultiplierService:AtkSPD(player)
-            end)
-            atkspd = (atkspd and atkspd > 0) and atkspd or 1
-            atkspd = atkspd * 1.5
+local atkspd = 1
+pcall(function()
+    atkspd = MultiplierService:AtkSPD(player)
+end)
 
-            pcall(function()
-                local char = player.Character
-                if char and char:FindFirstChild("Humanoid") then
-                    char.Humanoid.WalkSpeed = 45
-                end
-            end)
+atkspd = (atkspd and atkspd > 0) and atkspd or 1
+atkspd = atkspd * 1.5
 
-            task.wait(math.max(0.05, 0.6 / atkspd))
+-- adaptive speed
+local delay = 0.6 / atkspd
+if delay < 0.03 then
+    delay = 0.03
+end
+
+task.wait(delay)
         end
     end
 end)
