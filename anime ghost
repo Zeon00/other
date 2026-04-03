@@ -290,3 +290,213 @@ allBtn.MouseButton1Click:Connect(function()
     end
     allBtn.Text = allState and "Unselect All" or "Select All"
 end)
+
+
+
+
+
+--// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+--// LIB
+local Library = require(RS:WaitForChild("Framework"):WaitForChild("Library"))
+local Remote = Library.Remote
+local MultiplierService = Library:GetService("MultiplierService")
+
+--// REMOTE
+local RaidRemote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
+
+--// ENEMY
+local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
+
+--// SETTINGS
+local AutoRaid = false
+local Aura = false
+local TP = false
+
+local RAID_COOLDOWN = 900
+local lastRaidTime = 0
+local inRaid = false
+local lastTP = 0
+
+--// START RAID
+local function StartRaid()
+    pcall(function()
+        RaidRemote:FireServer({
+            {
+                "GamemodeSystem",
+                "Start",
+                "Easter Raid",
+                8594485805,
+                n = 4
+            },
+            "\002"
+        })
+    end)
+end
+
+--// DETECT RAID
+task.spawn(function()
+    while task.wait(2) do
+        if #EnemyFolder:GetChildren() > 0 then
+            inRaid = true
+        else
+            if inRaid then
+                lastRaidTime = tick()
+                inRaid = false
+            end
+        end
+    end
+end)
+
+--// AUTO RAID LOOP
+task.spawn(function()
+    while task.wait(2) do
+        if AutoRaid and not inRaid then
+            local passed = tick() - lastRaidTime
+            if passed >= RAID_COOLDOWN then
+                StartRaid()
+                task.wait(5)
+            end
+        end
+    end
+end)
+
+--// GET NEAREST
+local function GetNearest()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    local root = char.HumanoidRootPart
+    local nearest, dist = nil, math.huge
+
+    for _,mob in pairs(EnemyFolder:GetChildren()) do
+        local hrp = mob:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local d = (hrp.Position - root.Position).Magnitude
+            if d < dist then
+                dist = d
+                nearest = hrp
+            end
+        end
+    end
+
+    return nearest
+end
+
+--// TP
+local function TPTo(hrp)
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    local root = char.HumanoidRootPart
+
+    if tick() - lastTP < 0.2 then return end
+    lastTP = tick()
+
+    root.CFrame = root.CFrame:Lerp(hrp.CFrame * CFrame.new(0,0,4), 0.6)
+end
+
+--// LOOP TP
+task.spawn(function()
+    while task.wait(0.2) do
+        if TP and inRaid then
+            local t = GetNearest()
+            if t then TPTo(t) end
+        end
+    end
+end)
+
+--// LOOP AURA
+task.spawn(function()
+    while task.wait(0.03) do
+        if Aura and inRaid then
+            pcall(function()
+                Remote:Fire("ClickSystem","Execute",Library.Target)
+            end)
+
+            pcall(function()
+                local char = player.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    char.Humanoid.WalkSpeed = 24
+                end
+            end)
+        end
+    end
+end)
+
+--// GUI
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,230,0,200)
+main.Position = UDim2.new(1,-240,0.3,0)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "Auto Raid"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+
+-- STATUS
+local status = Instance.new("TextLabel", main)
+status.Size = UDim2.new(1,0,0,30)
+status.Position = UDim2.new(0,0,0,30)
+status.TextColor3 = Color3.new(1,1,1)
+status.BackgroundTransparency = 1
+status.Text = "Status: Idle"
+
+-- TIMER
+local timer = Instance.new("TextLabel", main)
+timer.Size = UDim2.new(1,0,0,30)
+timer.Position = UDim2.new(0,0,0,60)
+timer.TextColor3 = Color3.new(1,1,1)
+timer.BackgroundTransparency = 1
+
+-- TOGGLE
+local function toggle(name, pos, var)
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(1,-20,0,30)
+    btn.Position = UDim2.new(0,10,0,pos)
+    btn.Text = name.." OFF"
+    btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+    btn.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", btn)
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = name.." "..(state and "ON" or "OFF")
+        btn.BackgroundColor3 = state and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
+
+        if name == "AutoRaid" then AutoRaid = state end
+        if name == "Aura" then Aura = state end
+        if name == "TP" then TP = state end
+    end)
+end
+
+toggle("AutoRaid",100)
+toggle("Aura",135)
+toggle("TP",170)
+
+-- UPDATE STATUS
+task.spawn(function()
+    while task.wait(1) do
+        if inRaid then
+            status.Text = "Status: In Raid"
+            timer.Text = "Running..."
+        else
+            local left = math.max(0, RAID_COOLDOWN - (tick() - lastRaidTime))
+            status.Text = "Status: Waiting"
+            timer.Text = "Cooldown: "..math.floor(left).."s"
+        end
+    end
+end)
