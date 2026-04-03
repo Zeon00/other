@@ -81,9 +81,7 @@ task.spawn(function()
     while task.wait(0.25) do
         if TP then
             local target = (TPMode == "Selected") and GetTarget() or GetNearest()
-            if target then
-                TPTo(target)
-            end
+            if target then TPTo(target) end
         end
     end
 end)
@@ -112,21 +110,21 @@ task.spawn(function()
                 end)
             end
 
-local atkspd = 1
-pcall(function()
-    atkspd = MultiplierService:AtkSPD(player)
-end)
+            local atkspd = 1
+            pcall(function()
+                atkspd = MultiplierService:AtkSPD(player)
+            end)
+            atkspd = (atkspd and atkspd > 0) and atkspd or 1
+            atkspd = atkspd * 1.5
 
-atkspd = (atkspd and atkspd > 0) and atkspd or 1
-atkspd = atkspd * 1.5
+            pcall(function()
+                local char = player.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    char.Humanoid.WalkSpeed = 24
+                end
+            end)
 
--- adaptive speed
-local delay = 0.6 / atkspd
-if delay < 0.03 then
-    delay = 0.03
-end
-
-task.wait(delay)
+            task.wait(math.max(0.03, 0.6 / atkspd))
         end
     end
 end)
@@ -137,7 +135,7 @@ gui.Parent = player:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,250,0,400)
+main.Size = UDim2.new(0,250,0,420)
 main.Position = UDim2.new(1,-260,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 main.Active = true
@@ -165,7 +163,7 @@ close.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", close)
 close.MouseButton1Click:Connect(function() gui:Destroy() end)
 
--- MINIMIZE BUTTON
+-- MINIMIZE
 local mini = Instance.new("TextButton", main)
 mini.Size = UDim2.new(0,30,0,30)
 mini.Position = UDim2.new(1,-60,0,0)
@@ -174,7 +172,6 @@ mini.BackgroundColor3 = Color3.fromRGB(80,80,80)
 mini.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", mini)
 
--- ICON (KALO DI MINIMIZE)
 local icon = Instance.new("TextButton", gui)
 icon.Size = UDim2.new(0,50,0,50)
 icon.Position = UDim2.new(1,-60,0.5,0)
@@ -184,17 +181,16 @@ icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
 icon.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", icon)
 
--- FUNCTION MINIMIZE
 mini.MouseButton1Click:Connect(function()
     main.Visible = false
     icon.Visible = true
 end)
 
--- FUNCTION BALIKIN
 icon.MouseButton1Click:Connect(function()
     main.Visible = true
     icon.Visible = false
 end)
+
 -- TOGGLE
 local function createToggle(text, posY, callback)
     local btn = Instance.new("TextButton", main)
@@ -232,50 +228,65 @@ modeBtn.MouseButton1Click:Connect(function()
     modeBtn.Text = "Mode: "..TPMode
 end)
 
--- SCROLL LIST (FIXED)
+-- SELECT ALL
+local allBtn = Instance.new("TextButton", main)
+allBtn.Size = UDim2.new(1,-20,0,35)
+allBtn.Position = UDim2.new(0,10,0,200)
+allBtn.Text = "Select All"
+allBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+allBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", allBtn)
+
+-- LIST
 local scroll = Instance.new("ScrollingFrame", main)
-scroll.Size = UDim2.new(1,-10,1,-210)
-scroll.Position = UDim2.new(0,5,0,200)
+scroll.Size = UDim2.new(1,-10,1,-250)
+scroll.Position = UDim2.new(0,5,0,240)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0,0,0,0)
 
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0,5)
 
-local added = {}
+local buttons = {}
+local allState = false
 
-local function RefreshList()
-    for _,v in pairs(scroll:GetChildren()) do
-        if v:IsA("TextButton") then v:Destroy() end
-    end
+local function CreateMob(name)
+    if buttons[name] then return end
 
-    table.clear(added)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,-5,0,25)
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Parent = scroll
+    Instance.new("UICorner", btn)
 
+    local state = SelectedMobs[name] or false
+    btn.Text = (state and "[✔] " or "[ ] ")..name
+
+    btn.MouseButton1Click:Connect(function()
+        SelectedMobs[name] = not SelectedMobs[name]
+        local s = SelectedMobs[name]
+        btn.Text = (s and "[✔] " or "[ ] ")..name
+    end)
+
+    buttons[name] = btn
+end
+
+local function Refresh()
     for _,mob in pairs(EnemyFolder:GetChildren()) do
-        local name = GetMobName(mob)
-
-        if not added[name] then
-            added[name] = true
-
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1,-5,0,25)
-            btn.Text = "[ ] "..name
-            btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.Parent = scroll
-            Instance.new("UICorner", btn)
-
-            btn.MouseButton1Click:Connect(function()
-                SelectedMobs[name] = not SelectedMobs[name]
-                btn.Text = (SelectedMobs[name] and "[✔] " or "[ ] ")..name
-            end)
-        end
+        CreateMob(GetMobName(mob))
     end
-
     scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
 end
 
--- AUTO REFRESH LIST
-RefreshList()
-EnemyFolder.ChildAdded:Connect(RefreshList)
-EnemyFolder.ChildRemoved:Connect(RefreshList)
+Refresh()
+EnemyFolder.ChildAdded:Connect(Refresh)
+EnemyFolder.ChildRemoved:Connect(Refresh)
+
+allBtn.MouseButton1Click:Connect(function()
+    allState = not allState
+    for name,btn in pairs(buttons) do
+        SelectedMobs[name] = allState
+        btn.Text = (allState and "[✔] " or "[ ] ")..name
+    end
+    allBtn.Text = allState and "Unselect All" or "Select All"
+end)
