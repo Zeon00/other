@@ -309,17 +309,19 @@ local MultiplierService = Library:GetService("MultiplierService")
 --// REMOTE
 local RaidRemote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
 
+--// MAP
+local RaidMap = workspace:WaitForChild("_MAP"):WaitForChild("Gamemode"):WaitForChild("Easter Raid_8594485805")
+local SpawnPart = RaidMap:WaitForChild("Spawn")
+
 --// ENEMY
 local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
 
 --// SETTINGS
-local AutoRaid = false
-local Aura = false
-local TP = false
-
+local AutoRaid, Aura, TP = false, false, false
 local RAID_COOLDOWN = 900
+
 local lastRaidTime = 0
-local inRaid = false
+local raidState = "Idle"
 local lastTP = 0
 
 --// START RAID
@@ -338,28 +340,58 @@ local function StartRaid()
     end)
 end
 
---// DETECT RAID
-task.spawn(function()
-    while task.wait(2) do
+--// STATE DETECT
+local function GetRaidState()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then
+        return "Idle"
+    end
+
+    local dist = (char.HumanoidRootPart.Position - SpawnPart.Position).Magnitude
+
+    if dist < 80 then
         if #EnemyFolder:GetChildren() > 0 then
-            inRaid = true
+            return "InRaid"
         else
-            if inRaid then
-                lastRaidTime = tick()
-                inRaid = false
-            end
+            return "Waiting"
         end
+    end
+
+    return "Idle"
+end
+
+--// UPDATE STATE
+task.spawn(function()
+    while task.wait(1) do
+        local newState = GetRaidState()
+
+        if raidState == "InRaid" and newState == "Idle" then
+            lastRaidTime = tick()
+        end
+
+        raidState = newState
     end
 end)
 
 --// AUTO RAID LOOP
 task.spawn(function()
     while task.wait(2) do
-        if AutoRaid and not inRaid then
+        if AutoRaid and raidState == "Idle" then
             local passed = tick() - lastRaidTime
+
             if passed >= RAID_COOLDOWN then
                 StartRaid()
-                task.wait(5)
+                task.wait(1)
+
+                -- TP ke spawn
+                pcall(function()
+                    local char = player.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        char.HumanoidRootPart.CFrame = SpawnPart.CFrame + Vector3.new(0,5,0)
+                    end
+                end)
+
+                task.wait(12)
             end
         end
     end
@@ -392,18 +424,17 @@ local function TPTo(hrp)
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
 
-    local root = char.HumanoidRootPart
-
     if tick() - lastTP < 0.2 then return end
     lastTP = tick()
 
-    root.CFrame = root.CFrame:Lerp(hrp.CFrame * CFrame.new(0,0,4), 0.6)
+    char.HumanoidRootPart.CFrame =
+        char.HumanoidRootPart.CFrame:Lerp(hrp.CFrame * CFrame.new(0,0,4), 0.6)
 end
 
 --// LOOP TP
 task.spawn(function()
     while task.wait(0.2) do
-        if TP and inRaid then
+        if TP and raidState == "InRaid" then
             local t = GetNearest()
             if t then TPTo(t) end
         end
@@ -413,7 +444,7 @@ end)
 --// LOOP AURA
 task.spawn(function()
     while task.wait(0.03) do
-        if Aura and inRaid then
+        if Aura and raidState == "InRaid" then
             pcall(function()
                 Remote:Fire("ClickSystem","Execute",Library.Target)
             end)
@@ -433,36 +464,76 @@ local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,230,0,200)
-main.Position = UDim2.new(1,-240,0.3,0)
+main.Size = UDim2.new(0,240,0,230)
+main.Position = UDim2.new(1,-250,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
 
+-- TITLE
 local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,0,0,30)
-title.Text = "Auto Raid"
+title.Size = UDim2.new(1,-60,0,30)
+title.Position = UDim2.new(0,10,0,0)
+title.Text = "Raid Loop"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- CLOSE
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-30,0,0)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(200,50,50)
+close.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", close)
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+-- MINIMIZE
+local mini = Instance.new("TextButton", main)
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-60,0,0)
+mini.Text = "-"
+mini.BackgroundColor3 = Color3.fromRGB(80,80,80)
+mini.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", mini)
+
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(1,-60,0.5,0)
+icon.Text = "OPEN"
+icon.Visible = false
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", icon)
+
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    main.Visible = true
+    icon.Visible = false
+end)
 
 -- STATUS
 local status = Instance.new("TextLabel", main)
 status.Size = UDim2.new(1,0,0,30)
-status.Position = UDim2.new(0,0,0,30)
-status.TextColor3 = Color3.new(1,1,1)
+status.Position = UDim2.new(0,0,0,35)
 status.BackgroundTransparency = 1
-status.Text = "Status: Idle"
+status.TextColor3 = Color3.new(1,1,1)
 
 -- TIMER
 local timer = Instance.new("TextLabel", main)
 timer.Size = UDim2.new(1,0,0,30)
 timer.Position = UDim2.new(0,0,0,60)
-timer.TextColor3 = Color3.new(1,1,1)
 timer.BackgroundTransparency = 1
+timer.TextColor3 = Color3.new(1,1,1)
 
 -- TOGGLE
-local function toggle(name, pos, var)
+local function Toggle(name, pos)
     local btn = Instance.new("TextButton", main)
     btn.Size = UDim2.new(1,-20,0,30)
     btn.Position = UDim2.new(0,10,0,pos)
@@ -483,19 +554,22 @@ local function toggle(name, pos, var)
     end)
 end
 
-toggle("AutoRaid",100)
-toggle("Aura",135)
-toggle("TP",170)
+Toggle("AutoRaid",100)
+Toggle("Aura",135)
+Toggle("TP",170)
 
--- UPDATE STATUS
+-- UPDATE GUI
 task.spawn(function()
     while task.wait(1) do
-        if inRaid then
+        if raidState == "InRaid" then
             status.Text = "Status: In Raid"
             timer.Text = "Running..."
+        elseif raidState == "Waiting" then
+            status.Text = "Status: Starting..."
+            timer.Text = "Wait 10s..."
         else
             local left = math.max(0, RAID_COOLDOWN - (tick() - lastRaidTime))
-            status.Text = "Status: Waiting"
+            status.Text = "Status: Idle"
             timer.Text = "Cooldown: "..math.floor(left).."s"
         end
     end
