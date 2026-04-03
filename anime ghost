@@ -165,6 +165,36 @@ close.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", close)
 close.MouseButton1Click:Connect(function() gui:Destroy() end)
 
+-- MINIMIZE BUTTON
+local mini = Instance.new("TextButton", main)
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-60,0,0)
+mini.Text = "-"
+mini.BackgroundColor3 = Color3.fromRGB(80,80,80)
+mini.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", mini)
+
+-- ICON (KALO DI MINIMIZE)
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(1,-60,0.5,0)
+icon.Text = "OPEN"
+icon.Visible = false
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", icon)
+
+-- FUNCTION MINIMIZE
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+    icon.Visible = true
+end)
+
+-- FUNCTION BALIKIN
+icon.MouseButton1Click:Connect(function()
+    main.Visible = true
+    icon.Visible = false
+end)
 -- TOGGLE
 local function createToggle(text, posY, callback)
     local btn = Instance.new("TextButton", main)
