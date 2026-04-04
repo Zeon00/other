@@ -24,6 +24,11 @@ local lastSkill = 0
 local skillDelay = 2
 local lastTP = 0
 local AutoRaid = false
+local AutoClaim = false
+local lastClaim = 0
+local claimDelay = 600 -- 10 menit
+local lastReset = 0
+local resetDelay = 18000 -- 5 jam
 
 local START_CF = CFrame.new(
     -3035.23071, 784.099609, 7447.69922,
@@ -229,6 +234,53 @@ task.spawn(function()
         end
     end
 end)
+task.spawn(function()
+    while task.wait(1) do
+        if AutoClaim then
+
+            -- CLAIM tiap 10 menit
+            if tick() - lastClaim >= claimDelay then
+                lastClaim = tick()
+
+                for i = 1,9 do
+                    local args = {
+                        {
+                            {
+                                "TimeRewardSystem",
+                                "Claim",
+                                "General",
+                                i,
+                                n = 4
+                            },
+                            "\002"
+                        }
+                    }
+                    ScrollRemote:FireServer(unpack(args))
+                    task.wait(0.5)
+                end
+            end
+
+            -- RESET tiap 5 jam
+            if tick() - lastReset >= resetDelay then
+                lastReset = tick()
+
+                local args = {
+                    {
+                        {
+                            "TimeRewardSystem",
+                            "Reset",
+                            "General",
+                            n = 3
+                        },
+                        "\002"
+                    }
+                }
+                ScrollRemote:FireServer(unpack(args))
+            end
+
+        end
+    end
+end)
 --// GUI
 local gui = Instance.new("ScreenGui")
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -316,10 +368,11 @@ createToggle("Aura",40,function(v) Aura = v end)
 createToggle("TP",80,function(v) TP = v end)
 createToggle("Skill",120,function(v) Skill = v end)
 createToggle("Auto Raid",160,function(v) AutoRaid = v end)
+createToggle("Auto Claim",200,function(v) AutoClaim = v end)
 -- MODE
 local modeBtn = Instance.new("TextButton", main)
 modeBtn.Size = UDim2.new(1,-20,0,35)
-modeBtn.Position = UDim2.new(0,10,0,200)
+modeBtn.Position = UDim2.new(0,10,0,240)
 modeBtn.Text = "Mode: Nearest"
 modeBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
 modeBtn.TextColor3 = Color3.new(1,1,1)
@@ -333,7 +386,7 @@ end)
 -- SCROLL LIST (FIXED)
 local scroll = Instance.new("ScrollingFrame", main)
 scroll.Size = UDim2.new(1,-10,1,-210)
-scroll.Position = UDim2.new(0,5,0,240)
+scroll.Position = UDim2.new(0,5,0,280)
 scroll.BackgroundTransparency = 1
 scroll.CanvasSize = UDim2.new(0,0,0,0)
 
