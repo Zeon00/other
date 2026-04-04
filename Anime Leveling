@@ -318,7 +318,7 @@ RunService.Heartbeat:Connect(function()
     if AutoHaki then Remotes.HakiLeveling:FireServer() end
     if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
     if AutoSaiyan then Remotes.RollSaiyanPower:FireServer() end
-    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star4", 10) end
+    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star5", 10) end
     if AutoBreathing then Remotes.RollBreathingPower:FireServer() end
     if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
     if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
