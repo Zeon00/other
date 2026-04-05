@@ -15,27 +15,44 @@ local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
 
 --// SETTINGS
 local AutoRaid = false
-local Aura = false
 local TPEnemy = false
+local Aura = false
 
 local START_CF = CFrame.new(-3035,784,7447)
-
 local RAID_DURATION = 900 -- 15 menit
 local POST_DELAY = 600 -- 10 menit
 
---// DETECT RAID
-local function InRaid()
-    return #EnemyFolder:GetChildren() > 0
+--================ DETECT MAP =================--
+
+-- Event map → untuk AutoRaid
+local function InEventMap()
+    local map = workspace:FindFirstChild("_MAP")
+    return map and map:FindFirstChild("Easter 2026 Event")
 end
 
---// GET NEAREST
+-- Raid map → untuk TP & Aura
+local function InRaid()
+    local map = workspace:FindFirstChild("_MAP")
+    if not map then return false end
+    local gm = map:FindFirstChild("Gamemode")
+    if not gm then return false end
+
+    for _,v in pairs(gm:GetChildren()) do
+        if string.find(v.Name, "Easter Raid") then
+            return true
+        end
+    end
+    return false
+end
+
+--================ FUNCTIONS =================--
+
+-- Get nearest mob
 local function GetNearest()
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
     local root = char.HumanoidRootPart
     local nearest, dist = nil, math.huge
-
     for _,mob in pairs(EnemyFolder:GetChildren()) do
         local hrp = mob:FindFirstChild("HumanoidRootPart")
         if hrp then
@@ -46,44 +63,18 @@ local function GetNearest()
             end
         end
     end
-
     return nearest
 end
 
---// TP
+-- TP to target
 local function TPTo(hrp)
     local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-
-    root.CFrame = hrp.CFrame * CFrame.new(0,0,4)
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0,0,4)
+    end
 end
 
---// TP LOOP (RAID ONLY)
-task.spawn(function()
-    while task.wait(0.2) do
-        if TPEnemy and InRaid() then
-            local target = GetNearest()
-            if target then
-                TPTo(target)
-            end
-        end
-    end
-end)
-
---// AURA LOOP
-task.spawn(function()
-    while task.wait() do
-        if Aura then
-            pcall(function()
-                Remote:Fire("ClickSystem","Execute",Library.Target)
-            end)
-        end
-    end
-end)
-
---// RAID REMOTE
+-- Create raid
 local function CreateRaid()
     RemoteEvent:FireServer({
         {
@@ -99,6 +90,7 @@ local function CreateRaid()
     })
 end
 
+-- Start raid
 local function StartRaid()
     RemoteEvent:FireServer({
         {
@@ -112,7 +104,7 @@ local function StartRaid()
     })
 end
 
---// RETURN
+-- Click return
 local function ClickReturn()
     for i=1,20 do
         local results = player.PlayerGui:FindFirstChild("Results")
@@ -129,10 +121,33 @@ local function ClickReturn()
     end
 end
 
---// AUTO RAID LOOP
+--================ LOOP TP ===================
+task.spawn(function()
+    while task.wait(0.2) do
+        if TPEnemy and InRaid() then
+            local target = GetNearest()
+            if target then
+                TPTo(target)
+            end
+        end
+    end
+end)
+
+--================ LOOP AURA ===================
+task.spawn(function()
+    while task.wait() do
+        if Aura and InRaid() then
+            pcall(function()
+                Remote:Fire("ClickSystem","Execute",Library.Target)
+            end)
+        end
+    end
+end)
+
+--================ AUTO RAID LOOP ===================
 task.spawn(function()
     while task.wait(1) do
-        if AutoRaid then
+        if AutoRaid and InEventMap() then
 
             -- pastikan character ready
             repeat task.wait()
@@ -144,41 +159,38 @@ task.spawn(function()
 
             task.wait(2)
 
-            -- CREATE
+            -- create + start
             CreateRaid()
             task.wait(2)
-
-            -- START
             StartRaid()
 
-            -- ⏳ delay masuk raid (IMPORTANT)
+            -- delay masuk raid
             task.wait(15)
 
-            -- ⏳ durasi raid (15 menit)
-            task.wait(900)
+            -- durasi raid
+            task.wait(RAID_DURATION)
 
-            -- 📊 tunggu results UI muncul
+            -- tunggu results UI
             repeat task.wait(1)
                 local results = player.PlayerGui:FindFirstChild("Results")
             until results and results.Enabled
 
-            -- 🔘 klik return
+            -- klik return
             ClickReturn()
 
-            -- ⏳ tunggu UI hilang (balik lobby)
+            -- tunggu UI hilang
             repeat task.wait(1)
                 local results = player.PlayerGui:FindFirstChild("Results")
             until not results or not results.Enabled
 
-            -- ⏳ delay 10 menit sebelum ulang
-            task.wait(600)
+            -- delay 10 menit sebelum ulang
+            task.wait(POST_DELAY)
 
         end
     end
 end)
 
---================ GUI =================--
-
+--================ GUI ===================
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
@@ -215,5 +227,5 @@ local function Toggle(name,pos,callback)
 end
 
 Toggle("Auto Raid",40,function(v) AutoRaid = v end)
-Toggle("TP Enemy (Raid)",90,function(v) TPEnemy = v end)
+Toggle("TP Enemy (Raid Only)",90,function(v) TPEnemy = v end)
 Toggle("Kill Aura",140,function(v) Aura = v end)
