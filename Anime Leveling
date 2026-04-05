@@ -48,7 +48,7 @@ local AutoBreathing = false
 local AutoProsperity = false
 local AutoGrimoire = false
 local AutoDemon = false
-
+local AutoEaster = false
 local AutoJoinTower = false
 local AutoTPNearest = false
 local AutoGroup = false
@@ -231,7 +231,55 @@ local function Toggle(name, callback)
         callback(state)
     end)
 end
+local function DropdownMulti(title, list)
+    local main = Instance.new("Frame", scrollToggle)
+    main.Size = UDim2.new(0.9,0,0,36)
+    main.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    Instance.new("UICorner", main)
 
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(1,0,1,0)
+    btn.Text = title.." ▼"
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.BackgroundTransparency = 1
+    btn.Font = Enum.Font.Gotham
+    btn.TextScaled = true
+
+    local drop = Instance.new("Frame", scrollToggle)
+    drop.Size = UDim2.new(0.9,0,0,0)
+    drop.BackgroundTransparency = 1
+
+    local layout = Instance.new("UIListLayout", drop)
+    layout.Padding = UDim.new(0,4)
+
+    local opened = false
+
+    btn.MouseButton1Click:Connect(function()
+        opened = not opened
+        drop.Size = opened and UDim2.new(0.9,0,0,#list*32) or UDim2.new(0.9,0,0,0)
+    end)
+
+    for name, data in pairs(list) do
+        local b = Instance.new("TextButton", drop)
+        b.Size = UDim2.new(1,0,0,30)
+        b.Text = name.." OFF"
+        b.BackgroundColor3 = Color3.fromRGB(100,0,0)
+        b.TextColor3 = Color3.new(1,1,1)
+        b.Font = Enum.Font.Gotham
+        b.TextScaled = true
+        Instance.new("UICorner", b)
+
+        local state = false
+
+        b.MouseButton1Click:Connect(function()
+            state = not state
+            b.Text = name.." "..(state and "ON" or "OFF")
+            b.BackgroundColor3 = state and Color3.fromRGB(0,150,0) or Color3.fromRGB(100,0,0)
+
+            data(state)
+        end)
+    end
+end
 -- ENEMY LIST (UNCHANGED)
 local function UpdateEnemyList()
     local enemies = GetEnemies()
@@ -368,6 +416,12 @@ RunService.Heartbeat:Connect(function()
     if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
     if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
     if AutoDemon then Remotes.RollDemonPower:FireServer() end
+	if AutoEaster then
+    game:GetService("ReplicatedStorage")
+        :WaitForChild("Remotes")
+        :WaitForChild("RollEasterPower")
+        :FireServer()
+end
 end)
 
 -- BYPASS
@@ -381,19 +435,22 @@ end
 -- TOGGLES
 Toggle("FAST HIT", function(v) FastHit = v end)
 Toggle("AUTO TP", function(v) AutoTP = v end)
-Toggle("AUTO RAID", function(v) AutoRaid = v end)
 Toggle("BYPASS", function(v) BypassAll = v end)
-Toggle("FRUIT", function(v) AutoFruit = v end)
-Toggle("HAKI", function(v) AutoHaki = v end)
-Toggle("DRAGON", function(v) AutoDragon = v end)
-Toggle("SAIYAN", function(v) AutoSaiyan = v end)
 Toggle("EGG", function(v) AutoEgg = v end)
 
 Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
 Toggle("AUTO GROUP", function(v) AutoGroup = v end)
 
-Toggle("BREATHING", function(v) AutoBreathing = v end)
-Toggle("PROSPERITY", function(v) AutoProsperity = v end)
-Toggle("GRIMOIRE", function(v) AutoGrimoire = v end)
-Toggle("DEMON", function(v) AutoDemon = v end)
+DropdownMulti("AUTO POWERS", {
+	["Fruit"] = function(v) AutoDragon = v end,
+    ["Haki"] = function(v) AutoSaiyan = v end,
+    ["Dragon"] = function(v) AutoDragon = v end,
+    ["Saiyan"] = function(v) AutoSaiyan = v end,
+    ["Breathing"] = function(v) AutoBreathing = v end,
+    ["Prosperity"] = function(v) AutoProsperity = v end,
+    ["Grimoire"] = function(v) AutoGrimoire = v end,
+    ["Demon"] = function(v) AutoDemon = v end,
+    ["Easter"] = function(v) AutoEaster = v end,
+})
+
