@@ -195,7 +195,7 @@ local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,220,0,180)
+main.Size = UDim2.new(0,220,0,220)
 main.Position = UDim2.new(1,-230,0.4,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 main.Active = true
@@ -207,7 +207,55 @@ title.Size = UDim2.new(1,0,0,30)
 title.Text = "RAID PANEL"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Position = UDim2.new(0,10,0,0)
 
+-- CLOSE BUTTON
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-35,0,0)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(200,50,50)
+close.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", close)
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+-- MINIMIZE BUTTON
+local mini = Instance.new("TextButton", main)
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-70,0,0)
+mini.Text = "-"
+mini.BackgroundColor3 = Color3.fromRGB(80,80,80)
+mini.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", mini)
+
+-- ICON BUTTON (KALAU MINIMIZE)
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(1,-60,0.5,0)
+icon.Text = "OPEN"
+icon.Visible = false
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+icon.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", icon)
+
+-- FUNCTION MINIMIZE
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+    icon.Visible = true
+end)
+
+-- FUNCTION BALIKIN
+icon.MouseButton1Click:Connect(function()
+    main.Visible = true
+    icon.Visible = false
+end)
+
+--================ TOGGLES ===================
 local function Toggle(name,pos,callback)
     local b = Instance.new("TextButton", main)
     b.Size = UDim2.new(1,-20,0,40)
@@ -226,6 +274,6 @@ local function Toggle(name,pos,callback)
     end)
 end
 
-Toggle("Auto Raid",40,function(v) AutoRaid = v end)
-Toggle("TP Enemy (Raid Only)",90,function(v) TPEnemy = v end)
-Toggle("Kill Aura",140,function(v) Aura = v end)
+Toggle("Auto Raid",50,function(v) AutoRaid = v end)
+Toggle("TP Enemy (Raid Only)",100,function(v) TPEnemy = v end)
+Toggle("Kill Aura",150,function(v) Aura = v end)
