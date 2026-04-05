@@ -236,25 +236,25 @@ end
 
 local function DropdownMulti(title, list)
     local main = Instance.new("Frame", scrollToggle)
-    main.Size = UDim2.new(0.9,0,0,0)
+    main.Size = UDim2.new(0.9,0,0,36)
     main.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    main.AutomaticSize = Enum.AutomaticSize.Y
     Instance.new("UICorner", main)
 
     local btn = Instance.new("TextButton", main)
-    btn.Size = UDim2.new(1,0,0,36)
+    btn.Size = UDim2.new(1,0,1,0)
     btn.Text = title.." ▼"
     btn.TextColor3 = Color3.new(1,1,1)
     btn.BackgroundTransparency = 1
     btn.Font = Enum.Font.Gotham
     btn.TextScaled = true
 
-    local drop = Instance.new("Frame", main)
-    drop.Position = UDim2.new(0,0,0,36)
-    drop.Size = UDim2.new(1,0,0,0)
-    drop.BackgroundTransparency = 1
-    drop.AutomaticSize = Enum.AutomaticSize.Y
+    -- FLOATING DROPDOWN (ke GUI utama, bukan scroll)
+    local drop = Instance.new("Frame", gui)
+    drop.Size = UDim2.new(0,200,0,0)
+    drop.BackgroundColor3 = Color3.fromRGB(30,30,30)
     drop.Visible = false
+    drop.ZIndex = 10
+    Instance.new("UICorner", drop)
 
     local layout = Instance.new("UIListLayout", drop)
     layout.Padding = UDim.new(0,4)
@@ -265,8 +265,13 @@ local function DropdownMulti(title, list)
         opened = not opened
         drop.Visible = opened
 
-        task.wait() -- force refresh
-        scrollToggle.CanvasSize = UDim2.new(0,0,0, layout1.AbsoluteContentSize.Y + 10)
+        if opened then
+            -- posisi dropdown ngikut tombol
+            local pos = main.AbsolutePosition
+            drop.Position = UDim2.new(0, pos.X, 0, pos.Y + main.AbsoluteSize.Y)
+
+            drop.Size = UDim2.new(0, main.AbsoluteSize.X, 0, #list * 32)
+        end
     end)
 
     for name, data in pairs(list) do
@@ -277,6 +282,7 @@ local function DropdownMulti(title, list)
         b.TextColor3 = Color3.new(1,1,1)
         b.Font = Enum.Font.Gotham
         b.TextScaled = true
+        b.ZIndex = 11
         Instance.new("UICorner", b)
 
         local state = false
