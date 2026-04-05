@@ -10,9 +10,6 @@ local Remote = Library.Remote
 --// REMOTE
 local RemoteEvent = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
 
---// ENEMY
-local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
-
 --// SETTINGS
 local AutoRaid = false
 local TPEnemy = false
@@ -23,50 +20,60 @@ local RAID_DURATION = 900 -- 15 menit
 local POST_DELAY = 600 -- 10 menit
 
 --================ DETECT MAP =================--
-
--- Event map → untuk AutoRaid
 local function InEventMap()
     local map = workspace:FindFirstChild("_MAP")
     return map and map:FindFirstChild("Easter 2026 Event")
 end
 
--- Raid map → untuk TP & Aura
-local function InRaid()
+local function GetRaidInstance()
     local map = workspace:FindFirstChild("_MAP")
-    if not map then return false end
+    if not map then return end
     local gm = map:FindFirstChild("Gamemode")
-    if not gm then return false end
-
+    if not gm then return end
     for _,v in pairs(gm:GetChildren()) do
         if string.find(v.Name, "Easter Raid") then
-            return true
+            return v
         end
     end
-    return false
 end
 
---================ FUNCTIONS =================--
+local function InRaid()
+    return GetRaidInstance() ~= nil
+end
 
--- Get nearest mob
+--================ ENEMY FUNCTIONS ===================
+local function GetRaidEnemyFolder()
+    local raid = GetRaidInstance()
+    if not raid then return end
+    local enemies = raid:FindFirstChild("_ENEMIES")
+    if enemies then
+        return enemies:FindFirstChild("Client") or enemies
+    end
+end
+
 local function GetNearest()
+    local folder = GetRaidEnemyFolder()
+    if not folder then return end
+
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
     local root = char.HumanoidRootPart
     local nearest, dist = nil, math.huge
-    for _,mob in pairs(EnemyFolder:GetChildren()) do
+
+    for _,mob in pairs(folder:GetChildren()) do
         local hrp = mob:FindFirstChild("HumanoidRootPart")
         if hrp then
             local d = (hrp.Position - root.Position).Magnitude
-            if d < dist then
+            if d < dist and d < 300 then -- ignore mob jauh
                 dist = d
                 nearest = hrp
             end
         end
     end
+
     return nearest
 end
 
--- TP to target
 local function TPTo(hrp)
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -74,7 +81,7 @@ local function TPTo(hrp)
     end
 end
 
--- Create raid
+--================ RAID FUNCTIONS ===================
 local function CreateRaid()
     RemoteEvent:FireServer({
         {
@@ -90,7 +97,6 @@ local function CreateRaid()
     })
 end
 
--- Start raid
 local function StartRaid()
     RemoteEvent:FireServer({
         {
@@ -104,7 +110,6 @@ local function StartRaid()
     })
 end
 
--- Click return
 local function ClickReturn()
     for i=1,20 do
         local results = player.PlayerGui:FindFirstChild("Results")
@@ -148,15 +153,13 @@ end)
 task.spawn(function()
     while task.wait(1) do
         if AutoRaid and InEventMap() then
-
-            -- pastikan character ready
+            -- pastikan char ready
             repeat task.wait()
                 local c = player.Character
             until c and c:FindFirstChild("HumanoidRootPart")
 
             local char = player.Character
             char.HumanoidRootPart.CFrame = START_CF
-
             task.wait(2)
 
             -- create + start
@@ -170,22 +173,11 @@ task.spawn(function()
             -- durasi raid
             task.wait(RAID_DURATION)
 
-            -- tunggu results UI
-            repeat task.wait(1)
-                local results = player.PlayerGui:FindFirstChild("Results")
-            until results and results.Enabled
-
             -- klik return
             ClickReturn()
 
-            -- tunggu UI hilang
-            repeat task.wait(1)
-                local results = player.PlayerGui:FindFirstChild("Results")
-            until not results or not results.Enabled
-
             -- delay 10 menit sebelum ulang
             task.wait(POST_DELAY)
-
         end
     end
 end)
@@ -202,6 +194,7 @@ main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
 
+-- TITLE
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
 title.Text = "RAID PANEL"
@@ -243,13 +236,11 @@ icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
 icon.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", icon)
 
--- FUNCTION MINIMIZE
+-- FUNCTION MINIMIZE / BALIKIN
 mini.MouseButton1Click:Connect(function()
     main.Visible = false
     icon.Visible = true
 end)
-
--- FUNCTION BALIKIN
 icon.MouseButton1Click:Connect(function()
     main.Visible = true
     icon.Visible = false
