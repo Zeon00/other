@@ -5,6 +5,8 @@ local VirtualUser = game:GetService("VirtualUser")
 
 local player = Players.LocalPlayer
 local Remote = RS:WaitForChild("Bridge")
+local remoteFolder = RS:FindFirstChild("ffrostflame_bridgenet2@1.0.0")
+local remote2 = remoteFolder and remoteFolder:FindFirstChild("dataRemoteEvent")
 
 --// STATES
 local AutoHit = false  
@@ -17,6 +19,8 @@ local AutoEnchant = false
 local AutoWorldBoss = false
 local AutoPortal = false -- 🔥 TAMBAHAN
 local SpoofFastClick = false
+local AutoTP2 = false
+local AutoMagnet = false
 local SelectedSwordName = ""
 
 local lastEnemy = nil
@@ -238,6 +242,37 @@ local function TeleportToEnemy(mob)
     root.CFrame = CFrame.lookAt(safePos, pos)
 end
 
+--// TP SIMPLE (VERSI CEPAT)
+local function GetEnemySimple()
+    local enemies = workspace:FindFirstChild("Client") 
+        and workspace.Client:FindFirstChild("Enemies")
+
+    if not enemies then return end
+
+    local world = enemies:FindFirstChild("World")
+    if not world then return end
+
+    for _, e in pairs(world:GetChildren()) do
+        local hrp = e:FindFirstChild("HumanoidRootPart")
+        local hum = e:FindFirstChildOfClass("Humanoid")
+
+        if hrp and hum and hum.Health > 0 then
+            return hrp
+        end
+    end
+end
+
+--// MAGNET DROP
+local function CollectDrops()
+    if not remote2 then return end
+
+    local debris = workspace:FindFirstChild("Debris")
+    if not debris then return end
+
+    for _, drop in pairs(debris:GetChildren()) do
+        remote2:FireServer("Drops","Collect",drop.Name)
+    end
+end
 ----------------------------------------------------------------
 -- WORLD BOSS SYSTEM
 ----------------------------------------------------------------
@@ -368,6 +403,26 @@ task.spawn(function()
     while task.wait(10) do
         if AutoRankUp then
             Remote:FireServer("RankUp","Evolve")
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait() do
+        local root = GetRoot()
+        if not root then continue end
+
+        -- 🔥 TP VERSI CEPAT
+        if AutoTP2 then
+            local target = GetEnemySimple()
+            if target then
+                root.CFrame = target.CFrame * CFrame.new(0,0,3)
+            end
+        end
+
+        -- 🔥 MAGNET
+        if AutoMagnet then
+            CollectDrops()
         end
     end
 end)
@@ -606,6 +661,13 @@ Toggle("Auto Enchant", function(v) AutoEnchant=v end)
 Toggle("Auto Next World", function(v) AutoPortal=v end) -- 🔥 MASUK DI SINI
 Toggle("Fast Click (Spoof)", function(v)
     SetFastClick(v)
+end)
+Toggle("Auto TP (Fast)", function(v)
+    AutoTP2 = v
+end)
+
+Toggle("Auto Magnet", function(v)
+    AutoMagnet = v
 end)
 local box = Instance.new("TextBox", left)
 box.Size = UDim2.new(1,-10,0,36)
