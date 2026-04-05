@@ -196,7 +196,9 @@ scrollToggle.BackgroundTransparency = 1
 
 local layout1 = Instance.new("UIListLayout", scrollToggle)
 layout1.Padding = UDim.new(0,6)
-
+layout1:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scrollToggle.CanvasSize = UDim2.new(0,0,0, layout1.AbsoluteContentSize.Y + 10)
+end)
 -- RIGHT
 local right = Instance.new("Frame", frame)
 right.Size = UDim2.new(0.5,0,1,-35)
@@ -234,12 +236,13 @@ end
 
 local function DropdownMulti(title, list)
     local main = Instance.new("Frame", scrollToggle)
-    main.Size = UDim2.new(0.9,0,0,36)
+    main.Size = UDim2.new(0.9,0,0,0)
     main.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    main.AutomaticSize = Enum.AutomaticSize.Y
     Instance.new("UICorner", main)
 
     local btn = Instance.new("TextButton", main)
-    btn.Size = UDim2.new(1,0,1,0)
+    btn.Size = UDim2.new(1,0,0,36)
     btn.Text = title.." ▼"
     btn.TextColor3 = Color3.new(1,1,1)
     btn.BackgroundTransparency = 1
@@ -247,9 +250,11 @@ local function DropdownMulti(title, list)
     btn.TextScaled = true
 
     local drop = Instance.new("Frame", main)
-    drop.Position = UDim2.new(0,0,1,0)
+    drop.Position = UDim2.new(0,0,0,36)
     drop.Size = UDim2.new(1,0,0,0)
     drop.BackgroundTransparency = 1
+    drop.AutomaticSize = Enum.AutomaticSize.Y
+    drop.Visible = false
 
     local layout = Instance.new("UIListLayout", drop)
     layout.Padding = UDim.new(0,4)
@@ -258,10 +263,10 @@ local function DropdownMulti(title, list)
 
     btn.MouseButton1Click:Connect(function()
         opened = not opened
+        drop.Visible = opened
 
-        local size = opened and (#list * 32) or 0
-        drop.Size = UDim2.new(1,0,0,size)
-        main.Size = UDim2.new(0.9,0,0,36 + size)
+        task.wait() -- force refresh
+        scrollToggle.CanvasSize = UDim2.new(0,0,0, layout1.AbsoluteContentSize.Y + 10)
     end)
 
     for name, data in pairs(list) do
@@ -448,8 +453,8 @@ Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
 Toggle("AUTO GROUP", function(v) AutoGroup = v end)
 
 DropdownMulti("AUTO POWERS", {
-	["Fruit"] = function(v) AutoFruit = v end,
-	["Haki"] = function(v) AutoHaki = v end,
+    ["Fruit"] = function(v) AutoFruit = v end,
+    ["Haki"] = function(v) AutoHaki = v end,
     ["Dragon"] = function(v) AutoDragon = v end,
     ["Saiyan"] = function(v) AutoSaiyan = v end,
     ["Breathing"] = function(v) AutoBreathing = v end,
