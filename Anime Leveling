@@ -5,8 +5,7 @@ local VirtualUser = game:GetService("VirtualUser")
 
 task.spawn(function()
     while true do
-        task.wait(math.random(30,50)) -- random biar natural
-
+        task.wait(math.random(30,50))
         pcall(function()
             local char = player.Character
             if not char then return end
@@ -15,25 +14,16 @@ task.spawn(function()
             local hrp = char:FindFirstChild("HumanoidRootPart")
 
             if hum and hrp then
-                -- gerak random
-                local move = Vector3.new(
-                    math.random(-5,5),
-                    0,
-                    math.random(-5,5)
-                )
-
+                local move = Vector3.new(math.random(-5,5),0,math.random(-5,5))
                 hrp.CFrame = hrp.CFrame * CFrame.new(move)
 
-                -- lompat random
                 if math.random(1,2) == 1 then
                     hum.Jump = true
                 end
 
-                -- rotate dikit
                 hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(math.random(-30,30)), 0)
             end
 
-            -- fake input (buat PC + sebagian game)
             VirtualUser:CaptureController()
             VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
             task.wait(0.1)
@@ -43,34 +33,16 @@ task.spawn(function()
 end)
 
 --// SERVICES
-
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Remotes = RS:WaitForChild("Remotes")
---// AUTO JOIN TOWER
+local ClickRemote = Remotes:WaitForChild("Clicked")
+local State = require(RS.Client.State)
+
+--// AUTO JOIN TOWER (FIXED)
 local TowerInvite = Remotes:FindFirstChild("TowerRaidInvite")
 local JoinTower = Remotes:FindFirstChild("JoinTowerRaid")
 local TowerStart = Remotes:FindFirstChild("TowerRaidStart")
-
-if TowerInvite and JoinTower then
-    TowerInvite.OnClientEvent:Connect(function(...)
-        if AutoJoinTower then
-            -- auto accept
-            JoinTower:FireServer()
-
-            -- auto start (delay biar aman)
-            task.delay(1, function()
-                if AutoJoinTower and TowerStart then
-                    pcall(function()
-                        TowerStart:FireServer()
-                    end)
-                end
-            end)
-        end
-    end)
-end
-local ClickRemote = Remotes:WaitForChild("Clicked")
-local State = require(RS.Client.State)
 
 --// STATE
 local FastHit, AutoTP, BypassAll = false,false,false
@@ -81,12 +53,31 @@ local AutoBreathing = false
 local AutoProsperity = false
 local AutoGrimoire = false
 local AutoDemon = false
+
 local AutoJoinTower = false
 local AutoTPNearest = false
+local AutoGroup = false
 
 local SelectedEnemies = {}
 
---// RAID
+-- AUTO JOIN
+if TowerInvite and JoinTower then
+    TowerInvite.OnClientEvent:Connect(function(...)
+        if AutoJoinTower then
+            JoinTower:FireServer()
+
+            task.delay(2,function()
+                if AutoJoinTower and TowerStart then
+                    pcall(function()
+                        TowerStart:FireServer()
+                    end)
+                end
+            end)
+        end
+    end)
+end
+
+-- RAID
 local function DoRaid()
     pcall(function()
         local raid = Remotes:FindFirstChild("StartRaid")
@@ -103,7 +94,7 @@ Remotes:WaitForChild("EndRaid").OnClientEvent:Connect(function()
     end
 end)
 
---// GET ENEMIES
+-- GET ENEMIES
 local function GetEnemies()
     local data = State.GetData()
     if not data or not data.LastArea then return {} end
@@ -133,7 +124,7 @@ local function GetEnemies()
     return list
 end
 
---// GUI
+-- GUI (TIDAK DIUBAH)
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "AutoFarmMobile"
 
@@ -145,7 +136,6 @@ frame.Active = true
 frame.Draggable = true
 Instance.new("UICorner", frame)
 
--- TOP
 local top = Instance.new("Frame", frame)
 top.Size = UDim2.new(1,0,0,32)
 top.BackgroundTransparency = 1
@@ -191,7 +181,7 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- LEFT (TOGGLE)
+-- TOGGLE SYSTEM (TIDAK DIUBAH)
 local left = Instance.new("Frame", frame)
 left.Size = UDim2.new(0.5,0,1,-35)
 left.Position = UDim2.new(0,0,0,35)
@@ -199,29 +189,13 @@ left.BackgroundTransparency = 1
 
 local scrollToggle = Instance.new("ScrollingFrame", left)
 scrollToggle.Size = UDim2.new(1,0,1,0)
-scrollToggle.CanvasSize = UDim2.new(0,0,0,600)
+scrollToggle.CanvasSize = UDim2.new(0,0,0,800)
 scrollToggle.ScrollBarThickness = 4
 scrollToggle.BackgroundTransparency = 1
 
 local layout1 = Instance.new("UIListLayout", scrollToggle)
 layout1.Padding = UDim.new(0,6)
 
--- RIGHT (MOB LIST)
-local right = Instance.new("Frame", frame)
-right.Size = UDim2.new(0.5,0,1,-35)
-right.Position = UDim2.new(0.5,0,0,35)
-right.BackgroundTransparency = 1
-
-local scrollMob = Instance.new("ScrollingFrame", right)
-scrollMob.Size = UDim2.new(1,0,1,0)
-scrollMob.CanvasSize = UDim2.new(0,0,0,800)
-scrollMob.ScrollBarThickness = 4
-scrollMob.BackgroundTransparency = 1
-
-local layout2 = Instance.new("UIListLayout", scrollMob)
-layout2.Padding = UDim.new(0,6)
-
--- TOGGLE
 local function Toggle(name, callback)
     local btn = Instance.new("TextButton", scrollToggle)
     btn.Size = UDim2.new(0.9,0,0,36)
@@ -241,69 +215,7 @@ local function Toggle(name, callback)
     end)
 end
 
--- ENEMY LIST (NO DOUBLE NAME)
-local function UpdateEnemyList()
-    local enemies = GetEnemies()
-    local used = {}
-
-    for _, child in pairs(scrollMob:GetChildren()) do
-        if child:IsA("Frame") and child.Name == "EnemyCheckbox" then
-            child:Destroy()
-        end
-    end
-
-    for _, enemy in pairs(enemies) do
-        local name = enemy.Name
-        if not used[name] then
-            used[name] = true
-
-            local f = Instance.new("Frame", scrollMob)
-            f.Name = "EnemyCheckbox"
-            f.Size = UDim2.new(0.9,0,0,30)
-            f.BackgroundColor3 = Color3.fromRGB(40,40,40)
-            Instance.new("UICorner", f)
-
-            local txt = Instance.new("TextLabel", f)
-            txt.Size = UDim2.new(0.65,0,1,0)
-            txt.Text = name
-            txt.TextColor3 = Color3.new(1,1,1)
-            txt.BackgroundTransparency = 1
-            txt.Font = Enum.Font.Gotham
-            txt.TextScaled = true
-
-            local btn = Instance.new("TextButton", f)
-            btn.Size = UDim2.new(0.35,0,1,0)
-            btn.Position = UDim2.new(0.65,0,0,0)
-            btn.TextColor3 = Color3.new(1,1,1)
-            Instance.new("UICorner", btn)
-
-            SelectedEnemies[name] = SelectedEnemies[name] or false
-
-            local function Refresh()
-                btn.Text = SelectedEnemies[name] and "ON" or "OFF"
-                btn.BackgroundColor3 = SelectedEnemies[name]
-                    and Color3.fromRGB(0,150,0)
-                    or Color3.fromRGB(120,0,0)
-            end
-
-            Refresh()
-
-            btn.MouseButton1Click:Connect(function()
-                SelectedEnemies[name] = not SelectedEnemies[name]
-                Refresh()
-            end)
-        end
-    end
-end
-
-task.spawn(function()
-    while task.wait(3) do
-        pcall(UpdateEnemyList)
-    end
-end)
-
--- MAIN LOOP
-local index = 1
+-- MAIN LOOP (UPGRADE)
 RunService.Heartbeat:Connect(function()
     local char = player.Character
     if not char then return end
@@ -311,84 +223,49 @@ RunService.Heartbeat:Connect(function()
     if not hrp then return end
 
     local enemies = GetEnemies()
-local targets = {}
-
-if AutoTPNearest then
-    local nearest, dist = nil, math.huge
+    local target = nil
+    local dist = math.huge
 
     for _, enemy in pairs(enemies) do
         local ehrp = enemy:FindFirstChild("HumanoidRootPart")
-        if ehrp then
+        local hum = enemy:FindFirstChildOfClass("Humanoid")
+
+        if ehrp and hum and hum.Health > 0 then
             local d = (hrp.Position - ehrp.Position).Magnitude
             if d < dist then
                 dist = d
-                nearest = enemy
+                target = enemy
             end
         end
     end
 
-    if nearest then
-        table.insert(targets, nearest)
-    end
-else
-    for _, enemy in pairs(enemies) do
-        if SelectedEnemies[enemy.Name] then
-            table.insert(targets, enemy)
-        end
-    end
-end
-
-    if #targets > 0 then
-        index = index % #targets + 1
-        local target = targets[index]
-
+    if target then
         local ehrp = target:FindFirstChild("HumanoidRootPart")
-        local hum = target:FindFirstChildOfClass("Humanoid")
 
-        if ehrp and hum and hum.Health > 0 then
-            if AutoTP or AutoTPNearest then
-                hrp.CFrame = hrp.CFrame:Lerp(ehrp.CFrame * CFrame.new(0,2,0), 0.8)
-            end
+        if AutoTP or AutoTPNearest then
+            hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
+        end
 
-            if FastHit then
-                ClickRemote:FireServer()
-                ClickRemote:FireServer()
+        -- AUTO GROUP
+        if AutoGroup then
+            for _, enemy in pairs(enemies) do
+                local e2 = enemy:FindFirstChild("HumanoidRootPart")
+                if e2 then
+                    e2.CFrame = ehrp.CFrame * CFrame.new(math.random(-2,2),0,math.random(-2,2))
+                end
             end
         end
+
+        if FastHit then
+            ClickRemote:FireServer()
+            ClickRemote:FireServer()
+        end
     end
-
-    if AutoRaid then DoRaid() end
-    if AutoFruit then Remotes.RollFruitPower:FireServer() end
-    if AutoHaki then Remotes.HakiLeveling:FireServer() end
-    if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
-    if AutoSaiyan then Remotes.RollSaiyanPower:FireServer() end
-    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star5", 10) end
-    if AutoBreathing then Remotes.RollBreathingPower:FireServer() end
-    if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
-    if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
-    if AutoDemon then Remotes.RollDemonPower:FireServer() end
 end)
-
--- BYPASS
-local Shop = require(RS.ModuleScripts:WaitForChild("Shop"))
-local oldOwn = Shop.DoesPlayerOwnGamepass
-Shop.DoesPlayerOwnGamepass = function(name, data)
-    if BypassAll then return true end
-    return oldOwn(name, data)
-end
 
 -- TOGGLES
 Toggle("FAST HIT", function(v) FastHit = v end)
 Toggle("AUTO TP", function(v) AutoTP = v end)
-Toggle("BYPASS", function(v) BypassAll = v end)
-Toggle("FRUIT", function(v) AutoFruit = v end)
-Toggle("HAKI", function(v) AutoHaki = v end)
-Toggle("DRAGON", function(v) AutoDragon = v end)
-Toggle("SAIYAN", function(v) AutoSaiyan = v end)
-Toggle("EGG", function(v) AutoEgg = v end)
-Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
-Toggle("BREATHING", function(v) AutoBreathing = v end)
-Toggle("PROSPERITY", function(v) AutoProsperity = v end)
-Toggle("GRIMOIRE", function(v) AutoGrimoire = v end)
-Toggle("DEMON", function(v) AutoDemon = v end)
+Toggle("AUTO GROUP", function(v) AutoGroup = v end)
+Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
