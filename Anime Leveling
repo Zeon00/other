@@ -231,6 +231,7 @@ local function Toggle(name, callback)
         callback(state)
     end)
 end
+
 local function DropdownMulti(title, list)
     local main = Instance.new("Frame", scrollToggle)
     main.Size = UDim2.new(0.9,0,0,36)
@@ -245,8 +246,9 @@ local function DropdownMulti(title, list)
     btn.Font = Enum.Font.Gotham
     btn.TextScaled = true
 
-    local drop = Instance.new("Frame", scrollToggle)
-    drop.Size = UDim2.new(0.9,0,0,0)
+    local drop = Instance.new("Frame", main)
+    drop.Position = UDim2.new(0,0,1,0)
+    drop.Size = UDim2.new(1,0,0,0)
     drop.BackgroundTransparency = 1
 
     local layout = Instance.new("UIListLayout", drop)
@@ -256,7 +258,10 @@ local function DropdownMulti(title, list)
 
     btn.MouseButton1Click:Connect(function()
         opened = not opened
-        drop.Size = opened and UDim2.new(0.9,0,0,#list*32) or UDim2.new(0.9,0,0,0)
+
+        local size = opened and (#list * 32) or 0
+        drop.Size = UDim2.new(1,0,0,size)
+        main.Size = UDim2.new(0.9,0,0,36 + size)
     end)
 
     for name, data in pairs(list) do
@@ -443,8 +448,8 @@ Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
 Toggle("AUTO GROUP", function(v) AutoGroup = v end)
 
 DropdownMulti("AUTO POWERS", {
-	["Fruit"] = function(v) AutoDragon = v end,
-    ["Haki"] = function(v) AutoSaiyan = v end,
+	["Fruit"] = function(v) AutoFruit = v end,
+	["Haki"] = function(v) AutoHaki = v end,
     ["Dragon"] = function(v) AutoDragon = v end,
     ["Saiyan"] = function(v) AutoSaiyan = v end,
     ["Breathing"] = function(v) AutoBreathing = v end,
