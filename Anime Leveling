@@ -43,6 +43,10 @@ task.spawn(function()
 end)
 
 --// SERVICES
+
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local Remotes = RS:WaitForChild("Remotes")
 --// AUTO JOIN TOWER
 local TowerInvite = Remotes:FindFirstChild("TowerRaidInvite")
 local JoinTower = Remotes:FindFirstChild("JoinTowerRaid")
@@ -65,9 +69,6 @@ if TowerInvite and JoinTower then
         end
     end)
 end
-local RS = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local Remotes = RS:WaitForChild("Remotes")
 local ClickRemote = Remotes:WaitForChild("Clicked")
 local State = require(RS.Client.State)
 
@@ -345,7 +346,7 @@ end
         local hum = target:FindFirstChildOfClass("Humanoid")
 
         if ehrp and hum and hum.Health > 0 then
-            if AutoTP then
+            if AutoTP or AutoTPNearest then
                 hrp.CFrame = hrp.CFrame:Lerp(ehrp.CFrame * CFrame.new(0,2,0), 0.8)
             end
 
