@@ -130,6 +130,8 @@ end)
 -- ENEMY LIST
 ----------------------------------------------------------------
 
+--================ FIX ENEMY LIST =================--
+
 local function GetAllEnemyNames()
     local list = {}
 
@@ -150,10 +152,8 @@ local function GetAllEnemyNames()
     table.sort(list)
     return list
 end
+--================ FIX SELECT SYSTEM =================--
 
-----------------------------------------------------------------
--- TARGET
-----------------------------------------------------------------
 local function GetEnemyDisplayName(mob)
     local hrp = mob:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -164,6 +164,34 @@ local function GetEnemyDisplayName(mob)
         end
     end
 end
+
+local function GetMobByDisplayName(name)
+    local enemies = workspace:FindFirstChild("Client") 
+        and workspace.Client:FindFirstChild("Enemies")
+
+    if not enemies then return end
+
+    for _, folder in pairs(enemies:GetChildren()) do
+        for _, world in pairs(folder:GetChildren()) do
+            for _, mob in pairs(world:GetChildren()) do
+                local hrp = mob:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    for _, v in pairs(hrp:GetDescendants()) do
+                        if v.Name == "EnemyName" and v:IsA("TextLabel") then
+                            if v.Text == name then
+                                return mob
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+----------------------------------------------------------------
+-- TARGET
+----------------------------------------------------------------
+
 local function GetNearestEnemy()
     local root = GetRoot()
     if not root then return end
@@ -183,6 +211,8 @@ local function GetNearestEnemy()
                 if hp and hp > 0 and not died then
 
                     local valid = true
+
+--================ FIX FILTER SELECT =================--
 
 if UseSelected then
     local name = GetEnemyDisplayName(mob)
@@ -369,10 +399,23 @@ task.spawn(function()
 
         local target = GetNearestEnemy()
         if target then
-            if EnemyTP and lastEnemy ~= target.Enemy then
-                TeleportToEnemy(target.Enemy)
-                lastEnemy = target.Enemy
+--================ FIX TP =================--
+
+if EnemyTP then
+    if UseSelected then
+        for name,_ in next, SelectedEnemies do
+            local mob = GetMobByDisplayName(name)
+            if mob then
+                TeleportToEnemy(mob)
             end
+        end
+    else
+        if lastEnemy ~= target.Enemy then
+            TeleportToEnemy(target.Enemy)
+            lastEnemy = target.Enemy
+        end
+    end
+end
 
             local attackType = FixType(target.Type)
 
@@ -424,19 +467,19 @@ end)
 task.spawn(function()
     while task.wait() do
         local root = GetRoot()
-        if not root then continue end
-
-        -- 🔥 TP VERSI CEPAT
-        if AutoTP2 then
-            local target = GetEnemySimple()
-            if target then
-                root.CFrame = target.CFrame * CFrame.new(0,0,3)
+        if root then
+            -- 🔥 TP VERSI CEPAT
+            if AutoTP2 then
+                local target = GetEnemySimple()
+                if target then
+                    root.CFrame = target.CFrame * CFrame.new(0,0,3)
+                end
             end
-        end
 
-        -- 🔥 MAGNET
-        if AutoMagnet then
-            CollectDrops()
+            -- 🔥 MAGNET
+            if AutoMagnet then
+                CollectDrops()
+            end
         end
     end
 end)
@@ -755,7 +798,23 @@ local function RefreshEnemyList()
 end
 
 RefreshEnemyList()
+task.spawn(function()
+    local lastMap = ""
 
+    while task.wait(2) do
+        local currentMap = GetCurrentMap()
+
+        if currentMap and currentMap ~= lastMap then
+            lastMap = currentMap
+
+            table.clear(SelectedEnemies)
+            lastEnemy = nil
+            RefreshEnemyList()
+
+            print("REFRESH LIST MAP:", currentMap)
+        end
+    end
+end)
 
 
 --================ AUTO RAID FULL (PASTE SAJA) =================--
