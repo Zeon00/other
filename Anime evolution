@@ -132,13 +132,17 @@ end)
 
 local function GetAllEnemyNames()
     local list = {}
-    local enemies = workspace:FindFirstChild("Client") and workspace.Client:FindFirstChild("Enemies")
+
+    local enemies = workspace:FindFirstChild("Client") 
+        and workspace.Client:FindFirstChild("Enemies")
+
     if not enemies then return list end
 
     for _, v in pairs(enemies:GetDescendants()) do
-        if v.Name and v.Parent and v.Parent.Name == "HumanoidRootPart" then
-            if not table.find(list, v.Name) then
-                table.insert(list, v.Name)
+        if v.Name == "EnemyName" and v:IsA("TextLabel") then
+            local name = v.Text
+            if name ~= "" and not table.find(list, name) then
+                table.insert(list, name)
             end
         end
     end
@@ -150,7 +154,16 @@ end
 ----------------------------------------------------------------
 -- TARGET
 ----------------------------------------------------------------
+local function GetEnemyDisplayName(mob)
+    local hrp = mob:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
 
+    for _, v in pairs(hrp:GetDescendants()) do
+        if v.Name == "EnemyName" and v:IsA("TextLabel") then
+            return v.Text
+        end
+    end
+end
 local function GetNearestEnemy()
     local root = GetRoot()
     if not root then return end
@@ -171,11 +184,12 @@ local function GetNearestEnemy()
 
                     local valid = true
 
-                    if UseSelected then
-                        if not SelectedEnemies[mob.Name] then
-                            valid = false
-                        end
-                    end
+if UseSelected then
+    local name = GetEnemyDisplayName(mob)
+    if not name or not SelectedEnemies[name] then
+        valid = false
+    end
+end
 
                     if valid then
                         local pos = mob.Position or (mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position)
