@@ -1,4 +1,4 @@
-kenapa numpuk togglenya --// ANTI AFK HARDCORE (ANDROID SAFE)
+--// ANTI AFK HARDCORE (ANDROID SAFE)
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local VirtualUser = game:GetService("VirtualUser")
