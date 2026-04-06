@@ -477,7 +477,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait() do
+    while task.wait(0.15) do
         local root = GetRoot()
         if root then
             -- 🔥 TP VERSI CEPAT
@@ -489,9 +489,21 @@ task.spawn(function()
             end
 
             -- 🔥 MAGNET
-            if AutoMagnet then
-                CollectDrops()
+if AutoMagnet then
+    local root = GetRoot()
+    local debris = workspace:FindFirstChild("Debris")
+
+    if root and debris then
+        for _, drop in pairs(debris:GetChildren()) do
+            if drop:IsA("BasePart") then
+                -- paksa ke player
+                drop.CFrame = root.CFrame
             end
+        end
+    end
+
+    CollectDrops()
+end
         end
     end
 end)
@@ -608,6 +620,7 @@ task.spawn(function()
         end
     end
 end)
+
 ----------------------------------------------------------------
 -- ANTI AFK
 ----------------------------------------------------------------
