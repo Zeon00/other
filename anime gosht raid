@@ -1,4 +1,10 @@
 --// SERVICES
+local VirtualUser = game:GetService("VirtualUser")
+
+game.Players.LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
@@ -172,13 +178,16 @@ task.spawn(function()
     while task.wait(1) do
         if AutoRaid and InEventMap() then
 
+            -- tunggu karakter ready
             repeat task.wait()
                 local c = player.Character
             until c and c:FindFirstChild("HumanoidRootPart")
 
+            -- TP ke start
             player.Character.HumanoidRootPart.CFrame = START_CF
             task.wait(2)
 
+            -- buat & start raid
             CreateRaid()
             task.wait(2)
             StartRaid()
@@ -189,10 +198,38 @@ task.spawn(function()
             -- durasi raid
             task.wait(RAID_DURATION)
 
+            -- selesai raid → return
             ClickReturn()
 
-            -- delay sebelum ulang
-            task.wait(POST_DELAY)
+            -- tunggu respawn
+            repeat task.wait()
+                local c = player.Character
+            until c and c:FindFirstChild("HumanoidRootPart")
+
+            local WAIT_CF = CFrame.new(-3175.08203125, 815.68115234375, 7792.50244140625)
+            local char = player.Character
+
+            -- TP ke spot nunggu
+            char.HumanoidRootPart.CFrame = WAIT_CF
+
+            -- stay di situ selama POST_DELAY
+            local t = 0
+            while t < POST_DELAY do
+                task.wait(1)
+                t = t + 1
+
+                -- pastiin ga kegeser / jatuh
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = WAIT_CF
+                else
+                    -- kalau respawn ulang di tengah delay
+                    repeat task.wait()
+                        char = player.Character
+                    until char and char:FindFirstChild("HumanoidRootPart")
+
+                    char.HumanoidRootPart.CFrame = WAIT_CF
+                end
+            end
         end
     end
 end)
