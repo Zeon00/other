@@ -1,4 +1,11 @@
 --// SERVICES
+local VirtualUser = game:GetService("VirtualUser")
+
+game.Players.LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 
@@ -17,6 +24,7 @@ local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
 
 --// SETTINGS
 local Aura, TP, Skill = false, false, false
+local WarriorAura = false -- TAMBAHAN
 local TPMode = "Nearest"
 local SelectedMobs = {}
 
@@ -164,7 +172,10 @@ task.spawn(function()
         if Aura then
             pcall(function()
                 Remote:Fire("ClickSystem","Execute",Library.Target)
-            end)
+            if WarriorAura then
+    Remote:Fire("WarriorSystem","Attack",Library.Target, true)
+end
+			end)
 
             if Skill and tick() - lastSkill > skillDelay then
                 lastSkill = tick()
@@ -367,8 +378,9 @@ end
 createToggle("Aura",40,function(v) Aura = v end)
 createToggle("TP",80,function(v) TP = v end)
 createToggle("Skill",120,function(v) Skill = v end)
-createToggle("Auto Raid",160,function(v) AutoRaid = v end)
+createToggle("Warrior Aura",160,function(v) WarriorAura = v end)
 createToggle("Auto Claim",200,function(v) AutoClaim = v end)
+
 -- MODE
 local modeBtn = Instance.new("TextButton", main)
 modeBtn.Size = UDim2.new(1,-20,0,35)
