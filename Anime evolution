@@ -306,15 +306,27 @@ local function GetEnemySimple()
     end
 end
 
---// MAGNET DROP
+--// AUTO MAGNET FIX FULL
+
 local function CollectDrops()
-    if not remote2 then return end
+    local root = GetRoot()
+    if not root then return end
 
     local debris = workspace:FindFirstChild("Debris")
     if not debris then return end
 
     for _, drop in pairs(debris:GetChildren()) do
-        remote2:FireServer("Drops","Collect",drop.Name)
+        if drop:IsA("BasePart") then
+
+            local dist = (drop.Position - root.Position).Magnitude
+
+            -- fake range (biar jauh tetep keambil)
+            if dist < 250 then
+                pcall(function()
+                    Remote:FireServer("Drops","Collect", drop.Name)
+                end)
+            end
+        end
     end
 end
 ----------------------------------------------------------------
