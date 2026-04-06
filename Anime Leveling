@@ -1,33 +1,25 @@
---// ANTI AFK HARDCORE (ANDROID SAFE)
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local VirtualUser = game:GetService("VirtualUser")
+--// ANTI AFK SIMPLE (FINAL FIX)
 
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local RS = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local Remotes = RS:WaitForChild("Remotes")
+local ClickRemote = Remotes:WaitForChild("Clicked")
+
+-- 1. ANTI IDLE
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new(0,0))
+end)
+
+-- 2. REMOTE LOOP (KUNCI)
 task.spawn(function()
     while true do
-        task.wait(math.random(30,50))
+        task.wait(8)
         pcall(function()
-            local char = player.Character
-            if not char then return end
-
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-
-            if hum and hrp then
-                local move = Vector3.new(math.random(-5,5),0,math.random(-5,5))
-                hrp.CFrame = hrp.CFrame * CFrame.new(move)
-
-                if math.random(1,2) == 1 then
-                    hum.Jump = true
-                end
-
-                hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(math.random(-30,30)), 0)
-            end
-
-            VirtualUser:CaptureController()
-            VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            task.wait(0.1)
-            VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            ClickRemote:FireServer()
         end)
     end
 end)
