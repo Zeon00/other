@@ -1,12 +1,11 @@
---// ANTI AFK SIMPLE (FINAL FIX)
+
+
+--// ANTI AFK SIMPLE (FINAL BANGET)
 
 local Players = game:GetService("Players")
 local VirtualUser = game:GetService("VirtualUser")
-local RS = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
-local Remotes = RS:WaitForChild("Remotes")
-local ClickRemote = Remotes:WaitForChild("Clicked")
 
 -- 1. ANTI IDLE
 player.Idled:Connect(function()
@@ -14,15 +13,7 @@ player.Idled:Connect(function()
     VirtualUser:ClickButton2(Vector2.new(0,0))
 end)
 
--- 2. REMOTE LOOP (KUNCI)
-task.spawn(function()
-    while true do
-        task.wait(8)
-        pcall(function()
-            ClickRemote:FireServer()
-        end)
-    end
-end)
+
 
 --// SERVICES
 local RS = game:GetService("ReplicatedStorage")
@@ -415,9 +406,8 @@ RunService.Heartbeat:Connect(function()
             end
 
             if FastHit then
-                ClickRemote:FireServer()
-                ClickRemote:FireServer()
-            end
+    ClickRemote:FireServer()
+end
         end
     end
 
@@ -431,6 +421,8 @@ RunService.Heartbeat:Connect(function()
     if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
     if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
     if AutoDemon then Remotes.RollDemonPower:FireServer() end
+	if AutoMask then Remotes.RollMaskPower:FireServer() end
+	if AutoWisteria then Remotes.OpenWisteriaRaid:FireServer() end
 	if AutoEaster then
     game:GetService("ReplicatedStorage")
         :WaitForChild("Remotes")
@@ -456,6 +448,7 @@ Toggle("EGG", function(v) AutoEgg = v end)
 Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
 Toggle("AUTO GROUP", function(v) AutoGroup = v end)
+Toggle("Wisteria", function(v) AutoWisteria = v end)
 
 DropdownMulti("AUTO POWERS", {
 	["Fruit"] = function(v) AutoDFruit = v end,
@@ -467,4 +460,6 @@ DropdownMulti("AUTO POWERS", {
     ["Grimoire"] = function(v) AutoGrimoire = v end,
     ["Demon"] = function(v) AutoDemon = v end,
     ["Easter"] = function(v) AutoEaster = v end,
+	["Mask"] = function(v) AutoMask = v end,
+	
 })
