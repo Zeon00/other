@@ -9,8 +9,8 @@ local player = Players.LocalPlayer
 
 -- 1. ANTI IDLE
 player.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new(0,0))
+    game:GetService("VirtualUser"):CaptureController()
+    game:GetService("VirtualUser"):ClickButton1(Vector2.new(0,0))
 end)
 
 
@@ -406,7 +406,19 @@ RunService.Heartbeat:Connect(function()
             end
 
             if FastHit then
-    ClickRemote:FireServer()
+    if not _G.lastHit then _G.lastHit = 0 end
+
+    local delay = 0.08 -- default fast (aman banget)
+    
+    -- kalau mau lebih ngebut (punya gamepass)
+    if BypassAll then
+        delay = 0.05
+    end
+
+    if tick() - _G.lastHit >= delay then
+        _G.lastHit = tick()
+        ClickRemote:FireServer()
+    end
 end
         end
     end
@@ -416,7 +428,7 @@ end
     if AutoHaki then Remotes.HakiLeveling:FireServer() end
     if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
     if AutoSaiyan then Remotes.RollSaiyanPower:FireServer() end
-    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star5", 10) end
+    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star5", 20) end
     if AutoBreathing then Remotes.RollBreathingPower:FireServer() end
     if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
     if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
