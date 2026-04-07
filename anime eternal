@@ -13,6 +13,7 @@ local MAX_DISTANCE = 25
 --// VARIABLES
 local AutoTrain = false
 local KillAura = false
+local HitAll = false
 
 local Remote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("To_Server")
 
@@ -69,6 +70,7 @@ end
 
 local Train = makeButton("Auto Train : OFF", 65)
 local Hit = makeButton("Auto Hit : OFF", 115)
+local HitAllBtn = makeButton("Auto Hit All : OFF", 165)
 
 -- MIN / CLOSE
 local MinBtn = Instance.new("TextButton", Frame)
@@ -136,6 +138,11 @@ Hit.MouseButton1Click:Connect(function()
 	Hit.BackgroundColor3 = KillAura and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
 end)
 
+HitAllBtn.MouseButton1Click:Connect(function()
+	HitAll = not HitAll
+	HitAllBtn.Text = "Auto Hit All : " .. (HitAll and "ON" or "OFF")
+	HitAllBtn.BackgroundColor3 = HitAll and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
+end)
 -- MINIMIZE
 MinBtn.MouseButton1Click:Connect(function()
 	Frame.Visible = false
@@ -173,7 +180,28 @@ RunService.RenderStepped:Connect(function()
 	local myHRP = player.Character.HumanoidRootPart
 
 	-- PRIORITY
-	if KillAura then
+	if HitAll then
+	Status.Text = "Status: Hit All"
+
+	for _, mob in pairs(getMobs()) do
+		local hrp = mob:FindFirstChild("HumanoidRootPart")
+		local hum = mob:FindFirstChild("Humanoid")
+
+		if hrp and hum and hum.Health > 0 then
+			local dist = (myHRP.Position - hrp.Position).Magnitude
+
+			if dist <= MAX_DISTANCE then
+				for i = 1,5 do
+					Remote:FireServer(unpack({{
+						Id = mob.Name,
+						Action = "_Mouse_Click"
+					}}))
+				end
+			end
+		end
+	end
+
+elseif KillAura then
 		Status.Text = "Status: Farming"
 
 		local target = nil
