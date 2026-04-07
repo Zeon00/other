@@ -1,4 +1,52 @@
 --// SERVICES
+local function EnableEggSkip()
+    local client = require(game.ReplicatedStorage:WaitForChild("Client"))
+
+    -- 🔥 FORCE FAST OPEN
+    task.spawn(function()
+        while task.wait() do
+            pcall(function()
+                client.Data.Gamepasses["Fast Open"] = true
+            end)
+        end
+    end)
+
+    -- 🔥 HIDE UI AGRESIF
+    task.spawn(function()
+        while task.wait() do
+            local gui = player:FindFirstChild("PlayerGui")
+            if not gui then return end
+
+            for _,v in pairs(gui:GetDescendants()) do
+                local n = v.Name:lower()
+
+                if n:find("egg") or n:find("roll") or n:find("reward") then
+                    pcall(function()
+                        if v:IsA("Frame") or v:IsA("ImageLabel") then
+                            v.Visible = false
+                        end
+                    end)
+                end
+            end
+        end
+    end)
+
+    -- 🔥 OVERRIDE ANIM (TRICK PALING WORK)
+    task.spawn(function()
+        while task.wait(0.05) do
+            if AutoRoll then
+                pcall(function()
+                    Remote:FireServer("Stars","Roll",{
+                        Map = GetCurrentMap(),
+                        Type = "Multi"
+                    })
+                end)
+            end
+        end
+    end)
+
+    print("EGG SKIP (NO GETGC) ENABLED")
+end
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
@@ -165,21 +213,39 @@ local function GetEnemyDisplayName(mob)
     end
 end
 
-local function GetMobByDisplayName(name)
-    local enemies = workspace:FindFirstChild("Client") 
+local function GetServerMobFromName(name)
+    local clientEnemies = workspace:FindFirstChild("Client") 
         and workspace.Client:FindFirstChild("Enemies")
 
-    if not enemies then return end
+    local serverEnemies = workspace:FindFirstChild("Server") 
+        and workspace.Server:FindFirstChild("Enemies")
 
-    for _, folder in pairs(enemies:GetChildren()) do
+    if not clientEnemies or not serverEnemies then return end
+
+    for _, folder in pairs(clientEnemies:GetChildren()) do
         for _, world in pairs(folder:GetChildren()) do
             for _, mob in pairs(world:GetChildren()) do
+
                 local hrp = mob:FindFirstChild("HumanoidRootPart")
                 if hrp then
                     for _, v in pairs(hrp:GetDescendants()) do
                         if v.Name == "EnemyName" and v:IsA("TextLabel") then
+                            
                             if v.Text == name then
-                                return mob
+                                local id = mob:GetAttribute("ID")
+                                if not id then return end
+
+                                -- 🔥 cari server mob by ID
+                                for _, sfolder in pairs(serverEnemies:GetChildren()) do
+                                    for _, sworld in pairs(sfolder:GetChildren()) do
+                                        for _, smob in pairs(sworld:GetChildren()) do
+                                            if smob:GetAttribute("ID") == id then
+                                                return smob
+                                            end
+                                        end
+                                    end
+                                end
+
                             end
                         end
                     end
@@ -415,12 +481,29 @@ task.spawn(function()
 
 if EnemyTP then
     if UseSelected then
+
+        local chosenMob = nil
+        local shortest = math.huge
+        local root = GetRoot()
+
         for name,_ in next, SelectedEnemies do
-            local mob = GetMobByDisplayName(name)
-            if mob then
-                TeleportToEnemy(mob)
+            local mob = GetServerMobFromName(name)
+            if mob and root then
+                local hrp = mob:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local dist = (root.Position - hrp.Position).Magnitude
+                    if dist < shortest then
+                        shortest = dist
+                        chosenMob = mob
+                    end
+                end
             end
         end
+
+        if chosenMob then
+            TeleportToEnemy(chosenMob)
+        end
+
     else
         if lastEnemy ~= target.Enemy then
             TeleportToEnemy(target.Enemy)
@@ -759,6 +842,11 @@ Toggle("Auto RankUp", function(v) AutoRankUp=v end)
 Toggle("Auto World Boss", function(v) AutoWorldBoss=v end)
 Toggle("Auto Enchant", function(v) AutoEnchant=v end)
 Toggle("Auto Next World", function(v) AutoPortal=v end) -- 🔥 MASUK DI SINI
+Toggle("Skip Egg Anim", function(v)
+    if v then
+        EnableEggSkip()
+    end
+end)
 Toggle("Fast Click (Spoof)", function(v)
     SetFastClick(v)
 end)
