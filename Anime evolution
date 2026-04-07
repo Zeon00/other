@@ -569,26 +569,44 @@ end)
 ----------------------------------------------------------------
 
 task.spawn(function()
-    while task.wait(1) do
-        if AutoEnchant then
+    while task.wait(0.3) do -- lebih cepet dari 1 detik
+        if AutoEnchant and SelectedSwordName ~= "" then
 
-            if SelectedSwordName ~= "" then
-                pcall(function()
+            pcall(function()
+
+                -- ambil client sekali aja (lebih aman)
+                local client = require(game.ReplicatedStorage:WaitForChild("Client"))
+                local swordData = client.SharedModules.Swords[SelectedSwordName]
+                if not swordData then return end
+
+                local rarity = swordData.Rarity or "E"
+
+                -- cost fix
+                local costTable = {
+                    E = 1, D = 1,
+                    C = 2, B = 2,
+                    A = 3,
+                    S = 5,
+                    SS = 10,
+                    SSS = 15
+                }
+
+                local cost = (costTable[rarity] or 1) * 10
+
+                -- spam enchant
+                for i = 1,2 do
                     Remote:FireServer(
                         "EnchantWeapon",
                         "ScrollTry10",
                         {
                             CurrentSword = SelectedSwordName,
-                            IsCraftButton10 = true,
-                            CrystalCost = 100
+                            CrystalCost = cost,
+                            IsCraftButton10 = true
                         }
                     )
-                end)
+                end
 
-                print("Enchanting:", SelectedSwordName)
-            else
-                warn("Isi dulu nama sword di box!")
-            end
+            end)
 
         end
     end
