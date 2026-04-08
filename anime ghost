@@ -36,7 +36,7 @@ local AutoClaim = false
 local lastClaim = 0
 local claimDelay = 600 -- 10 menit
 local lastReset = 0
-local resetDelay = 18000 -- 5 jam
+local resetDelay = 21600 -- 5 jam
 
 local START_CF = CFrame.new(
     -3035.23071, 784.099609, 7447.69922,
