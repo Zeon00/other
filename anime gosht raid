@@ -105,12 +105,50 @@ end
 
 --================ LOOP TP =================--
 
+--================ LOOP TP =================--
+
+local function IsInRaidArea(pos)
+    local raid = GetRaid()
+    if not raid then return false end
+
+    local spots = raid:FindFirstChild("Spots")
+    if not spots then return false end
+
+    for _,spot in pairs(spots:GetChildren()) do
+        if (spot.Position - pos).Magnitude < 80 then
+            return true
+        end
+    end
+    return false
+end
+
 task.spawn(function()
     while task.wait(0.2) do
-        if TPEnemy and InRaid() then
-            local target = GetNearest()
-            if target then
-                TPTo(target)
+        if TPEnemy and GetRaid() then
+            local target = nil
+
+            local folder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
+            local char = player.Character
+
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local root = char.HumanoidRootPart
+                local dist = math.huge
+
+                for _,mob in pairs(folder:GetChildren()) do
+                    local hrp = mob:FindFirstChild("HumanoidRootPart")
+
+                    if hrp and IsInRaidArea(hrp.Position) then
+                        local d = (hrp.Position - root.Position).Magnitude
+                        if d < dist and d < 200 then
+                            dist = d
+                            target = hrp
+                        end
+                    end
+                end
+
+                if target then
+                    root.CFrame = target.CFrame * CFrame.new(0,0,4)
+                end
             end
         end
     end
