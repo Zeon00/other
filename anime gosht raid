@@ -102,7 +102,6 @@ local function IsSpotClear(pos)
     return true
 end
 
---================ TP SPOT =================--
 
 --================ LOOP TP =================--
 
