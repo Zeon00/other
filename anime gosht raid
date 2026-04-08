@@ -1,92 +1,87 @@
 --// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 
-game.Players.LocalPlayer.Idled:Connect(function()
+local player = Players.LocalPlayer
+
+-- Anti AFK
+player.Idled:Connect(function()
     VirtualUser:CaptureController()
     VirtualUser:ClickButton2(Vector2.new())
 end)
-local Players = game:GetService("Players")
-local RS = game:GetService("ReplicatedStorage")
-local player = Players.LocalPlayer
 
 --// LIB
 local Library = require(RS:WaitForChild("Framework"):WaitForChild("Library"))
 local Remote = Library.Remote
-
---// REMOTE
 local RemoteEvent = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
 
 --// SETTINGS
 local AutoRaid = false
 local TPEnemy = false
 local Aura = false
+local PowerBoost = false
 
-local START_CF = CFrame.new(-3035,784,7447)
-local RAID_DURATION = 900
-local POST_DELAY = 600
+local RAID_TIME = 900
+local START_DELAY = 10
 
---================ DETECT =================--
+--================ RAID =================--
 
-local function InEventMap()
-    local map = workspace:FindFirstChild("_MAP")
-    return map and map:FindFirstChild("Easter 2026 Event")
+local function CreateEaster()
+    RemoteEvent:FireServer({{"GamemodeSystem","Create","Easter Raid","ChocolateKingdom","Easy",true,n=6},"\002"})
 end
 
+local function StartEaster()
+    RemoteEvent:FireServer({{"GamemodeSystem","Start","Easter Raid",8594485805,n=4},"\002"})
+end
+
+local function CreateNormal()
+    RemoteEvent:FireServer({{"GamemodeSystem","Create","Raid","TitanTown","Easy",true,n=6},"\002"})
+end
+
+local function StartNormal()
+    RemoteEvent:FireServer({{"GamemodeSystem","Start","Raid",8594485805,n=4},"\002"})
+end
+
+--================ RAID DETECT =================--
+
 local function GetRaid()
-    local map = workspace:FindFirstChild("_MAP")
-    if not map then return end
-    local gm = map:FindFirstChild("Gamemode")
+    local gm = workspace:FindFirstChild("_MAP")
+    if not gm then return end
+    gm = gm:FindFirstChild("Gamemode")
     if not gm then return end
 
     for _,v in pairs(gm:GetChildren()) do
-        if string.find(v.Name, "Easter Raid") then
+        if string.find(v.Name,"Raid") then
             return v
         end
     end
 end
 
-local function InRaid()
-    return GetRaid() ~= nil
-end
-
---================ SPOT SYSTEM =================--
-
-local function GetRaidSpots()
+local function GetSpots()
     local raid = GetRaid()
     if not raid then return {} end
-
-    local spots = raid:FindFirstChild("Spots")
-    return spots and spots:GetChildren() or {}
+    local s = raid:FindFirstChild("Spots")
+    return s and s:GetChildren() or {}
 end
 
-local function IsInRaidArea(pos)
-    for _,spot in pairs(GetRaidSpots()) do
-        if (spot.Position - pos).Magnitude < 80 then
-            return true
-        end
-    end
-    return false
-end
-
---================ TARGET =================--
+--================ ENEMY =================--
 
 local function GetNearest()
     local folder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
-
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local root = char.HumanoidRootPart
 
+    local root = char.HumanoidRootPart
     local nearest, dist = nil, math.huge
 
     for _,mob in pairs(folder:GetChildren()) do
         local hrp = mob:FindFirstChild("HumanoidRootPart")
-
-        if hrp and IsInRaidArea(hrp.Position) then
+        if hrp then
             local d = (hrp.Position - root.Position).Magnitude
-            if d < dist and d < 200 then
+            if d < dist then
                 dist = d
-                nearest = hrp
+                nearest = mob
             end
         end
     end
@@ -94,67 +89,65 @@ local function GetNearest()
     return nearest
 end
 
-local function TPTo(hrp)
-    local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0,0,4)
-    end
-end
+local function IsSpotClear(pos)
+    local folder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
 
---================ RAID =================--
-
-local function CreateRaid()
-    RemoteEvent:FireServer({
-        {
-            "GamemodeSystem",
-            "Create",
-            "Easter Raid",
-            "ChocolateKingdom",
-            "Easy",
-            true,
-            n = 6
-        },
-        "\002"
-    })
-end
-
-local function StartRaid()
-    RemoteEvent:FireServer({
-        {
-            "GamemodeSystem",
-            "Start",
-            "Easter Raid",
-            8594485805,
-            n = 4
-        },
-        "\002"
-    })
-end
-
-local function ClickReturn()
-    for i=1,20 do
-        local results = player.PlayerGui:FindFirstChild("Results")
-        if results and results.Enabled then
-            local btn = results:FindFirstChild("Return", true)
-            if btn then
-                pcall(function()
-                    firesignal(btn.MouseButton1Click)
-                end)
-                break
-            end
+    for _,mob in pairs(folder:GetChildren()) do
+        local hrp = mob:FindFirstChild("HumanoidRootPart")
+        if hrp and (hrp.Position - pos).Magnitude < 70 then
+            return false
         end
-        task.wait(1)
     end
+
+    return true
 end
+
+--================ TP SPOT =================--
 
 --================ LOOP TP =================--
 
+local function IsInRaidArea(pos)
+    local raid = GetRaid()
+    if not raid then return false end
+
+    local spots = raid:FindFirstChild("Spots")
+    if not spots then return false end
+
+    for _,spot in pairs(spots:GetChildren()) do
+        if (spot.Position - pos).Magnitude < 80 then
+            return true
+        end
+    end
+    return false
+end
+
 task.spawn(function()
     while task.wait(0.2) do
-        if TPEnemy and InRaid() then
-            local target = GetNearest()
-            if target then
-                TPTo(target)
+        if TPEnemy and GetRaid() then
+            local target = nil
+
+            local folder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
+            local char = player.Character
+
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local root = char.HumanoidRootPart
+                local dist = math.huge
+
+                for _,mob in pairs(folder:GetChildren()) do
+                    local hrp = mob:FindFirstChild("HumanoidRootPart")
+
+                    if hrp and IsInRaidArea(hrp.Position) then
+                        local d = (hrp.Position - root.Position).Magnitude
+                        if d < dist and d < 200 then
+                            dist = d
+                            target = hrp
+                        end
+                    end
+                end
+
+                if target then
+                    root.CFrame = target.CFrame * CFrame.new(0,0,4)
+                end
             end
         end
     end
@@ -164,7 +157,7 @@ end)
 
 task.spawn(function()
     while task.wait() do
-        if Aura and InRaid() then
+        if Aura and GetRaid() then
             pcall(function()
                 Remote:Fire("ClickSystem","Execute",Library.Target)
             end)
@@ -172,67 +165,74 @@ task.spawn(function()
     end
 end)
 
+--================ POWER BOOST =================--
+
+task.spawn(function()
+    while true do
+        if PowerBoost then
+            for i = 1,3 do
+                RemoteEvent:FireServer({
+                    {
+                        "ClickSystem",
+                        "Execute",
+                        n = 3
+                    },
+                    "\002"
+                })
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+--================ RETURN =================--
+
+local function ClickReturn()
+    for i=1,15 do
+        local ui = player.PlayerGui:FindFirstChild("Results")
+        if ui and ui.Enabled then
+            local btn = ui:FindFirstChild("Return", true)
+            if btn then
+                firesignal(btn.MouseButton1Click)
+                break
+            end
+        end
+        task.wait(1)
+    end
+end
+
 --================ AUTO RAID =================--
 
 task.spawn(function()
-    while task.wait(1) do
-        if AutoRaid and InEventMap() then
+    while task.wait(2) do
+        if AutoRaid then
 
-            -- tunggu karakter ready
-            repeat task.wait()
-                local c = player.Character
-            until c and c:FindFirstChild("HumanoidRootPart")
-
-            -- TP ke start
-            player.Character.HumanoidRootPart.CFrame = START_CF
+            -- EASTER
+            CreateEaster()
             task.wait(2)
+            StartEaster()
 
-            -- buat & start raid
-            CreateRaid()
-            task.wait(2)
-            StartRaid()
+            task.wait(START_DELAY)
+            task.wait(RAID_TIME)
 
-            -- delay masuk raid
-            task.wait(15)
-
-            -- durasi raid
-            task.wait(RAID_DURATION)
-
-            -- selesai raid → return
             ClickReturn()
+            task.wait(8)
 
-            -- tunggu respawn
-            repeat task.wait()
-                local c = player.Character
-            until c and c:FindFirstChild("HumanoidRootPart")
+            -- NORMAL
+            CreateNormal()
+            task.wait(2)
+            StartNormal()
 
-            local WAIT_CF = CFrame.new(-3175.08203125, 815.68115234375, 7792.50244140625)
-            local char = player.Character
+            task.wait(START_DELAY)
+            task.wait(RAID_TIME)
 
-            -- TP ke spot nunggu
-            char.HumanoidRootPart.CFrame = WAIT_CF
-
-            -- stay di situ selama POST_DELAY
-            local t = 0
-            while t < POST_DELAY do
-                task.wait(1)
-                t = t + 1
-
-                -- pastiin ga kegeser / jatuh
-                if char and char:FindFirstChild("HumanoidRootPart") then
-                    char.HumanoidRootPart.CFrame = WAIT_CF
-                else
-                    -- kalau respawn ulang di tengah delay
-                    repeat task.wait()
-                        char = player.Character
-                    until char and char:FindFirstChild("HumanoidRootPart")
-
-                    char.HumanoidRootPart.CFrame = WAIT_CF
-                end
-            end
+            ClickReturn()
+            task.wait(10)
         end
     end
 end)
+
+--================ GUI =================--
 
 --================ GUI =================--
 
@@ -240,7 +240,7 @@ local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,220,0,220)
+main.Size = UDim2.new(0,220,0,250)
 main.Position = UDim2.new(1,-230,0.4,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 main.Active = true
@@ -291,17 +291,25 @@ local function Toggle(name,pos,callback)
     b.Size = UDim2.new(1,-20,0,40)
     b.Position = UDim2.new(0,10,0,pos)
     b.Text = name.." OFF"
+
     b.BackgroundColor3 = Color3.fromRGB(60,60,60)
+    b.TextColor3 = Color3.fromRGB(255,255,255)
+
+    b.TextSize = 14 -- 🔥 atur ukuran di sini (coba 14–18)
+    b.Font = Enum.Font.GothamBold -- biar lebih jelas & clean
 
     local state = false
     b.MouseButton1Click:Connect(function()
         state = not state
         b.Text = name.." "..(state and "ON" or "OFF")
+
         b.BackgroundColor3 = state and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
+
         callback(state)
     end)
 end
 
-Toggle("Auto Raid",50,function(v) AutoRaid = v end)
-Toggle("TP Enemy (Raid Only)",100,function(v) TPEnemy = v end)
-Toggle("Kill Aura",150,function(v) Aura = v end)
+Toggle("Auto Raid",40,function(v) AutoRaid = v end)
+Toggle("Auto TP",90,function(v) TPEnemy = v end)
+Toggle("Aura Kill",140,function(v) Aura = v end)
+Toggle("Power Boost",190,function(v) PowerBoost = v end)
