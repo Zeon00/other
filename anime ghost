@@ -298,7 +298,7 @@ gui.Parent = player:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,250,0,400)
+main.Size = UDim2.new(0,250,0,500)
 main.Position = UDim2.new(1,-260,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 main.Active = true
@@ -398,10 +398,10 @@ end)
 -- SCROLL LIST (FIXED)
 local scroll = Instance.new("ScrollingFrame", main)
 scroll.Size = UDim2.new(1,-10,1,-210)
-scroll.Position = UDim2.new(0,5,0,280)
+scroll.Position = UDim2.new(0,5,0,320)
 scroll.BackgroundTransparency = 1
 scroll.CanvasSize = UDim2.new(0,0,0,0)
-
+scroll.ScrollBarThickness = 6
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0,5)
 
