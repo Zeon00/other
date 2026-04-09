@@ -35,7 +35,11 @@ local AutoEaster = false
 local AutoJoinTower = false
 local AutoTPNearest = false
 local AutoGroup = false
-
+local InWisteria = false
+local LastWisteria = 0
+local WisteriaDelay = 5 -- delay buka raid
+local InTower = false
+local TowerLock = 0
 local SelectedEnemies = {}
 
 --// AUTO JOIN TOWER
@@ -46,18 +50,21 @@ task.spawn(function()
 
     if TowerInvite and JoinTower then
         TowerInvite.OnClientEvent:Connect(function(...)
-            if AutoJoinTower then
-                JoinTower:FireServer()
+    if AutoJoinTower then
+        InTower = true
+        TowerLock = tick() + 10 -- 🔥 tahan 10 detik
 
-                task.delay(2,function()
-                    if AutoJoinTower and TowerStart then
-                        pcall(function()
-                            TowerStart:FireServer()
-                        end)
-                    end
+        JoinTower:FireServer()
+
+        task.delay(2,function()
+            if AutoJoinTower and TowerStart then
+                pcall(function()
+                    TowerStart:FireServer()
                 end)
             end
         end)
+    end
+end)
     end
 end)
 
@@ -77,7 +84,41 @@ Remotes:WaitForChild("EndRaid").OnClientEvent:Connect(function()
         DoRaid()
     end
 end)
+task.spawn(function()
+    while task.wait(1) do
+        local data = State.GetData()
 
+        if tick() < TowerLock then
+            InTower = true -- 🔥 masih dilock
+        elseif data and data.LastArea == "TowerRaid" then
+            InTower = true
+        else
+            InTower = false
+        end
+    end
+end)
+task.spawn(function()
+    while task.wait(1) do
+        if AutoWisteria then
+            if not InWisteria and not InTower and player.Character then -- 🔥 PRIORITAS TOWER
+                if tick() - LastWisteria >= WisteriaDelay then
+                    LastWisteria = tick()
+                    Remotes.OpenWisteriaRaid:FireServer()
+                end
+            end
+        end
+    end
+end)
+task.spawn(function()
+    while task.wait(1) do
+        local data = State.GetData()
+        if data and data.LastArea == "WisteriaRaid" then
+            InWisteria = true
+        else
+            InWisteria = false
+        end
+    end
+end)
 --// GET ENEMIES
 local function GetEnemies()
     local data = State.GetData()
@@ -434,7 +475,7 @@ end
     if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
     if AutoDemon then Remotes.RollDemonPower:FireServer() end
 	if AutoMask then Remotes.RollMaskPower:FireServer() end
-	if AutoWisteria then Remotes.OpenWisteriaRaid:FireServer() end
+
 	if AutoEaster then
     game:GetService("ReplicatedStorage")
         :WaitForChild("Remotes")
