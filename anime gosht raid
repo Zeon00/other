@@ -22,6 +22,9 @@ local TPEnemy = false
 local Aura = false
 local PowerBoost = false
 
+--// ENEMY FOLDER
+local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
+
 --================ RAID =================--
 
 local function CreateEaster()
@@ -39,6 +42,9 @@ end
 local function StartNormal()
     RemoteEvent:FireServer({{"GamemodeSystem","Start","Raid",8594485805,n=4},"\002"})
 end
+
+--================ RAID CHECK =================--
+
 local function IsInRaid()
     local gm = workspace:FindFirstChild("_MAP")
     if not gm then return false end
@@ -47,73 +53,21 @@ local function IsInRaid()
     if not gm then return false end
 
     for _,v in pairs(gm:GetChildren()) do
-        if string.find(v.Name, "Raid") then
+        if string.find(v.Name,"Raid") then
             return true
         end
     end
 
     return false
 end
---================ RAID DETECT =================--
 
-local function GetRaid()
-    local gm = workspace:FindFirstChild("_MAP")
-    if not gm then return end
-    gm = gm:FindFirstChild("Gamemode")
-    if not gm then return end
-
-    for _,v in pairs(gm:GetChildren()) do
-        if string.find(v.Name,"Raid") then
-            return v
-        end
-    end
-end
-
--- ✅ DETECT RAID SELESAI
 local function IsRaidFinished()
     local ui = player.PlayerGui:FindFirstChild("Results")
     return ui and ui.Enabled
 end
 
---================ ENEMY =================--
+--================ TARGET =================--
 
--- ✅ FIX UTAMA: CEK MOB HARUS DARI RAID
-local function IsMobInRaid(mob)
-    local raid = GetRaid()
-    if not raid then return false end
-    return mob:IsDescendantOf(raid)
-end
-
--- EXTRA FILTER (ANTI MOB ANEH)
-local function IsValidRaidMob(mob)
-    if not IsMobInRaid(mob) then return false end
-
-    if not mob:FindFirstChild("HumanoidRootPart") then return false end
-    if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health <= 0 then return false end
-
-    return true
-end
-
---================ LOOP TP =================--
-
---// RAID CHECK
-local function IsInRaid()
-    local gm = workspace:FindFirstChild("_MAP")
-    if not gm then return false end
-
-    gm = gm:FindFirstChild("Gamemode")
-    if not gm then return false end
-
-    for _,v in pairs(gm:GetChildren()) do
-        if string.find(v.Name, "Raid") then
-            return true
-        end
-    end
-
-    return false
-end
-
---// GET NEAREST (DITAMBAH LIMIT JARAK BIAR GA NGACO)
 local function GetNearest()
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
@@ -128,8 +82,7 @@ local function GetNearest()
         if hrp and hum and hum.Health > 0 then
             local d = (hrp.Position - root.Position).Magnitude
 
-            -- 🔥 BATAS JARAK (ANTI MOB MAP BIASA)
-            if d < dist and d < 120 then
+            if d < dist and d < 100 then
                 dist = d
                 nearest = hrp
             end
@@ -139,7 +92,8 @@ local function GetNearest()
     return nearest
 end
 
---// TP SMOOTH
+--================ TP =================--
+
 local lastTP = 0
 
 local function TPTo(hrp)
@@ -156,12 +110,12 @@ local function TPTo(hrp)
     root.CFrame = root.CFrame:Lerp(hrp.CFrame * CFrame.new(0,0,4), 0.5)
 end
 
---// LOOP TP (🔥 SUDAH DI FIX)
+--================ LOOP TP =================--
+
 task.spawn(function()
     while task.wait(0.25) do
-        if TP and IsInRaid() then -- ✅ HANYA SAAT RAID
-            local target = (TPMode == "Selected") and GetTarget() or GetNearest()
-
+        if TPEnemy and IsInRaid() then
+            local target = GetNearest()
             if target then
                 TPTo(target)
             end
@@ -169,11 +123,11 @@ task.spawn(function()
     end
 end)
 
---================ LOOP AURA =================--
+--================ AURA =================--
 
 task.spawn(function()
     while task.wait() do
-        if Aura and GetRaid() then
+        if Aura and IsInRaid() then
             pcall(function()
                 Remote:Fire("ClickSystem","Execute",Library.Target)
             end)
@@ -188,11 +142,7 @@ task.spawn(function()
         if PowerBoost then
             for i = 1,5 do
                 RemoteEvent:FireServer({
-                    {
-                        "ClickSystem",
-                        "Execute",
-                        n = 3
-                    },
+                    {"ClickSystem","Execute",n=3},
                     "\002"
                 })
             end
@@ -201,33 +151,28 @@ task.spawn(function()
     end
 end)
 
---================ RETURN SAFE =================--
+--================ RETURN =================--
 
 local function ClickReturnSafe()
     for i = 1,20 do
         local ui = player.PlayerGui:FindFirstChild("Results")
-
         if ui and ui.Enabled then
             local btn = ui:FindFirstChild("Return", true)
             if btn then
                 firesignal(btn.MouseButton1Click)
             end
         end
-
         if not ui or not ui.Enabled then
             return true
         end
-
         task.wait(1)
     end
-
     return false
 end
 
 local function EnsureReturnCleared()
-    repeat
-        task.wait(1)
-    until not player.PlayerGui:FindFirstChild("Results") 
+    repeat task.wait(1)
+    until not player.PlayerGui:FindFirstChild("Results")
         or not player.PlayerGui.Results.Enabled
 end
 
@@ -237,7 +182,6 @@ task.spawn(function()
     while task.wait(2) do
         if AutoRaid then
 
-            -- EASTER
             CreateEaster()
             task.wait(2)
             StartEaster()
@@ -248,7 +192,6 @@ task.spawn(function()
 
             task.wait(5)
 
-            -- NORMAL
             CreateNormal()
             task.wait(2)
             StartNormal()
