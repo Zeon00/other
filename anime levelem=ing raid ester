@@ -39,7 +39,7 @@ Title.TextSize = 16
 local Close = Instance.new("TextButton", Main)
 Close.Size = UDim2.new(0, 30, 0, 30)
 Close.Position = UDim2.new(1, -35, 0, 5)
-Close.Text = "✕"
+Close.Text = "X"
 Close.BackgroundColor3 = Color3.fromRGB(40,40,50)
 Close.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Close).CornerRadius = UDim.new(1,0)
@@ -48,7 +48,7 @@ Instance.new("UICorner", Close).CornerRadius = UDim.new(1,0)
 local Min = Instance.new("TextButton", Main)
 Min.Size = UDim2.new(0, 30, 0, 30)
 Min.Position = UDim2.new(1, -70, 0, 5)
-Min.Text = "–"
+Min.Text = "-"
 Min.BackgroundColor3 = Color3.fromRGB(40,40,50)
 Min.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Min).CornerRadius = UDim.new(1,0)
@@ -141,18 +141,37 @@ task.spawn(function()
     while true do
         task.wait(0.2)
 
-        if not AutoRaid then continue end
+        if AutoRaid then
 
-        local raid = Workspace:FindFirstChild("EasterRaid")
+            local raid = Workspace:FindFirstChild("EasterRaid")
 
-        if not raid then
-            openRaid()
-            continue
-        end
+            -- ❌ BELUM ADA RAID → OPEN
+            if not raid then
+                openRaid()
 
-        local enemy = getEnemy()
-        if enemy then
-            attack(enemy)
+            else
+                local enemy = getEnemy()
+
+                -- 💀 RAID SELESAI (enemy habis)
+                if not enemy then
+                    print("Raid selesai, nunggu reset...")
+
+                    repeat
+                        task.wait(1)
+                        raid = Workspace:FindFirstChild("EasterRaid")
+                    until not raid or not AutoRaid
+
+                    if AutoRaid then
+                        print("Raid hilang, buka lagi")
+                        openRaid()
+                    end
+
+                else
+                    -- 🎯 ATTACK
+                    attack(enemy)
+                end
+            end
+
         end
     end
 end)
