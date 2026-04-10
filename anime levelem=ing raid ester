@@ -2,55 +2,81 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
---// REMOTE (FIX SESUAI LO)
+--// REMOTE
 local OpenRaidRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("OpenEasterRaid")
 
 --// SETTINGS
 local AutoRaid = false
-local opening = false
-local currentTarget = nil
+local busyOpening = false
 
 --// ================= GUI =================
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-ScreenGui.Name = "EasterRaidPro"
+ScreenGui.Name = "ModernRaidUI"
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 260, 0, 160)
+Main.Size = UDim2.new(0, 260, 0, 140)
 Main.Position = UDim2.new(0.4, 0, 0.3, 0)
-Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Main.BackgroundColor3 = Color3.fromRGB(20,20,25)
 Main.Active = true
 Main.Draggable = true
 
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+-- Title
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1,0,0,30)
-Title.Text = "Easter Raid Pro"
-Title.BackgroundColor3 = Color3.fromRGB(15,15,15)
-Title.TextColor3 = Color3.new(1,1,1)
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.BackgroundTransparency = 1
+Title.Text = "Easter Raid"
+Title.TextColor3 = Color3.fromRGB(200,200,255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
 
+-- Close
 local Close = Instance.new("TextButton", Main)
-Close.Size = UDim2.new(0,30,0,30)
-Close.Position = UDim2.new(1,-30,0,0)
-Close.Text = "X"
+Close.Size = UDim2.new(0, 30, 0, 30)
+Close.Position = UDim2.new(1, -35, 0, 5)
+Close.Text = "✕"
+Close.BackgroundColor3 = Color3.fromRGB(40,40,50)
+Close.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Close).CornerRadius = UDim.new(1,0)
 
+-- Minimize
 local Min = Instance.new("TextButton", Main)
-Min.Size = UDim2.new(0,30,0,30)
-Min.Position = UDim2.new(1,-60,0,0)
-Min.Text = "-"
+Min.Size = UDim2.new(0, 30, 0, 30)
+Min.Position = UDim2.new(1, -70, 0, 5)
+Min.Text = "–"
+Min.BackgroundColor3 = Color3.fromRGB(40,40,50)
+Min.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Min).CornerRadius = UDim.new(1,0)
 
+-- Toggle Button
 local Toggle = Instance.new("TextButton", Main)
-Toggle.Size = UDim2.new(0,200,0,50)
-Toggle.Position = UDim2.new(0.1,0,0.4,0)
-Toggle.Text = "Auto Raid: OFF"
+Toggle.Size = UDim2.new(0, 200, 0, 50)
+Toggle.Position = UDim2.new(0.1, 0, 0.5, -10)
+Toggle.Text = "AUTO RAID: OFF"
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextSize = 14
+Toggle.TextColor3 = Color3.new(1,1,1)
+Toggle.BackgroundColor3 = Color3.fromRGB(50,50,60)
+Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 10)
 
+-- ICON MINIMIZE
 local Icon = Instance.new("TextButton", ScreenGui)
-Icon.Size = UDim2.new(0,50,0,50)
-Icon.Position = UDim2.new(0,20,0.5,0)
-Icon.Text = "RAID"
+Icon.Size = UDim2.new(0, 50, 0, 50)
+Icon.Position = UDim2.new(0, 20, 0.5, 0)
+Icon.Text = "R"
+Icon.Font = Enum.Font.GothamBold
+Icon.TextSize = 20
 Icon.Visible = false
+Icon.BackgroundColor3 = Color3.fromRGB(30,30,40)
+Icon.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Icon).CornerRadius = UDim.new(1,0)
 
+-- BUTTON FUNCTION
 Close.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
@@ -67,112 +93,66 @@ end)
 
 Toggle.MouseButton1Click:Connect(function()
     AutoRaid = not AutoRaid
-    Toggle.Text = "Auto Raid: " .. (AutoRaid and "ON" or "OFF")
+    Toggle.Text = "AUTO RAID: " .. (AutoRaid and "ON" or "OFF")
+
+    if AutoRaid then
+        OpenRaidRemote:FireServer()
+    end
 end)
 
 --// ================= LOGIC =================
 
-local function isRaidActive()
-    return Workspace:FindFirstChild("EasterRaid") ~= nil
-end
-
-local function getEnemies()
+local function getEnemy()
     local raid = Workspace:FindFirstChild("EasterRaid")
-    if not raid then return {} end
+    if not raid then return nil end
 
-    local list = {}
     for _, v in pairs(raid:GetDescendants()) do
         if v:IsA("Model") and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") then
             if v.Humanoid.Health > 0 then
-                table.insert(list, v)
+                return v
             end
         end
     end
-    return list
 end
 
-local function getClosestEnemy(enemies)
-    local closest = nil
-    local dist = math.huge
+local function attack(enemy)
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
 
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-        return nil
-    end
+    char.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
 
-    local myPos = player.Character.HumanoidRootPart.Position
-
-    for _, enemy in pairs(enemies) do
-        local d = (enemy.HumanoidRootPart.Position - myPos).Magnitude
-        if d < dist then
-            dist = d
-            closest = enemy
-        end
-    end
-
-    return closest
-end
-
-local function tp(enemy)
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0,0,3)
-    end
-end
-
-local function hit(enemy)
     pcall(function()
         ReplicatedStorage.Remotes.TakeDamage:FireServer(enemy:GetAttribute("UUID") or enemy.Name)
     end)
 end
 
 local function openRaid()
-    if opening then return end
-    opening = true
+    if busyOpening then return end
+    busyOpening = true
 
-    print("OPEN RAID...")
-    pcall(function()
-        OpenRaidRemote:FireServer()
-    end)
+    OpenRaidRemote:FireServer()
 
-    task.delay(5, function()
-        opening = false
-    end)
+    task.wait(3)
+    busyOpening = false
 end
 
---// MAIN LOOP (STABIL)
+-- LOOP
 task.spawn(function()
     while true do
-        task.wait(0.15)
+        task.wait(0.2)
 
-        if not AutoRaid then 
-            currentTarget = nil
-            continue 
-        end
+        if not AutoRaid then continue end
 
         local raid = Workspace:FindFirstChild("EasterRaid")
 
-        -- ❌ BELUM RAID → OPEN
         if not raid then
             openRaid()
-            currentTarget = nil
             continue
         end
 
-        local enemies = getEnemies()
-
-        -- ❌ RAID SELESAI
-        if #enemies == 0 then
-            currentTarget = nil
-            continue
-        end
-
-        -- 🎯 LOCK TARGET
-        if not currentTarget or currentTarget.Humanoid.Health <= 0 then
-            currentTarget = getClosestEnemy(enemies)
-        end
-
-        if currentTarget then
-            tp(currentTarget)
-            hit(currentTarget)
+        local enemy = getEnemy()
+        if enemy then
+            attack(enemy)
         end
     end
 end)
