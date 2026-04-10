@@ -22,9 +22,6 @@ local TPEnemy = false
 local Aura = false
 local PowerBoost = false
 
-local RAID_TIME = 900
-local START_DELAY = 10
-
 --================ RAID =================--
 
 local function CreateEaster()
@@ -58,63 +55,61 @@ local function GetRaid()
     end
 end
 
-local function GetSpots()
-    local raid = GetRaid()
-    if not raid then return {} end
-    local s = raid:FindFirstChild("Spots")
-    return s and s:GetChildren() or {}
+-- ✅ DETECT RAID SELESAI
+local function IsRaidFinished()
+    local ui = player.PlayerGui:FindFirstChild("Results")
+    return ui and ui.Enabled
 end
 
 --================ ENEMY =================--
 
-local function GetNearest()
-    local folder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-    local root = char.HumanoidRootPart
-    local nearest, dist = nil, math.huge
-
-    for _,mob in pairs(folder:GetChildren()) do
-        local hrp = mob:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local d = (hrp.Position - root.Position).Magnitude
-            if d < dist then
-                dist = d
-                nearest = mob
-            end
-        end
-    end
-
-    return nearest
+-- ✅ FIX UTAMA: CEK MOB HARUS DARI RAID
+local function IsMobInRaid(mob)
+    local raid = GetRaid()
+    if not raid then return false end
+    return mob:IsDescendantOf(raid)
 end
 
-local function IsSpotClear(pos)
-    local folder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
+-- EXTRA FILTER (ANTI MOB ANEH)
+local function IsValidRaidMob(mob)
+    if not IsMobInRaid(mob) then return false end
 
-    for _,mob in pairs(folder:GetChildren()) do
-        local hrp = mob:FindFirstChild("HumanoidRootPart")
-        if hrp and (hrp.Position - pos).Magnitude < 70 then
-            return false
-        end
-    end
+    if not mob:FindFirstChild("HumanoidRootPart") then return false end
+    if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health <= 0 then return false end
 
     return true
 end
 
-
 --================ LOOP TP =================--
+
 task.spawn(function()
     while task.wait(0.2) do
-        if TPEnemy and GetRaid() then -- 🔥 cuma cek ini
-            local target = GetNearest()
+        if TPEnemy and GetRaid() then
 
-            if target and target:FindFirstChild("HumanoidRootPart") then
-                local char = player.Character
+            local folder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
+            local char = player.Character
 
-                if char and char:FindFirstChild("HumanoidRootPart") then
-                    char.HumanoidRootPart.CFrame =
-                        target.HumanoidRootPart.CFrame * CFrame.new(0,0,4)
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local root = char.HumanoidRootPart
+
+                local target = nil
+                local dist = math.huge
+
+                for _,mob in pairs(folder:GetChildren()) do
+                    local hrp = mob:FindFirstChild("HumanoidRootPart")
+
+                    if hrp and IsValidRaidMob(mob) then
+                        local d = (hrp.Position - root.Position).Magnitude
+
+                        if d < dist and d < 200 then
+                            dist = d
+                            target = hrp
+                        end
+                    end
+                end
+
+                if target then
+                    root.CFrame = target.CFrame * CFrame.new(0,0,4)
                 end
             end
         end
@@ -138,7 +133,7 @@ end)
 task.spawn(function()
     while true do
         if PowerBoost then
-            for i = 1,3 do
+            for i = 1,5 do
                 RemoteEvent:FireServer({
                     {
                         "ClickSystem",
@@ -153,20 +148,34 @@ task.spawn(function()
     end
 end)
 
---================ RETURN =================--
+--================ RETURN SAFE =================--
 
-local function ClickReturn()
-    for i=1,15 do
+local function ClickReturnSafe()
+    for i = 1,20 do
         local ui = player.PlayerGui:FindFirstChild("Results")
+
         if ui and ui.Enabled then
             local btn = ui:FindFirstChild("Return", true)
             if btn then
                 firesignal(btn.MouseButton1Click)
-                break
             end
         end
+
+        if not ui or not ui.Enabled then
+            return true
+        end
+
         task.wait(1)
     end
+
+    return false
+end
+
+local function EnsureReturnCleared()
+    repeat
+        task.wait(1)
+    until not player.PlayerGui:FindFirstChild("Results") 
+        or not player.PlayerGui.Results.Enabled
 end
 
 --================ AUTO RAID =================--
@@ -180,27 +189,25 @@ task.spawn(function()
             task.wait(2)
             StartEaster()
 
-            task.wait(START_DELAY)
-            task.wait(RAID_TIME)
+            repeat task.wait(1) until IsRaidFinished()
+            ClickReturnSafe()
+            EnsureReturnCleared()
 
-            ClickReturn()
-            task.wait(8)
+            task.wait(5)
 
             -- NORMAL
             CreateNormal()
             task.wait(2)
             StartNormal()
 
-            task.wait(START_DELAY)
-            task.wait(RAID_TIME)
+            repeat task.wait(1) until IsRaidFinished()
+            ClickReturnSafe()
+            EnsureReturnCleared()
 
-            ClickReturn()
-            task.wait(10)
+            task.wait(5)
         end
     end
 end)
-
---================ GUI =================--
 
 --================ GUI =================--
 
@@ -221,7 +228,6 @@ title.Text = "RAID PANEL"
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
 
--- CLOSE
 local close = Instance.new("TextButton", main)
 close.Size = UDim2.new(0,30,0,30)
 close.Position = UDim2.new(1,-35,0,0)
@@ -231,7 +237,6 @@ close.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
--- MINIMIZE
 local mini = Instance.new("TextButton", main)
 mini.Size = UDim2.new(0,30,0,30)
 mini.Position = UDim2.new(1,-70,0,0)
@@ -253,7 +258,6 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- TOGGLES
 local function Toggle(name,pos,callback)
     local b = Instance.new("TextButton", main)
     b.Size = UDim2.new(1,-20,0,40)
@@ -262,17 +266,14 @@ local function Toggle(name,pos,callback)
 
     b.BackgroundColor3 = Color3.fromRGB(60,60,60)
     b.TextColor3 = Color3.fromRGB(255,255,255)
-
-    b.TextSize = 14 -- 🔥 atur ukuran di sini (coba 14–18)
-    b.Font = Enum.Font.GothamBold -- biar lebih jelas & clean
+    b.TextSize = 14
+    b.Font = Enum.Font.GothamBold
 
     local state = false
     b.MouseButton1Click:Connect(function()
         state = not state
         b.Text = name.." "..(state and "ON" or "OFF")
-
         b.BackgroundColor3 = state and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
-
         callback(state)
     end)
 end
