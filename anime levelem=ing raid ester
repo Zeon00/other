@@ -94,10 +94,6 @@ end)
 Toggle.MouseButton1Click:Connect(function()
     AutoRaid = not AutoRaid
     Toggle.Text = "AUTO RAID: " .. (AutoRaid and "ON" or "OFF")
-
-    if AutoRaid then
-        OpenRaidRemote:FireServer()
-    end
 end)
 
 --// ================= LOGIC =================
@@ -130,10 +126,13 @@ local function openRaid()
     if busyOpening then return end
     busyOpening = true
 
-    OpenRaidRemote:FireServer()
+    pcall(function()
+        OpenRaidRemote:FireServer()
+    end)
 
-    task.wait(3)
-    busyOpening = false
+    task.delay(3, function()
+        busyOpening = false
+    end)
 end
 
 -- LOOP
@@ -145,32 +144,19 @@ task.spawn(function()
 
             local raid = Workspace:FindFirstChild("EasterRaid")
 
-            -- ❌ BELUM ADA RAID → OPEN
             if not raid then
                 openRaid()
-
             else
                 local enemy = getEnemy()
 
-                -- 💀 RAID SELESAI (enemy habis)
-                if not enemy then
-                    print("Raid selesai, nunggu reset...")
-
-                    repeat
-                        task.wait(1)
-                        raid = Workspace:FindFirstChild("EasterRaid")
-                    until not raid or not AutoRaid
-
-                    if AutoRaid then
-                        print("Raid hilang, buka lagi")
-                        openRaid()
-                    end
-
-                else
-                    -- 🎯 ATTACK
+                if enemy then
                     attack(enemy)
                 end
             end
+
+        end
+    end
+end)
 
         end
     end
