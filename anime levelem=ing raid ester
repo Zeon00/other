@@ -141,9 +141,12 @@ task.spawn(function()
         task.wait(15)
 
         if AutoRaid then
-            if not workspace:FindFirstChild("EasterRaid") then
-                openRaid()
-            end
+            pcall(function()
+                game:GetService("ReplicatedStorage")
+                    .Remotes
+                    .OpenEasterRaid
+                    :FireServer()
+            end)
         end
     end
 end)
