@@ -1,0 +1,140 @@
+--// SERVICES
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+--// SETTINGS
+local AutoRaid = false
+
+--// REMOTE
+local OpenRaidRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("OpenEasterRaid")
+
+--// ================= GUI =================
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "EasterRaidGUI"
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 250, 0, 150)
+Main.Position = UDim2.new(0.4, 0, 0.3, 0)
+Main.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Main.Active = true
+Main.Draggable = true
+
+-- TITLE
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Title.Text = "Easter Raid"
+Title.TextColor3 = Color3.new(1,1,1)
+
+-- CLOSE BUTTON (X)
+local Close = Instance.new("TextButton", Main)
+Close.Size = UDim2.new(0, 30, 0, 30)
+Close.Position = UDim2.new(1, -30, 0, 0)
+Close.Text = "X"
+Close.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+Close.TextColor3 = Color3.new(1,1,1)
+
+-- MINIMIZE BUTTON (_)
+local Minimize = Instance.new("TextButton", Main)
+Minimize.Size = UDim2.new(0, 30, 0, 30)
+Minimize.Position = UDim2.new(1, -60, 0, 0)
+Minimize.Text = "-"
+Minimize.BackgroundColor3 = Color3.fromRGB(100, 100, 0)
+Minimize.TextColor3 = Color3.new(1,1,1)
+
+-- TOGGLE BUTTON
+local Toggle = Instance.new("TextButton", Main)
+Toggle.Size = UDim2.new(0, 200, 0, 50)
+Toggle.Position = UDim2.new(0.1, 0, 0.4, 0)
+Toggle.Text = "Auto Raid: OFF"
+Toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+Toggle.TextColor3 = Color3.new(1,1,1)
+
+-- ICON (buat balikin GUI)
+local Icon = Instance.new("TextButton", ScreenGui)
+Icon.Size = UDim2.new(0, 50, 0, 50)
+Icon.Position = UDim2.new(0, 20, 0.5, 0)
+Icon.Text = "RAID"
+Icon.Visible = false
+Icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Icon.TextColor3 = Color3.new(1,1,1)
+
+--// BUTTON FUNCTIONS
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+Minimize.MouseButton1Click:Connect(function()
+    Main.Visible = false
+    Icon.Visible = true
+end)
+
+Icon.MouseButton1Click:Connect(function()
+    Main.Visible = true
+    Icon.Visible = false
+end)
+
+Toggle.MouseButton1Click:Connect(function()
+    AutoRaid = not AutoRaid
+    Toggle.Text = "Auto Raid: " .. (AutoRaid and "ON" or "OFF")
+end)
+
+--// ================= LOGIC =================
+
+local function getRaid()
+    return Workspace:FindFirstChild("EasterRaid")
+end
+
+local function getEnemies()
+    local raid = getRaid()
+    if not raid then return {} end
+    
+    local enemies = {}
+    for _, v in pairs(raid:GetDescendants()) do
+        if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") then
+            if v.Humanoid.Health > 0 then
+                table.insert(enemies, v)
+            end
+        end
+    end
+    return enemies
+end
+
+local function tpToEnemy(enemy)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+    end
+end
+
+local function hitEnemy(enemy)
+    pcall(function()
+        ReplicatedStorage.Remotes.TakeDamage:FireServer(enemy:GetAttribute("UUID") or enemy.Name)
+    end)
+end
+
+RunService.RenderStepped:Connect(function()
+    if not AutoRaid then return end
+
+    local raid = getRaid()
+
+    if not raid then
+        pcall(function()
+            OpenRaidRemote:FireServer()
+        end)
+        return
+    end
+
+    local enemies = getEnemies()
+
+    if #enemies == 0 then
+        return
+    end
+
+    local target = enemies[1]
+    tpToEnemy(target)
+    hitEnemy(target)
+end)
