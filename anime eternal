@@ -14,6 +14,19 @@ local MAX_DISTANCE = 25
 local AutoTrain = false
 local KillAura = false
 local HitAll = false
+local AutoTPMob = false
+local currentTarget = nil
+local lastTP = 0
+local TP_DELAY = 0.1
+local currentTarget = nil
+local hasTeleported = false
+
+-- 🔥 DELAY SYSTEM (FIX)
+local lastHitMob = 0
+local lastTrain = 0
+
+local HIT_DELAY = 0.03
+local TRAIN_DELAY = 0.05
 
 local Remote = ReplicatedStorage:WaitForChild("Events"):WaitForChild("To_Server")
 
@@ -23,7 +36,7 @@ ScreenGui.Name = "AnimeEternalGUI"
 ScreenGui.ResetOnSpawn = false
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 280, 0, 170)
+Frame.Size = UDim2.new(0, 280, 0, 280)
 Frame.Position = UDim2.new(0.5, -140, 0.5, -85)
 Frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
 Frame.BorderSizePixel = 0
@@ -32,7 +45,6 @@ Instance.new("UICorner", Frame)
 local Stroke = Instance.new("UIStroke", Frame)
 Stroke.Color = Color3.fromRGB(80,80,80)
 
--- TITLE
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, -20, 0, 30)
 Title.Position = UDim2.new(0, 10, 0, 10)
@@ -43,7 +55,6 @@ Title.TextSize = 20
 Title.TextColor3 = Color3.new(1,1,1)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- STATUS
 local Status = Instance.new("TextLabel", Frame)
 Status.Size = UDim2.new(1, -20, 0, 20)
 Status.Position = UDim2.new(0, 10, 0, 35)
@@ -54,7 +65,6 @@ Status.TextSize = 14
 Status.TextColor3 = Color3.fromRGB(180,180,180)
 Status.TextXAlignment = Enum.TextXAlignment.Left
 
--- BUTTON
 local function makeButton(text, y)
 	local b = Instance.new("TextButton", Frame)
 	b.Size = UDim2.new(0, 240, 0, 40)
@@ -71,8 +81,8 @@ end
 local Train = makeButton("Auto Train : OFF", 65)
 local Hit = makeButton("Auto Hit : OFF", 115)
 local HitAllBtn = makeButton("Auto Hit All : OFF", 165)
+local TPMobBtn = makeButton("Auto TP Mob : OFF", 215)
 
--- MIN / CLOSE
 local MinBtn = Instance.new("TextButton", Frame)
 MinBtn.Size = UDim2.new(0, 30, 0, 30)
 MinBtn.Position = UDim2.new(1, -75, 0, 10)
@@ -85,7 +95,6 @@ Close.Position = UDim2.new(1, -40, 0, 10)
 Close.Text = "X"
 Close.BackgroundColor3 = Color3.fromRGB(180,50,50)
 
--- ICON
 local Icon = Instance.new("TextButton", ScreenGui)
 Icon.Size = UDim2.new(0, 50, 0, 50)
 Icon.Position = UDim2.new(0, 20, 0.5, 0)
@@ -143,7 +152,13 @@ HitAllBtn.MouseButton1Click:Connect(function()
 	HitAllBtn.Text = "Auto Hit All : " .. (HitAll and "ON" or "OFF")
 	HitAllBtn.BackgroundColor3 = HitAll and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
 end)
--- MINIMIZE
+
+TPMobBtn.MouseButton1Click:Connect(function()
+	AutoTPMob = not AutoTPMob
+	TPMobBtn.Text = "Auto TP Mob : " .. (AutoTPMob and "ON" or "OFF")
+	TPMobBtn.BackgroundColor3 = AutoTPMob and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
+end)
+
 MinBtn.MouseButton1Click:Connect(function()
 	Frame.Visible = false
 	Icon.Visible = true
@@ -154,7 +169,6 @@ Icon.MouseButton1Click:Connect(function()
 	Icon.Visible = false
 end)
 
--- CLOSE
 Close.MouseButton1Click:Connect(function()
 	ScreenGui:Destroy()
 end)
@@ -179,29 +193,83 @@ RunService.RenderStepped:Connect(function()
 
 	local myHRP = player.Character.HumanoidRootPart
 
-	-- PRIORITY
-	if HitAll then
-	Status.Text = "Status: Hit All"
+	if AutoTPMob then
+	Status.Text = "Status: Auto Farm"
 
-	for _, mob in pairs(getMobs()) do
-		local hrp = mob:FindFirstChild("HumanoidRootPart")
-		local hum = mob:FindFirstChild("Humanoid")
+	-- RESET TARGET KALO MATI
+	if currentTarget and currentTarget:FindFirstChild("Humanoid") then
+		if currentTarget.Humanoid.Health <= 0 then
+			currentTarget = nil
+			hasTeleported = false
+		end
+	else
+		currentTarget = nil
+		hasTeleported = false
+	end
 
-		if hrp and hum and hum.Health > 0 then
-			local dist = (myHRP.Position - hrp.Position).Magnitude
+	-- CARI TARGET BARU
+	if not currentTarget then
+		local distMin = math.huge
 
-			if dist <= MAX_DISTANCE then
-				for i = 1,5 do
-					Remote:FireServer(unpack({{
-						Id = mob.Name,
-						Action = "_Mouse_Click"
-					}}))
+		for _, mob in pairs(getMobs()) do
+			local hrp = mob:FindFirstChild("HumanoidRootPart")
+			local hum = mob:FindFirstChild("Humanoid")
+
+			if hrp and hum and hum.Health > 0 then
+				local dist = (myHRP.Position - hrp.Position).Magnitude
+
+				if dist < distMin then
+					distMin = dist
+					currentTarget = mob
 				end
 			end
 		end
 	end
 
-elseif KillAura then
+	-- EKSEKUSI TARGET
+	if currentTarget and currentTarget:FindFirstChild("HumanoidRootPart") then
+		local hrp = currentTarget.HumanoidRootPart
+
+		-- 🔥 TP SEKALI DOANG
+		if not hasTeleported then
+			myHRP.CFrame = hrp.CFrame * CFrame.new(0,0,3)
+			hasTeleported = true
+		end
+
+		-- HIT SAMPE MATI
+		if tick() - lastHitMob >= HIT_DELAY then
+			lastHitMob = tick()
+
+			Remote:FireServer(unpack({{
+				Id = currentTarget.Name,
+				Action = "_Mouse_Click"
+			}}))
+		end
+	end
+
+	elseif HitAll then
+		Status.Text = "Status: Hit All"
+
+		for _, mob in pairs(getMobs()) do
+			local hrp = mob:FindFirstChild("HumanoidRootPart")
+			local hum = mob:FindFirstChild("Humanoid")
+
+			if hrp and hum and hum.Health > 0 then
+				local dist = (myHRP.Position - hrp.Position).Magnitude
+
+				if dist <= MAX_DISTANCE then
+					if tick() - lastHitMob >= HIT_DELAY then
+						lastHitMob = tick()
+						Remote:FireServer(unpack({{
+							Id = mob.Name,
+							Action = "_Mouse_Click"
+						}}))
+					end
+				end
+			end
+		end
+
+	elseif KillAura then
 		Status.Text = "Status: Farming"
 
 		local target = nil
@@ -214,11 +282,9 @@ elseif KillAura then
 			if hum.Health > 0 then
 				local dist = (myHRP.Position - hrp.Position).Magnitude
 
-				if dist <= MAX_DISTANCE then
-					if dist < distMin then
-						distMin = dist
-						target = mob
-					end
+				if dist <= MAX_DISTANCE and dist < distMin then
+					distMin = dist
+					target = mob
 				end
 			end
 		end
@@ -230,7 +296,8 @@ elseif KillAura then
 				myHRP.CFrame = hrp.CFrame * CFrame.new(0,0,3)
 			end
 
-			for i = 1,5 do
+			if tick() - lastHitMob >= HIT_DELAY then
+				lastHitMob = tick()
 				Remote:FireServer(unpack({{
 					Id = target.Name,
 					Action = "_Mouse_Click"
@@ -243,26 +310,29 @@ elseif KillAura then
 	elseif AutoTrain then
 		Status.Text = "Status: Training"
 
-		for i = 1,5 do
-			Remote:FireServer(unpack({{Action = "_Mouse_Click"}}))
+		if tick() - lastTrain >= TRAIN_DELAY then
+			lastTrain = tick()
+			Remote:FireServer(unpack({{
+				Action = "_Mouse_Click"
+			}}))
 		end
 
 	else
 		Status.Text = "Status: Idle"
 	end
 end)
-----------------------------------------------------------------
--- ANTI AFK (TETAP)
-----------------------------------------------------------------
 
-if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-	if tick() - lastAFK > AFK_DELAY then
-		local hrp = player.Character.HumanoidRootPart
-		
-		-- putar dikit (random kecil biar natural)
-		local angle = math.rad(math.random(-30,30))
-		hrp.CFrame = hrp.CFrame * CFrame.Angles(0, angle, 0)
 
-		lastAFK = tick()
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+task.spawn(function()
+	while true do
+		task.wait(10) -- tiap 10 detik (aman sebelum kick)
+
+		-- posisi random di layar
+		local x = math.random(100, 500)
+		local y = math.random(100, 500)
+
+		VirtualInputManager:SendMouseMoveEvent(x, y, game)
 	end
-end
+end)
