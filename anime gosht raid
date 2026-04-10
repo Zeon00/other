@@ -108,8 +108,9 @@ end
 
 task.spawn(function()
     local index = 1
+    local lastSwitch = 0
 
-    while task.wait(0.8) do
+    while task.wait(0.2) do
         if TPEnemy and IsInRaid() then
             local char = player.Character
             if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
@@ -125,8 +126,10 @@ task.spawn(function()
                 local spot = spots[index]
                 root.CFrame = spot.CFrame + Vector3.new(0,5,0)
 
-                if not IsEnemyNear(root.Position) then
-                    index = index +1
+                -- 🔥 FIX: pindah tiap 2 detik (bukan nunggu musuh)
+                if tick() - lastSwitch > 2 then
+                    index = index + 1
+                    lastSwitch = tick()
                 end
             end
         end
