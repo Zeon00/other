@@ -39,7 +39,21 @@ end
 local function StartNormal()
     RemoteEvent:FireServer({{"GamemodeSystem","Start","Raid",8594485805,n=4},"\002"})
 end
+local function IsInRaid()
+    local gm = workspace:FindFirstChild("_MAP")
+    if not gm then return false end
 
+    gm = gm:FindFirstChild("Gamemode")
+    if not gm then return false end
+
+    for _,v in pairs(gm:GetChildren()) do
+        if string.find(v.Name, "Raid") then
+            return true
+        end
+    end
+
+    return false
+end
 --================ RAID DETECT =================--
 
 local function GetRaid()
@@ -82,37 +96,74 @@ end
 
 --================ LOOP TP =================--
 
+--// RAID CHECK
+local function IsInRaid()
+    local gm = workspace:FindFirstChild("_MAP")
+    if not gm then return false end
+
+    gm = gm:FindFirstChild("Gamemode")
+    if not gm then return false end
+
+    for _,v in pairs(gm:GetChildren()) do
+        if string.find(v.Name, "Raid") then
+            return true
+        end
+    end
+
+    return false
+end
+
+--// GET NEAREST (DITAMBAH LIMIT JARAK BIAR GA NGACO)
+local function GetNearest()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    local root = char.HumanoidRootPart
+    local nearest, dist = nil, math.huge
+
+    for _,mob in pairs(EnemyFolder:GetChildren()) do
+        local hrp = mob:FindFirstChild("HumanoidRootPart")
+        local hum = mob:FindFirstChild("Humanoid")
+
+        if hrp and hum and hum.Health > 0 then
+            local d = (hrp.Position - root.Position).Magnitude
+
+            -- 🔥 BATAS JARAK (ANTI MOB MAP BIASA)
+            if d < dist and d < 120 then
+                dist = d
+                nearest = hrp
+            end
+        end
+    end
+
+    return nearest
+end
+
+--// TP SMOOTH
+local lastTP = 0
+
+local function TPTo(hrp)
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    local root = char.HumanoidRootPart
+    local dist = (hrp.Position - root.Position).Magnitude
+
+    if dist < 6 then return end
+    if tick() - lastTP < 0.25 then return end
+    lastTP = tick()
+
+    root.CFrame = root.CFrame:Lerp(hrp.CFrame * CFrame.new(0,0,4), 0.5)
+end
+
+--// LOOP TP (🔥 SUDAH DI FIX)
 task.spawn(function()
-    while task.wait(0.2) do
-        if TPEnemy and GetRaid() then
+    while task.wait(0.25) do
+        if TP and IsInRaid() then -- ✅ HANYA SAAT RAID
+            local target = (TPMode == "Selected") and GetTarget() or GetNearest()
 
-            local folder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
-            local char = player.Character
-
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local root = char.HumanoidRootPart
-
-                local target = nil
-                local dist = math.huge
-
-                for _,mob in pairs(folder:GetChildren()) do
-                    local hrp = mob:FindFirstChild("HumanoidRootPart")
-                    local hum = mob:FindFirstChild("Humanoid")
-
-                    if hrp and hum and hum.Health > 0 then
-                        local d = (hrp.Position - root.Position).Magnitude
-
-                        -- 🔥 KUNCI UTAMA DI SINI
-                        if d < dist and d < 120 then
-                            dist = d
-                            target = hrp
-                        end
-                    end
-                end
-
-                if target then
-                    root.CFrame = target.CFrame * CFrame.new(0,0,4)
-                end
+            if target then
+                TPTo(target)
             end
         end
     end
