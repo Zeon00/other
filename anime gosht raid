@@ -106,6 +106,36 @@ end
 
 --================ TP SPOT =================--
 
+--================ TP SPOT (FULL FIX) =================--
+
+-- ambil spot 1–10 dari raid aktif
+local function GetRaidSpots()
+    local map = workspace:FindFirstChild("_MAP")
+    if not map then return {} end
+
+    local gm = map:FindFirstChild("Gamemode")
+    if not gm then return {} end
+
+    for _,v in pairs(gm:GetChildren()) do
+        if string.find(v.Name,"Raid") then
+            local spots = v:FindFirstChild("Spots")
+            if spots then
+                local list = {}
+                for i = 1,10 do
+                    local s = spots:FindFirstChild(tostring(i))
+                    if s then
+                        table.insert(list, s)
+                    end
+                end
+                return list
+            end
+        end
+    end
+
+    return {}
+end
+
+-- TP muter spot terus (ANTI STUCK)
 task.spawn(function()
     local index = 1
     local lastSwitch = 0
@@ -119,14 +149,17 @@ task.spawn(function()
             local spots = GetRaidSpots()
 
             if #spots > 0 then
+                -- reset index kalau lewat
                 if index > #spots then
                     index = 1
                 end
 
                 local spot = spots[index]
+
+                -- TP ke spot
                 root.CFrame = spot.CFrame + Vector3.new(0,5,0)
 
-                -- 🔥 FIX: pindah tiap 2 detik (bukan nunggu musuh)
+                -- 🔥 pindah tiap 2 detik (biar ga stuck)
                 if tick() - lastSwitch > 2 then
                     index = index + 1
                     lastSwitch = tick()
