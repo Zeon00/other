@@ -138,24 +138,30 @@ end
 -- LOOP
 task.spawn(function()
     while true do
+        task.wait(15)
+
+        if AutoRaid then
+            if not workspace:FindFirstChild("EasterRaid") then
+                openRaid()
+            end
+        end
+    end
+end)
+task.spawn(function()
+    while true do
         task.wait(0.2)
 
         if AutoRaid then
+            local raid = workspace:FindFirstChild("EasterRaid")
 
-            local raid = Workspace:FindFirstChild("EasterRaid")
-
-            if not raid then
-                openRaid()
-            else
+            if raid then
                 local enemy = getEnemy()
 
                 if enemy then
                     attack(enemy)
                 end
             end
-
         end
     end
 end)
-
 
