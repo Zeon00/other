@@ -22,7 +22,7 @@ local TPEnemy = false
 local Aura = false
 local PowerBoost = false
 
---// ENEMY FOLDER
+--// ENEMY
 local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
 
 --================ RAID =================--
@@ -45,20 +45,22 @@ end
 
 --================ RAID CHECK =================--
 
-local function IsInRaid()
-    local gm = workspace:FindFirstChild("_MAP")
-    if not gm then return false end
+local function GetRaid()
+    local map = workspace:FindFirstChild("_MAP")
+    if not map then return end
 
-    gm = gm:FindFirstChild("Gamemode")
-    if not gm then return false end
+    local gm = map:FindFirstChild("Gamemode")
+    if not gm then return end
 
     for _,v in pairs(gm:GetChildren()) do
         if string.find(v.Name,"Raid") then
-            return true
+            return v
         end
     end
+end
 
-    return false
+local function IsInRaid()
+    return GetRaid() ~= nil
 end
 
 local function IsRaidFinished()
@@ -66,58 +68,66 @@ local function IsRaidFinished()
     return ui and ui.Enabled
 end
 
---================ TARGET =================--
+--================ SPOTS =================--
 
-local function GetNearest()
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+local function GetRaidSpots()
+    local raid = GetRaid()
+    if not raid then return {} end
 
-    local root = char.HumanoidRootPart
-    local nearest, dist = nil, math.huge
+    local spots = raid:FindFirstChild("Spots")
+    if not spots then return {} end
 
+    local list = {}
+    for i = 1,10 do
+        local s = spots:FindFirstChild(tostring(i))
+        if s then
+            table.insert(list, s)
+        end
+    end
+
+    return list
+end
+
+--================ ENEMY CHECK =================--
+
+local function IsEnemyNear(pos)
     for _,mob in pairs(EnemyFolder:GetChildren()) do
         local hrp = mob:FindFirstChild("HumanoidRootPart")
         local hum = mob:FindFirstChild("Humanoid")
 
         if hrp and hum and hum.Health > 0 then
-            local d = (hrp.Position - root.Position).Magnitude
-
-            if d < dist and d < 100 then
-                dist = d
-                nearest = hrp
+            if (hrp.Position - pos).Magnitude < 60 then
+                return true
             end
         end
     end
-
-    return nearest
+    return false
 end
 
---================ TP =================--
-
-local lastTP = 0
-
-local function TPTo(hrp)
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-    local root = char.HumanoidRootPart
-    local dist = (hrp.Position - root.Position).Magnitude
-
-    if dist < 6 then return end
-    if tick() - lastTP < 0.25 then return end
-    lastTP = tick()
-
-    root.CFrame = root.CFrame:Lerp(hrp.CFrame * CFrame.new(0,0,4), 0.5)
-end
-
---================ LOOP TP =================--
+--================ TP SPOT =================--
 
 task.spawn(function()
-    while task.wait(0.25) do
+    local index = 1
+
+    while task.wait(0.8) do
         if TPEnemy and IsInRaid() then
-            local target = GetNearest()
-            if target then
-                TPTo(target)
+            local char = player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then continue end
+
+            local root = char.HumanoidRootPart
+            local spots = GetRaidSpots()
+
+            if #spots > 0 then
+                if index > #spots then
+                    index = 1
+                end
+
+                local spot = spots[index]
+                root.CFrame = spot.CFrame + Vector3.new(0,5,0)
+
+                if not IsEnemyNear(root.Position) then
+                    index += 1
+                end
             end
         end
     end
