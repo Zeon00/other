@@ -263,17 +263,19 @@ local function DropdownMulti(title, list)
 
     local btn = Instance.new("TextButton", main)
     btn.Size = UDim2.new(1,0,1,0)
-    btn.Text = title.." ◀"
+    btn.Text = title.." ▶"
     btn.TextColor3 = Color3.new(1,1,1)
     btn.BackgroundTransparency = 1
     btn.Font = Enum.Font.Gotham
     btn.TextScaled = true
 
-    -- DROP FRAME (SAMPING)
-    local dropFrame = Instance.new("Frame", gui)
+    -- DROPDOWN FRAME (KE SAMPING)
+    local dropFrame = Instance.new("Frame")
+    dropFrame.Parent = gui
     dropFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
     dropFrame.Visible = false
-    dropFrame.ZIndex = 999
+    dropFrame.BorderSizePixel = 0
+    dropFrame.ZIndex = 100
     Instance.new("UICorner", dropFrame)
 
     local scroll = Instance.new("ScrollingFrame", dropFrame)
@@ -281,12 +283,10 @@ local function DropdownMulti(title, list)
     scroll.CanvasSize = UDim2.new(0,0,0,0)
     scroll.ScrollBarThickness = 4
     scroll.BackgroundTransparency = 1
-    scroll.ZIndex = 1000
+    scroll.ZIndex = 101
 
     local layout = Instance.new("UIListLayout", scroll)
     layout.Padding = UDim.new(0,4)
-
-    MakeDraggable(dropFrame)
 
     local opened = false
     local itemCount = 0
@@ -299,26 +299,30 @@ local function DropdownMulti(title, list)
             local pos = main.AbsolutePosition
             local size = main.AbsoluteSize
 
-            local dropWidth = size.X
-            local maxHeight = 200
+            local width = size.X
             local contentHeight = itemCount * 32
-            local finalHeight = math.min(contentHeight, maxHeight)
+            local maxHeight = 200
 
-            -- 🔥 BALIK KE SAMPING KIRI
             dropFrame.Position = UDim2.new(
                 0,
-                pos.X - dropWidth - 5,
+                pos.X + size.X + 5, -- 👉 KE SAMPING KANAN
                 0,
                 pos.Y
             )
 
-            dropFrame.Size = UDim2.new(0, dropWidth, 0, finalHeight)
+            dropFrame.Size = UDim2.new(
+                0,
+                width,
+                0,
+                math.min(contentHeight, maxHeight)
+            )
+
             scroll.CanvasSize = UDim2.new(0,0,0,contentHeight)
         end
     end)
 
-    for name, data in pairs(list) do
-        itemCount = itemCount + 1
+    for name, callback in pairs(list) do
+        itemCount = itemCount +1
 
         local b = Instance.new("TextButton", scroll)
         b.Size = UDim2.new(1,0,0,30)
@@ -327,7 +331,7 @@ local function DropdownMulti(title, list)
         b.TextColor3 = Color3.new(1,1,1)
         b.Font = Enum.Font.Gotham
         b.TextScaled = true
-        b.ZIndex = 1001
+        b.ZIndex = 102
         Instance.new("UICorner", b)
 
         local state = false
@@ -336,8 +340,7 @@ local function DropdownMulti(title, list)
             state = not state
             b.Text = name.." "..(state and "ON" or "OFF")
             b.BackgroundColor3 = state and Color3.fromRGB(0,150,0) or Color3.fromRGB(100,0,0)
-
-            data(state)
+            callback(state)
         end)
     end
 end
