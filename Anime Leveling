@@ -318,7 +318,7 @@ local function DropdownMulti(title, list)
     end)
 
     for name, data in pairs(list) do
-        itemCount += 1
+        itemCount = itemCount + 1
 
         local b = Instance.new("TextButton", scroll)
         b.Size = UDim2.new(1,0,0,30)
