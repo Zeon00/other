@@ -537,7 +537,7 @@ end
     if AutoHaki then Remotes.HakiLeveling:FireServer() end
     if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
     if AutoSaiyan then Remotes.RollSaiyanPower:FireServer() end
-    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star5", 20) end
+    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star6", 20) end
     if AutoBreathing then Remotes.RollBreathingPower:FireServer() end
     if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
     if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
