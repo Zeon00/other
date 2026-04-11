@@ -351,26 +351,41 @@ local function MakeDraggable(frame)
     local dragStart
     local startPos
 
+    local function startDrag(input)
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+
+    -- 🔥 DETECT DARI FRAME + SEMUA CHILD
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 
         or input.UserInputType == Enum.UserInputType.Touch then
-            
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
+            startDrag(input)
+        end
+    end)
 
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
+    for _, v in pairs(frame:GetDescendants()) do
+        if v:IsA("GuiObject") then
+            v.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 
+                or input.UserInputType == Enum.UserInputType.Touch then
+                    startDrag(input)
                 end
             end)
         end
-    end)
+    end
 
     UIS.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement 
         or input.UserInputType == Enum.UserInputType.Touch) then
-            
+
             local delta = input.Position - dragStart
 
             frame.Position = UDim2.new(
