@@ -139,6 +139,28 @@ local function ClickReturn()
         task.wait(1)
     end
 end
+
+local AutoRaid = false
+
+local function JoinRaid()
+    local args = {
+        {
+            {
+                "GamemodeSystem",
+                "Join",
+                "Easter Raid",
+                8594485805, -- ID dari temen lu
+                n = 4
+            },
+            "\002"
+        }
+    }
+
+    game:GetService("ReplicatedStorage")
+        :WaitForChild("ffrostflame_bridgenet2@1.0.0")
+        :WaitForChild("dataRemoteEvent")
+        :FireServer(unpack(args))
+end
 --// TP SMOOTH
 local function TPTo(hrp)
     local char = player.Character
@@ -292,6 +314,13 @@ task.spawn(function()
         end
     end
 end)
+task.spawn(function()
+    while task.wait(1.5) do
+        if AutoRaid then
+            pcall(JoinRaid)
+        end
+    end
+end)
 --// GUI
 local gui = Instance.new("ScreenGui")
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -380,7 +409,7 @@ createToggle("TP",80,function(v) TP = v end)
 createToggle("Skill",120,function(v) Skill = v end)
 createToggle("Warrior Aura",160,function(v) WarriorAura = v end)
 createToggle("Auto Claim",200,function(v) AutoClaim = v end)
-
+createToggle("Auto Join Raid",280,function(v) AutoRaid = v end)
 -- MODE
 local modeBtn = Instance.new("TextButton", main)
 modeBtn.Size = UDim2.new(1,-20,0,35)
