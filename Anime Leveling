@@ -269,12 +269,11 @@ local function DropdownMulti(title, list)
     btn.Font = Enum.Font.Gotham
     btn.TextScaled = true
 
-    -- DROP FRAME (HARUS DI ATAS SEMUA)
+    -- DROP FRAME
     local dropFrame = Instance.new("Frame", gui)
     dropFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
     dropFrame.Visible = false
     dropFrame.ZIndex = 999
-    dropFrame.ClipsDescendants = true
     Instance.new("UICorner", dropFrame)
 
     local scroll = Instance.new("ScrollingFrame", dropFrame)
@@ -287,11 +286,10 @@ local function DropdownMulti(title, list)
     local layout = Instance.new("UIListLayout", scroll)
     layout.Padding = UDim.new(0,4)
 
+    MakeDraggable(dropFrame)
+
     local opened = false
     local itemCount = 0
-
-    -- DRAG FIX (JANGAN PAKE DESCENDANTS)
-    MakeDraggable(dropFrame)
 
     btn.MouseButton1Click:Connect(function()
         opened = not opened
@@ -306,20 +304,16 @@ local function DropdownMulti(title, list)
             local contentHeight = itemCount * 32
             local finalHeight = math.min(contentHeight, maxHeight)
 
-            dropFrame.Position = UDim2.new(
-                0,
-                pos.X,
-                0,
-                pos.Y + size.Y + 5
-            )
-
+            dropFrame.Position = UDim2.new(0, pos.X, 0, pos.Y + size.Y + 5)
             dropFrame.Size = UDim2.new(0, dropWidth, 0, finalHeight)
+
             scroll.CanvasSize = UDim2.new(0,0,0,contentHeight)
         end
     end)
 
-    for name, callback in pairs(list) do
-        itemCount += 1
+    -- 🔥 PENTING: pakai name + data (bukan callback doang)
+    for name, data in pairs(list) do
+        itemCount = itemCount + 1
 
         local b = Instance.new("TextButton", scroll)
         b.Size = UDim2.new(1,0,0,30)
@@ -338,7 +332,8 @@ local function DropdownMulti(title, list)
             b.Text = name.." "..(state and "ON" or "OFF")
             b.BackgroundColor3 = state and Color3.fromRGB(0,150,0) or Color3.fromRGB(100,0,0)
 
-            callback(state)
+            -- 🔥 INI YG BIKIN AUTO POWER HIDUP LAGI
+            data(state)
         end)
     end
 end
