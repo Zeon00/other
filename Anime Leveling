@@ -269,51 +269,67 @@ local function DropdownMulti(title, list)
     btn.Font = Enum.Font.Gotham
     btn.TextScaled = true
 
-    -- DROP DI LUAR (GUI ROOT)
-    local drop = Instance.new("Frame", gui)
-    drop.BackgroundColor3 = Color3.fromRGB(30,30,30)
-    drop.Size = UDim2.new(0,200,0,0)
-    drop.Visible = false
-    drop.ZIndex = 10
-    Instance.new("UICorner", drop)
+    -- FRAME LUAR (ROOT GUI)
+    local dropFrame = Instance.new("Frame", gui)
+    dropFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    dropFrame.Visible = false
+    dropFrame.ZIndex = 10
+    Instance.new("UICorner", dropFrame)
 
-    local layout = Instance.new("UIListLayout", drop)
+    -- SCROLL DI DALAM
+    local scroll = Instance.new("ScrollingFrame", dropFrame)
+    scroll.Size = UDim2.new(1,0,1,0)
+    scroll.CanvasSize = UDim2.new(0,0,0,0)
+    scroll.ScrollBarThickness = 4
+    scroll.BackgroundTransparency = 1
+    scroll.ZIndex = 11
+
+    local layout = Instance.new("UIListLayout", scroll)
     layout.Padding = UDim.new(0,4)
 
     local opened = false
+    local itemCount = 0
 
     btn.MouseButton1Click:Connect(function()
         opened = not opened
-        drop.Visible = opened
+        dropFrame.Visible = opened
 
         if opened then
             local pos = main.AbsolutePosition
             local size = main.AbsoluteSize
 
             local dropWidth = size.X
-            local dropHeight = #list * 32
 
-            -- POSISI DI KIRI MAIN GUI
-            drop.Position = UDim2.new(
+            -- 🔥 MAX HEIGHT (biar scroll aktif)
+            local maxHeight = 200
+            local contentHeight = itemCount * 32
+
+            local finalHeight = math.min(contentHeight, maxHeight)
+
+            dropFrame.Position = UDim2.new(
                 0,
-                pos.X - dropWidth - 5, -- geser ke kiri
+                pos.X - dropWidth - 5,
                 0,
                 pos.Y
             )
 
-            drop.Size = UDim2.new(0, dropWidth, 0, dropHeight)
+            dropFrame.Size = UDim2.new(0, dropWidth, 0, finalHeight)
+
+            scroll.CanvasSize = UDim2.new(0,0,0,contentHeight)
         end
     end)
 
     for name, data in pairs(list) do
-        local b = Instance.new("TextButton", drop)
+        itemCount += 1
+
+        local b = Instance.new("TextButton", scroll)
         b.Size = UDim2.new(1,0,0,30)
         b.Text = name.." OFF"
         b.BackgroundColor3 = Color3.fromRGB(100,0,0)
         b.TextColor3 = Color3.new(1,1,1)
         b.Font = Enum.Font.Gotham
         b.TextScaled = true
-        b.ZIndex = 11
+        b.ZIndex = 12
         Instance.new("UICorner", b)
 
         local state = false
@@ -475,7 +491,8 @@ end
     if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
     if AutoDemon then Remotes.RollDemonPower:FireServer() end
 	if AutoMask then Remotes.RollMaskPower:FireServer() end
-
+	if AutoBlessing then Remotes.RollBlessingPower:FireServer() end
+	
 	if AutoEaster then
     game:GetService("ReplicatedStorage")
         :WaitForChild("Remotes")
@@ -514,5 +531,6 @@ DropdownMulti("AUTO POWERS", {
     ["Demon"] = function(v) AutoDemon = v end,
     ["Easter"] = function(v) AutoEaster = v end,
 	["Mask"] = function(v) AutoMask = v end,
+	["Blessing"] = function(v) AutoBlessing = v end,
 	
 })
