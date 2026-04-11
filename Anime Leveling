@@ -271,6 +271,7 @@ local function DropdownMulti(title, list)
 
     -- FRAME LUAR (ROOT GUI)
     local dropFrame = Instance.new("Frame", gui)
+	MakeDraggable(dropFrame)
     dropFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
     dropFrame.Visible = false
     dropFrame.ZIndex = 10
