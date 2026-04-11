@@ -305,7 +305,7 @@ local function DropdownMulti(title, list)
 
             dropFrame.Position = UDim2.new(
                 0,
-                pos.X + size.X + 5, -- 👉 KE SAMPING KANAN
+                pos.X + size.X + -5, -- 👉 KE SAMPING KANAN
                 0,
                 pos.Y
             )
