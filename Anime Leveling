@@ -263,33 +263,35 @@ local function DropdownMulti(title, list)
 
     local btn = Instance.new("TextButton", main)
     btn.Size = UDim2.new(1,0,1,0)
-    btn.Text = title.." ◀"
+    btn.Text = title.." ▼"
     btn.TextColor3 = Color3.new(1,1,1)
     btn.BackgroundTransparency = 1
     btn.Font = Enum.Font.Gotham
     btn.TextScaled = true
 
-    -- FRAME LUAR (ROOT GUI)
+    -- DROP FRAME (HARUS DI ATAS SEMUA)
     local dropFrame = Instance.new("Frame", gui)
-	MakeDraggable(dropFrame)
     dropFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
     dropFrame.Visible = false
-    dropFrame.ZIndex = 10
+    dropFrame.ZIndex = 999
+    dropFrame.ClipsDescendants = true
     Instance.new("UICorner", dropFrame)
 
-    -- SCROLL DI DALAM
     local scroll = Instance.new("ScrollingFrame", dropFrame)
     scroll.Size = UDim2.new(1,0,1,0)
     scroll.CanvasSize = UDim2.new(0,0,0,0)
     scroll.ScrollBarThickness = 4
     scroll.BackgroundTransparency = 1
-    scroll.ZIndex = 11
+    scroll.ZIndex = 1000
 
     local layout = Instance.new("UIListLayout", scroll)
     layout.Padding = UDim.new(0,4)
 
     local opened = false
     local itemCount = 0
+
+    -- DRAG FIX (JANGAN PAKE DESCENDANTS)
+    MakeDraggable(dropFrame)
 
     btn.MouseButton1Click:Connect(function()
         opened = not opened
@@ -300,27 +302,23 @@ local function DropdownMulti(title, list)
             local size = main.AbsoluteSize
 
             local dropWidth = size.X
-
-            -- 🔥 MAX HEIGHT (biar scroll aktif)
             local maxHeight = 200
             local contentHeight = itemCount * 32
-
             local finalHeight = math.min(contentHeight, maxHeight)
 
             dropFrame.Position = UDim2.new(
                 0,
-                pos.X - dropWidth - 5,
+                pos.X,
                 0,
-                pos.Y
+                pos.Y + size.Y + 5
             )
 
             dropFrame.Size = UDim2.new(0, dropWidth, 0, finalHeight)
-
             scroll.CanvasSize = UDim2.new(0,0,0,contentHeight)
         end
     end)
 
-    for name, data in pairs(list) do
+    for name, callback in pairs(list) do
         itemCount += 1
 
         local b = Instance.new("TextButton", scroll)
@@ -330,7 +328,7 @@ local function DropdownMulti(title, list)
         b.TextColor3 = Color3.new(1,1,1)
         b.Font = Enum.Font.Gotham
         b.TextScaled = true
-        b.ZIndex = 12
+        b.ZIndex = 1001
         Instance.new("UICorner", b)
 
         local state = false
@@ -340,7 +338,7 @@ local function DropdownMulti(title, list)
             b.Text = name.." "..(state and "ON" or "OFF")
             b.BackgroundColor3 = state and Color3.fromRGB(0,150,0) or Color3.fromRGB(100,0,0)
 
-            data(state)
+            callback(state)
         end)
     end
 end
