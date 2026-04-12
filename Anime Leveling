@@ -461,7 +461,7 @@ task.spawn(function()
 end)
 --// AUTO HATCH SYSTEM (FULL FIX)
 task.spawn(function()
-    while task.wait(0.4) do
+    while task.wait(0.05) do
         if AutoEgg then
             -- stop kalau lagi raid biar ga conflict
             if not InTower and not InWisteria then
