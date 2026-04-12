@@ -26,6 +26,8 @@ local State = require(RS.Client.State)
 local FastHit, AutoTP, BypassAll = false,false,false
 local AutoFruit, AutoHaki, AutoDragon = false,false,false
 local AutoSaiyan, AutoEgg = false,false
+local SelectedEgg = "Star6"
+local HatchAmount = 11
 local AutoRaid = false
 local AutoBreathing = false
 local AutoProsperity = false
@@ -457,6 +459,19 @@ task.spawn(function()
         pcall(UpdateEnemyList)
     end
 end)
+--// AUTO HATCH SYSTEM (FULL FIX)
+task.spawn(function()
+    while task.wait(0.4) do
+        if AutoEgg then
+            -- stop kalau lagi raid biar ga conflict
+            if not InTower and not InWisteria then
+                pcall(function()
+                    Remotes.Eggs.Hatch:InvokeServer(SelectedEgg, HatchAmount)
+                end)
+            end
+        end
+    end
+end)
 
 -- MAIN LOOP (UPGRADE TANPA HAPUS)
 local index = 1
@@ -539,7 +554,6 @@ end
     if AutoHaki then Remotes.HakiLeveling:FireServer() end
     if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
     if AutoSaiyan then Remotes.RollSaiyanPower:FireServer() end
-    if AutoEgg then Remotes.Eggs.Hatch:InvokeServer("Star6", 20) end
     if AutoBreathing then Remotes.RollBreathingPower:FireServer() end
     if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
     if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
