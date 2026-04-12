@@ -560,7 +560,8 @@ end
     if AutoDemon then Remotes.RollDemonPower:FireServer() end
 	if AutoMask then Remotes.RollMaskPower:FireServer() end
 	if AutoBlessing then Remotes.RollBlessingPower:FireServer() end
-	
+	if AutoRollRace then Remotes.RollRacePower:FireServer() end
+
 	if AutoEaster then
     game:GetService("ReplicatedStorage")
         :WaitForChild("Remotes")
@@ -600,5 +601,6 @@ DropdownMulti("AUTO POWERS", {
     ["Easter"] = function(v) AutoEaster = v end,
 	["Mask"] = function(v) AutoMask = v end,
 	["Blessing"] = function(v) AutoBlessing = v end,
+	["RollRace"] = function(v) AutoRollRace = v end,
 	
 })
