@@ -146,7 +146,7 @@ task.spawn(function()
 			local targets = getTargets()
 
 			if #targets > 0 then
-				for i = 1, 5 do
+				for i = 1, 1 do
 					local args = {
 						{
 							{
