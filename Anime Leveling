@@ -558,13 +558,8 @@ end
 	if AutoMask then Remotes.RollMaskPower:FireServer() end
 	if AutoBlessing then Remotes.RollBlessingPower:FireServer() end
 	if AutoRollRace then Remotes.RollRacePower:FireServer() end
-
-	if AutoEaster then
-    game:GetService("ReplicatedStorage")
-        :WaitForChild("Remotes")
-        :WaitForChild("RollEasterPower")
-        :FireServer()
-end
+	if AutoBankai then Remotes.RollBankaiPower:FireServer() end
+    if AutoEaster then Remotes.RollEasterPower:FireServer() end
 end)
 
 -- BYPASS
@@ -599,5 +594,5 @@ DropdownMulti("AUTO POWERS", {
 	["Mask"] = function(v) AutoMask = v end,
 	["Blessing"] = function(v) AutoBlessing = v end,
 	["RollRace"] = function(v) AutoRollRace = v end,
-	
+	["Bankai"] = function(v) AutoBankai = v end,
 })
