@@ -1,0 +1,242 @@
+--// SERVICES
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+
+local player = Players.LocalPlayer
+local Remote = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+--// STATE
+local AutoAttack = false
+local AutoClick = false
+local AutoTP = false
+
+
+--// GUI
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "AutoFarmGUI"
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 260, 0, 210)
+main.Position = UDim2.new(0.5, -130, 0.5, -105)
+main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main)
+
+-- TITLE
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "AUTO FARM V2"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+
+-- CLOSE
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-30,0,0)
+close.Text = "X"
+close.BackgroundTransparency = 1
+close.TextColor3 = Color3.fromRGB(255,80,80)
+
+-- MINIMIZE
+local mini = Instance.new("TextButton", main)
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-60,0,0)
+mini.Text = "-"
+mini.BackgroundTransparency = 1
+mini.TextColor3 = Color3.fromRGB(200,200,200)
+
+-- ICON
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,20,0.5,0)
+icon.Text = "OPEN"
+icon.Visible = false
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Instance.new("UICorner", icon)
+
+mini.MouseButton1Click:Connect(function()
+	main.Visible = false
+	icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+	main.Visible = true
+	icon.Visible = false
+end)
+
+close.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+--// BUTTON
+local function createToggle(name, y)
+	local btn = Instance.new("TextButton", main)
+	btn.Size = UDim2.new(0.9,0,0,35)
+	btn.Position = UDim2.new(0.05,0,0,y)
+	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 13
+	btn.Text = name.." : OFF"
+	Instance.new("UICorner", btn)
+	return btn
+end
+
+local atkBtn = createToggle("Auto Attack", 40)
+local clickBtn = createToggle("Auto Click", 80)
+local tpBtn = createToggle("Auto TP", 120)
+
+atkBtn.MouseButton1Click:Connect(function()
+	AutoAttack = not AutoAttack
+	atkBtn.Text = "Auto Attack : "..(AutoAttack and "ON" or "OFF")
+end)
+
+clickBtn.MouseButton1Click:Connect(function()
+	AutoClick = not AutoClick
+	clickBtn.Text = "Auto Click : "..(AutoClick and "ON" or "OFF")
+end)
+
+tpBtn.MouseButton1Click:Connect(function()
+	AutoTP = not AutoTP
+	tpBtn.Text = "Auto TP : "..(AutoTP and "ON" or "OFF")
+end)
+
+
+--// GET TARGET (SERVER MOBS)
+local overlap = OverlapParams.new()
+overlap.FilterType = Enum.RaycastFilterType.Include
+overlap.FilterDescendantsInstances = {
+	workspace.Game.Mobs,
+	workspace.Game.Rooms,
+	workspace.Game.Trials
+}
+
+local function getTargets()
+	local char = player.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
+	
+	local hrp = char.HumanoidRootPart
+	local parts = workspace:GetPartBoundsInRadius(hrp.Position, 10, overlap)
+
+	local targets = {}
+	local used = {}
+
+	for _, part in pairs(parts) do
+		local model = part.Parent
+		
+		if not used[model] and part:GetAttribute("Enemy") and not part:GetAttribute("Died") then
+			table.insert(targets, part) -- 🔥 PART, bukan model
+			used[model] = true
+		end
+	end
+
+	return targets
+end
+
+--// AUTO ATTACK (TARGET FIX)
+task.spawn(function()
+	while true do
+		if AutoAttack then
+			local targets = getTargets()
+
+			if #targets > 0 then
+				for i = 1, 5 do
+					local args = {
+						{
+							{
+								"Action",
+								"Action",
+								{
+									Callback = "M1",
+									Action = "Callback",
+									Targets = targets
+								}
+							},
+							"\006"
+						}
+					}
+
+					Remote:FireServer(unpack(args))
+					task.wait(0.01) -- 🔥 penting biar gak ke-drop
+				end
+			end
+		end
+		
+		task.wait(0.07) -- 🔥 jangan terlalu cepat
+	end
+end)
+
+--// AUTO CLICK (NO TARGET)
+task.spawn(function()
+	while true do
+		if AutoClick then
+			local args = {
+				{
+					{
+						"Action",
+						"Action",
+						{
+							Callback = "M1",
+							Action = "Callback",
+							Targets = {}
+						}
+					},
+					"\006"
+				}
+			}
+			Remote:FireServer(unpack(args))
+		end
+		task.wait(0.05)
+	end
+end)
+
+--// AUTO TP
+RunService.Heartbeat:Connect(function()
+	if AutoTP then
+		local char = player.Character
+		
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local hrp = char.HumanoidRootPart
+			local mobs = workspace.Game.Mobs.Client
+
+			local closest = nil
+			local dist = math.huge
+
+			for _, mob in pairs(mobs:GetChildren()) do
+				local mobHRP = mob:FindFirstChild("HumanoidRootPart")
+				local hum = mob:FindFirstChild("Humanoid")
+
+				if mobHRP and hum and hum.Health > 0 then
+					local d = (hrp.Position - mobHRP.Position).Magnitude
+					
+					if d < dist then
+						dist = d
+						closest = mobHRP
+					end
+				end
+			end
+
+			if closest then
+				hrp.CFrame = closest.CFrame * CFrame.new(0,3,5)
+			end
+		end
+	end
+end)
+
+--// ANTI AFK
+local VirtualUser = game:GetService("VirtualUser")
+local player = game:GetService("Players").LocalPlayer
+
+-- HAPUS semua variable AntiAFK
+
+player.Idled:Connect(function()
+	VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+	task.wait(1)
+	VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
