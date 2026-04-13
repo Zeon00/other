@@ -560,6 +560,7 @@ end
 	if AutoRollRace then Remotes.RollRacePower:FireServer() end
 	if AutoBankai then Remotes.RollBankaiPower:FireServer() end
     if AutoEaster then Remotes.RollEasterPower:FireServer() end
+	if AutoBlessing then Remotes.RollBlessingPower:FireServer() end
 end)
 
 -- BYPASS
@@ -582,7 +583,7 @@ Toggle("AUTO GROUP", function(v) AutoGroup = v end)
 Toggle("Wisteria", function(v) AutoWisteria = v end)
 
 DropdownMulti("AUTO POWERS", {
-	["Fruit"] = function(v) AutoDFruit = v end,
+	["Fruit"] = function(v) AutoFruit = v end,
     ["Haki"] = function(v) AutoHaki = v end,
     ["Dragon"] = function(v) AutoDragon = v end,
     ["Saiyan"] = function(v) AutoSaiyan = v end,
@@ -595,4 +596,5 @@ DropdownMulti("AUTO POWERS", {
 	["Blessing"] = function(v) AutoBlessing = v end,
 	["RollRace"] = function(v) AutoRollRace = v end,
 	["Bankai"] = function(v) AutoBankai = v end,
+	["Blessing"] = function(v) AutoBlessing = v end,
 })
