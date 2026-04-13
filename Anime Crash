@@ -12,15 +12,14 @@ local AutoAttack = false
 local AutoClick = false
 local AutoTP = false
 
-
 --// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "AutoFarmGUI"
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 260, 0, 210)
-main.Position = UDim2.new(0.5, -130, 0.5, -105)
+main.Size = UDim2.new(0, 260, 0, 220)
+main.Position = UDim2.new(0.5, -130, 0.5, -110)
 main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.Active = true
 main.Draggable = true
@@ -30,7 +29,7 @@ Instance.new("UICorner", main)
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "AUTO FARM V2"
+title.Text = "AUTO FARM V3"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 14
@@ -89,8 +88,8 @@ local function createToggle(name, y)
 end
 
 local atkBtn = createToggle("Auto Attack", 40)
-local clickBtn = createToggle("Auto Click", 80)
-local tpBtn = createToggle("Auto TP", 120)
+local clickBtn = createToggle("Auto Click", 85)
+local tpBtn = createToggle("Auto TP", 130)
 
 atkBtn.MouseButton1Click:Connect(function()
 	AutoAttack = not AutoAttack
@@ -107,8 +106,7 @@ tpBtn.MouseButton1Click:Connect(function()
 	tpBtn.Text = "Auto TP : "..(AutoTP and "ON" or "OFF")
 end)
 
-
---// GET TARGET (SERVER MOBS)
+--// GET TARGET
 local overlap = OverlapParams.new()
 overlap.FilterType = Enum.RaycastFilterType.Include
 overlap.FilterDescendantsInstances = {
@@ -122,7 +120,7 @@ local function getTargets()
 	if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
 	
 	local hrp = char.HumanoidRootPart
-	local parts = workspace:GetPartBoundsInRadius(hrp.Position, 10, overlap)
+	local parts = workspace:GetPartBoundsInRadius(hrp.Position, 12, overlap)
 
 	local targets = {}
 	local used = {}
@@ -131,7 +129,7 @@ local function getTargets()
 		local model = part.Parent
 		
 		if not used[model] and part:GetAttribute("Enemy") and not part:GetAttribute("Died") then
-			table.insert(targets, part) -- 🔥 PART, bukan model
+			table.insert(targets, part)
 			used[model] = true
 		end
 	end
@@ -139,102 +137,109 @@ local function getTargets()
 	return targets
 end
 
---// AUTO ATTACK (TARGET FIX)
+--// AUTO ATTACK (FAST STABLE)
 task.spawn(function()
 	while true do
 		if AutoAttack then
 			local targets = getTargets()
 
 			if #targets > 0 then
-				for i = 1, 1 do
-					local args = {
+				for i = 1, 5 do -- burst
+					Remote:FireServer({
 						{
+							"Action",
+							"Action",
 							{
-								"Action",
-								"Action",
-								{
-									Callback = "M1",
-									Action = "Callback",
-									Targets = targets
-								}
-							},
-							"\006"
-						}
-					}
+								Callback = "M1",
+								Action = "Callback",
+								Targets = targets
+							}
+						},
+						"\006"
+					})
 
-					Remote:FireServer(unpack(args))
-					task.wait(0.01) -- 🔥 penting biar gak ke-drop
+					task.wait(math.random(25,45)/1000) -- anti limit
 				end
 			end
 		end
 		
-		task.wait(0.07) -- 🔥 jangan terlalu cepat
-	end
-end)
-
---// AUTO CLICK (NO TARGET)
-task.spawn(function()
-	while true do
-		if AutoClick then
-			local args = {
-				{
-					{
-						"Action",
-						"Action",
-						{
-							Callback = "M1",
-							Action = "Callback",
-							Targets = {}
-						}
-					},
-					"\006"
-				}
-			}
-			Remote:FireServer(unpack(args))
-		end
 		task.wait(0.05)
 	end
 end)
 
---// AUTO TP
-RunService.Heartbeat:Connect(function()
+--// AUTO CLICK
+task.spawn(function()
+	while true do
+		if AutoClick then
+			Remote:FireServer({
+				{
+					"Action",
+					"Action",
+					{
+						Callback = "M1",
+						Action = "Callback",
+						Targets = {} -- tetap kosong biar pure click
+					}
+				},
+				"\006"
+			})
+		end
+
+		task.wait(0.01) -- 🔥 stabil spam click
+	end
+end)
+
+--// AUTO TP (SMOOTH)
+local mobList = {}
+local index = 1
+local lastUpdate = 0
+local holdTime = 0
+local HOLD_DURATION = 2.5 -- lebih cepat pindah
+
+local function updateMobList()
+	mobList = {}
+
+	for _, obj in pairs(workspace.Game.Mobs.Client:GetDescendants()) do
+		if obj:IsA("BasePart") and obj.Name == "HumanoidRootPart" then
+			table.insert(mobList, obj)
+		end
+	end
+end
+
+RunService.Heartbeat:Connect(function(dt)
 	if AutoTP then
 		local char = player.Character
+		if not char or not char:FindFirstChild("HumanoidRootPart") then return end
 		
-		if char and char:FindFirstChild("HumanoidRootPart") then
-			local hrp = char.HumanoidRootPart
-			local mobs = workspace.Game.Mobs.Client
+		local hrp = char.HumanoidRootPart
 
-			local closest = nil
-			local dist = math.huge
+		lastUpdate = lastUpdate + dt
+		if lastUpdate > 1 then
+			lastUpdate = 0
+			updateMobList()
+		end
 
-			for _, mob in pairs(mobs:GetChildren()) do
-				local mobHRP = mob:FindFirstChild("HumanoidRootPart")
-				local hum = mob:FindFirstChild("Humanoid")
-
-				if mobHRP and hum and hum.Health > 0 then
-					local d = (hrp.Position - mobHRP.Position).Magnitude
-					
-					if d < dist then
-						dist = d
-						closest = mobHRP
-					end
-				end
+		if #mobList > 0 then
+			if index > #mobList then
+				index = 1
 			end
 
-			if closest then
-				hrp.CFrame = closest.CFrame * CFrame.new(0,3,5)
+			local target = mobList[index]
+
+			if target and target.Parent then
+				hrp.CFrame = target.CFrame * CFrame.new(0,2,2)
+			end
+
+			holdTime = holdTime + dt
+			if holdTime >= HOLD_DURATION then
+				holdTime = 0
+				index = index + 1
 			end
 		end
 	end
 end)
 
---// ANTI AFK
-local VirtualUser = game:GetService("VirtualUser")
-local player = game:GetService("Players").LocalPlayer
-
--- HAPUS semua variable AntiAFK
-
+--// ANTI AFK (FIX GA KE KICK)
 player.Idled:Connect(function()
 	VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 	task.wait(1)
