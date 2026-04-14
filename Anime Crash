@@ -9,7 +9,6 @@ local Remote = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRe
 
 --// STATE
 local AutoAttack = false
-local AutoClick = false
 local AutoTP = false
 
 --// GUI
@@ -25,16 +24,14 @@ main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
 
--- TITLE
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "AUTO FARM V3"
+title.Text = "AUTO FARM V4"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 14
 
--- CLOSE
 local close = Instance.new("TextButton", main)
 close.Size = UDim2.new(0,30,0,30)
 close.Position = UDim2.new(1,-30,0,0)
@@ -42,7 +39,6 @@ close.Text = "X"
 close.BackgroundTransparency = 1
 close.TextColor3 = Color3.fromRGB(255,80,80)
 
--- MINIMIZE
 local mini = Instance.new("TextButton", main)
 mini.Size = UDim2.new(0,30,0,30)
 mini.Position = UDim2.new(1,-60,0,0)
@@ -50,7 +46,6 @@ mini.Text = "-"
 mini.BackgroundTransparency = 1
 mini.TextColor3 = Color3.fromRGB(200,200,200)
 
--- ICON
 local icon = Instance.new("TextButton", gui)
 icon.Size = UDim2.new(0,50,0,50)
 icon.Position = UDim2.new(0,20,0.5,0)
@@ -88,17 +83,11 @@ local function createToggle(name, y)
 end
 
 local atkBtn = createToggle("Auto Attack", 40)
-local clickBtn = createToggle("Auto Click", 85)
-local tpBtn = createToggle("Auto TP", 130)
+local tpBtn = createToggle("Auto TP", 85)
 
 atkBtn.MouseButton1Click:Connect(function()
 	AutoAttack = not AutoAttack
 	atkBtn.Text = "Auto Attack : "..(AutoAttack and "ON" or "OFF")
-end)
-
-clickBtn.MouseButton1Click:Connect(function()
-	AutoClick = not AutoClick
-	clickBtn.Text = "Auto Click : "..(AutoClick and "ON" or "OFF")
 end)
 
 tpBtn.MouseButton1Click:Connect(function()
@@ -106,7 +95,7 @@ tpBtn.MouseButton1Click:Connect(function()
 	tpBtn.Text = "Auto TP : "..(AutoTP and "ON" or "OFF")
 end)
 
---// GET TARGET
+--// TARGET SYSTEM (FIXED)
 local overlap = OverlapParams.new()
 overlap.FilterType = Enum.RaycastFilterType.Include
 overlap.FilterDescendantsInstances = {
@@ -120,14 +109,19 @@ local function getTargets()
 	if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
 	
 	local hrp = char.HumanoidRootPart
-	local parts = workspace:GetPartBoundsInRadius(hrp.Position, 12, overlap)
+
+	local range = 10
+	pcall(function()
+		range = require(ReplicatedStorage.GameCore).Player.State.Get("Range") or 10
+	end)
+
+	local parts = workspace:GetPartBoundsInRadius(hrp.Position, range / 2, overlap)
 
 	local targets = {}
 	local used = {}
 
 	for _, part in pairs(parts) do
 		local model = part.Parent
-		
 		if not used[model] and part:GetAttribute("Enemy") and not part:GetAttribute("Died") then
 			table.insert(targets, part)
 			used[model] = true
@@ -137,109 +131,67 @@ local function getTargets()
 	return targets
 end
 
---// AUTO ATTACK (FAST STABLE)
+--// AUTO ATTACK (FIXED STABLE)
 task.spawn(function()
 	while true do
 		if AutoAttack then
 			local targets = getTargets()
 
 			if #targets > 0 then
-				for i = 1, 5 do -- burst
-					Remote:FireServer({
-						{
-							"Action",
-							"Action",
-							{
-								Callback = "M1",
-								Action = "Callback",
-								Targets = targets
-							}
-						},
-						"\006"
-					})
-
-					task.wait(math.random(25,45)/1000) -- anti limit
-				end
-			end
-		end
-		
-		task.wait(0.05)
-	end
-end)
-
---// AUTO CLICK
-task.spawn(function()
-	while true do
-		if AutoClick then
-			Remote:FireServer({
-				{
-					"Action",
-					"Action",
+				-- HIT MUSUH
+				Remote:FireServer({
 					{
-						Callback = "M1",
-						Action = "Callback",
-						Targets = {} -- tetap kosong biar pure click
-					}
-				},
-				"\006"
-			})
-		end
+						"Action",
+						"Action",
+						{
+							Callback = "M1",
+							Action = "Callback",
+							Targets = targets
+						}
+					},
+					"\006"
+				})
+			else
+				-- GA ADA MUSUH → TETEP CLICK
+				Remote:FireServer({
+					{
+						"Action",
+						"Action",
+						{
+							Callback = "M1",
+							Action = "Callback",
+							Targets = {}
+						}
+					},
+					"\006"
+				})
+			end
 
-		task.wait(0.01) -- 🔥 stabil spam click
+			task.wait(0.05)
+		else
+			task.wait(0.05)
+		end
 	end
 end)
 
---// AUTO TP (SMOOTH)
-local mobList = {}
-local index = 1
-local lastUpdate = 0
-local holdTime = 0
-local HOLD_DURATION = 2.5 -- lebih cepat pindah
-
-local function updateMobList()
-	mobList = {}
-
-	for _, obj in pairs(workspace.Game.Mobs.Client:GetDescendants()) do
-		if obj:IsA("BasePart") and obj.Name == "HumanoidRootPart" then
-			table.insert(mobList, obj)
-		end
-	end
-end
-
-RunService.Heartbeat:Connect(function(dt)
+--// AUTO TP (BIARIN SESUAI LU)
+RunService.Heartbeat:Connect(function()
 	if AutoTP then
 		local char = player.Character
 		if not char or not char:FindFirstChild("HumanoidRootPart") then return end
 		
 		local hrp = char.HumanoidRootPart
 
-		lastUpdate = lastUpdate + dt
-		if lastUpdate > 1 then
-			lastUpdate = 0
-			updateMobList()
-		end
-
-		if #mobList > 0 then
-			if index > #mobList then
-				index = 1
-			end
-
-			local target = mobList[index]
-
-			if target and target.Parent then
-				hrp.CFrame = target.CFrame * CFrame.new(0,2,2)
-			end
-
-			holdTime = holdTime + dt
-			if holdTime >= HOLD_DURATION then
-				holdTime = 0
-				index = index + 1
+		for _, v in pairs(workspace.Game.Mobs.Client:GetDescendants()) do
+			if v:IsA("BasePart") and v.Name == "HumanoidRootPart" then
+				hrp.CFrame = v.CFrame * CFrame.new(0,2,2)
+				break
 			end
 		end
 	end
 end)
 
---// ANTI AFK (FIX GA KE KICK)
+--// ANTI AFK
 player.Idled:Connect(function()
 	VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 	task.wait(1)
