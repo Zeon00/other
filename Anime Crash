@@ -11,6 +11,7 @@ local Remote = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRe
 local AutoAttack = false
 local AutoTP = false
 local AutoRaid = false
+local AutoJoin = false
 
 --// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -85,6 +86,7 @@ end
 
 local atkBtn = createToggle("Auto Attack", 40)
 local tpBtn = createToggle("Auto TP", 85)
+local joinBtn = createToggle("Auto Join", 130)
 local raidBtn = createToggle("Auto Raid", 175)
 
 atkBtn.MouseButton1Click:Connect(function()
@@ -95,6 +97,11 @@ end)
 tpBtn.MouseButton1Click:Connect(function()
 	AutoTP = not AutoTP
 	tpBtn.Text = "Auto TP : "..(AutoTP and "ON" or "OFF")
+end)
+
+joinBtn.MouseButton1Click:Connect(function()
+	AutoJoin = not AutoJoin
+	joinBtn.Text = "Auto Join : "..(AutoJoin and "ON" or "OFF")
 end)
 
 raidBtn.MouseButton1Click:Connect(function()
@@ -219,7 +226,37 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 end)
+task.spawn(function()
+	while true do
+		if AutoJoin then
+			pcall(function()
+				local rooms = workspace.Game:FindFirstChild("Rooms")
 
+				if rooms then
+					local room = rooms:FindFirstChildWhichIsA("Folder")
+
+					if room then
+						Remote:FireServer({
+							{
+								"Gamemodes",
+								"Join",
+								{
+									Gamemode = "Raid",
+									Room = room.Name
+								}
+							},
+							"\006"
+						})
+					end
+				end
+			end)
+
+			task.wait(2)
+		else
+			task.wait(1)
+		end
+	end
+end)
 --// ANTI AFK
 player.Idled:Connect(function()
 	VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
