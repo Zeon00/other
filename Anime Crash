@@ -10,6 +10,7 @@ local Remote = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRe
 --// STATE
 local AutoAttack = false
 local AutoTP = false
+local AutoRaid = false
 
 --// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -84,6 +85,7 @@ end
 
 local atkBtn = createToggle("Auto Attack", 40)
 local tpBtn = createToggle("Auto TP", 85)
+local raidBtn = createToggle("Auto Raid", 175)
 
 atkBtn.MouseButton1Click:Connect(function()
 	AutoAttack = not AutoAttack
@@ -93,6 +95,11 @@ end)
 tpBtn.MouseButton1Click:Connect(function()
 	AutoTP = not AutoTP
 	tpBtn.Text = "Auto TP : "..(AutoTP and "ON" or "OFF")
+end)
+
+raidBtn.MouseButton1Click:Connect(function()
+	AutoRaid = not AutoRaid
+	raidBtn.Text = "Auto Raid : "..(AutoRaid and "ON" or "OFF")
 end)
 
 --// TARGET SYSTEM (FIXED)
@@ -174,6 +181,28 @@ task.spawn(function()
 	end
 end)
 
+task.spawn(function()
+	while true do
+		if AutoRaid then
+			Remote:FireServer({
+				{
+					"Gamemodes",
+					"Create",
+					{
+						Raid = "Frieza Force Invasion",
+						Gamemode = "Raid",
+						Mode = "Normal"
+					}
+				},
+				"\006"
+			})
+
+			task.wait(5) -- delay biar ga spam error
+		else
+			task.wait(1)
+		end
+	end
+end)
 --// AUTO TP (BIARIN SESUAI LU)
 RunService.Heartbeat:Connect(function()
 	if AutoTP then
