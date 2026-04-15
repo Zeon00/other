@@ -176,7 +176,7 @@ task.spawn(function()
 							Targets = targets
 						}
 					},
-					"\006"
+					"\005"
 				})
 			else
 				-- GA ADA MUSUH → TETEP CLICK
@@ -190,7 +190,7 @@ task.spawn(function()
 							Targets = {}
 						}
 					},
-					"\006"
+					"\005"
 				})
 			end
 
@@ -214,7 +214,7 @@ task.spawn(function()
 						Mode = "Normal"
 					}
 				},
-				"\006"
+				"\005"
 			})
 
 			task.wait(5) -- delay biar ga spam error
@@ -259,7 +259,7 @@ task.spawn(function()
 									Room = room.Name
 								}
 							},
-							"\006"
+							"\005"
 						})
 					end
 				end
@@ -272,37 +272,22 @@ task.spawn(function()
 	end
 end)
 
---// CHECK TRIAL STATE
-local function isTrialOpen(name)
-	local trials = workspace.Game:FindFirstChild("Trials")
-	if trials then
-		local t = trials:FindFirstChild(name)
-		if t then
-			local state = t:GetAttribute("TrialState")
-			return state == "open" or state == "running"
-		end
-	end
-	return false
-end
-
 task.spawn(function()
 	while true do
 		
-		-- EASY
-		if AutoTrialEasy and isTrialOpen("Easy") then
+		if AutoTrialEasy then
 			Remote:FireServer({
 				{
 					"TrialReceiver",
 					"Join",
 					"Easy"
 				},
-				"\006"
+				"\005"
 			})
 			task.wait(2)
 		end
 
-		-- MEDIUM
-		if AutoTrialMedium and isTrialOpen("Medium") then
+		if AutoTrialMedium then
 			Remote:FireServer({
 				{
 					"TrialReceiver",
@@ -317,7 +302,6 @@ task.spawn(function()
 		task.wait(1)
 	end
 end)
-
 --// ANTI AFK
 player.Idled:Connect(function()
 	VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
