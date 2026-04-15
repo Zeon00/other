@@ -265,19 +265,24 @@ task.spawn(function()
 	end
 end)
 
+
 task.spawn(function()
 	while true do
 		if AutoTrial then
-			Remote:FireServer({
-				{
-					"TrialReceiver",
-					"Join",
-					"Easy"
-				},
-				"\006"
-			})
+			for _, mode in ipairs({"Easy","Medium","Hard"}) do
+				Remote:FireServer({
+					{
+						"TrialReceiver",
+						"Join",
+						mode
+					},
+					"\006"
+				})
 
-			task.wait(5) -- delay biar ga spam error
+				task.wait(0.5) -- cepet biar langsung kena yang aktif
+			end
+
+			task.wait(2)
 		else
 			task.wait(1)
 		end
