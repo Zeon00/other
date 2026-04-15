@@ -1,123 +1,69 @@
-getgenv().Settings = {
-    ["Auto Click Keybind"] = "V",
-    ["Lock Mouse Position Keybind"] = "B",
-    ["Right Click"] = false,
-    ["GUI"] = true,
-    ["Delay"] = 0
-}
+local player = game:GetService("Players").LocalPlayer
+local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
 
---// GUI
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-ScreenGui.Name = "ModernAutoClickGUI"
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
 
-local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 260, 0, 140)
-Main.Position = UDim2.new(0.5, -130, 0.5, -70)
-Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,200,0,120)
+frame.Position = UDim2.new(0.5,-100,0.5,-60)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Active = true
+frame.Draggable = true
 
--- rounded
-local UICorner = Instance.new("UICorner", Main)
-UICorner.CornerRadius = UDim.new(0, 10)
+local close = Instance.new("TextButton", frame)
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-30,0,0)
+close.Text = "X"
 
--- title
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, -60, 0, 30)
-Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "Auto Clicker"
-Title.TextColor3 = Color3.new(1,1,1)
-Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left
+local mini = Instance.new("TextButton", frame)
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-60,0,0)
+mini.Text = "-"
 
--- close button
-local Close = Instance.new("TextButton", Main)
-Close.Size = UDim2.new(0, 25, 0, 25)
-Close.Position = UDim2.new(1, -30, 0, 5)
-Close.Text = "X"
-Close.BackgroundColor3 = Color3.fromRGB(255,70,70)
-Close.TextColor3 = Color3.new(1,1,1)
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(0.8,0,0,40)
+toggle.Position = UDim2.new(0.1,0,0.5,-20)
+toggle.Text = "OFF"
 
-local CloseCorner = Instance.new("UICorner", Close)
-CloseCorner.CornerRadius = UDim.new(1,0)
-
--- minimize button
-local Min = Instance.new("TextButton", Main)
-Min.Size = UDim2.new(0, 25, 0, 25)
-Min.Position = UDim2.new(1, -60, 0, 5)
-Min.Text = "-"
-Min.BackgroundColor3 = Color3.fromRGB(80,80,80)
-Min.TextColor3 = Color3.new(1,1,1)
-
-local MinCorner = Instance.new("UICorner", Min)
-MinCorner.CornerRadius = UDim.new(1,0)
-
--- toggle button
-local Toggle = Instance.new("TextButton", Main)
-Toggle.Size = UDim2.new(0.8, 0, 0, 40)
-Toggle.Position = UDim2.new(0.1, 0, 0.5, -10)
-Toggle.Text = "AUTO CLICK : OFF"
-Toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
-Toggle.TextColor3 = Color3.new(1,1,1)
-
-local ToggleCorner = Instance.new("UICorner", Toggle)
-ToggleCorner.CornerRadius = UDim.new(0, 8)
-
--- minimized icon
-local Icon = Instance.new("TextButton", ScreenGui)
-Icon.Size = UDim2.new(0, 50, 0, 50)
-Icon.Position = UDim2.new(0, 20, 0.5, -25)
-Icon.Text = "⚡"
-Icon.Visible = false
-Icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Icon.TextColor3 = Color3.new(1,1,1)
-
-local IconCorner = Instance.new("UICorner", Icon)
-IconCorner.CornerRadius = UDim.new(1,0)
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,20,0.5,-25)
+icon.Text = "O"
+icon.Visible = false
 
 -- logic
-local enabled = false
+local on = false
 
-Toggle.MouseButton1Click:Connect(function()
-    enabled = not enabled
-    Toggle.Text = "AUTO CLICK : " .. (enabled and "ON" or "OFF")
+toggle.MouseButton1Click:Connect(function()
+	on = not on
+	toggle.Text = on and "ON" or "OFF"
 end)
 
-Close.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+close.MouseButton1Click:Connect(function()
+	gui:Destroy()
 end)
 
-Min.MouseButton1Click:Connect(function()
-    Main.Visible = false
-    Icon.Visible = true
+mini.MouseButton1Click:Connect(function()
+	frame.Visible = false
+	icon.Visible = true
 end)
 
-Icon.MouseButton1Click:Connect(function()
-    Main.Visible = true
-    Icon.Visible = false
+icon.MouseButton1Click:Connect(function()
+	frame.Visible = true
+	icon.Visible = false
 end)
 
---// AUTO CLICK
+-- AUTO CLICK
 spawn(function()
-    while true do
-        if enabled then
-            if getgenv().Settings["Right Click"] then
-                game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            else
-                game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                game:GetService("VirtualUser"):Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            end
-        end
-
-        if getgenv().Settings["Delay"] == 5 then
-            game:GetService("RunService").RenderStepped:Wait()
-        else
-            task.wait(getgenv().Settings["Delay"])
-        end
-    end
+	while true do
+		if on then
+			VirtualUser:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+			VirtualUser:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		end
+		RunService.RenderStepped:Wait()
+	end
 end)
-
--- anti afk (optional dari script lo)
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/other/main/Auto%20click%20anti%20afk"))()
