@@ -15,8 +15,8 @@ local AutoJoin = false
 local AutoTrial = false
 local SelectedTrials = {
 	Easy = true,
-	Medium = false,
-	Hard = false
+	Medium = true,
+	Hard = true
 }
 --// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -307,30 +307,42 @@ task.spawn(function()
 		end
 	end
 end)
-
-
+--// CHECK TRIAL STATE
+local function isTrialOpen(name)
+	local trial = workspace.Game:FindFirstChild("Trials")
+	if trial then
+		local t = trial:FindFirstChild(name)
+		if t then
+			local state = t:GetAttribute("TrialState")
+			return state == "open" or state == "running"
+		end
+	end
+	return false
+end
 task.spawn(function()
 	while true do
 		if AutoTrial then
 			for mode, enabled in pairs(SelectedTrials) do
 				if enabled then
-					Remote:FireServer({
-						{
-							"TrialReceiver",
-							"Join",
-							mode
-						},
-						"\006"
-					})
+					
+					if isTrialOpen(mode) then
+						Remote:FireServer({
+							{
+								"TrialReceiver",
+								"Join",
+								mode
+							},
+							"\006"
+						})
 
-					task.wait(1)
+						task.wait(1.5) -- delay aman
+					end
+
 				end
 			end
-
-			task.wait(2)
-		else
-			task.wait(1)
 		end
+		
+		task.wait(1)
 	end
 end)
 --// ANTI AFK
