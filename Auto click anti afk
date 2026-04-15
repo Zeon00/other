@@ -1,0 +1,161 @@
+--Already Running--
+if getgenv()["AC_GUI"] then return else getgenv()["AC_GUI"] = true end
+
+--// SETTINGS
+local DelayMin = 15
+local DelayMax = 30
+
+--// SERVICES
+local UIS = game:GetService("UserInputService")
+local VIM = game:GetService("VirtualInputManager")
+
+--// STATE
+local AutoClick = false
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 260, 0, 140)
+Frame.Position = UDim2.new(0, 30, 0, 200)
+Frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
+
+-- TOP BAR
+local Top = Instance.new("Frame", Frame)
+Top.Size = UDim2.new(1,0,0,35)
+Top.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Instance.new("UICorner", Top).CornerRadius = UDim.new(0,10)
+
+-- TITLE
+local Title = Instance.new("TextLabel", Top)
+Title.Size = UDim2.new(1,-80,1,0)
+Title.Position = UDim2.new(0,10,0,0)
+Title.BackgroundTransparency = 1
+Title.Text = "Auto Click Anti AFK"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- CLOSE (X)
+local Close = Instance.new("TextButton", Top)
+Close.Size = UDim2.new(0,30,1,0)
+Close.Position = UDim2.new(1,-30,0,0)
+Close.Text = "X"
+Close.Font = Enum.Font.GothamBold
+Close.TextSize = 14
+Close.TextColor3 = Color3.new(1,1,1)
+Close.BackgroundTransparency = 1
+
+-- MINIMIZE
+local Min = Instance.new("TextButton", Top)
+Min.Size = UDim2.new(0,30,1,0)
+Min.Position = UDim2.new(1,-60,0,0)
+Min.Text = "-"
+Min.Font = Enum.Font.GothamBold
+Min.TextSize = 16
+Min.TextColor3 = Color3.fromRGB(200,200,200)
+Min.BackgroundTransparency = 1
+
+-- TOGGLE BUTTON
+local Toggle = Instance.new("TextButton", Frame)
+Toggle.Size = UDim2.new(1,-20,0,50)
+Toggle.Position = UDim2.new(0,10,0,60)
+Toggle.Text = "OFF"
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextSize = 18
+Toggle.TextColor3 = Color3.new(1,1,1)
+Toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0,8)
+
+-- ICON
+local Icon = Instance.new("TextButton", ScreenGui)
+Icon.Size = UDim2.new(0,50,0,50)
+Icon.Position = Frame.Position
+Icon.Text = "AC"
+Icon.Visible = false
+Icon.Font = Enum.Font.GothamBold
+Icon.TextColor3 = Color3.new(1,1,1)
+Icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Instance.new("UICorner", Icon).CornerRadius = UDim.new(1,0)
+
+--// FUNCTIONS
+
+-- TOGGLE
+Toggle.MouseButton1Click:Connect(function()
+    AutoClick = not AutoClick
+    Toggle.Text = AutoClick and "ON" or "OFF"
+    Toggle.BackgroundColor3 = AutoClick and Color3.fromRGB(0,170,100) or Color3.fromRGB(50,50,50)
+end)
+
+-- CLOSE
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    getgenv()["AC_GUI"] = false
+end)
+
+-- MINIMIZE
+Min.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    Icon.Visible = true
+    Icon.Position = Frame.Position
+end)
+
+-- RESTORE
+Icon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    Icon.Visible = false
+end)
+
+-- DRAG
+local drag, dragInput, startPos, startFrame
+
+Top.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        drag = true
+        startPos = input.Position
+        startFrame = Frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                drag = false
+            end
+        end)
+    end
+end)
+
+Top.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and drag then
+        local delta = input.Position - startPos
+        Frame.Position = UDim2.new(
+            startFrame.X.Scale,
+            startFrame.X.Offset + delta.X,
+            startFrame.Y.Scale,
+            startFrame.Y.Offset + delta.Y
+        )
+    end
+end)
+
+--// AUTO CLICK LOOP (ANTI AFK PURE CLICK)
+task.spawn(function()
+    while true do
+        if AutoClick then
+            local pos = UIS:GetMouseLocation()
+
+            VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 0)
+            VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 0)
+
+            -- delay random biar natural
+            task.wait(math.random(DelayMin, DelayMax))
+        else
+            task.wait(0.1)
+        end
+    end
+end)
