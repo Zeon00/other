@@ -12,19 +12,16 @@ local AutoAttack = false
 local AutoTP = false
 local AutoRaid = false
 local AutoJoin = false
-local AutoTrial = false
-local SelectedTrials = {
-	Easy = true,
-	Medium = true,
-	Hard = true
-}
+local AutoTrialEasy = false
+local AutoTrialMedium = false
+
 --// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "AutoFarmGUI"
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 260, 0, 300)
+main.Size = UDim2.new(0, 260, 0, 325)
 main.Position = UDim2.new(0.5, -130, 0.5, -110)
 main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.Active = true
@@ -93,7 +90,8 @@ local atkBtn = createToggle("Auto Attack", 40)
 local tpBtn = createToggle("Auto TP", 85)
 local joinBtn = createToggle("Auto Join", 130)
 local raidBtn = createToggle("Auto Raid", 175)
-local trialBtn = createToggle("Auto Trial", 220) 
+local trialEasyBtn = createToggle("Trial Easy", 220)
+local trialMedBtn = createToggle("Trial Medium", 265)
 
 atkBtn.MouseButton1Click:Connect(function()
 	AutoAttack = not AutoAttack
@@ -115,49 +113,15 @@ raidBtn.MouseButton1Click:Connect(function()
 	raidBtn.Text = "Auto Raid : "..(AutoRaid and "ON" or "OFF")
 end)
 
-trialBtn.MouseButton1Click:Connect(function()
-	AutoTrial = not AutoTrial
-	trialBtn.Text = "Auto Trial : "..(AutoTrial and "ON" or "OFF")
+trialEasyBtn.MouseButton1Click:Connect(function()
+	AutoTrialEasy = not AutoTrialEasy
+	trialEasyBtn.Text = "Trial Easy : "..(AutoTrialEasy and "ON" or "OFF")
 end)
---// DROPDOWN TRIAL
-local dropFrame = Instance.new("Frame", main)
-dropFrame.Size = UDim2.new(0,100,0,110)
-dropFrame.Position = UDim2.new(1,5,0,220)
-dropFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-Instance.new("UICorner", dropFrame)
 
-local dropTitle = Instance.new("TextLabel", dropFrame)
-dropTitle.Size = UDim2.new(1,0,0,25)
-dropTitle.BackgroundTransparency = 1
-dropTitle.Text = "TRIAL"
-dropTitle.TextColor3 = Color3.new(1,1,1)
-dropTitle.Font = Enum.Font.GothamBold
-dropTitle.TextSize = 12
-
-local function createOption(name, y)
-	local btn = Instance.new("TextButton", dropFrame)
-	btn.Size = UDim2.new(1,-10,0,25)
-	btn.Position = UDim2.new(0,5,0,y)
-	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.Font = Enum.Font.Gotham
-	btn.TextSize = 12
-	Instance.new("UICorner", btn)
-
-	local function update()
-		btn.Text = name.." : "..(SelectedTrials[name] and "ON" or "OFF")
-	end
-
-	update()
-
-	btn.MouseButton1Click:Connect(function()
-		SelectedTrials[name] = not SelectedTrials[name]
-		update()
-	end)
-end
-createOption("Easy", 30)
-createOption("Medium", 60)
-createOption("Hard", 90)
+trialMedBtn.MouseButton1Click:Connect(function()
+	AutoTrialMedium = not AutoTrialMedium
+	trialMedBtn.Text = "Trial Medium : "..(AutoTrialMedium and "ON" or "OFF")
+end)
 --// TARGET SYSTEM (FIXED)
 local overlap = OverlapParams.new()
 overlap.FilterType = Enum.RaycastFilterType.Include
@@ -307,11 +271,12 @@ task.spawn(function()
 		end
 	end
 end)
+
 --// CHECK TRIAL STATE
 local function isTrialOpen(name)
-	local trial = workspace.Game:FindFirstChild("Trials")
-	if trial then
-		local t = trial:FindFirstChild(name)
+	local trials = workspace.Game:FindFirstChild("Trials")
+	if trials then
+		local t = trials:FindFirstChild(name)
 		if t then
 			local state = t:GetAttribute("TrialState")
 			return state == "open" or state == "running"
@@ -319,32 +284,40 @@ local function isTrialOpen(name)
 	end
 	return false
 end
+
 task.spawn(function()
 	while true do
-		if AutoTrial then
-			for mode, enabled in pairs(SelectedTrials) do
-				if enabled then
-					
-					if isTrialOpen(mode) then
-						Remote:FireServer({
-							{
-								"TrialReceiver",
-								"Join",
-								mode
-							},
-							"\006"
-						})
-
-						task.wait(1.5) -- delay aman
-					end
-
-				end
-			end
-		end
 		
+		-- EASY
+		if AutoTrialEasy and isTrialOpen("Easy") then
+			Remote:FireServer({
+				{
+					"TrialReceiver",
+					"Join",
+					"Easy"
+				},
+				"\006"
+			})
+			task.wait(2)
+		end
+
+		-- MEDIUM
+		if AutoTrialMedium and isTrialOpen("Medium") then
+			Remote:FireServer({
+				{
+					"TrialReceiver",
+					"Join",
+					"Medium"
+				},
+				"\005"
+			})
+			task.wait(2)
+		end
+
 		task.wait(1)
 	end
 end)
+
 --// ANTI AFK
 player.Idled:Connect(function()
 	VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
