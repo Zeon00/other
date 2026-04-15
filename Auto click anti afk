@@ -1,1 +1,123 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/rrixh/uwuware/main/Kustom/autoklicker-mobile_lulaslollipop",true))();
+getgenv().Settings = {
+    ["Auto Click Keybind"] = "V",
+    ["Lock Mouse Position Keybind"] = "B",
+    ["Right Click"] = false,
+    ["GUI"] = true,
+    ["Delay"] = 0
+}
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "ModernAutoClickGUI"
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 260, 0, 140)
+Main.Position = UDim2.new(0.5, -130, 0.5, -70)
+Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+
+-- rounded
+local UICorner = Instance.new("UICorner", Main)
+UICorner.CornerRadius = UDim.new(0, 10)
+
+-- title
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, -60, 0, 30)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.Text = "Auto Clicker"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- close button
+local Close = Instance.new("TextButton", Main)
+Close.Size = UDim2.new(0, 25, 0, 25)
+Close.Position = UDim2.new(1, -30, 0, 5)
+Close.Text = "X"
+Close.BackgroundColor3 = Color3.fromRGB(255,70,70)
+Close.TextColor3 = Color3.new(1,1,1)
+
+local CloseCorner = Instance.new("UICorner", Close)
+CloseCorner.CornerRadius = UDim.new(1,0)
+
+-- minimize button
+local Min = Instance.new("TextButton", Main)
+Min.Size = UDim2.new(0, 25, 0, 25)
+Min.Position = UDim2.new(1, -60, 0, 5)
+Min.Text = "-"
+Min.BackgroundColor3 = Color3.fromRGB(80,80,80)
+Min.TextColor3 = Color3.new(1,1,1)
+
+local MinCorner = Instance.new("UICorner", Min)
+MinCorner.CornerRadius = UDim.new(1,0)
+
+-- toggle button
+local Toggle = Instance.new("TextButton", Main)
+Toggle.Size = UDim2.new(0.8, 0, 0, 40)
+Toggle.Position = UDim2.new(0.1, 0, 0.5, -10)
+Toggle.Text = "AUTO CLICK : OFF"
+Toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Toggle.TextColor3 = Color3.new(1,1,1)
+
+local ToggleCorner = Instance.new("UICorner", Toggle)
+ToggleCorner.CornerRadius = UDim.new(0, 8)
+
+-- minimized icon
+local Icon = Instance.new("TextButton", ScreenGui)
+Icon.Size = UDim2.new(0, 50, 0, 50)
+Icon.Position = UDim2.new(0, 20, 0.5, -25)
+Icon.Text = "⚡"
+Icon.Visible = false
+Icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Icon.TextColor3 = Color3.new(1,1,1)
+
+local IconCorner = Instance.new("UICorner", Icon)
+IconCorner.CornerRadius = UDim.new(1,0)
+
+-- logic
+local enabled = false
+
+Toggle.MouseButton1Click:Connect(function()
+    enabled = not enabled
+    Toggle.Text = "AUTO CLICK : " .. (enabled and "ON" or "OFF")
+end)
+
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+Min.MouseButton1Click:Connect(function()
+    Main.Visible = false
+    Icon.Visible = true
+end)
+
+Icon.MouseButton1Click:Connect(function()
+    Main.Visible = true
+    Icon.Visible = false
+end)
+
+--// AUTO CLICK
+spawn(function()
+    while true do
+        if enabled then
+            if getgenv().Settings["Right Click"] then
+                game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            else
+                game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                game:GetService("VirtualUser"):Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            end
+        end
+
+        if getgenv().Settings["Delay"] == 5 then
+            game:GetService("RunService").RenderStepped:Wait()
+        else
+            task.wait(getgenv().Settings["Delay"])
+        end
+    end
+end)
+
+-- anti afk (optional dari script lo)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Zeon00/other/main/Auto%20click%20anti%20afk"))()
