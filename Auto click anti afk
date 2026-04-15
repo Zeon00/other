@@ -1,8 +1,10 @@
--- anti double run
-if getgenv().AC_FULL then return else getgenv().AC_FULL = true end
+--Already Running--
+if getgenv().AC_UNIVERSAL then return else getgenv().AC_UNIVERSAL = true end
 
+--// WAIT GAME
 repeat task.wait() until game:IsLoaded()
 
+--// SERVICES
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local VIM = game:GetService("VirtualInputManager")
@@ -10,107 +12,126 @@ local VIM = game:GetService("VirtualInputManager")
 local player = Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
 
--- GUI
-local gui = Instance.new("ScreenGui")
-gui.Parent = PlayerGui
-gui.ResetOnSpawn = false
+--// SETTINGS
+local DelayMin = 15
+local DelayMax = 30
 
--- FRAME
-local frame = Instance.new("Frame")
-frame.Parent = gui
-frame.Size = UDim2.new(0,200,0,120)
-frame.Position = UDim2.new(0,50,0,200)
-frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
-
--- TITLE BAR
-local top = Instance.new("Frame")
-top.Parent = frame
-top.Size = UDim2.new(1,0,0,25)
-top.BackgroundColor3 = Color3.fromRGB(30,30,30)
-
--- TITLE TEXT
-local title = Instance.new("TextLabel")
-title.Parent = top
-title.Size = UDim2.new(1,-60,1,0)
-title.Position = UDim2.new(0,5,0,0)
-title.Text = "Auto Click"
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundTransparency = 1
-
--- CLOSE BUTTON
-local close = Instance.new("TextButton")
-close.Parent = top
-close.Size = UDim2.new(0,25,1,0)
-close.Position = UDim2.new(1,-25,0,0)
-close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(150,0,0)
-close.TextColor3 = Color3.new(1,1,1)
-
--- MINIMIZE
-local mini = Instance.new("TextButton")
-mini.Parent = top
-mini.Size = UDim2.new(0,25,1,0)
-mini.Position = UDim2.new(1,-50,0,0)
-mini.Text = "-"
-mini.BackgroundColor3 = Color3.fromRGB(80,80,80)
-mini.TextColor3 = Color3.new(1,1,1)
-
--- TOGGLE BUTTON
-local button = Instance.new("TextButton")
-button.Parent = frame
-button.Size = UDim2.new(1,-20,0,40)
-button.Position = UDim2.new(0,10,0,50)
-button.Text = "AUTO: OFF"
-button.BackgroundColor3 = Color3.fromRGB(40,40,40)
-button.TextColor3 = Color3.new(1,1,1)
-
--- ICON (MINIMIZE)
-local icon = Instance.new("TextButton")
-icon.Parent = gui
-icon.Size = UDim2.new(0,60,0,30)
-icon.Position = frame.Position
-icon.Text = "OPEN"
-icon.Visible = false
-icon.BackgroundColor3 = Color3.fromRGB(40,40,40)
-icon.TextColor3 = Color3.new(1,1,1)
-
--- STATE
+--// STATE
 local AutoClick = false
 
+--// GUI (UNIVERSAL FIX)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AC_GUI"
+ScreenGui.Parent = PlayerGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.DisplayOrder = 999
+
+-- MAIN FRAME
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 260, 0, 140)
+Frame.AnchorPoint = Vector2.new(0.5, 0.5)
+Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
+
+-- TOP BAR
+local Top = Instance.new("Frame", Frame)
+Top.Size = UDim2.new(1,0,0,35)
+Top.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Instance.new("UICorner", Top).CornerRadius = UDim.new(0,10)
+
+-- TITLE
+local Title = Instance.new("TextLabel", Top)
+Title.Size = UDim2.new(1,-80,1,0)
+Title.Position = UDim2.new(0,10,0,0)
+Title.BackgroundTransparency = 1
+Title.Text = "Auto Click Anti AFK"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- CLOSE
+local Close = Instance.new("TextButton", Top)
+Close.Size = UDim2.new(0,30,1,0)
+Close.Position = UDim2.new(1,-30,0,0)
+Close.Text = "X"
+Close.Font = Enum.Font.GothamBold
+Close.TextSize = 14
+Close.TextColor3 = Color3.new(1,1,1)
+Close.BackgroundTransparency = 1
+
+-- MINIMIZE
+local Min = Instance.new("TextButton", Top)
+Min.Size = UDim2.new(0,30,1,0)
+Min.Position = UDim2.new(1,-60,0,0)
+Min.Text = "-"
+Min.Font = Enum.Font.GothamBold
+Min.TextSize = 16
+Min.TextColor3 = Color3.fromRGB(200,200,200)
+Min.BackgroundTransparency = 1
+
 -- TOGGLE
-button.MouseButton1Click:Connect(function()
+local Toggle = Instance.new("TextButton", Frame)
+Toggle.Size = UDim2.new(1,-20,0,50)
+Toggle.Position = UDim2.new(0,10,0,60)
+Toggle.Text = "OFF"
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextSize = 18
+Toggle.TextColor3 = Color3.new(1,1,1)
+Toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0,8)
+
+-- ICON
+local Icon = Instance.new("TextButton", ScreenGui)
+Icon.Size = UDim2.new(0,50,0,50)
+Icon.Position = Frame.Position
+Icon.Text = "AC"
+Icon.Visible = false
+Icon.Font = Enum.Font.GothamBold
+Icon.TextColor3 = Color3.new(1,1,1)
+Icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Instance.new("UICorner", Icon).CornerRadius = UDim.new(1,0)
+
+--// FUNCTIONS
+
+-- TOGGLE
+Toggle.MouseButton1Click:Connect(function()
     AutoClick = not AutoClick
-    button.Text = "AUTO: " .. (AutoClick and "ON" or "OFF")
+    Toggle.Text = AutoClick and "ON" or "OFF"
+    Toggle.BackgroundColor3 = AutoClick and Color3.fromRGB(0,170,100) or Color3.fromRGB(50,50,50)
 end)
 
 -- CLOSE
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-    getgenv().AC_FULL = false
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    getgenv().AC_UNIVERSAL = false
 end)
 
 -- MINIMIZE
-mini.MouseButton1Click:Connect(function()
-    frame.Visible = false
-    icon.Visible = true
-    icon.Position = frame.Position
+Min.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    Icon.Visible = true
+    Icon.Position = Frame.Position
 end)
 
 -- RESTORE
-icon.MouseButton1Click:Connect(function()
-    frame.Visible = true
-    icon.Visible = false
+Icon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    Icon.Visible = false
 end)
 
--- DRAG (PC + ANDROID)
+-- DRAG (WORK MOBILE + PC)
 local dragging, dragStart, startPos
 
-top.InputBegan:Connect(function(input)
+Top.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 
     or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = frame.Position
+        startPos = Frame.Position
 
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
@@ -126,7 +147,7 @@ UIS.InputChanged:Connect(function(input)
 
         local delta = input.Position - dragStart
 
-        frame.Position = UDim2.new(
+        Frame.Position = UDim2.new(
             startPos.X.Scale,
             startPos.X.Offset + delta.X,
             startPos.Y.Scale,
@@ -135,7 +156,7 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
--- AUTO CLICK LOOP
+--// AUTO CLICK LOOP (ANTI AFK PURE CLICK)
 task.spawn(function()
     while true do
         if AutoClick then
@@ -144,9 +165,9 @@ task.spawn(function()
             VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 0)
             VIM:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 0)
 
-            task.wait(20) -- delay aman
+            task.wait(math.random(DelayMin, DelayMax))
         else
-            task.wait(0.2)
+            task.wait(0.1)
         end
     end
 end)
