@@ -107,31 +107,31 @@ task.spawn(function()
 end)
 --// GET ENEMIES
 local function GetEnemies()
-    local data = State.GetData()
-    if not data or not data.LastArea then return {} end
-
-    local folder
-    if data.LastArea == "WisteriaRaid" or data.LastArea == "TowerRaid" then
-        local raid = workspace:FindFirstChild(data.LastArea)
-        if raid then
-            local area = raid:FindFirstChild(data.RaidArea)
-            if area then folder = area:FindFirstChild("Enemy") end
-        end
-    else
-        local world = workspace:FindFirstChild(data.LastArea)
-        if world then folder = world:FindFirstChild("Enemy") end
-    end
-
-    if not folder then return {} end
-
     local list = {}
-    for _, enemy in pairs(folder:GetChildren()) do
-        local ehrp = enemy:FindFirstChild("HumanoidRootPart")
-        local hum = enemy:FindFirstChildOfClass("Humanoid")
-        if ehrp and hum and hum.Health > 0 then
-            table.insert(list, enemy)
+    local char = game.Players.LocalPlayer.Character
+    if not char then return list end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return list end
+
+    for _, folder in pairs(workspace:GetDescendants()) do
+        if folder.Name == "Enemy" and folder:IsA("Folder") then
+            for _, enemy in pairs(folder:GetChildren()) do
+                local ehrp = enemy:FindFirstChild("HumanoidRootPart")
+                local hum = enemy:FindFirstChildOfClass("Humanoid")
+
+                if ehrp and hum and hum.Health > 0 then
+                    local dist = (hrp.Position - ehrp.Position).Magnitude
+
+                    -- 🔥 FILTER BIAR GA TP KE MAP LAIN
+                    if dist < 300 then
+                        table.insert(list, enemy)
+                    end
+                end
+            end
         end
     end
+
     return list
 end
 
@@ -459,7 +459,7 @@ end)
 
 -- MAIN LOOP (UPGRADE TANPA HAPUS)
 local index = 1
-RunService.Heartbeat:Connect(function()
+RunService.RenderStepped:Connect(function()
     local char = player.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -495,8 +495,7 @@ RunService.Heartbeat:Connect(function()
     end
 
     if #targets > 0 then
-        index = index % #targets + 1
-        local target = targets[index]
+        local target = targets[1]
 
         local ehrp = target:FindFirstChild("HumanoidRootPart")
         local hum = target:FindFirstChildOfClass("Humanoid")
