@@ -1,3 +1,4 @@
+
 --// SERVICES
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -106,31 +107,31 @@ task.spawn(function()
 end)
 --// GET ENEMIES
 local function GetEnemies()
-    local list = {}
-    local char = game.Players.LocalPlayer.Character
-    if not char then return list end
+    local data = State.GetData()
+    if not data or not data.LastArea then return {} end
 
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return list end
-
-    -- 🔥 scan SEMUA Enemy termasuk raid (deep scan)
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == "Enemy" and obj:IsA("Folder") then
-            for _, enemy in pairs(obj:GetChildren()) do
-                local ehrp = enemy:FindFirstChild("HumanoidRootPart")
-                local hum = enemy:FindFirstChildOfClass("Humanoid")
-
-                if ehrp and hum and hum.Health > 0 then
-                    -- 🔥 filter jarak biar gak ke map lain
-                    local dist = (hrp.Position - ehrp.Position).Magnitude
-                    if dist < 1000 then
-                        table.insert(list, enemy)
-                    end
-                end
-            end
+    local folder
+    if data.LastArea == "WisteriaRaid" or data.LastArea == "TowerRaid" then
+        local raid = workspace:FindFirstChild(data.LastArea)
+        if raid then
+            local area = raid:FindFirstChild(data.RaidArea)
+            if area then folder = area:FindFirstChild("Enemy") end
         end
+    else
+        local world = workspace:FindFirstChild(data.LastArea)
+        if world then folder = world:FindFirstChild("Enemy") end
     end
 
+    if not folder then return {} end
+
+    local list = {}
+    for _, enemy in pairs(folder:GetChildren()) do
+        local ehrp = enemy:FindFirstChild("HumanoidRootPart")
+        local hum = enemy:FindFirstChildOfClass("Humanoid")
+        if ehrp and hum and hum.Health > 0 then
+            table.insert(list, enemy)
+        end
+    end
     return list
 end
 
