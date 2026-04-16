@@ -1,3 +1,18 @@
+--// ANTI AFK SIMPLE (FINAL BANGET) 
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+task.spawn(function()
+    while true do
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.Jump = true
+        end
+        task.wait(8) -- bisa ubah 5–10 detik
+    end
+end)
+
+
 
 --// SERVICES
 local RS = game:GetService("ReplicatedStorage")
@@ -27,8 +42,6 @@ local WisteriaDelay = 5 -- delay buka raid
 local InTower = false
 local TowerLock = 0
 local SelectedEnemies = {}
-local AutoWandenOpen = false
-local AutoWandenTP = false
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -109,31 +122,31 @@ task.spawn(function()
 end)
 --// GET ENEMIES
 local function GetEnemies()
-    local data = State.GetData()
-    if not data or not data.LastArea then return {} end
-
-    local folder
-    if data.LastArea == "WisteriaRaid" or data.LastArea == "TowerRaid" then
-        local raid = workspace:FindFirstChild(data.LastArea)
-        if raid then
-            local area = raid:FindFirstChild(data.RaidArea)
-            if area then folder = area:FindFirstChild("Enemy") end
-        end
-    else
-        local world = workspace:FindFirstChild(data.LastArea)
-        if world then folder = world:FindFirstChild("Enemy") end
-    end
-
-    if not folder then return {} end
-
     local list = {}
-    for _, enemy in pairs(folder:GetChildren()) do
-        local ehrp = enemy:FindFirstChild("HumanoidRootPart")
-        local hum = enemy:FindFirstChildOfClass("Humanoid")
-        if ehrp and hum and hum.Health > 0 then
-            table.insert(list, enemy)
+    local char = game.Players.LocalPlayer.Character
+    if not char then return list end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return list end
+
+    -- 🔥 scan SEMUA Enemy termasuk raid (deep scan)
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj.Name == "Enemy" and obj:IsA("Folder") then
+            for _, enemy in pairs(obj:GetChildren()) do
+                local ehrp = enemy:FindFirstChild("HumanoidRootPart")
+                local hum = enemy:FindFirstChildOfClass("Humanoid")
+
+                if ehrp and hum and hum.Health > 0 then
+                    -- 🔥 filter jarak biar gak ke map lain
+                    local dist = (hrp.Position - ehrp.Position).Magnitude
+                    if dist < 1000 then
+                        table.insert(list, enemy)
+                    end
+                end
+            end
         end
     end
+
     return list
 end
 
@@ -459,18 +472,6 @@ task.spawn(function()
     end
 end)
 
-task.spawn(function()
-    while task.wait(2) do
-        if AutoWandenOpen then
-            pcall(function()
-                game:GetService("ReplicatedStorage")
-                :WaitForChild("Remotes")
-                :WaitForChild("OpenWandenreichRaid")
-                :FireServer()
-            end)
-        end
-    end
-end)
 -- MAIN LOOP (UPGRADE TANPA HAPUS)
 local index = 1
 RunService.Heartbeat:Connect(function()
@@ -508,17 +509,31 @@ RunService.Heartbeat:Connect(function()
         end
     end
 
-    if #targets > 0 then
-        index = index % #targets + 1
-        local target = targets[index]
+   if #targets > 0 then
+    local nearest, dist = nil, math.huge
 
-        local ehrp = target:FindFirstChild("HumanoidRootPart")
-        local hum = target:FindFirstChildOfClass("Humanoid")
+    for _, enemy in pairs(targets) do
+        local ehrp = enemy:FindFirstChild("HumanoidRootPart")
+        local hum = enemy:FindFirstChildOfClass("Humanoid")
 
         if ehrp and hum and hum.Health > 0 then
+            local d = (hrp.Position - ehrp.Position).Magnitude
+            if d < dist then
+                dist = d
+                nearest = enemy
+            end
+        end
+    end
+
+    if nearest then
+        local ehrp = nearest:FindFirstChild("HumanoidRootPart")
+        if ehrp then
             if AutoTP or AutoTPNearest then
                 hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
             end
+        end
+	   end
+    end
 
             if AutoGroup then
                 for _, e in pairs(enemies) do
@@ -544,35 +559,8 @@ RunService.Heartbeat:Connect(function()
         ClickRemote:FireServer()
     end
 end
-        end
-    end
-task.spawn(function()
-    while task.wait(0.3) do
-        if AutoWandenTP then
-            pcall(function()
-                local raid = workspace:FindFirstChild("WandenreichRaid")
-                local char = game.Players.LocalPlayer.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+     
 
-                if raid and raid:FindFirstChild("Raid1") and hrp then
-                    local enemies = raid.Raid1:FindFirstChild("Enemy")
-
-                    if enemies then
-                        for _, mob in pairs(enemies:GetChildren()) do
-                            local ehrp = mob:FindFirstChild("HumanoidRootPart")
-                            local hum = mob:FindFirstChildOfClass("Humanoid")
-
-                            if ehrp and hum and hum.Health > 0 then
-                                hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
-                                task.wait(0.1)
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
     if AutoRaid then DoRaid() end
     if AutoFruit then Remotes.RollFruitPower:FireServer() end
     if AutoHaki then Remotes.HakiLeveling:FireServer() end
@@ -607,9 +595,7 @@ Toggle("EGG", function(v) AutoEgg = v end)
 Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
 Toggle("AUTO GROUP", function(v) AutoGroup = v end)
-Toggle("WISTERIA OPEN", function(v) AutoWisteria = v end)
-Toggle("WANDEN OPEN", function(v) AutoWandenOpen = v end)
-Toggle("WANDEN TP", function(v) AutoWandenTP = v end)
+Toggle("Wisteria", function(v) AutoWisteria = v end)
 
 DropdownMulti("AUTO POWERS", {
 	["Fruit"] = function(v) AutoFruit = v end,
