@@ -106,7 +106,31 @@ task.spawn(function()
     end
 end)
 --// GET ENEMIES
+--// GET ENEMIES
 local function GetEnemies()
+
+    -- 🔥 TAMBAH DI SINI (PALING ATAS)
+    local raid = workspace:FindFirstChild("WandenreichRaid")
+    if raid and raid:FindFirstChild("Raid1") then
+        local enemiesFolder = raid.Raid1:FindFirstChild("Enemy")
+        if enemiesFolder then
+            local list = {}
+            for _, enemy in pairs(enemiesFolder:GetChildren()) do
+                local ehrp = enemy:FindFirstChild("HumanoidRootPart")
+                local hum = enemy:FindFirstChildOfClass("Humanoid")
+
+                if ehrp and hum and hum.Health > 0 then
+                    table.insert(list, enemy)
+                end
+            end
+
+            if #list > 0 then
+                return list -- 🔥 STOP di sini, jangan lanjut bawah
+            end
+        end
+    end
+
+    -- 🔽 BARU LANJUT KODE LAMA LU DI BAWAH SINI
     local data = State.GetData()
     if not data or not data.LastArea then return {} end
 
@@ -457,38 +481,20 @@ task.spawn(function()
         end
     end
 end)
-
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(2) do
         if AutoWandenRaid then
-            pcall(function()
-                -- 🔥 OPEN RAID
-                Remotes:WaitForChild("OpenWandenreichRaid"):FireServer()
+            local raid = workspace:FindFirstChild("WandenreichRaid")
 
-                -- 🔥 AMBIL ENEMY
-                local raid = workspace:FindFirstChild("WandenreichRaid")
-                if raid and raid:FindFirstChild("Raid1") then
-                    local enemies = raid.Raid1:FindFirstChild("Enemy")
-                    local char = player.Character
-                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
-                    if enemies and hrp then
-                        for _, mob in pairs(enemies:GetChildren()) do
-                            local ehrp = mob:FindFirstChild("HumanoidRootPart")
-                            local hum = mob:FindFirstChildOfClass("Humanoid")
-
-                            if ehrp and hum and hum.Health > 0 then
-                                -- 🔥 TP KE MOB
-                                hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
-                                task.wait(0.2) -- biar ga skip mob
-                            end
-                        end
-                    end
-                end
-            end)
+            if not raid or not raid:FindFirstChild("Raid1") then
+                pcall(function()
+                    Remotes:WaitForChild("OpenWandenreichRaid"):FireServer()
+                end)
+            end
         end
     end
 end)
+
 -- MAIN LOOP (UPGRADE TANPA HAPUS)
 local index = 1
 RunService.Heartbeat:Connect(function()
