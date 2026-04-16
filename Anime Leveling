@@ -27,6 +27,7 @@ local InTower = false
 local TowerLock = 0
 local SelectedEnemies = {}
 local AutoWandenRaid = false
+local InWanden = false
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -95,6 +96,7 @@ task.spawn(function()
         end
     end
 end)
+
 task.spawn(function()
     while task.wait(1) do
         local data = State.GetData()
@@ -105,7 +107,17 @@ task.spawn(function()
         end
     end
 end)
---// GET ENEMIES
+
+task.spawn(function()
+    while task.wait(1) do
+        local raid = workspace:FindFirstChild("WandenreichRaid")
+        if raid and raid:FindFirstChild("Raid1") then
+            InWanden = true
+        else
+            InWanden = false
+        end
+    end
+end)
 --// GET ENEMIES
 local function GetEnemies()
 
@@ -483,21 +495,44 @@ task.spawn(function()
 end)
 task.spawn(function()
     while task.wait(2) do
-        if AutoWandenRaid then
-            local raid = workspace:FindFirstChild("WandenreichRaid")
-
-            if not raid or not raid:FindFirstChild("Raid1") then
-                pcall(function()
-                    Remotes:WaitForChild("OpenWandenreichRaid"):FireServer()
-                end)
-            end
+        if AutoWandenRaid and not InWanden then
+            pcall(function()
+                Remotes:WaitForChild("OpenWandenreichRaid"):FireServer()
+            end)
         end
     end
 end)
+task.spawn(function()
+    while task.wait(0.4) do
+        if AutoWandenRaid and InWanden then
+            pcall(function()
+                local raid = workspace:FindFirstChild("WandenreichRaid")
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
+                if raid and raid:FindFirstChild("Raid1") and hrp then
+                    local enemies = raid.Raid1:FindFirstChild("Enemy")
+
+                    if enemies then
+                        for _, mob in pairs(enemies:GetChildren()) do
+                            local ehrp = mob:FindFirstChild("HumanoidRootPart")
+                            local hum = mob:FindFirstChildOfClass("Humanoid")
+
+                            if ehrp and hum and hum.Health > 0 then
+                                hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
+                                task.wait(0.12)
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
 -- MAIN LOOP (UPGRADE TANPA HAPUS)
 local index = 1
 RunService.Heartbeat:Connect(function()
+	if AutoWandenRaid and InWanden then return end
     local char = player.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
