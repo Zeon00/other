@@ -1,13 +1,15 @@
 --// ANTI AFK SIMPLE (FINAL BANGET)
-local VirtualUser = game:GetService("VirtualUser")
-local player = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
--- HAPUS semua variable AntiAFK
-
-player.Idled:Connect(function()
-	VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-	task.wait(1)
-	VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+task.spawn(function()
+    while true do
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.Jump = true
+        end
+        task.wait(8) -- bisa ubah 5–10 detik
+    end
 end)
 
 
