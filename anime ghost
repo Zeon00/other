@@ -471,3 +471,16 @@ end
 RefreshList()
 EnemyFolder.ChildAdded:Connect(RefreshList)
 EnemyFolder.ChildRemoved:Connect(RefreshList)
+-- ANTI AFK
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+task.spawn(function()
+    while true do
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.Jump = true
+        end
+        task.wait(8) -- bisa ubah 5–10 detik
+    end
+end)
