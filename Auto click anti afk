@@ -1,3 +1,5 @@
+-- ANTI AFK SIMPLE GUI
+
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 
@@ -6,145 +8,136 @@ repeat task.wait() until player:FindFirstChild("PlayerGui")
 
 -- GUI
 local gui = Instance.new("ScreenGui")
+gui.Name = "AntiAFK"
 gui.Parent = player.PlayerGui
 gui.ResetOnSpawn = false
 
--- MAIN
+-- FRAME
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0,260,0,140)
-frame.Position = UDim2.new(0.5,-130,0.5,-70)
+frame.Size = UDim2.new(0.4,0,0.3,0)
+frame.Position = UDim2.new(0.3,0,0.3,0)
 frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 frame.Active = true
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
+frame.Draggable = true
+Instance.new("UICorner", frame)
 
 -- TOP
 local top = Instance.new("Frame", frame)
-top.Size = UDim2.new(1,0,0,35)
-top.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Instance.new("UICorner", top).CornerRadius = UDim.new(0,12)
+top.Size = UDim2.new(1,0,0,32)
+top.BackgroundTransparency = 1
 
--- TITLE
 local title = Instance.new("TextLabel", top)
-title.Size = UDim2.new(1,-80,1,0)
-title.Position = UDim2.new(0,10,0,0)
-title.BackgroundTransparency = 1
-title.Text = "Anti AFK Jump"
-title.TextColor3 = Color3.new(1,1,1)
+title.Size = UDim2.new(1,0,1,0)
+title.Text = "ANTI AFK"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 14
-title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextScaled = true
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
 
 -- CLOSE
 local close = Instance.new("TextButton", top)
 close.Size = UDim2.new(0,30,1,0)
 close.Position = UDim2.new(1,-30,0,0)
 close.Text = "X"
-close.BackgroundTransparency = 1
+close.BackgroundColor3 = Color3.fromRGB(150,0,0)
 close.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", close)
 
 -- MINIMIZE
 local mini = Instance.new("TextButton", top)
 mini.Size = UDim2.new(0,30,1,0)
 mini.Position = UDim2.new(1,-60,0,0)
 mini.Text = "-"
-mini.BackgroundTransparency = 1
+mini.BackgroundColor3 = Color3.fromRGB(60,60,60)
 mini.TextColor3 = Color3.new(1,1,1)
-
--- TOGGLE
-local toggle = Instance.new("TextButton", frame)
-toggle.Size = UDim2.new(1,-20,0,50)
-toggle.Position = UDim2.new(0,10,0,60)
-toggle.Text = "OFF"
-toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
-toggle.TextColor3 = Color3.new(1,1,1)
-toggle.Font = Enum.Font.GothamBold
-toggle.TextSize = 18
-Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,10)
+Instance.new("UICorner", mini)
 
 -- ICON
 local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.new(0,55,0,55)
-icon.Position = UDim2.new(0,20,0.5,-25)
+icon.Size = UDim2.new(0,60,0,60)
+icon.Position = UDim2.new(0.02,0,0.5,0)
 icon.Text = "AFK"
 icon.Visible = false
-icon.BackgroundColor3 = Color3.fromRGB(25,25,25)
+icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
 icon.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", icon).CornerRadius = UDim.new(1,0)
+Instance.new("UICorner", icon)
 
--- STATE
+-- TOGGLE BUTTON
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(0.8,0,0,40)
+toggle.Position = UDim2.new(0.1,0,0.5,-20)
+toggle.Text = "OFF"
+toggle.Font = Enum.Font.GothamBold
+toggle.TextScaled = true
+toggle.BackgroundColor3 = Color3.fromRGB(80,0,0)
+toggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", toggle)
+
+-- LOGIC
 local enabled = false
 
--- TOGGLE
 toggle.MouseButton1Click:Connect(function()
-	enabled = not enabled
-	toggle.Text = enabled and "ON" or "OFF"
-	toggle.BackgroundColor3 = enabled and Color3.fromRGB(0,170,100) or Color3.fromRGB(50,50,50)
+    enabled = not enabled
+    toggle.Text = enabled and "ON" or "OFF"
+    toggle.BackgroundColor3 = enabled and Color3.fromRGB(0,150,0) or Color3.fromRGB(80,0,0)
 end)
 
--- CLOSE
 close.MouseButton1Click:Connect(function()
-	gui:Destroy()
+    gui:Destroy()
 end)
 
--- MINIMIZE
 mini.MouseButton1Click:Connect(function()
-	frame.Visible = false
-	icon.Visible = true
+    frame.Visible = false
+    icon.Visible = true
 end)
 
--- RESTORE
 icon.MouseButton1Click:Connect(function()
-	frame.Visible = true
-	icon.Visible = false
+    frame.Visible = true
+    icon.Visible = false
 end)
 
--- DRAG FUNCTION
-local function dragify(obj)
-	local dragging, dragStart, startPos
+-- DRAG ICON (BIAR KAYAK PUNYA LU)
+local dragging, dragStart, startPos
 
-	obj.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1
-		or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = obj.Position
+icon.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = icon.Position
 
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
-		end
-	end)
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
 
-	UIS.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-		or input.UserInputType == Enum.UserInputType.Touch) then
+UIS.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+    or input.UserInputType == Enum.UserInputType.Touch) then
 
-			local delta = input.Position - dragStart
+        local delta = input.Position - dragStart
 
-			obj.Position = UDim2.new(
-				startPos.X.Scale,
-				startPos.X.Offset + delta.X,
-				startPos.Y.Scale,
-				startPos.Y.Offset + delta.Y
-			)
-		end
-	end)
-end
-
-dragify(frame)
-dragify(icon)
+        icon.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
 
 -- ANTI AFK JUMP
 task.spawn(function()
-	while true do
-		if enabled then
-			local char = player.Character
-			if char and char:FindFirstChild("Humanoid") then
-				char.Humanoid.Jump = true
-			end
-		end
-		task.wait(8)
-	end
+    while true do
+        if enabled then
+            local char = player.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.Jump = true
+            end
+        end
+        task.wait(8)
+    end
 end)
