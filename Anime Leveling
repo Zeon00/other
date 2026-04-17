@@ -1,20 +1,6 @@
- --// ANTI AFK SIMPLE (FINAL BANGET)
+--// SERVICES
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-
-task.spawn(function()
-    while true do
-        local char = player.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.Jump = true
-        end
-        task.wait(8) -- bisa ubah 5–10 detik
-    end
-end)
-
-
-
---// SERVICES
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Remotes = RS:WaitForChild("Remotes")
@@ -43,7 +29,8 @@ local InTower = false
 local TowerLock = 0
 local SelectedEnemies = {}
 local AutoWandenRaid = false
-
+local LastWanden = 0
+local WandenDelay = 6
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -123,33 +110,76 @@ task.spawn(function()
         end
     end
 end)
+
+local function IsInWanden()
+    local raid = workspace:FindFirstChild("WandenreichRaid")
+    if not raid then return false end
+
+    for _, v in pairs(raid:GetChildren()) do
+        if v:IsA("Folder") and v:FindFirstChild("Enemy") then
+            local enemies = v:FindFirstChild("Enemy")
+            if enemies and #enemies:GetChildren() > 0 then
+                return true -- ✅ ada musuh = lagi raid
+            end
+        end
+    end
+
+    return false
+end
+
+-- 🔥 AMBIL RAID AKTIF
+local function GetCurrentRaid()
+    local raid = workspace:FindFirstChild("WandenreichRaid")
+    if not raid then return nil end
+
+    for _, v in pairs(raid:GetChildren()) do
+        if v:IsA("Folder") and v:FindFirstChild("Enemy") then
+            local enemies = v:FindFirstChild("Enemy")
+            if enemies and #enemies:GetChildren() > 0 then
+                return v
+            end
+        end
+    end
+
+    return nil
+end
+
+-- 🔥 LOOP
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(0.5) do
         if AutoWandenRaid then
             pcall(function()
-                -- 🔥 OPEN RAID
-                Remotes:WaitForChild("OpenWandenreichRaid"):FireServer()
 
-                -- 🔥 AMBIL ENEMY
-                local raid = workspace:FindFirstChild("WandenreichRaid")
-                if raid and raid:FindFirstChild("Raid1") then
-                    local enemies = raid.Raid1:FindFirstChild("Enemy")
-                    local char = player.Character
-                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local InWanden = IsInWanden()
 
-                    if enemies and hrp then
-                        for _, mob in pairs(enemies:GetChildren()) do
-                            local ehrp = mob:FindFirstChild("HumanoidRootPart")
-                            local hum = mob:FindFirstChildOfClass("Humanoid")
+                -- 🔥 OPEN RAID (SEKARANG FIX)
+                if not InWanden and tick() - LastWanden >= WandenDelay then
+                    LastWanden = tick()
+                    Remotes:WaitForChild("OpenWandenreichRaid"):FireServer()
+                end
 
-                            if ehrp and hum and hum.Health > 0 then
-                                -- 🔥 TP KE MOB
-                                hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
-                                task.wait(0.2) -- biar ga skip mob
+                -- 🔥 JALANIN RAID
+                if InWanden then
+                    local currentRaid = GetCurrentRaid()
+                    if currentRaid then
+                        local enemies = currentRaid:FindFirstChild("Enemy")
+                        local char = player.Character
+                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+                        if enemies and hrp then
+                            for _, mob in pairs(enemies:GetChildren()) do
+                                local ehrp = mob:FindFirstChild("HumanoidRootPart")
+                                local hum = mob:FindFirstChildOfClass("Humanoid")
+
+                                if ehrp and hum and hum.Health > 0 then
+                                    hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
+                                    task.wait(0.2)
+                                end
                             end
                         end
                     end
                 end
+
             end)
         end
     end
@@ -616,7 +646,7 @@ Toggle("EGG", function(v) AutoEgg = v end)
 Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
 Toggle("AUTO GROUP", function(v) AutoGroup = v end)
-Toggle("Wisteria", function(v) AutoWisteria = v end)
+Toggle("WISTERIA RAID", function(v) AutoWisteria = v end)
 Toggle("WANDEN RAID", function(v) AutoWandenRaid = v end)
 
 DropdownMulti("AUTO POWERS", {
