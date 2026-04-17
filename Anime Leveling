@@ -42,6 +42,8 @@ local WisteriaDelay = 5 -- delay buka raid
 local InTower = false
 local TowerLock = 0
 local SelectedEnemies = {}
+local AutoWandenRaid = false
+local InWanden = false
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -112,11 +114,61 @@ task.spawn(function()
 end)
 task.spawn(function()
     while task.wait(1) do
+        local char = player.Character
+        if char and workspace:FindFirstChild("WandenreichRaid") then
+            local raid = workspace.WandenreichRaid
+            if raid:FindFirstChild("Raid1") then
+                InWanden = true
+            else
+                InWanden = false
+            end
+        else
+            InWanden = false
+        end
+    end
+end)
+task.spawn(function()
+    while task.wait(1) do
         local data = State.GetData()
         if data and data.LastArea == "WisteriaRaid" then
             InWisteria = true
         else
             InWisteria = false
+        end
+    end
+end)
+task.spawn(function()
+    while task.wait(1) do
+        if AutoWandenRaid then
+            pcall(function()
+
+                -- 🔥 OPEN RAID (HANYA KALAU BELUM MASUK)
+                if not InWanden then
+                    Remotes:WaitForChild("OpenWandenreichRaid"):FireServer()
+                    return -- tunggu masuk dulu
+                end
+
+                -- 🔥 KALAU SUDAH DI RAID → FARM
+                local raid = workspace:FindFirstChild("WandenreichRaid")
+                if raid and raid:FindFirstChild("Raid1") then
+                    local enemies = raid.Raid1:FindFirstChild("Enemy")
+                    local char = player.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+                    if enemies and hrp then
+                        for _, mob in pairs(enemies:GetChildren()) do
+                            local ehrp = mob:FindFirstChild("HumanoidRootPart")
+                            local hum = mob:FindFirstChildOfClass("Humanoid")
+
+                            if ehrp and hum and hum.Health > 0 then
+                                hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
+                                task.wait(0.2)
+                            end
+                        end
+                    end
+                end
+
+            end)
         end
     end
 end)
@@ -583,6 +635,7 @@ Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
 Toggle("AUTO GROUP", function(v) AutoGroup = v end)
 Toggle("Wisteria", function(v) AutoWisteria = v end)
+Toggle("WANDEN RAID", function(v) AutoWandenRaid = v end)
 
 DropdownMulti("AUTO POWERS", {
 	["Fruit"] = function(v) AutoFruit = v end,
