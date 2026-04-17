@@ -43,7 +43,7 @@ local InTower = false
 local TowerLock = 0
 local SelectedEnemies = {}
 local AutoWandenRaid = false
-local InWanden = false
+
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -112,21 +112,7 @@ task.spawn(function()
         end
     end
 end)
-task.spawn(function()
-    while task.wait(1) do
-        local char = player.Character
-        if char and workspace:FindFirstChild("WandenreichRaid") then
-            local raid = workspace.WandenreichRaid
-            if raid:FindFirstChild("Raid1") then
-                InWanden = true
-            else
-                InWanden = false
-            end
-        else
-            InWanden = false
-        end
-    end
-end)
+
 task.spawn(function()
     while task.wait(1) do
         local data = State.GetData()
@@ -141,14 +127,10 @@ task.spawn(function()
     while task.wait(1) do
         if AutoWandenRaid then
             pcall(function()
+                -- 🔥 OPEN RAID
+                Remotes:WaitForChild("OpenWandenreichRaid"):FireServer()
 
-                -- 🔥 OPEN RAID (HANYA KALAU BELUM MASUK)
-                if not InWanden then
-                    Remotes:WaitForChild("OpenWandenreichRaid"):FireServer()
-                    return -- tunggu masuk dulu
-                end
-
-                -- 🔥 KALAU SUDAH DI RAID → FARM
+                -- 🔥 AMBIL ENEMY
                 local raid = workspace:FindFirstChild("WandenreichRaid")
                 if raid and raid:FindFirstChild("Raid1") then
                     local enemies = raid.Raid1:FindFirstChild("Enemy")
@@ -161,13 +143,13 @@ task.spawn(function()
                             local hum = mob:FindFirstChildOfClass("Humanoid")
 
                             if ehrp and hum and hum.Health > 0 then
+                                -- 🔥 TP KE MOB
                                 hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
-                                task.wait(0.2)
+                                task.wait(0.2) -- biar ga skip mob
                             end
                         end
                     end
                 end
-
             end)
         end
     end
