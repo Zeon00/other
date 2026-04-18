@@ -312,19 +312,7 @@ end)
 task.spawn(function()
 	while true do
 		if AutoGacha then
-			local char = player.Character
-			if char and char:FindFirstChild("HumanoidRootPart") then
-				local hrp = char.HumanoidRootPart
-
-				local old = hrp.CFrame
-
-				local attachment = workspace.Game.Zones.Summons.GachaModel.Model.StarAura.Attachment
-
-				-- 🔥 TP ke gacha
-				hrp.CFrame = CFrame.new(attachment.WorldPosition + Vector3.new(0,2,0))
-				task.wait(0.1)
-
-				-- 🎰 GACHA
+			pcall(function()
 				Remote:FireServer({
 					{
 						"LastAction",
@@ -341,29 +329,16 @@ task.spawn(function()
 					},
 					"\005"
 				})
+			end)
 
-				task.wait(0.1)
-
-				-- balik ke posisi farming
-				hrp.CFrame = old
-			end
-
-			task.wait(0.5) -- delay penting
+			task.wait(0.7) -- 🔥 delay aman (jangan kecil)
 		else
 			task.wait(1)
 		end
 	end
 end)
 --// ANTI AFK
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
-task.spawn(function()
-    while true do
-        local char = player.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.Jump = true
-        end
-        task.wait(8) -- bisa ubah 5–10 detik
-    end
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
 end)
