@@ -14,6 +14,7 @@ local AutoRaid = false
 local AutoJoin = false
 local AutoTrialEasy = false
 local AutoTrialMedium = false
+local AutoGacha = false 
 
 --// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -21,7 +22,7 @@ gui.Name = "AutoFarmGUI"
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 260, 0, 325)
+main.Size = UDim2.new(0, 260, 0, 350)
 main.Position = UDim2.new(0.5, -130, 0.5, -110)
 main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.Active = true
@@ -92,6 +93,12 @@ local joinBtn = createToggle("Auto Join", 130)
 local raidBtn = createToggle("Auto Raid", 175)
 local trialEasyBtn = createToggle("Trial Easy", 220)
 local trialMedBtn = createToggle("Trial Medium", 265)
+local gachaBtn = createToggle("Auto Gacha", 310)
+
+gachaBtn.MouseButton1Click:Connect(function()
+	AutoGacha = not AutoGacha
+	gachaBtn.Text = "Auto Gacha : "..(AutoGacha and "ON" or "OFF")
+end)
 
 atkBtn.MouseButton1Click:Connect(function()
 	AutoAttack = not AutoAttack
@@ -225,7 +232,7 @@ task.spawn(function()
 end)
 --// AUTO TP (BIARIN SESUAI LU)
 RunService.Heartbeat:Connect(function()
-	if AutoTP then
+	if AutoTP and not AutoGacha then
 		local char = player.Character
 		if not char or not char:FindFirstChild("HumanoidRootPart") then return end
 		
@@ -300,6 +307,51 @@ task.spawn(function()
 		end
 
 		task.wait(1)
+	end
+end)
+task.spawn(function()
+	while true do
+		if AutoGacha then
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") then
+				local hrp = char.HumanoidRootPart
+
+				local old = hrp.CFrame
+
+				local attachment = workspace.Game.Zones.Summons.GachaModel.Model.StarAura.Attachment
+
+				-- 🔥 TP ke gacha
+				hrp.CFrame = CFrame.new(attachment.WorldPosition + Vector3.new(0,2,0))
+				task.wait(0.1)
+
+				-- 🎰 GACHA
+				Remote:FireServer({
+					{
+						"LastAction",
+						"Change",
+						"SummonAutoRoll"
+					},
+					"\005",
+					{
+						"Pets",
+						"Summon",
+						{
+							useMaxRoll = true
+						}
+					},
+					"\005"
+				})
+
+				task.wait(0.1)
+
+				-- balik ke posisi farming
+				hrp.CFrame = old
+			end
+
+			task.wait(0.5) -- delay penting
+		else
+			task.wait(1)
+		end
 	end
 end)
 --// ANTI AFK
