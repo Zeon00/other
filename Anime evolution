@@ -70,6 +70,11 @@ local SpoofFastClick = false
 local AutoTP2 = false
 local AutoMagnet = false
 local SelectedSwordName = ""
+local AutoRaidEasy = false
+local AutoRaidMedium = false
+local AutoRaidHard = false
+local AutoRaidInfinity = false
+local AutoRaidDivinity = false
 
 local lastEnemy = nil
 local HIT_MULTIPLIER = 1
@@ -139,6 +144,18 @@ local function GetPortalByMap(portals, mapName)
             return p
         end
     end
+end
+local function StartRaid(raidName)
+    pcall(function()
+        Remote:FireServer("Enemies","Bridge",{
+            Module = "RaidSystemServer",
+            FunctionName = "Start",
+            Args = {
+                raidName,
+                [3] = 1
+            }
+        })
+    end)
 end
 local function GoToCurrentPortal()
     local mapName = GetCurrentMap()
@@ -590,6 +607,34 @@ end
         end
     end
 end)
+
+task.spawn(function()
+    while task.wait(5) do
+        
+        if AutoRaidEasy then
+            StartRaid("Raid_Easy")
+        end
+
+        if AutoRaidMedium then
+            StartRaid("Raid_Medium")
+        end
+
+        if AutoRaidHard then
+            StartRaid("Raid_Hard")
+        end
+
+        if AutoRaidInfinity then
+            StartRaid("Raid_Infinity")
+        end
+
+        if AutoRaidDivinity then
+            StartRaid("Raid_Divinity")
+        end
+
+    end
+end)
+
+
 ----------------------------------------------------------------
 -- AUTO WORLD BOSS
 ----------------------------------------------------------------
@@ -856,6 +901,25 @@ end)
 
 Toggle("Auto Magnet", function(v)
     AutoMagnet = v
+end)
+Toggle("Auto Raid Easy", function(v)
+    AutoRaidEasy = v
+end)
+
+Toggle("Auto Raid Medium", function(v)
+    AutoRaidMedium = v
+end)
+
+Toggle("Auto Raid Hard", function(v)
+    AutoRaidHard = v
+end)
+
+Toggle("Auto Raid Infinity", function(v)
+    AutoRaidInfinity = v
+end)
+
+Toggle("Auto Raid Divinity", function(v)
+    AutoRaidDivinity = v
 end)
 local box = Instance.new("TextBox", left)
 box.Size = UDim2.new(1,-10,0,36)
