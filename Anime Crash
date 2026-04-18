@@ -331,9 +331,9 @@ task.spawn(function()
 					:FireServer(unpack(args))
 			end)
 
-			task.wait(0.6) -- 🔥 jangan terlalu kecil
+			task.wait(0.2) -- 🔥 jangan terlalu kecil
 		else
-			task.wait(1)
+			task.wait(0.1)
 		end
 	end
 end)
