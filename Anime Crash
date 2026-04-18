@@ -313,25 +313,25 @@ task.spawn(function()
 	while true do
 		if AutoGacha then
 			pcall(function()
-				Remote:FireServer({
+				local args = {
 					{
-						"LastAction",
-						"Change",
-						"SummonAutoRoll"
-					},
-					"\005",
-					{
-						"Pets",
-						"Summon",
 						{
-							useMaxRoll = true
-						}
-					},
-					"\005"
-				})
+							"Pets",
+							"Summon",
+							{
+								useMaxRoll = true
+							}
+						},
+						"\005"
+					}
+				}
+				game:GetService("ReplicatedStorage")
+					:WaitForChild("BridgeNet2")
+					:WaitForChild("dataRemoteEvent")
+					:FireServer(unpack(args))
 			end)
 
-			task.wait(0.7) -- 🔥 delay aman (jangan kecil)
+			task.wait(0.6) -- 🔥 jangan terlalu kecil
 		else
 			task.wait(1)
 		end
