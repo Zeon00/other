@@ -338,7 +338,11 @@ task.spawn(function()
 	end
 end)
 --// ANTI AFK
-player.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
+task.spawn(function()
+    while task.wait(30) do
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
 end)
