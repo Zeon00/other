@@ -11,8 +11,8 @@ local State = require(RS.Client.State)
 local FastHit, AutoTP, BypassAll = false,false,false
 local AutoFruit, AutoHaki, AutoDragon = false,false,false
 local AutoSaiyan, AutoEgg = false,false
-local SelectedEgg = "Star6"
-local HatchAmount = 11
+local SelectedEgg = "Star7"
+local HatchAmount = 25
 local AutoRaid = false
 local AutoBreathing = false
 local AutoProsperity = false
@@ -627,6 +627,8 @@ end
 	if AutoBankai then Remotes.RollBankaiPower:FireServer() end
     if AutoEaster then Remotes.RollEasterPower:FireServer() end
 	if AutoBlessing then Remotes.RollBlessingPower:FireServer() end
+	if AutoDivisions then Remotes.RollDivisionsPower:FireServer() end
+	if AutoClaim then Remotes.ClaimDailyStreak:FireServer() end
 end)
 
 -- BYPASS
@@ -664,4 +666,6 @@ DropdownMulti("AUTO POWERS", {
 	["RollRace"] = function(v) AutoRollRace = v end,
 	["Bankai"] = function(v) AutoBankai = v end,
 	["Blessing"] = function(v) AutoBlessing = v end,
+	["Divisions"] = function(v) AutoDivisions = v end,
+	["Claim"] = function(v) AutoClaim = v end,
 })
