@@ -15,19 +15,29 @@ local AutoJoin = false
 local AutoTrialEasy = false
 local AutoTrialMedium = false
 local AutoGacha = false 
+local AntiAFK = true
 
 --// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "AutoFarmGUI"
 gui.ResetOnSpawn = false
 
+-- FRAME UTAMA (tetep)
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 260, 0, 350)
+main.Size = UDim2.new(0, 260, 0, 400)
 main.Position = UDim2.new(0.5, -130, 0.5, -110)
 main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
+
+-- SCROLL AREA
+local scroll = Instance.new("ScrollingFrame", main)
+scroll.Size = UDim2.new(1,0,1,-30) -- minus title
+scroll.Position = UDim2.new(0,0,0,30)
+scroll.CanvasSize = UDim2.new(0,0,0,600) -- tinggi isi (nanti auto)
+scroll.ScrollBarThickness = 6
+scroll.BackgroundTransparency = 1
 
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
@@ -59,6 +69,9 @@ icon.Visible = false
 icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
 Instance.new("UICorner", icon)
 
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0,5)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
 mini.MouseButton1Click:Connect(function()
 	main.Visible = false
 	icon.Visible = true
@@ -74,26 +87,28 @@ close.MouseButton1Click:Connect(function()
 end)
 
 --// BUTTON
-local function createToggle(name, y)
-	local btn = Instance.new("TextButton", main)
-	btn.Size = UDim2.new(0.9,0,0,35)
-	btn.Position = UDim2.new(0.05,0,0,y)
-	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.Font = Enum.Font.Gotham
-	btn.TextSize = 13
-	btn.Text = name.." : OFF"
-	Instance.new("UICorner", btn)
-	return btn
+local function createToggle(name)
+    local btn = Instance.new("TextButton", scroll)
+    btn.Size = UDim2.new(1,-10,0,35)
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 13
+    btn.Text = name.." : OFF"
+    Instance.new("UICorner", btn)
+    return btn
 end
-
-local atkBtn = createToggle("Auto Attack", 40)
-local tpBtn = createToggle("Auto TP", 85)
-local joinBtn = createToggle("Auto Join", 130)
-local raidBtn = createToggle("Auto Raid", 175)
-local trialEasyBtn = createToggle("Trial Easy", 220)
-local trialMedBtn = createToggle("Trial Medium", 265)
-local gachaBtn = createToggle("Auto Gacha", 310)
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
+end)
+local atkBtn = createToggle("Auto Attack")
+local tpBtn = createToggle("Auto TP")
+local joinBtn = createToggle("Auto Join")
+local raidBtn = createToggle("Auto Raid")
+local trialEasyBtn = createToggle("Trial Easy")
+local trialMedBtn = createToggle("Trial Medium")
+local gachaBtn = createToggle("Auto Gacha")
+local afkBtn = createToggle("Anti AFK")
 
 gachaBtn.MouseButton1Click:Connect(function()
 	AutoGacha = not AutoGacha
@@ -128,6 +143,11 @@ end)
 trialMedBtn.MouseButton1Click:Connect(function()
 	AutoTrialMedium = not AutoTrialMedium
 	trialMedBtn.Text = "Trial Medium : "..(AutoTrialMedium and "ON" or "OFF")
+end)
+
+afkBtn.MouseButton1Click:Connect(function()
+    AntiAFK = not AntiAFK
+    afkBtn.Text = "Anti AFK : ON"
 end)
 --// TARGET SYSTEM (FIXED)
 local overlap = OverlapParams.new()
@@ -218,7 +238,7 @@ task.spawn(function()
 					{
 						Raid = "Frieza Force Invasion",
 						Gamemode = "Raid",
-						Mode = "Medium"
+						Mode = "Expert"
 					}
 				},
 				"\005"
@@ -340,12 +360,27 @@ end)
 
 
 
+--// ANTI AFK (JUMP + VIRTUAL USER)
 task.spawn(function()
     while true do
-        task.wait(60) -- 1 menit
-        local char = player.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.Jump = true
+        task.wait(60)
+
+        if AntiAFK then
+            local char = player.Character
+            local hum = char and char:FindFirstChild("Humanoid")
+
+            if hum then
+                -- gerak dikit
+                hum:Move(Vector3.new(0.5, 0, 0))
+                task.wait(0.3)
+
+                -- lompat
+                hum.Jump = true
+            end
+
+            -- backup biar ga ke kick
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
         end
     end
 end)
