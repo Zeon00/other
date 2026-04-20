@@ -339,3 +339,13 @@ task.spawn(function()
 end)
 
 
+
+task.spawn(function()
+    while true do
+        task.wait(60) -- 1 menit
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.Jump = true
+        end
+    end
+end)
