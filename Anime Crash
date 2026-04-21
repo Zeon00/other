@@ -158,27 +158,18 @@ overlap.FilterDescendantsInstances = {
 	workspace.Game.Trials
 }
 
-local function getTargets()
-	local char = player.Character
-	if not char or not char:FindFirstChild("HumanoidRootPart") then return {} end
-	
-	local hrp = char.HumanoidRootPart
-
-	local range = 10
-	pcall(function()
-		range = require(ReplicatedStorage.GameCore).Player.State.Get("Range") or 10
-	end)
-
-	local parts = workspace:GetPartBoundsInRadius(hrp.Position, range / 2, overlap)
-
+local function getAllTargets()
 	local targets = {}
 	local used = {}
 
-	for _, part in pairs(parts) do
-		local model = part.Parent
-		if not used[model] and part:GetAttribute("Enemy") and not part:GetAttribute("Died") then
-			table.insert(targets, part)
-			used[model] = true
+	for _, v in pairs(workspace.Game.Mobs:GetDescendants()) do
+		if v:IsA("BasePart") and v:GetAttribute("Enemy") and not v:GetAttribute("Died") then
+			local model = v.Parent
+
+			if not used[model] then
+				table.insert(targets, v)
+				used[model] = true
+			end
 		end
 	end
 
@@ -189,10 +180,17 @@ end
 task.spawn(function()
 	while true do
 		if AutoAttack then
-			local targets = getTargets()
+			local targets = getAllTargets()
 
-			if #targets > 0 then
-				-- HIT MUSUH
+			local chunkSize = 25 -- 🔥 bisa lu ubah (20–30 paling aman)
+
+			for i = 1, #targets, chunkSize do
+				local chunk = {}
+
+				for j = i, math.min(i + chunkSize - 1, #targets) do
+					table.insert(chunk, targets[j])
+				end
+
 				Remote:FireServer({
 					{
 						"Action",
@@ -200,30 +198,16 @@ task.spawn(function()
 						{
 							Callback = "M1",
 							Action = "Callback",
-							Targets = targets
-						}
-					},
-					"\005"
-				})
-			else
-				-- GA ADA MUSUH → TETEP CLICK
-				Remote:FireServer({
-					{
-						"Action",
-						"Action",
-						{
-							Callback = "M1",
-							Action = "Callback",
-							Targets = {}
+							Targets = chunk
 						}
 					},
 					"\005"
 				})
 			end
 
-			task.wait(0.05)
+			task.wait(0.03)
 		else
-			task.wait(0.05)
+			task.wait(0.1)
 		end
 	end
 end)
