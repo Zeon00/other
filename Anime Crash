@@ -274,9 +274,7 @@ task.spawn(function()
 				local rooms = workspace.Game:FindFirstChild("Rooms")
 
 				if rooms then
-					local room = rooms:FindFirstChildWhichIsA("Folder")
-
-					if room then
+					for _, room in pairs(rooms:GetChildren()) do
 						Remote:FireServer({
 							{
 								"Gamemodes",
@@ -288,6 +286,7 @@ task.spawn(function()
 							},
 							"\005"
 						})
+						break
 					end
 				end
 			end)
