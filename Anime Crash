@@ -251,6 +251,8 @@ task.spawn(function()
 	end
 end)
 --// AUTO TP (BIARIN SESUAI LU)
+local tpIndex = 1
+
 RunService.Heartbeat:Connect(function()
 	if AutoTP and not AutoGacha then
 		local char = player.Character
@@ -258,11 +260,19 @@ RunService.Heartbeat:Connect(function()
 		
 		local hrp = char.HumanoidRootPart
 
+		local mobs = {}
+
 		for _, v in pairs(workspace.Game.Mobs.Client:GetDescendants()) do
 			if v:IsA("BasePart") and v.Name == "HumanoidRootPart" then
-				hrp.CFrame = v.CFrame * CFrame.new(0,2,2)
-				break
+				table.insert(mobs, v)
 			end
+		end
+
+		if #mobs > 0 then
+			tpIndex = tpIndex % #mobs + 1
+			local target = mobs[tpIndex]
+
+			hrp.CFrame = target.CFrame * CFrame.new(0,2,2)
 		end
 	end
 end)
