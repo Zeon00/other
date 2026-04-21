@@ -203,6 +203,7 @@ task.spawn(function()
 					},
 					"\005"
 				})
+end
 			else
 				-- GA ADA MUSUH → TETEP CLICK
 				Remote:FireServer({
