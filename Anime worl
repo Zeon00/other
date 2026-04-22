@@ -8,7 +8,8 @@ local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-local Remote = RS:WaitForChild("BridgeNet"):WaitForChild("dataRemoteEvent")
+--// OMNI
+local Omni = require(RS:WaitForChild("Omni"))
 
 --// STATE
 local AutoAttack = false
@@ -29,29 +30,26 @@ Instance.new("UICorner", main)
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "⚡ Fruit Farm"
+title.Text = "⚡ Fruit Farm (Smart)"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 16
 
---// BUTTON MAKER
-local function makeButton(text, posY)
-    local btn = Instance.new("TextButton", main)
-    btn.Size = UDim2.new(0.8,0,0,35)
-    btn.Position = UDim2.new(0.1,0,posY,0)
-    btn.Text = text.." OFF"
-    btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
-    Instance.new("UICorner", btn)
-    return btn
+local function makeBtn(name, y)
+    local b = Instance.new("TextButton", main)
+    b.Size = UDim2.new(0.8,0,0,35)
+    b.Position = UDim2.new(0.1,0,y,0)
+    b.Text = name.." OFF"
+    b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", b)
+    return b
 end
 
-local attackBtn = makeButton("Attack", 0.3)
-local energyBtn = makeButton("Energy", 0.6)
+local atkBtn = makeBtn("Attack",0.3)
+local engBtn = makeBtn("Energy",0.6)
 
--- CLOSE
+-- close
 local close = Instance.new("TextButton", main)
 close.Size = UDim2.new(0,30,0,30)
 close.Position = UDim2.new(1,-35,0,0)
@@ -59,7 +57,7 @@ close.Text = "X"
 close.BackgroundColor3 = Color3.fromRGB(200,50,50)
 Instance.new("UICorner", close)
 
--- MINIMIZE
+-- minimize
 local mini = Instance.new("TextButton", main)
 mini.Size = UDim2.new(0,30,0,30)
 mini.Position = UDim2.new(1,-70,0,0)
@@ -75,87 +73,48 @@ icon.Visible = false
 icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
 Instance.new("UICorner", icon)
 
---// AUTO DETECT MOB
-local function getMobs()
-    local folder = Workspace.Server.Enemies.World:FindFirstChild("Fruits Verse")
-    if not folder then return {} end
-
-    local world = folder:FindFirstChild("1")
-    if not world then return {} end
-
-    local targets = {}
-
-    for _, mob in pairs(world:GetChildren()) do
-        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-            targets[mob.Name] = true
-        end
-    end
-
-    return targets
-end
-
---// REMOTES
+--// FUNCTIONS
 local function attack()
-    local args = {
-        {
-            {
-                "General",
-                "Attack",
-                "Click",
-                getMobs(),
-                n = 4
-            },
-            "\2"
-        }
-    }
-    Remote:FireServer(unpack(args))
+    local mobs = Omni.Cache:Get({"EnemiesOnRangeIds"}) or {}
+    Omni.Signal:Fire("General","Attack","Click",mobs)
 end
 
 local function energy()
-    local args = {
-        {
-            {
-                "General",
-                "Attack",
-                "Click",
-                {},
-                n = 4
-            },
-            "\2"
-        }
-    }
-    Remote:FireServer(unpack(args))
+    Omni.Signal:Fire("General","Attack","Click",{})
 end
 
---// LOOP SUPER FAST
-RunService.Heartbeat:Connect(function()
-    if AutoAttack then
-        attack()
-    end
-    if AutoEnergy then
-        energy()
+--// LOOP (SMART SPEED)
+task.spawn(function()
+    while true do
+        if AutoAttack then
+            attack()
+        end
+        if AutoEnergy then
+            energy()
+        end
+        task.wait(0.03) -- aman (ikut sistem game)
     end
 end)
 
---// TOGGLES
-attackBtn.MouseButton1Click:Connect(function()
+--// TOGGLE
+atkBtn.MouseButton1Click:Connect(function()
     AutoAttack = not AutoAttack
-    attackBtn.Text = "Attack "..(AutoAttack and "ON" or "OFF")
-    attackBtn.BackgroundColor3 = AutoAttack and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
+    atkBtn.Text = "Attack "..(AutoAttack and "ON" or "OFF")
+    atkBtn.BackgroundColor3 = AutoAttack and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
 end)
 
-energyBtn.MouseButton1Click:Connect(function()
+engBtn.MouseButton1Click:Connect(function()
     AutoEnergy = not AutoEnergy
-    energyBtn.Text = "Energy "..(AutoEnergy and "ON" or "OFF")
-    energyBtn.BackgroundColor3 = AutoEnergy and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
+    engBtn.Text = "Energy "..(AutoEnergy and "ON" or "OFF")
+    engBtn.BackgroundColor3 = AutoEnergy and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
 end)
 
---// CLOSE
+-- close
 close.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
---// MINIMIZE
+-- minimize
 mini.MouseButton1Click:Connect(function()
     main.Visible = false
     icon.Visible = true
