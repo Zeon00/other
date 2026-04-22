@@ -13,56 +13,29 @@ local Omni = require(RS:WaitForChild("Omni"))
 -- STATE
 local AutoAttack = false
 local AutoTP = false
-local CurrentTarget = nil
+local tpIndex = 1
+local mobsCache = {}
 
+task.spawn(function()
+    while task.wait(1) do
+        mobsCache = {}
+
+        for _, v in pairs(workspace.Client.Enemies:GetChildren()) do
+            local hrp = v:FindFirstChild("HumanoidRootPart")
+            local hum = v:FindFirstChildOfClass("Humanoid")
+
+            if hrp and hum and hum.Health > 0 then
+                table.insert(mobsCache, hrp)
+            end
+        end
+    end
+end)
 --------------------------------------------------
 -- GET HRP
 --------------------------------------------------
 local function GetHRP()
     local char = player.Character
     return char and char:FindFirstChild("HumanoidRootPart")
-end
-
---------------------------------------------------
--- GET ENEMY FOLDER
---------------------------------------------------
-local function GetFolder()
-    return workspace:WaitForChild("Client"):WaitForChild("Enemies")
-end
-
---------------------------------------------------
--- GET TARGET (AUTO SWITCH)
---------------------------------------------------
-local function GetTarget()
-    local folder = GetFolder()
-    local myhrp = GetHRP()
-    if not myhrp then return end
-
-    local closest, dist = nil, math.huge
-
-    for _, mob in pairs(folder:GetChildren()) do
-        local hrp = mob:FindFirstChild("HumanoidRootPart")
-        local hum = mob:FindFirstChildOfClass("Humanoid")
-
-        if hrp and hum and hum.Health > 0 then
-            local d = (myhrp.Position - hrp.Position).Magnitude
-            if d < dist then
-                dist = d
-                closest = mob
-            end
-        end
-    end
-
-    return closest
-end
-
---------------------------------------------------
--- VALIDATE TARGET
---------------------------------------------------
-local function IsAlive(mob)
-    if not mob then return false end
-    local hum = mob:FindFirstChildOfClass("Humanoid")
-    return hum and hum.Health > 0
 end
 
 --------------------------------------------------
@@ -78,21 +51,18 @@ end
 task.spawn(function()
     while true do
         local myhrp = GetHRP()
+       if AutoTP then
+    if #mobsCache > 0 and myhrp then
+        tpIndex = tpIndex % #mobsCache + 1
+        local target = mobsCache[tpIndex]
 
-        if AutoTP then
-            -- kalau target mati / hilang → cari baru
-            if not IsAlive(CurrentTarget) then
-                CurrentTarget = GetTarget()
-            end
-
-            if CurrentTarget and myhrp then
-                local hrp = CurrentTarget:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    myhrp.CFrame = hrp.CFrame * CFrame.new(0,0,3)
-                end
-            end
+        if target and target.Parent then
+            myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
         end
+    end
 
+    task.wait(0.1) -- 🔥 penting biar pindah stabil
+end
         if AutoAttack then
             local start = tick()
             local ids = GetIDs()
