@@ -1,6 +1,6 @@
 -- DESTROY GUI LAMA
 pcall(function()
-    game.CoreGui.ProFarm:Destroy()
+    game.CoreGui.ProFarmTP:Destroy()
 end)
 
 -- SERVICES
@@ -12,41 +12,89 @@ local Omni = require(RS:WaitForChild("Omni"))
 
 -- STATE
 local AutoAttack = false
-local SelectedMob = nil
+local AutoTP = false
+local CurrentTarget = nil
 
 --------------------------------------------------
--- GET IDS (FILTER BY SELECTED MOB)
+-- GET HRP
 --------------------------------------------------
-
-local function GetIDs()
-    local ids = Omni.Cache:Get({"EnemiesOnRangeIds"}) or {}
-
-    if not SelectedMob then
-        return ids
-    end
-
-    local enemies = Omni.Cache:Get({"Enemies"}) or {}
-    local filtered = {}
-
-    for id, _ in pairs(ids) do
-        local data = enemies[id]
-        if data and data.Model and data.Model.Name == SelectedMob then
-            filtered[id] = true
-        end
-    end
-
-    return filtered
+local function GetHRP()
+    local char = player.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
 end
 
 --------------------------------------------------
--- FAST HIT LOOP
+-- GET ENEMY FOLDER
 --------------------------------------------------
+local function GetFolder()
+    return workspace:WaitForChild("Client"):WaitForChild("Enemies")
+end
 
+--------------------------------------------------
+-- GET TARGET (AUTO SWITCH)
+--------------------------------------------------
+local function GetTarget()
+    local folder = GetFolder()
+    local myhrp = GetHRP()
+    if not myhrp then return end
+
+    local closest, dist = nil, math.huge
+
+    for _, mob in pairs(folder:GetChildren()) do
+        local hrp = mob:FindFirstChild("HumanoidRootPart")
+        local hum = mob:FindFirstChildOfClass("Humanoid")
+
+        if hrp and hum and hum.Health > 0 then
+            local d = (myhrp.Position - hrp.Position).Magnitude
+            if d < dist then
+                dist = d
+                closest = mob
+            end
+        end
+    end
+
+    return closest
+end
+
+--------------------------------------------------
+-- VALIDATE TARGET
+--------------------------------------------------
+local function IsAlive(mob)
+    if not mob then return false end
+    local hum = mob:FindFirstChildOfClass("Humanoid")
+    return hum and hum.Health > 0
+end
+
+--------------------------------------------------
+-- GET IDS
+--------------------------------------------------
+local function GetIDs()
+    return Omni.Cache:Get({"EnemiesOnRangeIds"}) or {}
+end
+
+--------------------------------------------------
+-- MAIN LOOP
+--------------------------------------------------
 task.spawn(function()
     while true do
+        local myhrp = GetHRP()
+
+        if AutoTP then
+            -- kalau target mati / hilang → cari baru
+            if not IsAlive(CurrentTarget) then
+                CurrentTarget = GetTarget()
+            end
+
+            if CurrentTarget and myhrp then
+                local hrp = CurrentTarget:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    myhrp.CFrame = hrp.CFrame * CFrame.new(0,0,3)
+                end
+            end
+        end
+
         if AutoAttack then
             local start = tick()
-
             local ids = GetIDs()
 
             if next(ids) then
@@ -73,13 +121,11 @@ end)
 --------------------------------------------------
 -- GUI
 --------------------------------------------------
-
 local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "ProFarm"
+gui.Name = "ProFarmTP"
 
--- MAIN
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 230, 0, 120)
+main.Size = UDim2.new(0, 230, 0, 140)
 main.Position = UDim2.new(0.4,0,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 main.Active = true
@@ -87,19 +133,31 @@ main.Draggable = true
 
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
-title.Text = "PRO FARM"
+title.Text = "AUTO FARM TP"
 title.BackgroundColor3 = Color3.fromRGB(35,35,35)
 
--- TOGGLE ATTACK
-local btn = Instance.new("TextButton", main)
-btn.Size = UDim2.new(1,-20,0,40)
-btn.Position = UDim2.new(0,10,0,40)
-btn.Text = "Auto Attack: OFF"
-btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+-- AUTO ATTACK
+local atk = Instance.new("TextButton", main)
+atk.Size = UDim2.new(1,-20,0,40)
+atk.Position = UDim2.new(0,10,0,40)
+atk.Text = "Auto Attack: OFF"
+atk.BackgroundColor3 = Color3.fromRGB(45,45,45)
 
-btn.MouseButton1Click:Connect(function()
+atk.MouseButton1Click:Connect(function()
     AutoAttack = not AutoAttack
-    btn.Text = AutoAttack and "Auto Attack: ON" or "Auto Attack: OFF"
+    atk.Text = AutoAttack and "Auto Attack: ON" or "Auto Attack: OFF"
+end)
+
+-- AUTO TP
+local tp = Instance.new("TextButton", main)
+tp.Size = UDim2.new(1,-20,0,40)
+tp.Position = UDim2.new(0,10,0,90)
+tp.Text = "Auto TP: OFF"
+tp.BackgroundColor3 = Color3.fromRGB(45,45,45)
+
+tp.MouseButton1Click:Connect(function()
+    AutoTP = not AutoTP
+    tp.Text = AutoTP and "Auto TP: ON" or "Auto TP: OFF"
 end)
 
 -- MINIMIZE
@@ -133,67 +191,4 @@ end)
 
 close.MouseButton1Click:Connect(function()
     gui:Destroy()
-end)
-
---------------------------------------------------
--- DROPDOWN (KANAN)
---------------------------------------------------
-
-local dropFrame = Instance.new("Frame", gui)
-dropFrame.Size = UDim2.new(0, 160, 0, 220)
-dropFrame.Position = UDim2.new(0.4, 240, 0.3, 0)
-dropFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-
-local dropTitle = Instance.new("TextLabel", dropFrame)
-dropTitle.Size = UDim2.new(1,0,0,30)
-dropTitle.Text = "Select Mob"
-dropTitle.BackgroundColor3 = Color3.fromRGB(40,40,40)
-
-local list = Instance.new("ScrollingFrame", dropFrame)
-list.Size = UDim2.new(1,0,1,-30)
-list.Position = UDim2.new(0,0,0,30)
-list.CanvasSize = UDim2.new(0,0,0,0)
-list.ScrollBarThickness = 4
-
-local layout = Instance.new("UIListLayout", list)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-
---------------------------------------------------
--- REFRESH LIST (REAL FROM WORKSPACE)
---------------------------------------------------
-
-local function RefreshMobList()
-    list:ClearAllChildren()
-    layout.Parent = list
-
-    local folder = workspace:WaitForChild("Client"):WaitForChild("Enemies")
-    local mobs = {}
-
-    for _, mob in pairs(folder:GetChildren()) do
-        if mob:FindFirstChild("HumanoidRootPart") then
-            mobs[mob.Name] = true
-        end
-    end
-
-    for name in pairs(mobs) do
-        local b = Instance.new("TextButton")
-        b.Size = UDim2.new(1, -5, 0, 30)
-        b.Text = name
-        b.BackgroundColor3 = Color3.fromRGB(50,50,50)
-        b.Parent = list
-
-        b.MouseButton1Click:Connect(function()
-            SelectedMob = name
-            dropTitle.Text = "Mob: "..name
-        end)
-    end
-
-    list.CanvasSize = UDim2.new(0,0,0, layout.AbsoluteContentSize.Y)
-end
-
--- AUTO UPDATE LIST
-task.spawn(function()
-    while task.wait(2) do
-        pcall(RefreshMobList)
-    end
 end)
