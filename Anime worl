@@ -1,121 +1,128 @@
---// CLEAN
+-- DESTROY GUI LAMA
 pcall(function()
-    game.CoreGui.FruitFarmGUI:Destroy()
+    game.CoreGui.FastHitFarm:Destroy()
 end)
 
---// SERVICES
+-- SERVICES
+local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
 
---// OMNI
+local player = Players.LocalPlayer
 local Omni = require(RS:WaitForChild("Omni"))
 
---// STATE
+-- STATE
 local AutoAttack = false
-local AutoEnergy = false
+local SelectedMob = nil
 
---// GUI
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "FruitFarmGUI"
+-- GET VALID IDS (MULTI TARGET)
+local function GetIDs()
+    local ids = Omni.Cache:Get({"EnemiesOnRangeIds"}) or {}
 
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 240, 0, 160)
-main.Position = UDim2.new(0.5, -120, 0.5, -80)
-main.BackgroundColor3 = Color3.fromRGB(25,25,25)
-main.Active = true
-main.Draggable = true
-Instance.new("UICorner", main)
+    -- kalau belum pilih mob → semua kena
+    if not SelectedMob then
+        return ids
+    end
 
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,0,0,30)
-title.BackgroundTransparency = 1
-title.Text = "⚡ Fruit Farm (Smart)"
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.GothamBold
+    local enemies = Omni.Cache:Get({"Enemies"}) or {}
+    local filtered = {}
 
-local function makeBtn(name, y)
-    local b = Instance.new("TextButton", main)
-    b.Size = UDim2.new(0.8,0,0,35)
-    b.Position = UDim2.new(0.1,0,y,0)
-    b.Text = name.." OFF"
-    b.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.GothamBold
-    Instance.new("UICorner", b)
-    return b
+    for id, _ in pairs(ids) do
+        local data = enemies[id]
+        if data and data.Model and data.Model.Name == SelectedMob then
+            filtered[id] = true
+        end
+    end
+
+    return filtered
 end
 
-local atkBtn = makeBtn("Attack",0.3)
-local engBtn = makeBtn("Energy",0.6)
-
--- close
-local close = Instance.new("TextButton", main)
-close.Size = UDim2.new(0,30,0,30)
-close.Position = UDim2.new(1,-35,0,0)
-close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(200,50,50)
-Instance.new("UICorner", close)
-
--- minimize
-local mini = Instance.new("TextButton", main)
-mini.Size = UDim2.new(0,30,0,30)
-mini.Position = UDim2.new(1,-70,0,0)
-mini.Text = "-"
-mini.BackgroundColor3 = Color3.fromRGB(80,80,80)
-Instance.new("UICorner", mini)
-
-local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.new(0,50,0,50)
-icon.Position = UDim2.new(0,20,0.5,0)
-icon.Text = "⚡"
-icon.Visible = false
-icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Instance.new("UICorner", icon)
-
---// FUNCTIONS
-local function attack()
-    local mobs = Omni.Cache:Get({"EnemiesOnRangeIds"}) or {}
-    Omni.Signal:Fire("General","Attack","Click",mobs)
+-- ATTACK (FORMAT AMAN)
+local function Attack(ids)
+    if not next(ids) then return end
+    Omni.Signal:Fire("General","Attack","Click", ids)
 end
 
-local function energy()
-    Omni.Signal:Fire("General","Attack","Click",{})
-end
-
---// LOOP (SMART SPEED)
+-- FAST LOOP (ANTI MISS + MAX SPEED)
 task.spawn(function()
     while true do
         if AutoAttack then
-            attack()
+            local start = tick()
+
+            local ids = GetIDs()
+
+if next(ids) then
+    for i = 1,3 do -- jumlah hit (bisa 2-5)
+        Omni.Signal:Fire("General","Attack","Click", ids)
+        task.wait(0.05) -- delay kecil biar ga di-ignore
+    end
+end
+
+            -- AUTO COOLDOWN ADJUST
+            local cd = Omni.Utils.PlayerStats.ClickCooldown(Omni.Data, Omni.Instance) or 0.2
+            local took = tick() - start
+
+            if took < cd then
+                task.wait(cd - took)
+            else
+                task.wait()
+            end
+        else
+            task.wait(0.1)
         end
-        if AutoEnergy then
-            energy()
-        end
-        task.wait(0.03) -- aman (ikut sistem game)
     end
 end)
 
---// TOGGLE
-atkBtn.MouseButton1Click:Connect(function()
+--------------------------------------------------
+-- GUI MODERN
+--------------------------------------------------
+
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "FastHitFarm"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 220, 0, 110)
+main.Position = UDim2.new(0.4,0,0.3,0)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.Active = true
+main.Draggable = true
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "FAST HIT FARM"
+title.BackgroundColor3 = Color3.fromRGB(35,35,35)
+
+-- TOGGLE
+local btn = Instance.new("TextButton", main)
+btn.Size = UDim2.new(1,-20,0,40)
+btn.Position = UDim2.new(0,10,0,40)
+btn.Text = "Auto Attack: OFF"
+btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+
+btn.MouseButton1Click:Connect(function()
     AutoAttack = not AutoAttack
-    atkBtn.Text = "Attack "..(AutoAttack and "ON" or "OFF")
-    atkBtn.BackgroundColor3 = AutoAttack and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
+    btn.Text = AutoAttack and "Auto Attack: ON" or "Auto Attack: OFF"
 end)
 
-engBtn.MouseButton1Click:Connect(function()
-    AutoEnergy = not AutoEnergy
-    engBtn.Text = "Energy "..(AutoEnergy and "ON" or "OFF")
-    engBtn.BackgroundColor3 = AutoEnergy and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
-end)
+-- MINIMIZE
+local minimize = Instance.new("TextButton", main)
+minimize.Size = UDim2.new(0,30,0,30)
+minimize.Position = UDim2.new(1,-60,0,0)
+minimize.Text = "-"
 
--- close
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
+-- CLOSE
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-30,0,0)
+close.Text = "X"
 
--- minimize
-mini.MouseButton1Click:Connect(function()
+-- ICON
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0,50,0,50)
+icon.Position = UDim2.new(0,10,0.5,0)
+icon.Text = "⚡"
+icon.Visible = false
+
+minimize.MouseButton1Click:Connect(function()
     main.Visible = false
     icon.Visible = true
 end)
@@ -123,4 +130,59 @@ end)
 icon.MouseButton1Click:Connect(function()
     main.Visible = true
     icon.Visible = false
+end)
+
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+-- DROPDOWN FRAME (KANAN)
+local dropFrame = Instance.new("Frame", gui)
+dropFrame.Size = UDim2.new(0, 150, 0, 200)
+dropFrame.Position = UDim2.new(0.4, 230, 0.3, 0)
+dropFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+
+local dropTitle = Instance.new("TextLabel", dropFrame)
+dropTitle.Size = UDim2.new(1,0,0,30)
+dropTitle.Text = "Select Mob"
+dropTitle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+local list = Instance.new("ScrollingFrame", dropFrame)
+list.Size = UDim2.new(1,0,1,-30)
+list.Position = UDim2.new(0,0,0,30)
+list.CanvasSize = UDim2.new(0,0,0,0)
+list.ScrollBarThickness = 4
+
+local layout = Instance.new("UIListLayout", list)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function RefreshMobList()
+    list:ClearAllChildren()
+    layout.Parent = list
+
+    local mobs = {}
+    for _, mob in pairs(workspace.Client.Enemies:GetChildren()) do
+        mobs[mob.Name] = true
+    end
+
+    for name in pairs(mobs) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -5, 0, 30)
+        btn.Text = name
+        btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        btn.Parent = list
+
+        btn.MouseButton1Click:Connect(function()
+            SelectedMob = name
+            dropTitle.Text = "Mob: "..name
+        end)
+    end
+
+    list.CanvasSize = UDim2.new(0,0,0, layout.AbsoluteContentSize.Y)
+end
+
+task.spawn(function()
+    while task.wait(2) do
+        pcall(RefreshMobList)
+    end
 end)
