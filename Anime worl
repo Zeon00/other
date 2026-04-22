@@ -1,6 +1,6 @@
 -- DESTROY GUI LAMA
 pcall(function()
-    game.CoreGui.FastHitFarm:Destroy()
+    game.CoreGui.ProFarm:Destroy()
 end)
 
 -- SERVICES
@@ -14,11 +14,13 @@ local Omni = require(RS:WaitForChild("Omni"))
 local AutoAttack = false
 local SelectedMob = nil
 
--- GET VALID IDS (MULTI TARGET)
+--------------------------------------------------
+-- GET IDS (FILTER BY SELECTED MOB)
+--------------------------------------------------
+
 local function GetIDs()
     local ids = Omni.Cache:Get({"EnemiesOnRangeIds"}) or {}
 
-    -- kalau belum pilih mob → semua kena
     if not SelectedMob then
         return ids
     end
@@ -36,13 +38,10 @@ local function GetIDs()
     return filtered
 end
 
--- ATTACK (FORMAT AMAN)
-local function Attack(ids)
-    if not next(ids) then return end
-    Omni.Signal:Fire("General","Attack","Click", ids)
-end
+--------------------------------------------------
+-- FAST HIT LOOP
+--------------------------------------------------
 
--- FAST LOOP (ANTI MISS + MAX SPEED)
 task.spawn(function()
     while true do
         if AutoAttack then
@@ -50,14 +49,13 @@ task.spawn(function()
 
             local ids = GetIDs()
 
-if next(ids) then
-    for i = 1,3 do -- jumlah hit (bisa 2-5)
-        Omni.Signal:Fire("General","Attack","Click", ids)
-        task.wait(0.05) -- delay kecil biar ga di-ignore
-    end
-end
+            if next(ids) then
+                for i = 1,3 do
+                    Omni.Signal:Fire("General","Attack","Click", ids)
+                    task.wait(0.05)
+                end
+            end
 
-            -- AUTO COOLDOWN ADJUST
             local cd = Omni.Utils.PlayerStats.ClickCooldown(Omni.Data, Omni.Instance) or 0.2
             local took = tick() - start
 
@@ -73,14 +71,15 @@ end
 end)
 
 --------------------------------------------------
--- GUI MODERN
+-- GUI
 --------------------------------------------------
 
 local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "FastHitFarm"
+gui.Name = "ProFarm"
 
+-- MAIN
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 220, 0, 110)
+main.Size = UDim2.new(0, 230, 0, 120)
 main.Position = UDim2.new(0.4,0,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 main.Active = true
@@ -88,10 +87,10 @@ main.Draggable = true
 
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
-title.Text = "FAST HIT FARM"
+title.Text = "PRO FARM"
 title.BackgroundColor3 = Color3.fromRGB(35,35,35)
 
--- TOGGLE
+-- TOGGLE ATTACK
 local btn = Instance.new("TextButton", main)
 btn.Size = UDim2.new(1,-20,0,40)
 btn.Position = UDim2.new(0,10,0,40)
@@ -136,10 +135,13 @@ close.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
--- DROPDOWN FRAME (KANAN)
+--------------------------------------------------
+-- DROPDOWN (KANAN)
+--------------------------------------------------
+
 local dropFrame = Instance.new("Frame", gui)
-dropFrame.Size = UDim2.new(0, 150, 0, 200)
-dropFrame.Position = UDim2.new(0.4, 230, 0.3, 0)
+dropFrame.Size = UDim2.new(0, 160, 0, 220)
+dropFrame.Position = UDim2.new(0.4, 240, 0.3, 0)
 dropFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 
 local dropTitle = Instance.new("TextLabel", dropFrame)
@@ -156,23 +158,31 @@ list.ScrollBarThickness = 4
 local layout = Instance.new("UIListLayout", list)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
+--------------------------------------------------
+-- REFRESH LIST (REAL FROM WORKSPACE)
+--------------------------------------------------
+
 local function RefreshMobList()
     list:ClearAllChildren()
     layout.Parent = list
 
+    local folder = workspace:WaitForChild("Client"):WaitForChild("Enemies")
     local mobs = {}
-    for _, mob in pairs(workspace.Client.Enemies:GetChildren()) do
-        mobs[mob.Name] = true
+
+    for _, mob in pairs(folder:GetChildren()) do
+        if mob:FindFirstChild("HumanoidRootPart") then
+            mobs[mob.Name] = true
+        end
     end
 
     for name in pairs(mobs) do
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, -5, 0, 30)
-        btn.Text = name
-        btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-        btn.Parent = list
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(1, -5, 0, 30)
+        b.Text = name
+        b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        b.Parent = list
 
-        btn.MouseButton1Click:Connect(function()
+        b.MouseButton1Click:Connect(function()
             SelectedMob = name
             dropTitle.Text = "Mob: "..name
         end)
@@ -181,6 +191,7 @@ local function RefreshMobList()
     list.CanvasSize = UDim2.new(0,0,0, layout.AbsoluteContentSize.Y)
 end
 
+-- AUTO UPDATE LIST
 task.spawn(function()
     while task.wait(2) do
         pcall(RefreshMobList)
