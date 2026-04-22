@@ -16,6 +16,7 @@ local AutoTrialEasy = false
 local AutoTrialMedium = false
 local AutoGacha = false 
 local AntiAFK = true
+local AutoLevel = false
 
 --// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -35,7 +36,8 @@ Instance.new("UICorner", main)
 local scroll = Instance.new("ScrollingFrame", main)
 scroll.Size = UDim2.new(1,0,1,-30) -- minus title
 scroll.Position = UDim2.new(0,0,0,30)
-scroll.CanvasSize = UDim2.new(0,0,0,600) -- tinggi isi (nanti auto)
+scroll.CanvasSize = UDim2.new(0,0,0,0)
+scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 scroll.ScrollBarThickness = 6
 scroll.BackgroundTransparency = 1
 
@@ -109,6 +111,7 @@ local trialEasyBtn = createToggle("Trial Easy")
 local trialMedBtn = createToggle("Trial Medium")
 local gachaBtn = createToggle("Auto Gacha")
 local afkBtn = createToggle("Anti AFK")
+local levelBtn = createToggle("Auto Level")
 
 gachaBtn.MouseButton1Click:Connect(function()
 	AutoGacha = not AutoGacha
@@ -148,6 +151,11 @@ end)
 afkBtn.MouseButton1Click:Connect(function()
     AntiAFK = not AntiAFK
     afkBtn.Text = "Anti AFK : ON"
+end)
+
+levelBtn.MouseButton1Click:Connect(function()
+	AutoLevel = not AutoLevel
+	levelBtn.Text = "Auto Level : "..(AutoLevel and "ON" or "OFF")
 end)
 --// TARGET SYSTEM (FIXED)
 local overlap = OverlapParams.new()
@@ -367,7 +375,29 @@ task.spawn(function()
 	end
 end)
 
+task.spawn(function()
+	while true do
+		if AutoLevel then
+			pcall(function()
+				local args = {
+					{
+						{
+							"AvatarsLevel",
+							"LevelUp"
+						},
+						"\005"
+					}
+				}
 
+				Remote:FireServer(unpack(args))
+			end)
+
+			task.wait(0.5) -- jangan terlalu cepet biar aman
+		else
+			task.wait(0.2)
+		end
+	end
+end)
 
 --// ANTI AFK (JUMP + VIRTUAL USER)
 task.spawn(function()
