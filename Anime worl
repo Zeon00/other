@@ -15,6 +15,7 @@ _G.AutoAttack = false
 _G.AutoTP = false
 _G.AutoJoin = false
 _G.AutoTPNearest = false
+_G.AutoDragon = false
 local tpIndex = 1
 local mobsCache = {}
 
@@ -152,13 +153,37 @@ task.spawn(function()
         end
     end
 end)
+task.spawn(function()
+    while task.wait(2) do
+        if _G.AutoDragon then
+            if Omni.Data.Gamemode ~= "Dragon Defense" then
+                local args = {
+                    {
+                        {
+                            "General",
+                            "Gamemodes",
+                            "Join",
+                            "Dragon Defense",
+                            n = 4
+                        },
+                        "\002"
+                    }
+                }
 
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("BridgeNet")
+                    :WaitForChild("dataRemoteEvent")
+                    :FireServer(unpack(args))
+            end
+        end
+    end
+end)
 
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ProFarmTP"
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 240, 0, 180)
+main.Size = UDim2.new(0, 240, 0, 350)
 main.Position = UDim2.new(0.4,0,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
@@ -210,6 +235,7 @@ local atk = MakeToggle("Auto Attack", 40, "AutoAttack")
 local tp = MakeToggle("Auto TP", 80, "AutoTP")
 local join = MakeToggle("Auto Join", 120, "AutoJoin")
 local near = MakeToggle("TP Nearest", 160, "AutoTPNearest")
+local dragon = MakeToggle("Auto Dragon", 200, "AutoDragon")
 -------------------------------------------
 -- CONTROL BUTTONS
 --------------------------------------------------
