@@ -183,7 +183,7 @@ local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ProFarmTP"
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 240, 0, 350)
+main.Size = UDim2.new(0, 240, 0, 250)
 main.Position = UDim2.new(0.4,0,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
