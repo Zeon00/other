@@ -303,7 +303,6 @@ task.spawn(function()
 end)
 --// AUTO TP (BIARIN SESUAI LU)
 local tpIndex = 1
-
 RunService.Heartbeat:Connect(function()
 	if AutoTP and not AutoGacha then
 		local char = player.Character
@@ -327,7 +326,20 @@ RunService.Heartbeat:Connect(function()
 		end
 	end
 end)
-
+-- AUTO GACHA TP KE EGG
+RunService.Heartbeat:Connect(function()
+	if AutoGacha then
+		local char = player.Character
+		if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+		
+		local hrp = char.HumanoidRootPart
+		
+		-- posisi egg
+		local eggPos = CFrame.new(-725.8919, 19.7840, -1674.9205)
+		
+		hrp.CFrame = eggPos
+	end
+end)
 task.spawn(function()
 	while true do
 		if AutoJoin then
