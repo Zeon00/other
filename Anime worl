@@ -75,34 +75,33 @@ end
 --------------------------------------------------
 task.spawn(function()
     while true do
-     -- 🔥 TP NEAREST (PRIORITAS)
-if _G.AutoTPNearest then
-    local myhrp = GetHRP()
-    local target = GetNearestMob(40)
+        local myhrp = GetHRP()
 
-    if target and myhrp then
-        myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
-    end
+        -- PRIORITAS: NEAREST
+        if _G.AutoTPNearest then
+            local target = GetNearestMob(40) or GetNearestMob(200)
 
-    task.wait(0.05)
-    
-end
-if _G.AutoTPNearest then
-    _G.AutoTP = false
-end
-      
-       if _G.AutoTP then
-    if #mobsCache > 0 and myhrp then
-        tpIndex = tpIndex % #mobsCache + 1
-        local target = mobsCache[tpIndex]
+            if target and myhrp then
+                myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
+            end
 
-        if target and target.Parent then
-            myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
+        elseif _G.AutoTP then
+            if #mobsCache > 0 and myhrp then
+                tpIndex = tpIndex % #mobsCache + 1
+                local target = mobsCache[tpIndex]
+
+                if target and target.Parent then
+                    myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
+                end
+            end
         end
-    end
 
-    task.wait(0.1) -- 🔥 penting biar pindah stabil
-end
+        task.wait(0.08)
+    end
+end)
+
+task.spawn(function()
+    while true do
         if _G.AutoAttack then
             local start = tick()
             local ids = GetIDs()
@@ -110,7 +109,7 @@ end
             if next(ids) then
                 for i = 1,3 do
                     Omni.Signal:Fire("General","Attack","Click", ids)
-                    task.wait(0.05)
+                    task.wait(0.03)
                 end
             end
 
