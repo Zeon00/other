@@ -15,7 +15,6 @@ local AutoJoin = false
 local AutoTrialEasy = false
 local AutoTrialMedium = false
 local AutoGacha = false 
-local AntiAFK = true
 local AutoLevel = false
 
 
@@ -121,7 +120,6 @@ local raidBtn = createToggle("Auto Raid")
 local trialEasyBtn = createToggle("Trial Easy")
 local trialMedBtn = createToggle("Trial Medium")
 local gachaBtn = createToggle("Auto Gacha")
-local afkBtn = createToggle("Anti AFK")
 local levelBtn = createToggle("Auto Level")
 local chestBtn = createToggle("Claim Chest")
 chestBtn.Text = "Claim Chest"
@@ -196,11 +194,6 @@ end)
 trialMedBtn.MouseButton1Click:Connect(function()
 	AutoTrialMedium = not AutoTrialMedium
 	trialMedBtn.Text = "Trial Medium : "..(AutoTrialMedium and "ON" or "OFF")
-end)
-
-afkBtn.MouseButton1Click:Connect(function()
-    AntiAFK = not AntiAFK
-    afkBtn.Text = "Anti AFK : ON"
 end)
 
 levelBtn.MouseButton1Click:Connect(function()
@@ -449,23 +442,3 @@ task.spawn(function()
 	end
 end)
 
---// ANTI AFK (JUMP + VIRTUAL USER)
-task.spawn(function()
-    while true do
-        task.wait(math.random(55,70))
-
-        if AntiAFK then
-            local char = player.Character or player.CharacterAdded:Wait()
-            local hum = char:FindFirstChildOfClass("Humanoid")
-
-            if hum then
-                -- paksa lompat (lebih reliable)
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-
-            -- backup anti kick
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton2(Vector2.new())
-        end
-    end
-end)
