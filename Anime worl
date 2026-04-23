@@ -16,6 +16,7 @@ local AutoTP = false
 local tpIndex = 1
 local mobsCache = {}
 local AutoJoin = false
+local AutoTPNearest = false
 
 task.spawn(function()
     while task.wait(1) do
@@ -46,6 +47,29 @@ local function GetIDs()
     return Omni.Cache:Get({"EnemiesOnRangeIds"}) or {}
 end
 
+local function GetNearestMob(maxDist)
+    local myhrp = GetHRP()
+    if not myhrp then return end
+
+    local folder = workspace.Client.Enemies
+    local closest, dist = nil, maxDist or 50 -- radius
+
+    for _, v in pairs(folder:GetChildren()) do
+        local hrp = v:FindFirstChild("HumanoidRootPart")
+        local hum = v:FindFirstChildOfClass("Humanoid")
+
+        if hrp and hum and hum.Health > 0 then
+            local d = (myhrp.Position - hrp.Position).Magnitude
+
+            if d < dist then
+                dist = d
+                closest = hrp
+            end
+        end
+    end
+
+    return closest
+end
 --------------------------------------------------
 -- MAIN LOOP
 --------------------------------------------------
@@ -114,6 +138,20 @@ task.spawn(function()
         end
     end
 end)
+if AutoTPNearest then
+    local myhrp = GetHRP()
+    local target = GetNearestMob(40) -- radius 40 stud
+
+    if target and myhrp then
+        myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
+    end
+
+    task.wait(0.1)
+end
+
+if AutoTPNearest then
+    AutoTP = false
+end
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ProFarmTP"
 
@@ -172,6 +210,10 @@ local join = MakeButton("Auto Join: OFF", 120, function()
     join.Text = AutoJoin and "Auto Join: ON" or "Auto Join: OFF"
 end)
 
+local near = MakeButton("TP Nearest: OFF", 160, function()
+    AutoTPNearest = not AutoTPNearest
+    near.Text = AutoTPNearest and "TP Nearest: ON" or "TP Nearest: OFF"
+end)
 --------------------------------------------------
 -- CONTROL BUTTONS
 --------------------------------------------------
