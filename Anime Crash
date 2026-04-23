@@ -289,7 +289,7 @@ task.spawn(function()
 					{
 						Raid = "Frieza Force Invasion",
 						Gamemode = "Raid",
-						Mode = "Expert"
+						Mode = "Extreme"
 					}
 				},
 				"\005"
