@@ -11,12 +11,12 @@ local player = Players.LocalPlayer
 local Omni = require(RS:WaitForChild("Omni"))
 
 -- STATE
-local AutoAttack = false
-local AutoTP = false
+_G.AutoAttack = false
+_G.AutoTP = false
+_G.AutoJoin = false
+_G.AutoTPNearest = false
 local tpIndex = 1
 local mobsCache = {}
-local AutoJoin = false
-local AutoTPNearest = false
 
 task.spawn(function()
     while task.wait(1) do
@@ -75,8 +75,23 @@ end
 --------------------------------------------------
 task.spawn(function()
     while true do
-        local myhrp = GetHRP()
-       if AutoTP then
+     -- 🔥 TP NEAREST (PRIORITAS)
+if _G.AutoTPNearest then
+    local myhrp = GetHRP()
+    local target = GetNearestMob(40)
+
+    if target and myhrp then
+        myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
+    end
+
+    task.wait(0.1)
+    continue
+end
+if _G.AutoTPNearest then
+    _G.AutoTP = false
+end
+      
+       if _G.AutoTP then
     if #mobsCache > 0 and myhrp then
         tpIndex = tpIndex % #mobsCache + 1
         local target = mobsCache[tpIndex]
@@ -88,7 +103,7 @@ task.spawn(function()
 
     task.wait(0.1) -- 🔥 penting biar pindah stabil
 end
-        if AutoAttack then
+        if _G.AutoAttack then
             local start = tick()
             local ids = GetIDs()
 
@@ -115,7 +130,7 @@ end)
 
 task.spawn(function()
     while task.wait(2) do
-        if AutoJoin then
+        if _G.AutoJoin then
             if Omni.Data.Gamemode ~= "Trial Easy" then
                 local args = {
                     {
@@ -138,20 +153,8 @@ task.spawn(function()
         end
     end
 end)
-if AutoTPNearest then
-    local myhrp = GetHRP()
-    local target = GetNearestMob(40) -- radius 40 stud
 
-    if target and myhrp then
-        myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
-    end
 
-    task.wait(0.1)
-end
-
-if AutoTPNearest then
-    AutoTP = false
-end
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ProFarmTP"
 
@@ -177,44 +180,38 @@ title.TextColor3 = Color3.fromRGB(200,200,200)
 --------------------------------------------------
 -- BUTTON FUNCTION TEMPLATE
 --------------------------------------------------
-local function MakeButton(text, posY, callback)
+local function MakeToggle(text, posY, stateVar)
     local b = Instance.new("TextButton", main)
     b.Size = UDim2.new(1,-20,0,35)
     b.Position = UDim2.new(0,10,0,posY)
-    b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(30,30,30)
     b.TextColor3 = Color3.fromRGB(220,220,220)
 
     Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
 
-    b.MouseButton1Click:Connect(callback)
+    local function Update()
+        local state = _G[stateVar]
+        b.Text = text..": "..(state and "ON" or "OFF")
+        b.BackgroundColor3 = state and Color3.fromRGB(0,170,0) or Color3.fromRGB(30,30,30)
+    end
+
+    b.MouseButton1Click:Connect(function()
+        _G[stateVar] = not _G[stateVar]
+        Update()
+    end)
+
+    Update()
     return b
 end
 
 --------------------------------------------------
 -- BUTTONS
 --------------------------------------------------
-
-local atk = MakeButton("Auto Attack: OFF", 40, function()
-    AutoAttack = not AutoAttack
-    atk.Text = AutoAttack and "Auto Attack: ON" or "Auto Attack: OFF"
-end)
-
-local tp = MakeButton("Auto TP: OFF", 80, function()
-    AutoTP = not AutoTP
-    tp.Text = AutoTP and "Auto TP: ON" or "Auto TP: OFF"
-end)
-
-local join = MakeButton("Auto Join: OFF", 120, function()
-    AutoJoin = not AutoJoin
-    join.Text = AutoJoin and "Auto Join: ON" or "Auto Join: OFF"
-end)
-
-local near = MakeButton("TP Nearest: OFF", 160, function()
-    AutoTPNearest = not AutoTPNearest
-    near.Text = AutoTPNearest and "TP Nearest: ON" or "TP Nearest: OFF"
-end)
---------------------------------------------------
+local atk = MakeToggle("Auto Attack", 40, "AutoAttack")
+local tp = MakeToggle("Auto TP", 80, "AutoTP")
+local join = MakeToggle("Auto Join", 120, "AutoJoin")
+local near = MakeToggle("TP Nearest", 160, "AutoTPNearest")
+-------------------------------------------
 -- CONTROL BUTTONS
 --------------------------------------------------
 
