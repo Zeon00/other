@@ -1,1 +1,143 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/rrixh/uwuware/main/Kustom/autoklicker-mobile_lulaslollipop",true))();
+-- DESTROY GUI LAMA
+pcall(function()
+    game.CoreGui.FullAuraGUI:Destroy()
+end)
+
+-- SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+-- REMOTE
+local Remote = RS
+    :WaitForChild("CommonLibrary")
+    :WaitForChild("Tool")
+    :WaitForChild("RemoteManager")
+    :WaitForChild("Funcs")
+    :WaitForChild("DataPullFunc")
+
+-- STATE
+_G.KillAura = false
+_G.AutoSkill = false
+
+-- GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FullAuraGUI"
+ScreenGui.Parent = game.CoreGui
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 220, 0, 160)
+Frame.Position = UDim2.new(0.4, 0, 0.3, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+-- TITLE
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "FULL AURA"
+Title.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Parent = Frame
+
+-- CLOSE BUTTON
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.new(0, 30, 0, 30)
+Close.Position = UDim2.new(1, -30, 0, 0)
+Close.Text = "X"
+Close.BackgroundColor3 = Color3.fromRGB(120,0,0)
+Close.TextColor3 = Color3.new(1,1,1)
+Close.Parent = Frame
+
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    _G.KillAura = false
+    _G.AutoSkill = false
+end)
+
+-- KILL AURA BUTTON
+local AuraBtn = Instance.new("TextButton")
+AuraBtn.Size = UDim2.new(0.8, 0, 0, 40)
+AuraBtn.Position = UDim2.new(0.1, 0, 0.3, 0)
+AuraBtn.Text = "KILL AURA OFF"
+AuraBtn.BackgroundColor3 = Color3.fromRGB(150,0,0)
+AuraBtn.TextColor3 = Color3.new(1,1,1)
+AuraBtn.Parent = Frame
+
+AuraBtn.MouseButton1Click:Connect(function()
+    _G.KillAura = not _G.KillAura
+    
+    if _G.KillAura then
+        AuraBtn.Text = "KILL AURA ON"
+        AuraBtn.BackgroundColor3 = Color3.fromRGB(0,150,0)
+    else
+        AuraBtn.Text = "KILL AURA OFF"
+        AuraBtn.BackgroundColor3 = Color3.fromRGB(150,0,0)
+    end
+end)
+
+-- AUTO SKILL BUTTON
+local SkillBtn = Instance.new("TextButton")
+SkillBtn.Size = UDim2.new(0.8, 0, 0, 40)
+SkillBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
+SkillBtn.Text = "AUTO SKILL OFF"
+SkillBtn.BackgroundColor3 = Color3.fromRGB(150,0,0)
+SkillBtn.TextColor3 = Color3.new(1,1,1)
+SkillBtn.Parent = Frame
+
+SkillBtn.MouseButton1Click:Connect(function()
+    _G.AutoSkill = not _G.AutoSkill
+    
+    if _G.AutoSkill then
+        SkillBtn.Text = "AUTO SKILL ON"
+        SkillBtn.BackgroundColor3 = Color3.fromRGB(0,150,0)
+    else
+        SkillBtn.Text = "AUTO SKILL OFF"
+        SkillBtn.BackgroundColor3 = Color3.fromRGB(150,0,0)
+    end
+end)
+
+-- 🔥 KILL AURA LOOP
+spawn(function()
+    while true do
+        if _G.KillAura then
+            local playerPos = _G.PathTool.ViewUtil.GetLastPlayerPos()
+
+            for _, mon in pairs(workspace.ClientMonsters:GetChildren()) do
+                if mon.Name:find("Monster_") then
+                    local id = tonumber(mon.Name:match("%d+"))
+                    
+                    if id then
+                        -- legit attack
+                        _G.PathTool.MonsterSystem.ClientAttackMonster(id)
+                        
+                        -- remote spam
+                        Remote:InvokeServer("AttackMonsterChannel", {id})
+                    end
+                end
+            end
+        end
+        task.wait(0.05)
+    end
+end)
+
+-- ⚡ AUTO SKILL LOOP
+spawn(function()
+    while true do
+        if _G.AutoSkill then
+            local playerData = _G.PathTool.ClientPlayerManager.GetGamePlayer()
+            
+            if _G.PathTool.LogicUnit.IsPlayerAlive(playerData:GetPlayer()) then
+                if not _G.PathTool.MgrFightClient.GetSelfUsingSkill() then
+                    local char = player.Character
+                    if char then
+                        local pos = char:GetPivot()
+                        _G.PathTool.MgrFightClient.TryUseSkill(88888888, pos)
+                    end
+                end
+            end
+        end
+        task.wait(0.1)
+    end
+end)
