@@ -15,6 +15,7 @@ local AutoAttack = false
 local AutoTP = false
 local tpIndex = 1
 local mobsCache = {}
+local AutoJoin = false
 
 task.spawn(function()
     while task.wait(1) do
@@ -88,66 +89,113 @@ end
     end
 end)
 
---------------------------------------------------
--- GUI
---------------------------------------------------
+task.spawn(function()
+    while task.wait(2) do
+        if AutoJoin then
+            if Omni.Data.Gamemode ~= "Trial Easy" then
+                local args = {
+                    {
+                        {
+                            "General",
+                            "Gamemodes",
+                            "Join",
+                            "Trial Easy",
+                            n = 4
+                        },
+                        "\002"
+                    }
+                }
+
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("BridgeNet")
+                    :WaitForChild("dataRemoteEvent")
+                    :FireServer(unpack(args))
+            end
+        end
+    end
+end)
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ProFarmTP"
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 230, 0, 140)
+main.Size = UDim2.new(0, 240, 0, 180)
 main.Position = UDim2.new(0.4,0,0.3,0)
-main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
 main.Draggable = true
 
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
+
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(80,80,80)
+stroke.Thickness = 1.5
+
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,30)
-title.Text = "AUTO FARM TP"
-title.BackgroundColor3 = Color3.fromRGB(35,35,35)
+title.Text = "GOTHAM FARM"
+title.BackgroundColor3 = Color3.fromRGB(25,25,25)
+title.TextColor3 = Color3.fromRGB(200,200,200)
 
--- AUTO ATTACK
-local atk = Instance.new("TextButton", main)
-atk.Size = UDim2.new(1,-20,0,40)
-atk.Position = UDim2.new(0,10,0,40)
-atk.Text = "Auto Attack: OFF"
-atk.BackgroundColor3 = Color3.fromRGB(45,45,45)
+--------------------------------------------------
+-- BUTTON FUNCTION TEMPLATE
+--------------------------------------------------
+local function MakeButton(text, posY, callback)
+    local b = Instance.new("TextButton", main)
+    b.Size = UDim2.new(1,-20,0,35)
+    b.Position = UDim2.new(0,10,0,posY)
+    b.Text = text
+    b.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    b.TextColor3 = Color3.fromRGB(220,220,220)
 
-atk.MouseButton1Click:Connect(function()
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+
+    b.MouseButton1Click:Connect(callback)
+    return b
+end
+
+--------------------------------------------------
+-- BUTTONS
+--------------------------------------------------
+
+local atk = MakeButton("Auto Attack: OFF", 40, function()
     AutoAttack = not AutoAttack
     atk.Text = AutoAttack and "Auto Attack: ON" or "Auto Attack: OFF"
 end)
 
--- AUTO TP
-local tp = Instance.new("TextButton", main)
-tp.Size = UDim2.new(1,-20,0,40)
-tp.Position = UDim2.new(0,10,0,90)
-tp.Text = "Auto TP: OFF"
-tp.BackgroundColor3 = Color3.fromRGB(45,45,45)
-
-tp.MouseButton1Click:Connect(function()
+local tp = MakeButton("Auto TP: OFF", 80, function()
     AutoTP = not AutoTP
     tp.Text = AutoTP and "Auto TP: ON" or "Auto TP: OFF"
 end)
 
--- MINIMIZE
+local join = MakeButton("Auto Join: OFF", 120, function()
+    AutoJoin = not AutoJoin
+    join.Text = AutoJoin and "Auto Join: ON" or "Auto Join: OFF"
+end)
+
+--------------------------------------------------
+-- CONTROL BUTTONS
+--------------------------------------------------
+
 local minimize = Instance.new("TextButton", main)
 minimize.Size = UDim2.new(0,30,0,30)
 minimize.Position = UDim2.new(1,-60,0,0)
 minimize.Text = "-"
+minimize.BackgroundColor3 = Color3.fromRGB(20,20,20)
 
--- CLOSE
 local close = Instance.new("TextButton", main)
 close.Size = UDim2.new(0,30,0,30)
 close.Position = UDim2.new(1,-30,0,0)
 close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(20,20,20)
 
--- ICON
 local icon = Instance.new("TextButton", gui)
 icon.Size = UDim2.new(0,50,0,50)
 icon.Position = UDim2.new(0,10,0.5,0)
-icon.Text = "⚡"
+icon.Text = "🦇"
 icon.Visible = false
+icon.BackgroundColor3 = Color3.fromRGB(20,20,20)
+
+Instance.new("UICorner", icon)
 
 minimize.MouseButton1Click:Connect(function()
     main.Visible = false
