@@ -73,30 +73,62 @@ local function GetNearestMob(maxDist)
     return closest
 end
 --------------------------------------------------
+-- SAFE TELEPORT (ANTI VOID)
+--------------------------------------------------
+local function SafeTP(cf)
+    local origin = cf.Position
+
+    local ray = Ray.new(origin, Vector3.new(0, -100, 0))
+    local part, pos = workspace:FindPartOnRay(ray)
+
+    if part and pos then
+        return CFrame.new(pos + Vector3.new(0, 3, 0))
+    end
+
+    return nil -- skip kalau ga ada tanah
+end
+--------------------------------------------------
 -- MAIN LOOP
 --------------------------------------------------
+
 task.spawn(function()
     while true do
         local myhrp = GetHRP()
 
-        -- PRIORITAS: NEAREST
-        if _G.AutoTPNearest then
-            local target = GetNearestMob(40) or GetNearestMob(200)
 
-            if target and myhrp then
-                myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
+-- PRIORITAS: NEAREST (ANTI VOID)
+if _G.AutoTPNearest then
+    local target = GetNearestMob(40) or GetNearestMob(200)
+
+    if target and myhrp then
+        local dist = (myhrp.Position - target.Position).Magnitude
+
+        if target.Position.Y > -10 and dist < 150 then
+            local safe = SafeTP(target.CFrame)
+
+            if safe then
+                myhrp.CFrame = safe
             end
+        end
+    end
 
-        elseif _G.AutoTP then
-            if #mobsCache > 0 and myhrp then
-                tpIndex = tpIndex % #mobsCache + 1
-                local target = mobsCache[tpIndex]
+elseif _G.AutoTP then
+    if #mobsCache > 0 and myhrp then
+        tpIndex = tpIndex % #mobsCache + 1
+        local target = mobsCache[tpIndex]
 
-                if target and target.Parent then
-                    myhrp.CFrame = target.CFrame * CFrame.new(0,2,2)
+        if target and target.Parent then
+            local dist = (myhrp.Position - target.Position).Magnitude
+
+            if target.Position.Y > -10 and dist < 150 then
+                local safe = SafeTP(target.CFrame)
+
+                if safe then
+                    myhrp.CFrame = safe
                 end
             end
         end
+    end
 
         task.wait(0.08)
     end
