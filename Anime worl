@@ -129,7 +129,7 @@ elseif _G.AutoTP then
             end
         end
     end
-
+ end
         task.wait(0.08)
     end
 end)
