@@ -23,9 +23,9 @@ local ClickRemote = RS:WaitForChild("Packages")
 --// STATE
 local KillAura = false
 local AutoTP = false
-local switchCount = 0
-local MAX_SWITCH = 2 -- berapa kali ganti target sebelum kabur
-local TELEPORT_DISTANCE = 120 -- jarak kabur
+local currentTarget = nil
+local lastSwitch = 0
+local SWITCH_DELAY = 5
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
@@ -163,29 +163,16 @@ RunService.RenderStepped:Connect(function()
     local hrp = getHRP()
     if not hrp then return end
 
+    -- ambil target awal
     if not currentTarget or not currentTarget.Parent then
         currentTarget = getNearestMob()
-        targetStartTime = tick()
-        switchCount = 0
+        lastSwitch = tick()
     end
 
-    if currentTarget and (tick() - targetStartTime > SWITCH_DELAY) then
-        switchCount = switchCount +1
+    -- kalau lebih dari 5 detik → cari target baru
+    if tick() - lastSwitch > SWITCH_DELAY then
         currentTarget = getNearestMob()
-        targetStartTime = tick()
-    end
-
-    if switchCount >= MAX_SWITCH then
-        switchCount = 0
-
-        local randomOffset = Vector3.new(
-            math.random(-TELEPORT_DISTANCE, TELEPORT_DISTANCE),
-            0,
-            math.random(-TELEPORT_DISTANCE, TELEPORT_DISTANCE)
-        )
-
-        hrp.CFrame = hrp.CFrame + randomOffset
-        currentTarget = nil
+        lastSwitch = tick()
     end
 
     local mob = currentTarget
@@ -194,10 +181,12 @@ RunService.RenderStepped:Connect(function()
     local mHRP = mob:FindFirstChild("HumanoidRootPart")
     if not mHRP then return end
 
+    -- TP
     if AutoTP then
-        hrp.CFrame = mHRP.CFrame * CFrame.new(0, 0, -3)
+        hrp.CFrame = mHRP.CFrame * CFrame.new(0,0,-3)
     end
 
+    -- Attack
     if KillAura then
         pcall(function()
             ClickRemote:InvokeServer(mob.Name)
