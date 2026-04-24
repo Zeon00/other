@@ -16,6 +16,7 @@ _G.AutoTP = false
 _G.AutoJoin = false
 _G.AutoTPNearest = false
 _G.AutoDragon = false
+_G.AutoTimeReward = false
 local tpIndex = 1
 local mobsCache = {}
 
@@ -178,7 +179,62 @@ task.spawn(function()
         end
     end
 end)
+task.spawn(function()
+    while true do
+        if _G.AutoTimeReward then
+            -- RESET dulu
+            local args = {
+                {
+                    {
+                        "General",
+                        "TimeRewards",
+                        "Reset",
+                        n = 3
+                    },
+                    "\002"
+                }
+            }
 
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("BridgeNet")
+                :WaitForChild("dataRemoteEvent")
+                :FireServer(unpack(args))
+
+            task.wait(1)
+
+            -- CLAIM 1 - 7
+            for i = 1,7 do
+                local args = {
+                    {
+                        {
+                            "General",
+                            "TimeRewards",
+                            "Claim",
+                            i,
+                            n = 4
+                        },
+                        "\002"
+                    }
+                }
+
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("BridgeNet")
+                    :WaitForChild("dataRemoteEvent")
+                    :FireServer(unpack(args))
+
+                task.wait(0.5)
+            end
+
+            -- tunggu 10 menit
+            for i = 1,600 do
+                if not _G.AutoTimeReward then break end
+                task.wait(1)
+            end
+        else
+            task.wait(1)
+        end
+    end
+end)
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ProFarmTP"
 
@@ -236,6 +292,7 @@ local tp = MakeToggle("Auto TP", 80, "AutoTP")
 local join = MakeToggle("Auto Join", 120, "AutoJoin")
 local near = MakeToggle("TP Nearest", 160, "AutoTPNearest")
 local dragon = MakeToggle("Auto Dragon", 200, "AutoDragon")
+local time = MakeToggle("Auto TimeReward", 240, "AutoTimeReward")
 -------------------------------------------
 -- CONTROL BUTTONS
 --------------------------------------------------
