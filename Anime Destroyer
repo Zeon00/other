@@ -163,21 +163,18 @@ RunService.RenderStepped:Connect(function()
     local hrp = getHRP()
     if not hrp then return end
 
-    -- 1. ambil target kalau belum ada
     if not currentTarget or not currentTarget.Parent then
         currentTarget = getNearestMob()
         targetStartTime = tick()
         switchCount = 0
     end
 
-    -- 2. cek timeout 5 detik (ganti target)
     if currentTarget and (tick() - targetStartTime > SWITCH_DELAY) then
-        switchCount = switchCount + 1
+        switchCount = switchCount +1
         currentTarget = getNearestMob()
         targetStartTime = tick()
     end
 
-    -- 3. kalau terlalu sering ganti → pindah area
     if switchCount >= MAX_SWITCH then
         switchCount = 0
 
@@ -189,22 +186,18 @@ RunService.RenderStepped:Connect(function()
 
         hrp.CFrame = hrp.CFrame + randomOffset
         currentTarget = nil
-        return -- penting biar ga lanjut attack di frame ini
     end
 
-    -- 4. ambil data mob
     local mob = currentTarget
     if not mob then return end
 
     local mHRP = mob:FindFirstChild("HumanoidRootPart")
     if not mHRP then return end
 
-    -- 5. TP ke mob
     if AutoTP then
         hrp.CFrame = mHRP.CFrame * CFrame.new(0, 0, -3)
     end
 
-    -- 6. attack
     if KillAura then
         pcall(function()
             ClickRemote:InvokeServer(mob.Name)
