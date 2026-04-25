@@ -151,7 +151,7 @@ task.spawn(function()
                     local safe = SafeTP(target.CFrame)
 
                     -- 🔥 TP DELAY (INI YANG NGURANGIN CEPET)
-                    local tpDelay = 0.5
+                    local tpDelay = 0.8
 
                     if safe and dist > 6 and tick() - lastTP >= tpDelay then
                         myhrp.CFrame = safe
@@ -164,7 +164,7 @@ task.spawn(function()
 
         end
 
-        task.wait(0.2) -- 🔥 ini juga ngaruh (jangan terlalu kecil)
+        task.wait(0.5) -- 🔥 ini juga ngaruh (jangan terlalu kecil)
     end
 end)
 task.spawn(function()
