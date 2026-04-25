@@ -11,7 +11,7 @@ local State = require(RS.Client.State)
 local FastHit, AutoTP, BypassAll = false,false,false
 local AutoFruit, AutoHaki, AutoDragon = false,false,false
 local AutoSaiyan, AutoEgg = false,false
-local SelectedEgg = "Star7"
+local SelectedEgg = "Star8"
 local HatchAmount = 25
 local AutoRaid = false
 local AutoBreathing = false
@@ -648,7 +648,7 @@ task.spawn(function()
                 if AutoEaster then Remotes.RollEasterPower:FireServer() end
                 if AutoDivisions then Remotes.RollDivisionsPower:FireServer() end
                 if AutoClaim then Remotes.ClaimDailyStreak:FireServer() end
-
+				if AutoRollTechnique then Remotes.RollTechniquePower:FireServer() end
             end
         end
     end
@@ -691,4 +691,5 @@ DropdownMulti("AUTO POWERS", {
 	["Blessing"] = function(v) AutoBlessing = v end,
 	["Divisions"] = function(v) AutoDivisions = v end,
 	["Claim"] = function(v) AutoClaim = v end,
+	["Roll"] = function(v) AutoRollTechnique = v end,
 })
