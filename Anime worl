@@ -20,19 +20,19 @@ _G.AutoTimeReward = false
 local tpIndex = 1
 local mobsCache = {}
 
-task.spawn(function()
-    while task.wait(1) do
-        mobsCache = {}
+while task.wait(1) do
+    table.clear(mobsCache)
 
-        for _, v in pairs(workspace.Client.Enemies:GetChildren()) do
-            local hrp = v:FindFirstChild("HumanoidRootPart")
-            local hum = v:FindFirstChildOfClass("Humanoid")
+    for _, v in pairs(workspace.Client.Enemies:GetDescendants()) do
+        if v.Name == "HumanoidRootPart" then
+            local hum = v.Parent:FindFirstChildOfClass("Humanoid")
 
-            if hrp and hum and hum.Health > 0 then
-                table.insert(mobsCache, hrp)
+            if hum and hum.Health > 0 then
+                table.insert(mobsCache, v)
             end
         end
     end
+end
 end)
 --------------------------------------------------
 -- GET HRP
@@ -56,19 +56,20 @@ local function GetNearestMob(maxDist)
     local folder = workspace.Client.Enemies
     local closest, dist = nil, maxDist or 50 -- radius
 
-    for _, v in pairs(folder:GetChildren()) do
-        local hrp = v:FindFirstChild("HumanoidRootPart")
-        local hum = v:FindFirstChildOfClass("Humanoid")
+ for _, v in pairs(folder:GetDescendants()) do
+    if v.Name == "HumanoidRootPart" then
+        local hum = v.Parent:FindFirstChildOfClass("Humanoid")
 
-        if hrp and hum and hum.Health > 0 then
-            local d = (myhrp.Position - hrp.Position).Magnitude
+        if hum and hum.Health > 0 then
+            local d = (myhrp.Position - v.Position).Magnitude
 
             if d < dist then
                 dist = d
-                closest = hrp
+                closest = v
             end
         end
     end
+end
 
     return closest
 end
@@ -96,10 +97,15 @@ local function IsMobReady(hrp)
     local hum = hrp.Parent:FindFirstChildOfClass("Humanoid")
     if not hum or hum.Health <= 0 then return false end
 
-    -- cegah mob bawah map / belum naik
-    if hrp.Position.Y < 0 then return false end
+    local myhrp = GetHRP()
+    if not myhrp then return false end
 
-    -- cek ada tanah
+    -- ❌ terlalu bawah (void)
+    if hrp.Position.Y < myhrp.Position.Y - 30 then
+        return false
+    end
+
+    -- cek tanah
     local ray = Ray.new(hrp.Position, Vector3.new(0, -50, 0))
     local part = workspace:FindPartOnRay(ray)
 
