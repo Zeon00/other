@@ -111,6 +111,8 @@ end
 -- MAIN LOOP (FIX TOTAL)
 --------------------------------------------------
 local lastTP = 0
+local lastTarget = nil
+local targetHoldTime = 0
 
 task.spawn(function()
     while true do
@@ -118,47 +120,51 @@ task.spawn(function()
 
         if myhrp then
 
-            -- PRIORITAS NEAREST
+            local target = nil
+
+            -- 🔥 PRIORITAS NEAREST
             if _G.AutoTPNearest then
-                local target = GetNearestMob(40) or GetNearestMob(200)
+                target = GetNearestMob(40) or GetNearestMob(200)
 
-                if target and IsMobReady(target) then
-                    local dist = (myhrp.Position - target.Position).Magnitude
-
-                    if dist < 150 then
-                        local safe = SafeTP(target.CFrame)
-
-                        if safe and tick() - lastTP > 0.2 then
-                            myhrp.CFrame = safe
-                            lastTP = tick()
-                        end
-                    end
-                end
-
-            -- AUTO TP BIASA
+            -- 🔥 AUTO TP BIASA
             elseif _G.AutoTP then
                 if #mobsCache > 0 then
                     tpIndex = tpIndex % #mobsCache + 1
-                    local target = mobsCache[tpIndex]
+                    target = mobsCache[tpIndex]
+                end
+            end
 
-                    if target and target.Parent and IsMobReady(target) then
-                        local dist = (myhrp.Position - target.Position).Magnitude
+            -- 🔥 VALIDASI TARGET
+            if target and target.Parent and IsMobReady(target) then
+                local dist = (myhrp.Position - target.Position).Magnitude
 
-                        if dist < 150 then
-                            local safe = SafeTP(target.CFrame)
+                -- 🔥 LOCK TARGET (biar ga pindah2 tiap frame)
+                if lastTarget ~= target then
+                    lastTarget = target
+                    targetHoldTime = tick()
+                end
 
-                            if safe and tick() - lastTP > 0.2 then
-                                myhrp.CFrame = safe
-                                lastTP = tick()
-                            end
-                        end
+                -- tahan target minimal 0.5 detik
+                local holdOK = (tick() - targetHoldTime) > 0.5
+
+                if holdOK then
+                    local safe = SafeTP(target.CFrame)
+
+                    -- 🔥 TP DELAY (INI YANG NGURANGIN CEPET)
+                    local tpDelay = 0.25
+
+                    if safe and dist > 6 and tick() - lastTP >= tpDelay then
+                        myhrp.CFrame = safe
+                        lastTP = tick()
                     end
                 end
+            else
+                lastTarget = nil
             end
 
         end
 
-        task.wait(0.08)
+        task.wait(0.12) -- 🔥 ini juga ngaruh (jangan terlalu kecil)
     end
 end)
 task.spawn(function()
