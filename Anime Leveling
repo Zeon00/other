@@ -536,99 +536,122 @@ task.spawn(function()
     end
 end)
 
--- MAIN LOOP (UPGRADE TANPA HAPUS)
-local index = 1
-RunService.Heartbeat:Connect(function()
-    local char = player.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
 
-    local enemies = GetEnemies()
-    local targets = {}
+task.spawn(function()
+    local index = 1
+    local lastTP = 0
+    local lastTarget = nil
 
-    if AutoTPNearest then
-        local nearest, dist = nil, math.huge
-        for _, enemy in pairs(enemies) do
-            local ehrp = enemy:FindFirstChild("HumanoidRootPart")
-            local hum = enemy:FindFirstChildOfClass("Humanoid")
+    while task.wait(0.1) do
+        local char = player.Character
 
-            if ehrp and hum and hum.Health > 0 then
-                local d = (hrp.Position - ehrp.Position).Magnitude
-                if d < dist then
-                    dist = d
-                    nearest = enemy
-                end
-            end
-        end
+        if char then
+            local hrp = char:FindFirstChild("HumanoidRootPart")
 
-        if nearest then
-            table.insert(targets, nearest)
-        end
-    else
-        for _, enemy in pairs(enemies) do
-            if SelectedEnemies[enemy.Name] then
-                table.insert(targets, enemy)
-            end
-        end
-    end
+            if hrp then
+                local enemies = GetEnemies()
+                local targets = {}
 
-    if #targets > 0 then
-        index = index % #targets + 1
-        local target = targets[index]
+                -- 🔥 PILIH TARGET
+                if AutoTPNearest then
+                    local nearest = nil
+                    local dist = math.huge
 
-        local ehrp = target:FindFirstChild("HumanoidRootPart")
-        local hum = target:FindFirstChildOfClass("Humanoid")
+                    for _, enemy in pairs(enemies) do
+                        local ehrp = enemy:FindFirstChild("HumanoidRootPart")
+                        local hum = enemy:FindFirstChildOfClass("Humanoid")
 
-        if ehrp and hum and hum.Health > 0 then
-            if AutoTP or AutoTPNearest then
-                hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
-            end
+                        if ehrp and hum and hum.Health > 0 then
+                            local d = (hrp.Position - ehrp.Position).Magnitude
+                            if d < dist then
+                                dist = d
+                                nearest = enemy
+                            end
+                        end
+                    end
 
-            if AutoGroup then
-                for _, e in pairs(enemies) do
-                    local e2 = e:FindFirstChild("HumanoidRootPart")
-                    if e2 then
-                        e2.CFrame = ehrp.CFrame * CFrame.new(math.random(-2,2),0,math.random(-2,2))
+                    if nearest then
+                        table.insert(targets, nearest)
+                    end
+                else
+                    for _, enemy in pairs(enemies) do
+                        if SelectedEnemies[enemy.Name] then
+                            table.insert(targets, enemy)
+                        end
                     end
                 end
+
+                -- 🔥 EKSEKUSI TARGET
+                if #targets > 0 then
+                    index = index % #targets + 1
+                    local target = targets[index]
+
+                    local ehrp = target:FindFirstChild("HumanoidRootPart")
+                    local hum = target:FindFirstChildOfClass("Humanoid")
+
+                    if ehrp and hum and hum.Health > 0 then
+
+                        -- 🔥 HIT
+                        if FastHit then
+                            if not _G.lastHit then _G.lastHit = 0 end
+
+                            local hitDelay = BypassAll and 0.05 or 0.08
+
+                            if tick() - _G.lastHit >= hitDelay then
+                                _G.lastHit = tick()
+                                ClickRemote:FireServer()
+                            end
+                        end
+
+                        -- 🔥 TP FIX (ANTI SPAM)
+                        if AutoTP or AutoTPNearest then
+                            local dist = (hrp.Position - ehrp.Position).Magnitude
+                            local tpDelay = 0.15
+
+                            if tick() - lastTP >= tpDelay then
+                                if dist > 6 then
+                                    if target ~= lastTarget then
+                                        lastTarget = target
+                                        hrp.CFrame = ehrp.CFrame * CFrame.new(0,3,0)
+                                    end
+                                end
+                                lastTP = tick()
+                            end
+                        end
+
+                        -- 🔥 GROUP
+                        if AutoGroup then
+                            for _, e in pairs(enemies) do
+                                local e2 = e:FindFirstChild("HumanoidRootPart")
+                                if e2 then
+                                    e2.CFrame = ehrp.CFrame * CFrame.new(math.random(-2,2),0,math.random(-2,2))
+                                end
+                            end
+                        end
+                    end
+                end
+
+                -- 🔥 AUTO SYSTEM
+                if AutoRaid then DoRaid() end
+                if AutoFruit then Remotes.RollFruitPower:FireServer() end
+                if AutoHaki then Remotes.HakiLeveling:FireServer() end
+                if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
+                if AutoSaiyan then Remotes.RollSaiyanPower:FireServer() end
+                if AutoBreathing then Remotes.RollBreathingPower:FireServer() end
+                if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
+                if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
+                if AutoDemon then Remotes.RollDemonPower:FireServer() end
+                if AutoMask then Remotes.RollMaskPower:FireServer() end
+                if AutoBlessing then Remotes.RollBlessingPower:FireServer() end
+                if AutoRollRace then Remotes.RollRacePower:FireServer() end
+                if AutoBankai then Remotes.RollBankaiPower:FireServer() end
+                if AutoEaster then Remotes.RollEasterPower:FireServer() end
+                if AutoDivisions then Remotes.RollDivisionsPower:FireServer() end
+                if AutoClaim then Remotes.ClaimDailyStreak:FireServer() end
+
             end
-
-            if FastHit then
-    if not _G.lastHit then _G.lastHit = 0 end
-
-    local delay = 0.08 -- default fast (aman banget)
-    
-    -- kalau mau lebih ngebut (punya gamepass)
-    if BypassAll then
-        delay = 0.05
-    end
-
-    if tick() - _G.lastHit >= delay then
-        _G.lastHit = tick()
-        ClickRemote:FireServer()
-    end
-end
         end
     end
-
-    if AutoRaid then DoRaid() end
-    if AutoFruit then Remotes.RollFruitPower:FireServer() end
-    if AutoHaki then Remotes.HakiLeveling:FireServer() end
-    if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
-    if AutoSaiyan then Remotes.RollSaiyanPower:FireServer() end
-    if AutoBreathing then Remotes.RollBreathingPower:FireServer() end
-    if AutoProsperity then Remotes.RollProsperityPower:FireServer() end
-    if AutoGrimoire then Remotes.RollGrimoiresPower:FireServer() end
-    if AutoDemon then Remotes.RollDemonPower:FireServer() end
-	if AutoMask then Remotes.RollMaskPower:FireServer() end
-	if AutoBlessing then Remotes.RollBlessingPower:FireServer() end
-	if AutoRollRace then Remotes.RollRacePower:FireServer() end
-	if AutoBankai then Remotes.RollBankaiPower:FireServer() end
-    if AutoEaster then Remotes.RollEasterPower:FireServer() end
-	if AutoBlessing then Remotes.RollBlessingPower:FireServer() end
-	if AutoDivisions then Remotes.RollDivisionsPower:FireServer() end
-	if AutoClaim then Remotes.ClaimDailyStreak:FireServer() end
 end)
 
 -- BYPASS
