@@ -1,216 +1,290 @@
---// DESTROY GUI LAMA
+-- DESTROY GUI LAMA
 pcall(function()
-    game.CoreGui.AllMapAuraUI:Destroy()
+    game.CoreGui.ProFarmTP:Destroy()
 end)
 
---// SERVICES
+-- SERVICES
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
+local Omni = require(RS:WaitForChild("Omni"))
 
---// REMOTE
-local ClickRemote = RS:WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_knit@1.5.1")
-    :WaitForChild("knit")
-    :WaitForChild("Services")
-    :WaitForChild("ClickService")
-    :WaitForChild("RF")
-    :WaitForChild("Click")
+-- STATE
+_G.AutoAttack = false
+_G.AutoTP = false
+_G.AutoTPNearest = false
 
---// STATE
-local KillAura = false
-local AutoTP = false
-local Selected = {} -- multi target
+local SelectedEnemies = {}
 
---// FUNCTION BASE NAME
-local function getBaseName(name)
-    return name:match("^[^_]+")
+--------------------------------------------------
+-- GET HRP
+--------------------------------------------------
+local function GetHRP()
+    local char = player.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
 end
 
---// AUTO DETECT TARGET
-local Targets = {}
-for _, map in pairs(workspace:WaitForChild("MobSpawns"):GetChildren()) do
-    for _, spawn in pairs(map:GetChildren()) do
-        local base = getBaseName(spawn.Name)
-        if base and not Targets[base] then
-            Targets[base] = true
-            Selected[base] = false
+--------------------------------------------------
+-- GET ENEMIES (FIX: CLIENT ENEMIES)
+--------------------------------------------------
+local function GetEnemies()
+    local list = {}
+
+    local folder = workspace:FindFirstChild("Client")
+    folder = folder and folder:FindFirstChild("Enemies")
+
+    if not folder then return list end
+
+    for _, enemy in pairs(folder:GetChildren()) do
+        local hrp = enemy:FindFirstChild("HumanoidRootPart")
+        local hum = enemy:FindFirstChildOfClass("Humanoid")
+
+        if hrp and hum and hum.Health > 0 and hrp.Position.Y > 0 then
+            table.insert(list, enemy)
+        end
+    end
+
+    return list
+end
+
+--------------------------------------------------
+-- SAFE TP (ANTI VOID)
+--------------------------------------------------
+local function SafeTP(cf)
+    local ray = Ray.new(cf.Position, Vector3.new(0, -100, 0))
+    local part, pos = workspace:FindPartOnRay(ray)
+
+    if part and pos then
+        return CFrame.new(pos + Vector3.new(0, 3, 0))
+    end
+
+    return nil
+end
+
+--------------------------------------------------
+-- VALID MOB
+--------------------------------------------------
+local function IsMobReady(enemy)
+    if not enemy then return false end
+
+    local hrp = enemy:FindFirstChild("HumanoidRootPart")
+    local hum = enemy:FindFirstChildOfClass("Humanoid")
+
+    if not hrp or not hum then return false end
+    if hum.Health <= 0 then return false end
+    if hrp.Position.Y < 0 then return false end
+
+    return true
+end
+
+--------------------------------------------------
+-- GET IDS (ATTACK)
+--------------------------------------------------
+local function GetIDs()
+    return Omni.Cache:Get({"EnemiesOnRangeIds"}) or {}
+end
+
+--------------------------------------------------
+-- GUI
+--------------------------------------------------
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "ProFarmTP"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 260, 0, 320)
+main.Position = UDim2.new(0.4,0,0.3,0)
+main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+main.Active = true
+main.Draggable = true
+
+Instance.new("UICorner", main)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "AUTO FARM"
+title.BackgroundColor3 = Color3.fromRGB(30,30,30)
+title.TextColor3 = Color3.new(1,1,1)
+
+--------------------------------------------------
+-- SCROLL MOB
+--------------------------------------------------
+local scroll = Instance.new("ScrollingFrame", main)
+scroll.Size = UDim2.new(1,-10,0,150)
+scroll.Position = UDim2.new(0,5,0,160)
+scroll.CanvasSize = UDim2.new(0,0,0,600)
+scroll.ScrollBarThickness = 4
+scroll.BackgroundTransparency = 1
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0,5)
+
+--------------------------------------------------
+-- UPDATE LIST MOB
+--------------------------------------------------
+local function UpdateEnemyList()
+    local enemies = GetEnemies()
+    local used = {}
+
+    for _, v in pairs(scroll:GetChildren()) do
+        if v:IsA("Frame") then
+            v:Destroy()
+        end
+    end
+
+    for _, enemy in pairs(enemies) do
+        local name = enemy.Name:gsub("_%d+","")
+
+        if not used[name] then
+            used[name] = true
+
+            local f = Instance.new("Frame", scroll)
+            f.Size = UDim2.new(1,0,0,30)
+            f.BackgroundColor3 = Color3.fromRGB(40,40,40)
+            Instance.new("UICorner", f)
+
+            local txt = Instance.new("TextLabel", f)
+            txt.Size = UDim2.new(0.6,0,1,0)
+            txt.Text = name
+            txt.TextColor3 = Color3.new(1,1,1)
+            txt.BackgroundTransparency = 1
+
+            local btn = Instance.new("TextButton", f)
+            btn.Size = UDim2.new(0.4,0,1,0)
+            btn.Position = UDim2.new(0.6,0,0,0)
+
+            SelectedEnemies[name] = SelectedEnemies[name] or false
+
+            local function Refresh()
+                btn.Text = SelectedEnemies[name] and "ON" or "OFF"
+                btn.BackgroundColor3 = SelectedEnemies[name]
+                    and Color3.fromRGB(0,150,0)
+                    or Color3.fromRGB(100,0,0)
+            end
+
+            Refresh()
+
+            btn.MouseButton1Click:Connect(function()
+                SelectedEnemies[name] = not SelectedEnemies[name]
+                Refresh()
+            end)
         end
     end
 end
 
---// GUI
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "AllMapAuraUI"
+task.spawn(function()
+    while task.wait(2) do
+        pcall(UpdateEnemyList)
+    end
+end)
 
-local Main = Instance.new("Frame", gui)
-Main.Size = UDim2.new(0,260,0,320)
-Main.Position = UDim2.new(0.5,-130,0.5,-160)
-Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Main.Active = true
-Main.Draggable = true
-Instance.new("UICorner", Main)
-
--- HEADER
-local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1,0,0,30)
-Header.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Instance.new("UICorner", Header)
-
-local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1,-60,1,0)
-Title.Position = UDim2.new(0,10,0,0)
-Title.Text = "All Map Aura"
-Title.BackgroundTransparency = 1
-Title.TextColor3 = Color3.new(1,1,1)
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
--- MINIMIZE
-local Min = Instance.new("TextButton", Header)
-Min.Size = UDim2.new(0,25,1,0)
-Min.Position = UDim2.new(1,-50,0,0)
-Min.Text = "➖"
-Min.BackgroundTransparency = 1
-Min.TextColor3 = Color3.new(1,1,1)
-
--- CLOSE
-local Close = Instance.new("TextButton", Header)
-Close.Size = UDim2.new(0,25,1,0)
-Close.Position = UDim2.new(1,-25,0,0)
-Close.Text = "✕"
-Close.BackgroundTransparency = 1
-Close.TextColor3 = Color3.fromRGB(255,80,80)
-
--- SCROLL TARGET
-local Scroll = Instance.new("ScrollingFrame", Main)
-Scroll.Size = UDim2.new(1,-10,0,200)
-Scroll.Position = UDim2.new(0,5,0,35)
-Scroll.BackgroundTransparency = 1
-Scroll.ScrollBarThickness = 4
-
-local Layout = Instance.new("UIListLayout", Scroll)
-Layout.Padding = UDim.new(0,5)
-
--- BUTTON TARGET
-for name,_ in pairs(Targets) do
-    local btn = Instance.new("TextButton", Scroll)
-    btn.Size = UDim2.new(1,-10,0,30)
-    btn.Text = name.." : OFF"
-    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    btn.TextColor3 = Color3.new(1,1,1)
-    Instance.new("UICorner", btn)
-
-    btn.MouseButton1Click:Connect(function()
-        Selected[name] = not Selected[name]
-        btn.Text = name.." : "..(Selected[name] and "ON" or "OFF")
-        btn.BackgroundColor3 = Selected[name] and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
-    end)
-end
-
-task.wait()
-Scroll.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y+10)
-
+--------------------------------------------------
 -- TOGGLE BUTTON
-local function makeToggle(text, y)
-    local b = Instance.new("TextButton", Main)
-    b.Size = UDim2.new(1,-10,0,30)
-    b.Position = UDim2.new(0,5,0,y)
-    b.Text = text.." : OFF"
-    b.BackgroundColor3 = Color3.fromRGB(170,50,50)
-    b.TextColor3 = Color3.new(1,1,1)
-    Instance.new("UICorner", b)
-    return b
+--------------------------------------------------
+local function Toggle(text, posY, var)
+    local b = Instance.new("TextButton", main)
+    b.Size = UDim2.new(1,-20,0,30)
+    b.Position = UDim2.new(0,10,0,posY)
+    b.BackgroundColor3 = Color3.fromRGB(30,30,30)
+
+    local function Update()
+        b.Text = text.." : "..(_G[var] and "ON" or "OFF")
+        b.BackgroundColor3 = _G[var]
+            and Color3.fromRGB(0,170,0)
+            or Color3.fromRGB(30,30,30)
+    end
+
+    b.MouseButton1Click:Connect(function()
+        _G[var] = not _G[var]
+        Update()
+    end)
+
+    Update()
 end
 
-local KillBtn = makeToggle("Kill Aura", 240)
-local TPBtn = makeToggle("Auto TP", 275)
+Toggle("AUTO ATTACK", 40, "AutoAttack")
+Toggle("AUTO TP", 80, "AutoTP")
+Toggle("TP NEAREST", 120, "AutoTPNearest")
 
-KillBtn.MouseButton1Click:Connect(function()
-    KillAura = not KillAura
-    KillBtn.Text = "Kill Aura : "..(KillAura and "ON" or "OFF")
-end)
+--------------------------------------------------
+-- MAIN LOOP
+--------------------------------------------------
+local lastTP = 0
+local index = 1
 
-TPBtn.MouseButton1Click:Connect(function()
-    AutoTP = not AutoTP
-    TPBtn.Text = "Auto TP : "..(AutoTP and "ON" or "OFF")
-end)
+RunService.Heartbeat:Connect(function()
+    local myhrp = GetHRP()
+    if not myhrp then return end
 
--- ICON MINIMIZE
-local Icon = Instance.new("TextButton", gui)
-Icon.Size = UDim2.new(0,50,0,50)
-Icon.Position = UDim2.new(0,20,0.5,-25)
-Icon.Text = "⚡"
-Icon.Visible = false
-Icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Icon.Draggable = true
-Instance.new("UICorner", Icon)
+    local enemies = GetEnemies()
+    local targets = {}
 
-Min.MouseButton1Click:Connect(function()
-    Main.Visible = false
-    Icon.Visible = true
-end)
+    -- NEAREST MODE
+    if _G.AutoTPNearest then
+        local nearest, dist = nil, math.huge
 
-Icon.MouseButton1Click:Connect(function()
-    Main.Visible = true
-    Icon.Visible = false
-end)
+        for _, e in pairs(enemies) do
+            if IsMobReady(e) then
+                local hrp = e:FindFirstChild("HumanoidRootPart")
+                local d = (myhrp.Position - hrp.Position).Magnitude
 
-Close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
-
---// LOGIC
-local function getHRP()
-    local c = player.Character
-    return c and c:FindFirstChild("HumanoidRootPart")
-end
-
-local function isSelected(name)
-    local base = getBaseName(name)
-    return Selected[base]
-end
-
-local function getTargetMob()
-    local closest, dist = nil, math.huge
-    local hrp = getHRP()
-    if not hrp then return end
-
-    for _, mob in pairs(workspace.Mobs:GetChildren()) do
-        if isSelected(mob.Name) then
-            local mHRP = mob:FindFirstChild("HumanoidRootPart")
-            if mHRP then
-                local d = (mHRP.Position - hrp.Position).Magnitude
                 if d < dist then
                     dist = d
-                    closest = mob
+                    nearest = e
                 end
+            end
+        end
+
+        if nearest then
+            table.insert(targets, nearest)
+        end
+
+    -- SELECT MODE
+    else
+        for _, e in pairs(enemies) do
+            local name = e.Name:gsub("_%d+","")
+            if SelectedEnemies[name] then
+                table.insert(targets, e)
             end
         end
     end
 
-    return closest
-end
+    if #targets > 0 then
+        index = index % #targets + 1
+        local target = targets[index]
 
-RunService.RenderStepped:Connect(function()
-    local hrp = getHRP()
-    if not hrp then return end
+        local hrp = target:FindFirstChild("HumanoidRootPart")
 
-    local mob = getTargetMob()
-    if not mob then return end
+        if hrp and tick() - lastTP > 0.2 then
+            local safe = SafeTP(hrp.CFrame)
 
-    local mHRP = mob:FindFirstChild("HumanoidRootPart")
-    if not mHRP then return end
-
-    if AutoTP then
-        hrp.CFrame = mHRP.CFrame * CFrame.new(0,0,-3)
+            if safe then
+                myhrp.CFrame = safe
+                lastTP = tick()
+            end
+        end
     end
+end)
 
-    if KillAura then
-        pcall(function()
-            ClickRemote:InvokeServer(mob.Name)
-        end)
+--------------------------------------------------
+-- AUTO ATTACK
+--------------------------------------------------
+task.spawn(function()
+    while true do
+        if _G.AutoAttack then
+            local ids = GetIDs()
+
+            if next(ids) then
+                for i = 1,3 do
+                    Omni.Signal:Fire("General","Attack","Click", ids)
+                    task.wait(0.03)
+                end
+            end
+
+            task.wait(0.15)
+        else
+            task.wait(0.1)
+        end
     end
 end)
