@@ -17,11 +17,17 @@ _G.AutoJoin = false
 _G.AutoTPNearest = false
 _G.AutoDragon = false
 _G.AutoTimeReward = false
-local tpIndex = 1
-local mobsCache = {}
+_G.AutoTempest = false
 
+local mobsCache = {}
+local currentTarget = nil
+local lastTP = 0
+
+--------------------------------------------------
+-- SCAN MOB (ANTI ERROR + FUTURE PROOF)
+--------------------------------------------------
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(0.7) do
         table.clear(mobsCache)
 
         for _, v in pairs(workspace.Client.Enemies:GetDescendants()) do
@@ -35,6 +41,7 @@ task.spawn(function()
         end
     end
 end)
+
 --------------------------------------------------
 -- GET HRP
 --------------------------------------------------
@@ -44,199 +51,152 @@ local function GetHRP()
 end
 
 --------------------------------------------------
--- GET IDS
+-- GET IDS (ATTACK)
 --------------------------------------------------
 local function GetIDs()
     return Omni.Cache:Get({"EnemiesOnRangeIds"}) or {}
 end
 
-local function GetNearestMob(maxDist)
+--------------------------------------------------
+-- GET NEAREST
+--------------------------------------------------
+local function GetNearest()
     local myhrp = GetHRP()
     if not myhrp then return end
 
-    local folder = workspace.Client.Enemies
-    local closest, dist = nil, maxDist or 50 -- radius
+    local closest, dist = nil, 999
 
- for _, v in pairs(folder:GetDescendants()) do
-    if v.Name == "HumanoidRootPart" then
-        local hum = v.Parent:FindFirstChildOfClass("Humanoid")
+    for _, v in pairs(mobsCache) do
+        local d = (myhrp.Position - v.Position).Magnitude
 
-        if hum and hum.Health > 0 then
-            local d = (myhrp.Position - v.Position).Magnitude
-
-            if d < dist then
-                dist = d
-                closest = v
-            end
+        if d < dist then
+            dist = d
+            closest = v
         end
     end
-end
 
     return closest
 end
+
 --------------------------------------------------
--- SAFE TELEPORT (ANTI VOID)
+-- SIMPLE TP (ANTI GAGAL)
 --------------------------------------------------
-local function SafeTP(cf)
-    local origin = cf.Position
-
-    local ray = Ray.new(origin, Vector3.new(0, -100, 0))
-    local part, pos = workspace:FindPartOnRay(ray)
-
-    if part and pos then
-        return CFrame.new(pos + Vector3.new(0, 3, 0))
-    end
-
-    return nil -- skip kalau ga ada tanah
-end
---------------------------------------------------
--- VALIDASI MOB (ANTI BUG / BELUM SPAWN)
---------------------------------------------------
-local function IsMobReady(hrp)
-    if not hrp or not hrp.Parent then return false end
-
-    local hum = hrp.Parent:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health <= 0 then return false end
-
+local function TPTo(target)
     local myhrp = GetHRP()
-    if not myhrp then return false end
+    if not myhrp or not target then return end
 
-    -- ❌ terlalu bawah (void)
-    if hrp.Position.Y < myhrp.Position.Y - 30 then
-        return false
-    end
-
-    -- cek tanah
-    local ray = Ray.new(hrp.Position, Vector3.new(0, -50, 0))
-    local part = workspace:FindPartOnRay(ray)
-
-    if not part then return false end
-
-    return true
+    -- offset biar gak nabrak
+    myhrp.CFrame = target.CFrame * CFrame.new(0, 0, 3)
 end
---------------------------------------------------
--- MAIN LOOP (FIX TOTAL)
---------------------------------------------------
-local lastTP = 0
-local lastTarget = nil
-local targetHoldTime = 0
 
+--------------------------------------------------
+-- MAIN TP LOOP (SUPER SMOOTH)
+--------------------------------------------------
 task.spawn(function()
     while true do
         local myhrp = GetHRP()
 
         if myhrp then
-
             local target = nil
 
-            -- 🔥 PRIORITAS NEAREST
             if _G.AutoTPNearest then
-                target = GetNearestMob(40) or GetNearestMob(200)
+                target = GetNearest()
 
-            -- 🔥 AUTO TP BIASA
             elseif _G.AutoTP then
                 if #mobsCache > 0 then
-                    tpIndex = tpIndex % #mobsCache + 1
-                    target = mobsCache[tpIndex]
+                    target = mobsCache[math.random(1, #mobsCache)]
                 end
             end
 
-            -- 🔥 VALIDASI TARGET
-            if target and target.Parent and IsMobReady(target) then
+            if target and target.Parent then
+                currentTarget = target
+
                 local dist = (myhrp.Position - target.Position).Magnitude
 
-                -- 🔥 LOCK TARGET (biar ga pindah2 tiap frame)
-                if lastTarget ~= target then
-                    lastTarget = target
-                    targetHoldTime = tick()
-                end
-
-                -- tahan target minimal 0.5 detik
-                local holdOK = (tick() - targetHoldTime) > 0.5
-
-                if holdOK then
-                    local safe = SafeTP(target.CFrame)
-
-                    -- 🔥 TP DELAY (INI YANG NGURANGIN CEPET)
-                    local tpDelay = 0.8
-
-                    if safe and dist > 6 and tick() - lastTP >= tpDelay then
-                        myhrp.CFrame = safe
+                -- 🔥 TP terus kalau jauh
+                if dist > 4 then
+                    if tick() - lastTP > 0.2 then
+                        TPTo(target)
                         lastTP = tick()
                     end
                 end
             else
-                lastTarget = nil
+                currentTarget = nil
             end
-
         end
 
-        task.wait(0.5) -- 🔥 ini juga ngaruh (jangan terlalu kecil)
+        task.wait(0.15)
     end
 end)
+
+--------------------------------------------------
+-- AUTO ATTACK (STABIL)
+--------------------------------------------------
 task.spawn(function()
     while true do
         if _G.AutoAttack then
-            local start = tick()
             local ids = GetIDs()
 
             if next(ids) then
-                for i = 1,3 do
-                    Omni.Signal:Fire("General","Attack","Click", ids)
-                    task.wait(0.03)
-                end
+                Omni.Signal:Fire("General","Attack","Click", ids)
             end
-
-            local cd = Omni.Utils.PlayerStats.ClickCooldown(Omni.Data, Omni.Instance) or 0.2
-            local took = tick() - start
-
-            if took < cd then
-                task.wait(cd - took)
-            else
-                task.wait()
-            end
-        else
-            task.wait(0.1)
         end
+
+        task.wait(0.15)
     end
 end)
 
+--------------------------------------------------
+-- AUTO JOIN
+--------------------------------------------------
 task.spawn(function()
     while task.wait(2) do
         if _G.AutoJoin then
             if Omni.Data.Gamemode ~= "Trial Easy" then
-                local args = {
-                    {
-                        {
-                            "General",
-                            "Gamemodes",
-                            "Join",
-                            "Trial Easy",
-                            n = 4
-                        },
-                        "\002"
-                    }
-                }
-
                 game:GetService("ReplicatedStorage")
-                    :WaitForChild("BridgeNet")
-                    :WaitForChild("dataRemoteEvent")
-                    :FireServer(unpack(args))
+                :WaitForChild("BridgeNet")
+                :WaitForChild("dataRemoteEvent")
+                :FireServer({
+                    {"General","Gamemodes","Join","Trial Easy", n = 4},
+                    "\002"
+                })
             end
         end
     end
 end)
+
+--------------------------------------------------
+-- AUTO DRAGON
+--------------------------------------------------
 task.spawn(function()
     while task.wait(2) do
         if _G.AutoDragon then
             if Omni.Data.Gamemode ~= "Dragon Defense" then
+                game:GetService("ReplicatedStorage")
+                :WaitForChild("BridgeNet")
+                :WaitForChild("dataRemoteEvent")
+                :FireServer({
+                    {"General","Gamemodes","Join","Dragon Defense", n = 4},
+                    "\002"
+                })
+            end
+        end
+    end
+end)
+--------------------------------------------------
+-- AUTO TEMPEST
+--------------------------------------------------
+task.spawn(function()
+    while task.wait(2) do
+        if _G.AutoTempest then
+            if Omni.Data.Gamemode ~= "Tempest Invasion" then
                 local args = {
                     {
                         {
                             "General",
                             "Gamemodes",
                             "Join",
-                            "Dragon Defense",
+                            "Tempest Invasion",
                             n = 4
                         },
                         "\002"
@@ -251,155 +211,67 @@ task.spawn(function()
         end
     end
 end)
+
+--------------------------------------------------
+-- AUTO TIME REWARD
+--------------------------------------------------
 task.spawn(function()
     while true do
         if _G.AutoTimeReward then
-            -- RESET dulu
-            local args = {
-                {
-                    {
-                        "General",
-                        "TimeRewards",
-                        "Reset",
-                        n = 3
-                    },
-                    "\002"
-                }
-            }
-
-            game:GetService("ReplicatedStorage")
+            for i = 1,7 do
+                game:GetService("ReplicatedStorage")
                 :WaitForChild("BridgeNet")
                 :WaitForChild("dataRemoteEvent")
-                :FireServer(unpack(args))
-
-            task.wait(1)
-
-            -- CLAIM 1 - 7
-            for i = 1,7 do
-                local args = {
-                    {
-                        {
-                            "General",
-                            "TimeRewards",
-                            "Claim",
-                            i,
-                            n = 4
-                        },
-                        "\002"
-                    }
-                }
-
-                game:GetService("ReplicatedStorage")
-                    :WaitForChild("BridgeNet")
-                    :WaitForChild("dataRemoteEvent")
-                    :FireServer(unpack(args))
-
+                :FireServer({
+                    {"General","TimeRewards","Claim",i,n=4},
+                    "\002"
+                })
                 task.wait(0.5)
             end
-
-            -- tunggu 10 menit
-            for i = 1,600 do
-                if not _G.AutoTimeReward then break end
-                task.wait(1)
-            end
+            task.wait(600)
         else
             task.wait(1)
         end
     end
 end)
+
+--------------------------------------------------
+-- GUI (SAMA)
+--------------------------------------------------
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ProFarmTP"
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 240, 0, 285)
+main.Size = UDim2.new(0, 240, 0, 335)
 main.Position = UDim2.new(0.4,0,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.Active = true
 main.Draggable = true
 
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
+Instance.new("UICorner", main)
 
-local stroke = Instance.new("UIStroke", main)
-stroke.Color = Color3.fromRGB(80,80,80)
-stroke.Thickness = 1.5
-
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,0,0,30)
-title.Text = "GOTHAM FARM"
-title.BackgroundColor3 = Color3.fromRGB(25,25,25)
-title.TextColor3 = Color3.fromRGB(200,200,200)
-
---------------------------------------------------
--- BUTTON FUNCTION TEMPLATE
---------------------------------------------------
-local function MakeToggle(text, posY, stateVar)
+local function MakeToggle(text, posY, var)
     local b = Instance.new("TextButton", main)
     b.Size = UDim2.new(1,-20,0,35)
     b.Position = UDim2.new(0,10,0,posY)
-    b.BackgroundColor3 = Color3.fromRGB(30,30,30)
-    b.TextColor3 = Color3.fromRGB(220,220,220)
 
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
-
-    local function Update()
-        local state = _G[stateVar]
-        b.Text = text..": "..(state and "ON" or "OFF")
-        b.BackgroundColor3 = state and Color3.fromRGB(0,170,0) or Color3.fromRGB(30,30,30)
+    local function update()
+        b.Text = text..": "..(_G[var] and "ON" or "OFF")
+        b.BackgroundColor3 = _G[var] and Color3.fromRGB(0,170,0) or Color3.fromRGB(30,30,30)
     end
 
     b.MouseButton1Click:Connect(function()
-        _G[stateVar] = not _G[stateVar]
-        Update()
+        _G[var] = not _G[var]
+        update()
     end)
 
-    Update()
-    return b
+    update()
 end
 
---------------------------------------------------
--- BUTTONS
---------------------------------------------------
-local atk = MakeToggle("Auto Attack", 40, "AutoAttack")
-local tp = MakeToggle("Auto TP", 80, "AutoTP")
-local join = MakeToggle("Auto Join", 120, "AutoJoin")
-local near = MakeToggle("TP Nearest", 160, "AutoTPNearest")
-local dragon = MakeToggle("Auto Dragon", 200, "AutoDragon")
-local time = MakeToggle("Auto TimeReward", 240, "AutoTimeReward")
--------------------------------------------
--- CONTROL BUTTONS
---------------------------------------------------
-
-local minimize = Instance.new("TextButton", main)
-minimize.Size = UDim2.new(0,30,0,30)
-minimize.Position = UDim2.new(1,-60,0,0)
-minimize.Text = "-"
-minimize.BackgroundColor3 = Color3.fromRGB(20,20,20)
-
-local close = Instance.new("TextButton", main)
-close.Size = UDim2.new(0,30,0,30)
-close.Position = UDim2.new(1,-30,0,0)
-close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(20,20,20)
-
-local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.new(0,50,0,50)
-icon.Position = UDim2.new(0,10,0.5,0)
-icon.Text = "🦇"
-icon.Visible = false
-icon.BackgroundColor3 = Color3.fromRGB(20,20,20)
-
-Instance.new("UICorner", icon)
-
-minimize.MouseButton1Click:Connect(function()
-    main.Visible = false
-    icon.Visible = true
-end)
-
-icon.MouseButton1Click:Connect(function()
-    main.Visible = true
-    icon.Visible = false
-end)
-
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
+MakeToggle("Auto Attack",40,"AutoAttack")
+MakeToggle("Auto TP",80,"AutoTP")
+MakeToggle("Auto Join",120,"AutoJoin")
+MakeToggle("TP Nearest",160,"AutoTPNearest")
+MakeToggle("Auto Dragon",200,"AutoDragon")
+MakeToggle("Auto Reward",240,"AutoTimeReward")
+local tempest = MakeToggle("Auto Tempest", 280, "AutoTempest")
