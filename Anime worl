@@ -114,8 +114,8 @@ task.spawn(function()
                 local dist = (myhrp.Position - target.Position).Magnitude
 
                 -- 🔥 TP terus kalau jauh
-                if dist > 4 then
-                    if tick() - lastTP > 0.2 then
+                if dist > 8 then
+                    if tick() - lastTP > 0.5 then
                         TPTo(target)
                         lastTP = tick()
                     end
