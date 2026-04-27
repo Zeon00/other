@@ -239,7 +239,7 @@ local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ProFarmTP"
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 260, 0, 320)
+main.Size = UDim2.new(0, 260, 0, 380)
 main.Position = UDim2.new(0.4,0,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(22,22,22)
 main.Active = true
@@ -331,7 +331,7 @@ MakeToggle("Auto Join", 140, "AutoJoin")
 MakeToggle("TP Nearest", 185, "AutoTPNearest")
 MakeToggle("Auto Dragon", 230, "AutoDragon")
 MakeToggle("Auto Reward", 275, "AutoTimeReward")
-local tempest = MakeToggle("Auto Tempest", 280, "AutoTempest")
+local tempest = MakeToggle("Auto Tempest", 320, "AutoTempest")
 --------------------------------------------------
 -- CONTROL BUTTONS
 --------------------------------------------------
