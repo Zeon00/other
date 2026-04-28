@@ -29,10 +29,42 @@ local RerollRemote = RS:WaitForChild("Packages")
     :WaitForChild("RF")
     :WaitForChild("Reroll")
 
+local BossRushRemote = RS:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_knit@1.5.1")
+    :WaitForChild("knit")
+    :WaitForChild("Services")
+    :WaitForChild("BossRushService")
+    :WaitForChild("RF")
+    :WaitForChild("StartBossRush")
+
+local TrialRemote = RS:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_knit@1.5.1")
+    :WaitForChild("knit")
+    :WaitForChild("Services")
+    :WaitForChild("TimeTrialService")
+    :WaitForChild("RF")
+    :WaitForChild("JoinTrial")
+
+local RaidRemote = RS:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_knit@1.5.1")
+    :WaitForChild("knit")
+    :WaitForChild("Services")
+    :WaitForChild("ProgressionRaidService")
+    :WaitForChild("RF")
+    :WaitForChild("StartRaid")
+
 --// STATE
 local KillAura = false
 local AutoTP = false
 local AutoReroll = false
+local AutoBoss1 = false
+local AutoBoss2 = false
+local AutoTrial = false
+local AutoRaidNormal = false
+local AutoRaidHard = false
 
 local currentTarget = nil
 local lastSwitch = 0
@@ -50,7 +82,7 @@ local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "ModernAuraUI"
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 230, 0, 200)
+Main.Size = UDim2.new(0, 230, 0, 430)
 Main.Position = UDim2.new(0.5, -115, 0.5, -100)
 Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Main.Active = true
@@ -82,7 +114,7 @@ MinBtn.TextColor3 = Color3.new(1,1,1)
 local CloseBtn = Instance.new("TextButton", Header)
 CloseBtn.Size = UDim2.new(0,25,1,0)
 CloseBtn.Position = UDim2.new(1,-25,0,0)
-CloseBtn.Text = "✕"
+CloseBtn.Text = "X"
 CloseBtn.BackgroundTransparency = 1
 CloseBtn.TextColor3 = Color3.fromRGB(255,80,80)
 
@@ -108,6 +140,11 @@ local KillBtn = createButton("Kill Aura: OFF", 10)
 local TPBtn = createButton("Auto TP: OFF", 55)
 local RerollBtn = createButton("Auto Reroll: OFF", 100)
 local DropToggle = createButton("Select Reroll ▼", 145)
+local Boss1Btn = createButton("Boss Rush I: OFF", 190)
+local Boss2Btn = createButton("Boss Rush II: OFF", 235)
+local TrialBtn = createButton("Trial Easy: OFF", 280)
+local RaidNBtn = createButton("Raid Normal: OFF", 325)
+local RaidHBtn = createButton("Raid Hard: OFF", 370)
 
 -- ICON
 local Icon = Instance.new("TextButton", ScreenGui)
@@ -157,6 +194,36 @@ for _, name in ipairs(RerollList) do
 end
 
 -- TOGGLES
+Boss1Btn.MouseButton1Click:Connect(function()
+    AutoBoss1 = not AutoBoss1
+    Boss1Btn.Text = "Boss Rush I: "..(AutoBoss1 and "ON" or "OFF")
+    Boss1Btn.BackgroundColor3 = AutoBoss1 and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
+end)
+
+Boss2Btn.MouseButton1Click:Connect(function()
+    AutoBoss2 = not AutoBoss2
+    Boss2Btn.Text = "Boss Rush II: "..(AutoBoss2 and "ON" or "OFF")
+    Boss2Btn.BackgroundColor3 = AutoBoss2 and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
+end)
+
+TrialBtn.MouseButton1Click:Connect(function()
+    AutoTrial = not AutoTrial
+    TrialBtn.Text = "Trial Easy: "..(AutoTrial and "ON" or "OFF")
+    TrialBtn.BackgroundColor3 = AutoTrial and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
+end)
+
+RaidNBtn.MouseButton1Click:Connect(function()
+    AutoRaidNormal = not AutoRaidNormal
+    RaidNBtn.Text = "Raid Normal: "..(AutoRaidNormal and "ON" or "OFF")
+    RaidNBtn.BackgroundColor3 = AutoRaidNormal and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
+end)
+
+RaidHBtn.MouseButton1Click:Connect(function()
+    AutoRaidHard = not AutoRaidHard
+    RaidHBtn.Text = "Raid Hard: "..(AutoRaidHard and "ON" or "OFF")
+    RaidHBtn.BackgroundColor3 = AutoRaidHard and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
+end)
+
 KillBtn.MouseButton1Click:Connect(function()
     KillAura = not KillAura
     KillBtn.Text = "Kill Aura: "..(KillAura and "ON" or "OFF")
@@ -263,6 +330,41 @@ task.spawn(function()
                 end)
                 task.wait(0.5)
             end
+        end
+    end
+end)
+task.spawn(function()
+    while true do
+        task.wait(2)
+
+        if AutoBoss1 then
+            pcall(function()
+                BossRushRemote:InvokeServer("I")
+            end)
+        end
+
+        if AutoBoss2 then
+            pcall(function()
+                BossRushRemote:InvokeServer("II")
+            end)
+        end
+
+        if AutoTrial then
+            pcall(function()
+                TrialRemote:InvokeServer("Easy")
+            end)
+        end
+
+        if AutoRaidNormal then
+            pcall(function()
+                RaidRemote:InvokeServer("Normal")
+            end)
+        end
+
+        if AutoRaidHard then
+            pcall(function()
+                RaidRemote:InvokeServer("Hard")
+            end)
         end
     end
 end)
