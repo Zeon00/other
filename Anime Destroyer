@@ -59,6 +59,7 @@ local RaidRemote = RS:WaitForChild("Packages")
 --// STATE
 local KillAura = false
 local AutoTP = false
+local TPNearest = false
 local AutoReroll = false
 local AutoBoss1 = false
 local AutoBoss2 = false
@@ -152,13 +153,14 @@ end
 
 local KillBtn = createButton("Kill Aura: OFF", 10)
 local TPBtn = createButton("Auto TP: OFF", 55)
-local RerollBtn = createButton("Auto Reroll: OFF", 100)
+local TPNearestBtn = createButton("TP Nearest: OFF", 100)
 local DropToggle = createButton("Select Reroll ▼", 145)
 local Boss1Btn = createButton("Boss Rush I: OFF", 190)
 local Boss2Btn = createButton("Boss Rush II: OFF", 235)
 local TrialBtn = createButton("Trial Easy: OFF", 280)
 local RaidNBtn = createButton("Raid Normal: OFF", 325)
 local RaidHBtn = createButton("Raid Hard: OFF", 370)
+local RerollBtn = createButton("Auto Reroll: OFF", 415)
 
 -- ICON
 local Icon = Instance.new("TextButton", ScreenGui)
@@ -209,6 +211,12 @@ for _, name in ipairs(RerollList) do
 end
 
 -- TOGGLES
+TPNearestBtn.MouseButton1Click:Connect(function()
+    TPNearest = not TPNearest
+    TPNearestBtn.Text = "TP Nearest: "..(TPNearest and "ON" or "OFF")
+    TPNearestBtn.BackgroundColor3 = TPNearest and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
+end)
+
 Boss1Btn.MouseButton1Click:Connect(function()
     AutoBoss1 = not AutoBoss1
     Boss1Btn.Text = "Boss Rush I: "..(AutoBoss1 and "ON" or "OFF")
@@ -292,7 +300,7 @@ local function getNearestMob()
         local mHRP = mob:FindFirstChild("HumanoidRootPart")
         if mHRP then
             local d = (mHRP.Position - hrp.Position).Magnitude
-            if d < dist then
+            if d < dist and d > 2 then
                 dist = d
                 closest = mob
             end
@@ -317,14 +325,29 @@ RunService.RenderStepped:Connect(function()
         lastSwitch = tick()
     end
 
-    local mob = currentTarget
+    local mob
+    if TPNearest then
+    if not currentTarget or not currentTarget.Parent then
+        currentTarget = getNearestMob()
+        lastSwitch = tick()
+    end
+
+    if tick() - lastSwitch > 0.5 then -- delay kecil biar ga geter
+        currentTarget = getNearestMob()
+        lastSwitch = tick()
+    end
+
+    mob = currentTarget
+else
+    mob = currentTarget
+end
     if not mob then return end
 
     local mHRP = mob:FindFirstChild("HumanoidRootPart")
     if not mHRP then return end
 
-    if AutoTP then
-        hrp.CFrame = mHRP.CFrame * CFrame.new(0,0,-3)
+    if AutoTP or TPNearest then
+    hrp.CFrame = mHRP.CFrame * CFrame.new(0,0,-3)
     end
 
     if KillAura then
