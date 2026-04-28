@@ -119,16 +119,30 @@ CloseBtn.BackgroundTransparency = 1
 CloseBtn.TextColor3 = Color3.fromRGB(255,80,80)
 
 -- CONTENT
-local Container = Instance.new("Frame", Main)
+local Container = Instance.new("ScrollingFrame", Main)
 Container.Size = UDim2.new(1,0,1,-30)
 Container.Position = UDim2.new(0,0,0,30)
 Container.BackgroundTransparency = 1
+Container.ScrollBarThickness = 6
 
+local Padding = Instance.new("UIPadding", Container)
+Padding.PaddingLeft = UDim.new(0,10)
+Padding.PaddingRight = UDim.new(0,10)
+Padding.PaddingTop = UDim.new(0,5)
+
+local Layout = Instance.new("UIListLayout", Container)
+Layout.Padding = UDim.new(0,5)
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    Container.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y + 10)
+end)
 -- BUTTON FUNCTION
 local function createButton(text, y)
     local b = Instance.new("TextButton", Container)
     b.Size = UDim2.new(1,-20,0,35)
-    b.Position = UDim2.new(0,10,0,y)
+    b.Position = UDim2.new(0,10,0,0)
+    b.LayoutOrder = y
     b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(40,40,40)
     b.TextColor3 = Color3.new(1,1,1)
@@ -162,6 +176,7 @@ Dropdown.Size = UDim2.new(0,140,0,200)
 Dropdown.Position = UDim2.new(1,5,0,30)
 Dropdown.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Instance.new("UICorner", Dropdown)
+Dropdown.Visible = false
 
 local Scroll = Instance.new("ScrollingFrame", Dropdown)
 Scroll.Size = UDim2.new(1,0,1,0)
