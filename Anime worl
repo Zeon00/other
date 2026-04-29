@@ -235,7 +235,9 @@ task.spawn(function()
     end
 end)
 
-local gui = Instance.new("ScreenGui", game.CoreGui)
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
 gui.Name = "ProFarmTP"
 
 local main = Instance.new("Frame", gui)
