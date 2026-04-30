@@ -83,7 +83,7 @@ local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "ModernAuraUI"
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0.7, 0, 0.75, 0)
+Main.Size = UDim2.new(0.5, 0, 0.75, 0)
 Main.AnchorPoint = Vector2.new(0.5,0.5)
 Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
@@ -128,8 +128,8 @@ Container.BackgroundTransparency = 1
 Container.ScrollBarThickness = 6
 
 local Padding = Instance.new("UIPadding", Container)
-Padding.PaddingLeft = UDim.new(0,10)
-Padding.PaddingRight = UDim.new(0,10)
+Padding.PaddingLeft = UDim.new(0,5)
+Padding.PaddingRight = UDim.new(0,5)
 Padding.PaddingTop = UDim.new(0,5)
 
 local Layout = Instance.new("UIListLayout", Container)
@@ -142,8 +142,9 @@ end)
 -- BUTTON FUNCTION
 local function createButton(text, y)
     local b = Instance.new("TextButton", Container)
-    b.Size = UDim2.new(1,-10,0,28)
-    b.Position = UDim2.new(0,10,0,0)
+    b.Size = UDim2.new(0.9,0,0,28)
+    b.TextScaled = true
+    b.Position = UDim2.new(0.05,0,0,0)
     b.LayoutOrder = y
     b.Text = text
     b.BackgroundColor3 = Color3.fromRGB(40,40,40)
