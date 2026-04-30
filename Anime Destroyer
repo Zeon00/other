@@ -83,8 +83,9 @@ local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "ModernAuraUI"
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 230, 0, 430)
-Main.Position = UDim2.new(0.5, -115, 0.5, -100)
+Main.Size = UDim2.new(0.7, 0, 0.75, 0)
+Main.AnchorPoint = Vector2.new(0.5,0.5)
+Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Main.Active = true
 Main.Draggable = true
@@ -141,7 +142,7 @@ end)
 -- BUTTON FUNCTION
 local function createButton(text, y)
     local b = Instance.new("TextButton", Container)
-    b.Size = UDim2.new(1,-20,0,35)
+    b.Size = UDim2.new(1,-10,0,28)
     b.Position = UDim2.new(0,10,0,0)
     b.LayoutOrder = y
     b.Text = text
@@ -174,7 +175,7 @@ Instance.new("UICorner", Icon)
 
 -- DROPDOWN
 local Dropdown = Instance.new("Frame", Main)
-Dropdown.Size = UDim2.new(0,140,0,200)
+Dropdown.Size = UDim2.new(0.5,0,0.5,0)
 Dropdown.Position = UDim2.new(1,5,0,30)
 Dropdown.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Instance.new("UICorner", Dropdown)
