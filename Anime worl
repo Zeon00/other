@@ -157,7 +157,7 @@ task.spawn(function()
                 :WaitForChild("BridgeNet")
                 :WaitForChild("dataRemoteEvent")
                 :FireServer({
-                    {"General","Gamemodes","Join","Trial Easy", n = 4},
+                    {"General","Gamemodes","Join","Trial Medium", n = 4},
                     "\002"
                 })
             end
