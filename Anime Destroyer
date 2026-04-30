@@ -71,7 +71,9 @@ local TargetPlayerName = "Beben_0x1" -- isi nama target
 local currentTarget = nil
 local lastSwitch = 0
 local SWITCH_DELAY = 5
-
+local AutoDefense = false
+local hasTeleported = false
+local lastDefense = 0
 local SelectedRerolls = {}
 
 local RerollList = {
@@ -165,7 +167,7 @@ local RaidNBtn = createButton("Raid Normal: OFF", 325)
 local RaidHBtn = createButton("Raid Hard: OFF", 370)
 local RerollBtn = createButton("Auto Reroll: OFF", 415)
 local FollowBtn = createButton("Auto Follow: OFF", 460)
-
+local DefenseBtn = createButton("Demon Defense: OFF", 505)
 
 
 -- ICON
@@ -268,7 +270,14 @@ TPBtn.MouseButton1Click:Connect(function()
     TPBtn.Text = "Auto TP: "..(AutoTP and "ON" or "OFF")
     TPBtn.BackgroundColor3 = AutoTP and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
 end)
+DefenseBtn.MouseButton1Click:Connect(function()
+    AutoDefense = not AutoDefense
+    DefenseBtn.Text = "Demon Defense: "..(AutoDefense and "ON" or "OFF")
+    DefenseBtn.BackgroundColor3 = AutoDefense and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
 
+    -- reset biar bisa TP lagi pas diaktifin ulang
+    hasTeleported = false
+end)
 RerollBtn.MouseButton1Click:Connect(function()
     AutoReroll = not AutoReroll
     RerollBtn.Text = "Auto Reroll: "..(AutoReroll and "ON" or "OFF")
@@ -386,22 +395,53 @@ task.spawn(function()
         end
     end
 end)
+local lastBoss = 0
+local COOLDOWN = 25
+
 task.spawn(function()
     while true do
-        task.wait(2)
+        task.wait(1)
 
-        if AutoBoss1 then
+        -- ==== BOSS RUSH ====
+        if tick() - lastBoss >= COOLDOWN then
+
+            if AutoBoss1 then
+                pcall(function()
+                    BossRushRemote:InvokeServer("I")
+                end)
+                lastBoss = tick()
+
+            elseif AutoBoss2 then
+                pcall(function()
+                    BossRushRemote:InvokeServer("II")
+                end)
+                lastBoss = tick()
+            end
+
+        end
+
+        -- ==== DEMON DEFENSE (FIX DI SINI) ====
+        if AutoDefense and tick() - lastDefense >= 25 then
+            lastDefense = tick()
+            hasTeleported = false
+
             pcall(function()
-                BossRushRemote:InvokeServer("I")
+                local args = {"Hard"}
+                RS.Packages._Index["sleitnick_knit@1.5.1"].knit.Services.DemonDefenseService.RF.StartDefense:InvokeServer(unpack(args))
+            end)
+
+            task.delay(7, function()
+                if AutoDefense and not hasTeleported then
+                    local hrp = getHRP()
+                    if hrp then
+                        hrp.CFrame = CFrame.new(2129.96337890625, 10447.9052734375, -11092.1025390625)
+                        hasTeleported = true
+                    end
+                end
             end)
         end
 
-        if AutoBoss2 then
-            pcall(function()
-                BossRushRemote:InvokeServer("II")
-            end)
-        end
-
+        -- ==== MODE LAIN ====
         if AutoTrial then
             pcall(function()
                 TrialRemote:InvokeServer("Easy")
