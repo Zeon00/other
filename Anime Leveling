@@ -14,6 +14,7 @@ local AutoSaiyan, AutoEgg = false,false
 local SelectedEgg = "Star8"
 local HatchAmount = 25
 local AutoRaid = false
+local AutoMediumTower = false
 local AutoBreathing = false
 local AutoProsperity = false
 local AutoGrimoire = false
@@ -31,6 +32,15 @@ local SelectedEnemies = {}
 local AutoWandenRaid = false
 local LastWanden = 0
 local WandenDelay = 6
+local RollEasyArtifac = false
+local RollMediumArtifact = false
+local AutoMask = false
+local AutoBlessing = false
+local AutoRollRace = false
+local AutoBankai = false
+local AutoDivisions = false
+local AutoClaim = false
+local AutoRollTechnique = false
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -184,6 +194,15 @@ task.spawn(function()
         end
     end
 end)
+task.spawn(function()
+    while task.wait(1) do
+        if AutoMediumTower and not InTower and not InWisteria then
+            pcall(function()
+                Remotes:WaitForChild("JoinMediumTowerRaid"):FireServer()
+            end)
+        end
+    end
+end)
 --// GET ENEMIES
 local function GetEnemies()
     local data = State.GetData()
@@ -219,8 +238,18 @@ local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "AutoFarmMobile"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0.5,0,0.55,0)
-frame.Position = UDim2.new(0.25,0,0.2,0)
+local camera = workspace.CurrentCamera
+local screenSize = camera.ViewportSize
+
+local isMobile = screenSize.X < 800
+
+if isMobile then
+    frame.Size = UDim2.new(0.9,0,0.7,0)
+    frame.Position = UDim2.new(0.05,0,0.15,0)
+else
+    frame.Size = UDim2.new(0.5,0,0.6,0)
+    frame.Position = UDim2.new(0.25,0,0.2,0)
+end
 frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 frame.Active = true
 frame.Draggable = true
@@ -273,34 +302,50 @@ end)
 
 -- LEFT
 local left = Instance.new("Frame", frame)
-left.Size = UDim2.new(0.5,0,1,-35)
-left.Position = UDim2.new(0,0,0,35)
 left.BackgroundTransparency = 1
 
+-- RIGHT
+local right = Instance.new("Frame", frame)
+right.BackgroundTransparency = 1
+
+-- SCROLL TOGGLE (KIRI)
 local scrollToggle = Instance.new("ScrollingFrame", left)
 scrollToggle.Size = UDim2.new(1,0,1,0)
-scrollToggle.CanvasSize = UDim2.new(0,0,0,900)
+scrollToggle.CanvasSize = UDim2.new(0,0,0,0)
 scrollToggle.ScrollBarThickness = 4
 scrollToggle.BackgroundTransparency = 1
 
 local layout1 = Instance.new("UIListLayout", scrollToggle)
 layout1.Padding = UDim.new(0,6)
+layout1:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scrollToggle.CanvasSize = UDim2.new(0,0,0,layout1.AbsoluteContentSize.Y + 10)
+end)
 
--- RIGHT
-local right = Instance.new("Frame", frame)
-right.Size = UDim2.new(0.5,0,1,-35)
-right.Position = UDim2.new(0.5,0,0,35)
-right.BackgroundTransparency = 1
-
+-- SCROLL MOB (KANAN)
 local scrollMob = Instance.new("ScrollingFrame", right)
 scrollMob.Size = UDim2.new(1,0,1,0)
-scrollMob.CanvasSize = UDim2.new(0,0,0,800)
+scrollMob.CanvasSize = UDim2.new(0,0,0,0)
 scrollMob.ScrollBarThickness = 4
 scrollMob.BackgroundTransparency = 1
 
 local layout2 = Instance.new("UIListLayout", scrollMob)
 layout2.Padding = UDim.new(0,6)
+layout2:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scrollMob.CanvasSize = UDim2.new(0,0,0,layout2.AbsoluteContentSize.Y + 10)
+end)
+-- 🔥 MOBILE / PC LAYOUT
+if isMobile then
+    left.Size = UDim2.new(1,0,1,-35)
+    left.Position = UDim2.new(0,0,0,35)
 
+    right.Visible = false
+else
+    left.Size = UDim2.new(0.5,0,1,-35)
+    left.Position = UDim2.new(0,0,0,35)
+
+    right.Size = UDim2.new(0.5,0,1,-35)
+    right.Position = UDim2.new(0.5,0,0,35)
+end
 -- TOGGLE
 local function Toggle(name, callback)
     local btn = Instance.new("TextButton", scrollToggle)
@@ -632,7 +677,13 @@ task.spawn(function()
                 end
 
                 -- 🔥 AUTO SYSTEM
-                if AutoRaid then DoRaid() end
+                if AutoRaid then
+    if not _G.lastRaid then _G.lastRaid = 0 end
+    if tick() - _G.lastRaid > 3 then
+        _G.lastRaid = tick()
+        DoRaid()
+    end
+end
                 if AutoFruit then Remotes.RollFruitPower:FireServer() end
                 if AutoHaki then Remotes.HakiLeveling:FireServer() end
                 if AutoDragon then Remotes.RollDragonBallPower:FireServer() end
@@ -649,6 +700,8 @@ task.spawn(function()
                 if AutoDivisions then Remotes.RollDivisionsPower:FireServer() end
                 if AutoClaim then Remotes.ClaimDailyStreak:FireServer() end
 				if AutoRollTechnique then Remotes.RollTechniquePower:FireServer() end
+				if RollEasyArtifac then Remotes.RollEasyArtifactPower:FireServer() end
+				if RollMediumArtifact then Remotes.RollMediumArtifactPower:FireServer() end
             end
         end
     end
@@ -667,7 +720,7 @@ Toggle("FAST HIT", function(v) FastHit = v end)
 Toggle("AUTO TP", function(v) AutoTP = v end)
 Toggle("BYPASS", function(v) BypassAll = v end)
 Toggle("EGG", function(v) AutoEgg = v end)
-
+Toggle("AUTO MEDIUM TOWER", function(v) AutoMediumTower = v end)
 Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
 Toggle("AUTO GROUP", function(v) AutoGroup = v end)
@@ -688,8 +741,9 @@ DropdownMulti("AUTO POWERS", {
 	["Blessing"] = function(v) AutoBlessing = v end,
 	["RollRace"] = function(v) AutoRollRace = v end,
 	["Bankai"] = function(v) AutoBankai = v end,
-	["Blessing"] = function(v) AutoBlessing = v end,
 	["Divisions"] = function(v) AutoDivisions = v end,
 	["Claim"] = function(v) AutoClaim = v end,
 	["Roll"] = function(v) AutoRollTechnique = v end,
+	["Easy"] = function(v) RollEasyArtifac = v end,
+	["Medium"] = function(v) RollMediumArtifact = v end,
 })
