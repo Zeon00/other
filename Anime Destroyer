@@ -66,7 +66,8 @@ local AutoBoss2 = false
 local AutoTrial = false
 local AutoRaidNormal = false
 local AutoRaidHard = false
-
+local AutoFollow = false
+local TargetPlayerName = "Beben_0x1" -- isi nama target
 local currentTarget = nil
 local lastSwitch = 0
 local SWITCH_DELAY = 5
@@ -163,6 +164,9 @@ local TrialBtn = createButton("Trial Easy: OFF", 280)
 local RaidNBtn = createButton("Raid Normal: OFF", 325)
 local RaidHBtn = createButton("Raid Hard: OFF", 370)
 local RerollBtn = createButton("Auto Reroll: OFF", 415)
+local FollowBtn = createButton("Auto Follow: OFF", 460)
+
+
 
 -- ICON
 local Icon = Instance.new("TextButton", ScreenGui)
@@ -254,7 +258,11 @@ KillBtn.MouseButton1Click:Connect(function()
     KillBtn.Text = "Kill Aura: "..(KillAura and "ON" or "OFF")
     KillBtn.BackgroundColor3 = KillAura and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
 end)
-
+FollowBtn.MouseButton1Click:Connect(function()
+    AutoFollow = not AutoFollow
+    FollowBtn.Text = "Auto Follow: "..(AutoFollow and "ON" or "OFF")
+    FollowBtn.BackgroundColor3 = AutoFollow and Color3.fromRGB(50,170,50) or Color3.fromRGB(40,40,40)
+end)
 TPBtn.MouseButton1Click:Connect(function()
     AutoTP = not AutoTP
     TPBtn.Text = "Auto TP: "..(AutoTP and "ON" or "OFF")
@@ -287,6 +295,13 @@ CloseBtn.MouseButton1Click:Connect(function()
 end)
 
 -- FUNCTION
+local function getTargetPlayer()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Name:lower():find(TargetPlayerName:lower()) then
+            return plr
+        end
+    end
+end
 local function getHRP()
     local char = player.Character
     return char and char:FindFirstChild("HumanoidRootPart")
@@ -317,6 +332,19 @@ RunService.RenderStepped:Connect(function()
     local hrp = getHRP()
     if not hrp then return end
 
+    -- AUTO FOLLOW PRIORITAS
+    if AutoFollow then
+        local target = getTargetPlayer()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local targetHRP = target.Character.HumanoidRootPart
+            
+            -- smooth biar ga geter
+            hrp.CFrame = hrp.CFrame:Lerp(targetHRP.CFrame * CFrame.new(0,0,-3), 0.2)
+        end
+        return -- stop logic lain biar ga tabrakan
+    end
+
+    -- ==== LOGIC LAMA ====
     if not currentTarget or not currentTarget.Parent then
         currentTarget = getNearestMob()
         lastSwitch = tick()
@@ -327,29 +355,14 @@ RunService.RenderStepped:Connect(function()
         lastSwitch = tick()
     end
 
-    local mob
-    if TPNearest then
-    if not currentTarget or not currentTarget.Parent then
-        currentTarget = getNearestMob()
-        lastSwitch = tick()
-    end
-
-    if tick() - lastSwitch > 0.5 then -- delay kecil biar ga geter
-        currentTarget = getNearestMob()
-        lastSwitch = tick()
-    end
-
-    mob = currentTarget
-else
-    mob = currentTarget
-end
+    local mob = currentTarget
     if not mob then return end
 
     local mHRP = mob:FindFirstChild("HumanoidRootPart")
     if not mHRP then return end
 
     if AutoTP or TPNearest then
-    hrp.CFrame = mHRP.CFrame * CFrame.new(0,0,-3)
+        hrp.CFrame = mHRP.CFrame * CFrame.new(0,0,-3)
     end
 
     if KillAura then
