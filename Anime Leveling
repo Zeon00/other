@@ -11,8 +11,8 @@ local State = require(RS.Client.State)
 local FastHit, AutoTP, BypassAll = false,false,false
 local AutoFruit, AutoHaki, AutoDragon = false,false,false
 local AutoSaiyan, AutoEgg = false,false
-local SelectedEgg = "Star8"
-local HatchAmount = 25
+local SelectedEgg = "Star9"
+local HatchAmount = 30
 local AutoRaid = false
 local AutoMediumTower = false
 local AutoBreathing = false
@@ -41,7 +41,7 @@ local AutoBankai = false
 local AutoDivisions = false
 local AutoClaim = false
 local AutoRollTechnique = false
-local AutoWorld8 = false
+local AutoWorld9 = false
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -206,7 +206,7 @@ task.spawn(function()
 end)
 task.spawn(function()
     local CheckPos = Vector3.new(-104.79999542236328, 156.26548767089844, 2233.800048828125)
-    local TPPos = Vector3.new(234.68699645996094, 322.89239501953125, 24535.9453125)
+    local TPPos = Vector3.new(-369.005859375, 130.0355987548828, 28065.107421875)
 
     local Radius = 10
     local debounce = false
@@ -214,7 +214,7 @@ task.spawn(function()
     local lastTrigger = 0
 
     while task.wait(0.5) do
-        if AutoWorld8 then
+        if AutoWorld9 then
             pcall(function()
                 local char = player.Character
                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -226,7 +226,7 @@ task.spawn(function()
                         debounce = true
                         lastTrigger = tick()
 
-                        Remotes:WaitForChild("Teleport"):FireServer("World8")
+                        Remotes:WaitForChild("Teleport"):FireServer("World9")
 
                         task.wait(2)
 
