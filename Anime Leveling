@@ -41,6 +41,7 @@ local AutoBankai = false
 local AutoDivisions = false
 local AutoClaim = false
 local AutoRollTechnique = false
+local AutoWorld8 = false
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -199,6 +200,45 @@ task.spawn(function()
         if AutoMediumTower and not InTower and not InWisteria then
             pcall(function()
                 Remotes:WaitForChild("JoinMediumTowerRaid"):FireServer()
+            end)
+        end
+    end
+end)
+task.spawn(function()
+    local CheckPos = Vector3.new(-104.79999542236328, 156.26548767089844, 2233.800048828125)
+    local TPPos = Vector3.new(234.68699645996094, 322.89239501953125, 24535.9453125)
+
+    local Radius = 10
+    local debounce = false
+    local cooldown = 5
+    local lastTrigger = 0
+
+    while task.wait(0.5) do
+        if AutoWorld8 then
+            pcall(function()
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+                if hrp and not debounce then
+                    local dist = (hrp.Position - CheckPos).Magnitude
+
+                    if dist <= Radius and tick() - lastTrigger > cooldown then
+                        debounce = true
+                        lastTrigger = tick()
+
+                        Remotes:WaitForChild("Teleport"):FireServer("World8")
+
+                        task.wait(2)
+
+                        local newChar = player.Character or player.CharacterAdded:Wait()
+                        local newHrp = newChar:WaitForChild("HumanoidRootPart")
+
+                        newHrp.CFrame = CFrame.new(TPPos)
+
+                        task.wait(2)
+                        debounce = false
+                    end
+                end
             end)
         end
     end
@@ -726,6 +766,7 @@ Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
 Toggle("AUTO GROUP", function(v) AutoGroup = v end)
 Toggle("WISTERIA RAID", function(v) AutoWisteria = v end)
 Toggle("WANDEN RAID", function(v) AutoWandenRaid = v end)
+Toggle("AUTO WORLD8 TP", function(v) AutoWorld8 = v end)
 
 DropdownMulti("AUTO POWERS", {
 	["Fruit"] = function(v) AutoFruit = v end,
