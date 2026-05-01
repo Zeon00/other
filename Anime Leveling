@@ -34,6 +34,7 @@ local LastWanden = 0
 local WandenDelay = 6
 local RollEasyArtifac = false
 local RollMediumArtifact = false
+local RollHunterPower = false
 local AutoMask = false
 local AutoBlessing = false
 local AutoRollRace = false
@@ -742,6 +743,7 @@ end
 				if AutoRollTechnique then Remotes.RollTechniquePower:FireServer() end
 				if RollEasyArtifac then Remotes.RollEasyArtifactPower:FireServer() end
 				if RollMediumArtifact then Remotes.RollMediumArtifactPower:FireServer() end
+				if RollHunterPower then Remotes.RollHunterPower:FireServer() end
             end
         end
     end
@@ -787,4 +789,5 @@ DropdownMulti("AUTO POWERS", {
 	["Roll"] = function(v) AutoRollTechnique = v end,
 	["Easy"] = function(v) RollEasyArtifac = v end,
 	["Medium"] = function(v) RollMediumArtifact = v end,
+	["Hunter"] = function(v) RollHunterPower = v end,
 })
