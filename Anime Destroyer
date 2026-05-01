@@ -98,7 +98,7 @@ local Header = Instance.new("Frame", Main)
 Header.Size = UDim2.new(1,0,0,30)
 Header.BackgroundColor3 = Color3.fromRGB(30,30,30)
 Instance.new("UICorner", Header)
-
+Header.Active = true
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1,-60,1,0)
 Title.Position = UDim2.new(0,10,0,0)
@@ -110,24 +110,44 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 local UIS = game:GetService("UserInputService")
 
 local dragging = false
-local dragInput, dragStart, startPos
+local dragStart
+local startPos
 
-local function update(input)
-    local delta = input.Position - dragStart
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
 
-    local newX = startPos.X.Offset + delta.X
-    local newY = startPos.Y.Offset + delta.Y
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
 
-    local screenSize = workspace.CurrentCamera.ViewportSize
+UIS.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement 
+    or input.UserInputType == Enum.UserInputType.Touch) then
 
-    local frameSize = Main.AbsoluteSize
+        local delta = input.Position - dragStart
 
-    -- CLAMP BIAR GA KELUAR LAYAR
-    newX = math.clamp(newX, 0, screenSize.X - frameSize.X)
-    newY = math.clamp(newY, 0, screenSize.Y - frameSize.Y)
+        local newX = startPos.X.Offset + delta.X
+        local newY = startPos.Y.Offset + delta.Y
 
-    Main.Position = UDim2.new(0, newX, 0, newY)
-end
+        local screen = workspace.CurrentCamera.ViewportSize
+        local size = Main.AbsoluteSize
+
+        -- clamp biar ga keluar layar
+        newX = math.clamp(newX, 0, screen.X - size.X)
+        newY = math.clamp(newY, 0, screen.Y - size.Y)
+
+        Main.Position = UDim2.new(0, newX, 0, newY)
+    end
+end)
 
 Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
