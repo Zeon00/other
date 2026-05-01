@@ -91,7 +91,6 @@ Main.AnchorPoint = Vector2.new(0.5,0.5)
 Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Main.Active = true
-Main.Draggable = true
 Instance.new("UICorner", Main)
 
 -- HEADER
@@ -108,6 +107,53 @@ Title.TextColor3 = Color3.new(1,1,1)
 Title.BackgroundTransparency = 1
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+local UIS = game:GetService("UserInputService")
+
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+
+    local newX = startPos.X.Offset + delta.X
+    local newY = startPos.Y.Offset + delta.Y
+
+    local screenSize = workspace.CurrentCamera.ViewportSize
+
+    local frameSize = Main.AbsoluteSize
+
+    -- CLAMP BIAR GA KELUAR LAYAR
+    newX = math.clamp(newX, 0, screenSize.X - frameSize.X)
+    newY = math.clamp(newY, 0, screenSize.Y - frameSize.Y)
+
+    Main.Position = UDim2.new(0, newX, 0, newY)
+end
+
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+Header.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
 -- BUTTON HEADER
 local MinBtn = Instance.new("TextButton", Header)
 MinBtn.Size = UDim2.new(0,25,1,0)
@@ -420,26 +466,42 @@ task.spawn(function()
 
         end
 
-        -- ==== DEMON DEFENSE (FIX DI SINI) ====
-        if AutoDefense and tick() - lastDefense >= 25 then
-            lastDefense = tick()
-            hasTeleported = false
+      -- ==== DEMON DEFENSE (ONE TP KE MAIN) ====
+if AutoDefense and tick() - lastDefense >= 25 then
+    lastDefense = tick()
+    hasTeleported = false
 
-            pcall(function()
-                local args = {"Hard"}
-                RS.Packages._Index["sleitnick_knit@1.5.1"].knit.Services.DemonDefenseService.RF.StartDefense:InvokeServer(unpack(args))
-            end)
+    -- start defense
+    pcall(function()
+        RS.Packages._Index["sleitnick_knit@1.5.1"].knit
+            .Services.DemonDefenseService.RF.StartDefense:InvokeServer("Hard")
+    end)
 
-            task.delay(7, function()
-                if AutoDefense and not hasTeleported then
-                    local hrp = getHRP()
-                    if hrp then
-                        hrp.CFrame = CFrame.new(2129.96337890625, 10447.9052734375, -11092.1025390625)
+    -- tunggu spawn + map siap, lalu TP SEKALI
+    task.spawn(function()
+        for i = 1, 30 do
+            if not AutoDefense then return end
+
+            local hrp = getHRP()
+            local maps = workspace:FindFirstChild("Maps")
+
+            if hrp and maps then
+                local demonMap = maps:FindFirstChild("DemonDefense_1")
+                if demonMap then
+                    local main = demonMap:FindFirstChild("Main")
+                    if main then
+                        task.wait(0.5) -- kasih waktu dikit biar spawn stabil
+                        hrp.CFrame = main.CFrame + Vector3.new(0,3,0)
                         hasTeleported = true
+                        break -- ✅ cuma sekali TP
                     end
                 end
-            end)
+            end
+
+            task.wait(0.3)
         end
+    end)
+end
 
         -- ==== MODE LAIN ====
         if AutoTrial then
