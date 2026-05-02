@@ -257,7 +257,9 @@ Dropdown.Visible = false
 
 local Scroll = Instance.new("ScrollingFrame", Dropdown)
 Scroll.Size = UDim2.new(1,0,1,0)
-Scroll.CanvasSize = UDim2.new(0,0,0,300)
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    Scroll.CanvasSize = UDim2.new(0,0,0,UIList.AbsoluteContentSize.Y + 10)
+end)
 Scroll.BackgroundTransparency = 1
 Scroll.ScrollBarThickness = 4
 
