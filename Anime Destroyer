@@ -250,7 +250,7 @@ Instance.new("UICorner", Icon)
 -- DROPDOWN
 local Dropdown = Instance.new("Frame", Main)
 Dropdown.Size = UDim2.new(0.45,0,0.7,0)
-Dropdown.Position = UDim2.new(0.55,0,0,30)
+Dropdown.Position = UDim2.new(1,5,0,30)
 Dropdown.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Dropdown.Visible = false
 Dropdown.ZIndex = 10
