@@ -42,7 +42,7 @@ local AutoBankai = false
 local AutoDivisions = false
 local AutoClaim = false
 local AutoRollTechnique = false
-local AutoWorld9 = false
+local AutoWorld8 = false
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -206,7 +206,7 @@ task.spawn(function()
     end
 end)
 task.spawn(function()
-    local CheckPos = Vector3.new(-104.79999542236328, 156.26548767089844, 2233.800048828125)
+    local CheckPos = Vector3.new(-104.79999542236328, 147.20468139648438, 2233.800048828125)
     local TPPos = Vector3.new(-369.005859375, 130.0355987548828, 28065.107421875)
 
     local Radius = 10
@@ -215,7 +215,7 @@ task.spawn(function()
     local lastTrigger = 0
 
     while task.wait(0.5) do
-        if AutoWorld9 then
+        if AutoWorld8 then
             pcall(function()
                 local char = player.Character
                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
