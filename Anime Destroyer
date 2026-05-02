@@ -249,34 +249,51 @@ Instance.new("UICorner", Icon)
 
 -- DROPDOWN
 local Dropdown = Instance.new("Frame", Main)
-Dropdown.Size = UDim2.new(0.45,0,0.8,0)
-Dropdown.Position = UDim2.new(1,5,0,30)
+Dropdown.Size = UDim2.new(0.45,0,0.7,0)
+Dropdown.Position = UDim2.new(0.55,0,0,30)
 Dropdown.BackgroundColor3 = Color3.fromRGB(25,25,25)
-Instance.new("UICorner", Dropdown)
 Dropdown.Visible = false
+Dropdown.ZIndex = 10
+Instance.new("UICorner", Dropdown)
 
 local Scroll = Instance.new("ScrollingFrame", Dropdown)
 Scroll.Size = UDim2.new(1,0,1,0)
-UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    Scroll.CanvasSize = UDim2.new(0,0,0,UIList.AbsoluteContentSize.Y + 10)
-end)
 Scroll.BackgroundTransparency = 1
-Scroll.ScrollBarThickness = 4
+Scroll.ScrollBarThickness = 6
+Scroll.ScrollingEnabled = true
+Scroll.ClipsDescendants = true
+Scroll.ZIndex = 10
 
 local UIList = Instance.new("UIListLayout", Scroll)
 UIList.Padding = UDim.new(0,5)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
 
+-- AUTO CANVAS (WAJIB BIAR GA KEPOONG)
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    Scroll.CanvasSize = UDim2.new(0,0,0,UIList.AbsoluteContentSize.Y + 10)
+end)
+
+-- PADDING DALAM
+local Pad = Instance.new("UIPadding", Scroll)
+Pad.PaddingLeft = UDim.new(0,5)
+Pad.PaddingRight = UDim.new(0,5)
+Pad.PaddingTop = UDim.new(0,5)
+
+-- ISI REROLL
 for _, name in ipairs(RerollList) do
     local btn = Instance.new("TextButton", Scroll)
-    btn.Size = UDim2.new(1,-10,0,25)
+    btn.Size = UDim2.new(1,0,0,28)
     btn.Text = name
     btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
     btn.TextColor3 = Color3.new(1,1,1)
+    btn.ZIndex = 11
+    Instance.new("UICorner", btn)
 
     local selected = false
 
     btn.MouseButton1Click:Connect(function()
         selected = not selected
+
         if selected then
             SelectedRerolls[name] = true
             btn.BackgroundColor3 = Color3.fromRGB(50,170,50)
