@@ -78,7 +78,8 @@ local SelectedRerolls = {}
 
 local RerollList = {
     "Dragon","Saiyan","Chakra","Jinchuriki",
-    "Haki","Devil Fruit","Voltstanding","Reiatsu"
+    "Haki","Devil Fruit","Voltstanding","Reiatsu",
+    "Breathing","Demon Art","Curse","Cursed Technique"
 }
 
 --// GUI
@@ -86,7 +87,7 @@ local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "ModernAuraUI"
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0.5, 0, 0.75, 0)
+Main.Size = UDim2.new(0.3, 0, 0.7, 0)
 Main.AnchorPoint = Vector2.new(0.5,0.5)
 Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
