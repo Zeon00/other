@@ -1,0 +1,179 @@
+--// DESTROY GUI LAMA
+pcall(function()
+    game.CoreGui.ModernMonsterFarm:Destroy()
+end)
+
+--// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+
+local Remote = RS:WaitForChild("CommonLibrary")
+    :WaitForChild("Tool")
+    :WaitForChild("RemoteManager")
+    :WaitForChild("Funcs")
+    :WaitForChild("DataPullFunc")
+
+--// STATE
+local AutoAttack = false
+local AutoTP = false
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "ModernMonsterFarm"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0,240,0,160)
+Frame.Position = UDim2.new(0.4,0,0.3,0)
+Frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Frame.Active = true
+Frame.Draggable = true
+
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
+
+-- Title
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1,0,0,35)
+Title.Text = "⚡ Monster Farm"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+
+-- Attack Toggle
+local AttackBtn = Instance.new("TextButton", Frame)
+AttackBtn.Size = UDim2.new(0.85,0,0,40)
+AttackBtn.Position = UDim2.new(0.075,0,0.3,0)
+AttackBtn.Text = "Attack : OFF"
+AttackBtn.BackgroundColor3 = Color3.fromRGB(150,50,50)
+AttackBtn.TextColor3 = Color3.new(1,1,1)
+AttackBtn.Font = Enum.Font.Gotham
+AttackBtn.TextSize = 14
+Instance.new("UICorner", AttackBtn).CornerRadius = UDim.new(0,8)
+
+-- TP Toggle
+local TPBtn = Instance.new("TextButton", Frame)
+TPBtn.Size = UDim2.new(0.85,0,0,40)
+TPBtn.Position = UDim2.new(0.075,0,0.6,0)
+TPBtn.Text = "Teleport : OFF"
+TPBtn.BackgroundColor3 = Color3.fromRGB(50,50,150)
+TPBtn.TextColor3 = Color3.new(1,1,1)
+TPBtn.Font = Enum.Font.Gotham
+TPBtn.TextSize = 14
+Instance.new("UICorner", TPBtn).CornerRadius = UDim.new(0,8)
+
+-- Close
+local Close = Instance.new("TextButton", Frame)
+Close.Size = UDim2.new(0,30,0,30)
+Close.Position = UDim2.new(1,-35,0,5)
+Close.Text = "X"
+Close.BackgroundColor3 = Color3.fromRGB(120,40,40)
+Close.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Close)
+
+-- Minimize
+local Min = Instance.new("TextButton", Frame)
+Min.Size = UDim2.new(0,30,0,30)
+Min.Position = UDim2.new(1,-70,0,5)
+Min.Text = "-"
+Min.BackgroundColor3 = Color3.fromRGB(70,70,70)
+Min.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Min)
+
+-- Icon
+local Icon = Instance.new("TextButton", ScreenGui)
+Icon.Size = UDim2.new(0,50,0,50)
+Icon.Position = UDim2.new(0,10,0.5,0)
+Icon.Text = "⚡"
+Icon.Visible = false
+Icon.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Icon.TextColor3 = Color3.new(1,1,1)
+Icon.Font = Enum.Font.GothamBold
+Instance.new("UICorner", Icon).CornerRadius = UDim.new(1,0)
+
+--// GET SERVER MONSTER
+local function getServerMonster()
+    for _, mob in pairs(workspace:WaitForChild("Monsters"):GetChildren()) do
+        local id = tonumber(mob.Name:match("Monster_(%d+)"))
+        if id then
+            return mob, id
+        end
+    end
+end
+
+--// GET CLIENT MONSTER
+local function getClientMonster(id)
+    local mob = workspace:WaitForChild("ClientMonsters"):FindFirstChild("Monster_"..id)
+    if mob and mob:FindFirstChild("Shower") and mob.Shower:FindFirstChild("HumanoidRootPart") then
+        return mob.Shower.HumanoidRootPart
+    end
+end
+
+--// ATTACK LOOP
+task.spawn(function()
+    while true do
+        if AutoAttack then
+            local _, id = getServerMonster()
+            if id then
+                Remote:InvokeServer("AttackMonsterChannel", {id})
+            end
+        end
+        task.wait(0.05)
+    end
+end)
+
+--// TP LOOP (SMOOTH NO SHAKE)
+task.spawn(function()
+    while true do
+        if AutoTP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local _, id = getServerMonster()
+            if id then
+                local hrp = getClientMonster(id)
+                if hrp then
+                    local myHRP = player.Character.HumanoidRootPart
+                    local targetPos = hrp.Position + Vector3.new(0,0,3)
+
+                    local dist = (myHRP.Position - targetPos).Magnitude
+                    
+                    if dist > 6 then
+                        local tween = TweenService:Create(
+                            myHRP,
+                            TweenInfo.new(0.15, Enum.EasingStyle.Linear),
+                            {CFrame = CFrame.new(targetPos)}
+                        )
+                        tween:Play()
+                    end
+                end
+            end
+        end
+        task.wait(0.2)
+    end
+end)
+
+--// BUTTONS
+AttackBtn.MouseButton1Click:Connect(function()
+    AutoAttack = not AutoAttack
+    AttackBtn.Text = "Attack : "..(AutoAttack and "ON" or "OFF")
+    AttackBtn.BackgroundColor3 = AutoAttack and Color3.fromRGB(50,170,80) or Color3.fromRGB(150,50,50)
+end)
+
+TPBtn.MouseButton1Click:Connect(function()
+    AutoTP = not AutoTP
+    TPBtn.Text = "Teleport : "..(AutoTP and "ON" or "OFF")
+    TPBtn.BackgroundColor3 = AutoTP and Color3.fromRGB(50,120,200) or Color3.fromRGB(50,50,150)
+end)
+
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+Min.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    Icon.Visible = true
+end)
+
+Icon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    Icon.Visible = false
+end)
