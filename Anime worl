@@ -64,7 +64,7 @@ local function GetNearest()
     local myhrp = GetHRP()
     if not myhrp then return end
 
-    local closest, dist = nil, 999
+    local closest, dist = nil, 9999
 
     for _, v in pairs(mobsCache) do
         local d = (myhrp.Position - v.Position).Magnitude
