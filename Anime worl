@@ -14,6 +14,7 @@ local Omni = require(RS:WaitForChild("Omni"))
 _G.AutoAttack = false
 _G.AutoTP = false
 _G.AutoJoin = false
+_G.AutoJoinMedium = false
 _G.AutoTPNearest = false
 _G.AutoDragon = false
 _G.AutoTimeReward = false
@@ -157,7 +158,7 @@ task.spawn(function()
                 :WaitForChild("BridgeNet")
                 :WaitForChild("dataRemoteEvent")
                 :FireServer({
-                    {"General","Gamemodes","Join","Trial Medium", n = 4},
+                    {"General","Gamemodes","Join","Trial Easy", n = 4},
                     "\002"
                 })
             end
@@ -165,6 +166,24 @@ task.spawn(function()
     end
 end)
 
+--------------------------------------------------
+-- AUTO JOIN MEDIUM
+--------------------------------------------------
+task.spawn(function()
+    while task.wait(2) do
+        if _G.AutoJoinMedium then
+            if Omni.Data.Gamemode ~= "Trial Medium" then
+                game:GetService("ReplicatedStorage")
+                :WaitForChild("BridgeNet")
+                :WaitForChild("dataRemoteEvent")
+                :FireServer({
+                    {"General","Gamemodes","Join","Trial Medium", n = 4},
+                    "\002"
+                })
+            end
+        end
+    end
+end)
 --------------------------------------------------
 -- AUTO DRAGON
 --------------------------------------------------
@@ -241,7 +260,7 @@ gui.ResetOnSpawn = false
 gui.Name = "ProFarmTP"
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 260, 0, 380)
+main.Size = UDim2.new(0, 260, 0, 430)
 main.Position = UDim2.new(0.4,0,0.3,0)
 main.BackgroundColor3 = Color3.fromRGB(22,22,22)
 main.Active = true
@@ -331,9 +350,10 @@ MakeToggle("Auto Attack", 50, "AutoAttack")
 MakeToggle("Auto TP", 95, "AutoTP")
 MakeToggle("Auto Join", 140, "AutoJoin")
 MakeToggle("TP Nearest", 185, "AutoTPNearest")
-MakeToggle("Auto Dragon", 230, "AutoDragon")
+MakeToggle("Auto Join Medium", 230, "AutoJoinMedium")
 MakeToggle("Auto Reward", 275, "AutoTimeReward")
 local tempest = MakeToggle("Auto Tempest", 320, "AutoTempest")
+MakeToggle("Auto Dragon", 365, "AutoDragon")
 --------------------------------------------------
 -- CONTROL BUTTONS
 --------------------------------------------------
