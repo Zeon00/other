@@ -43,6 +43,9 @@ local AutoDivisions = false
 local AutoClaim = false
 local AutoRollTechnique = false
 local AutoWorld8 = false
+local AutoGateRaid = false
+local LastGate = 0
+local GateDelay = 5
 
 --// AUTO JOIN TOWER
 task.spawn(function()
@@ -238,6 +241,20 @@ task.spawn(function()
 
                         task.wait(2)
                         debounce = false
+                    end
+                end
+            end)
+        end
+    end
+end)
+task.spawn(function()
+    while task.wait(1) do
+        if AutoGateRaid then
+            pcall(function()
+                if not InTower and not InWisteria then
+                    if tick() - LastGate >= GateDelay then
+                        LastGate = tick()
+                        Remotes:WaitForChild("OpenGateRaid"):FireServer()
                     end
                 end
             end)
@@ -769,6 +786,7 @@ Toggle("AUTO GROUP", function(v) AutoGroup = v end)
 Toggle("WISTERIA RAID", function(v) AutoWisteria = v end)
 Toggle("WANDEN RAID", function(v) AutoWandenRaid = v end)
 Toggle("AUTO WORLD8 TP", function(v) AutoWorld8 = v end)
+Toggle("GATE RAID", function(v) AutoGateRaid = v end)
 
 DropdownMulti("AUTO POWERS", {
 	["Fruit"] = function(v) AutoFruit = v end,
