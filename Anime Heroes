@@ -1,0 +1,289 @@
+--// DESTROY GUI LAMA
+pcall(function()
+    game.CoreGui.FighterHub:Destroy()
+end)
+
+--// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+--// REMOTE
+local Bridge = RS:WaitForChild("Remotes"):WaitForChild("Bridge")
+
+--// STATES
+_G.FighterAura = false
+_G.AutoClick = false
+
+--// GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "FighterHub"
+gui.Parent = game.CoreGui
+gui.ResetOnSpawn = false
+
+-- MAIN
+local main = Instance.new("Frame")
+main.Parent = gui
+main.Size = UDim2.new(0,280,0,190)
+main.Position = UDim2.new(0.5,-140,0.5,-95)
+main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+
+Instance.new("UICorner",main).CornerRadius = UDim.new(0,18)
+
+local stroke = Instance.new("UIStroke",main)
+stroke.Color = Color3.fromRGB(0,255,120)
+stroke.Thickness = 2
+
+-- TITLE
+local title = Instance.new("TextLabel")
+title.Parent = main
+title.Size = UDim2.new(1,0,0,40)
+title.BackgroundTransparency = 1
+title.Text = "Fighter Hub"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+title.TextColor3 = Color3.new(1,1,1)
+
+-- AURA BUTTON
+local aura = Instance.new("TextButton")
+aura.Parent = main
+aura.Size = UDim2.new(0,240,0,50)
+aura.Position = UDim2.new(0.5,-120,0,55)
+aura.BackgroundColor3 = Color3.fromRGB(40,40,40)
+aura.Text = "Aura : OFF"
+aura.Font = Enum.Font.GothamBold
+aura.TextSize = 20
+aura.TextColor3 = Color3.new(1,1,1)
+aura.BorderSizePixel = 0
+
+Instance.new("UICorner",aura).CornerRadius = UDim.new(0,14)
+
+-- CLICK BUTTON
+local click = Instance.new("TextButton")
+click.Parent = main
+click.Size = UDim2.new(0,240,0,50)
+click.Position = UDim2.new(0.5,-120,0,115)
+click.BackgroundColor3 = Color3.fromRGB(40,40,40)
+click.Text = "Auto Click : OFF"
+click.Font = Enum.Font.GothamBold
+click.TextSize = 20
+click.TextColor3 = Color3.new(1,1,1)
+click.BorderSizePixel = 0
+
+Instance.new("UICorner",click).CornerRadius = UDim.new(0,14)
+
+-- CLOSE
+local close = Instance.new("TextButton")
+close.Parent = main
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-35,0,5)
+close.BackgroundColor3 = Color3.fromRGB(255,70,70)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 18
+close.TextColor3 = Color3.new(1,1,1)
+close.BorderSizePixel = 0
+
+Instance.new("UICorner",close).CornerRadius = UDim.new(1,0)
+
+-- MINIMIZE
+local mini = Instance.new("TextButton")
+mini.Parent = main
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-70,0,5)
+mini.BackgroundColor3 = Color3.fromRGB(255,200,0)
+mini.Text = "-"
+mini.Font = Enum.Font.GothamBold
+mini.TextSize = 20
+mini.TextColor3 = Color3.new(1,1,1)
+mini.BorderSizePixel = 0
+
+Instance.new("UICorner",mini).CornerRadius = UDim.new(1,0)
+
+-- ICON
+local icon = Instance.new("TextButton")
+icon.Parent = gui
+icon.Size = UDim2.new(0,60,0,60)
+icon.Position = UDim2.new(0,20,0.5,-30)
+icon.BackgroundColor3 = Color3.fromRGB(20,20,20)
+icon.Visible = false
+icon.Text = "⚔"
+icon.Font = Enum.Font.GothamBold
+icon.TextSize = 28
+icon.TextColor3 = Color3.new(1,1,1)
+icon.BorderSizePixel = 0
+icon.Active = true
+icon.Draggable = true
+
+Instance.new("UICorner",icon).CornerRadius = UDim.new(1,0)
+
+local iconStroke = Instance.new("UIStroke",icon)
+iconStroke.Color = Color3.fromRGB(0,255,120)
+iconStroke.Thickness = 2
+
+-- FUNCTIONS
+
+local function GetFighters()
+    local folder = workspace.Server.Fighters:FindFirstChild(tostring(player.UserId))
+    if not folder then return {} end
+
+    local t = {}
+
+    for _,v in pairs(folder:GetChildren()) do
+        if v:FindFirstChild("Target") then
+            table.insert(t,v)
+        end
+    end
+
+    return t
+end
+
+local function GetMobs()
+    local t = {}
+
+    local char = player.Character
+    if not char then return t end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return t end
+
+    for _,mob in pairs(workspace.Server.Enemies:GetDescendants()) do
+        if mob:IsA("BasePart")
+        and mob:GetAttribute("ID")
+        and not mob:GetAttribute("Died") then
+
+            if (mob.Position - hrp.Position).Magnitude <= 70 then
+                table.insert(t,mob)
+            end
+        end
+    end
+
+    return t
+end
+
+-- AURA LOOP
+task.spawn(function()
+    while task.wait(0.03) do
+
+        if _G.FighterAura then
+
+            local fighters = GetFighters()
+            local mobs = GetMobs()
+
+            if #fighters > 0 and #mobs > 0 then
+
+                for i,fighter in pairs(fighters) do
+
+                    local mob = mobs[(i % #mobs) + 1]
+
+                    if mob then
+
+                        Bridge:FireServer(
+                            "Fighters",
+                            "Attack",
+                            "Attack",
+                            mob:GetAttribute("Class"),
+                            mob,
+                            fighter.Name
+                        )
+
+                        Bridge:FireServer(
+                            "Fighters",
+                            "Attack",
+                            "Do_Damage",
+                            fighter.Name
+                        )
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- AUTO CLICK LOOP
+task.spawn(function()
+    while task.wait() do
+
+        if _G.AutoClick then
+
+            Bridge:FireServer(
+                "Fighters",
+                "Attack",
+                "Click"
+            )
+        end
+    end
+end)
+
+-- TOGGLE AURA
+aura.MouseButton1Click:Connect(function()
+
+    _G.FighterAura = not _G.FighterAura
+
+    if _G.FighterAura then
+
+        aura.Text = "Aura : ON"
+
+        TweenService:Create(aura,TweenInfo.new(0.2),{
+            BackgroundColor3 = Color3.fromRGB(0,255,120)
+        }):Play()
+
+    else
+
+        aura.Text = "Aura : OFF"
+
+        TweenService:Create(aura,TweenInfo.new(0.2),{
+            BackgroundColor3 = Color3.fromRGB(40,40,40)
+        }):Play()
+    end
+end)
+
+-- TOGGLE CLICK
+click.MouseButton1Click:Connect(function()
+
+    _G.AutoClick = not _G.AutoClick
+
+    if _G.AutoClick then
+
+        click.Text = "Auto Click : ON"
+
+        TweenService:Create(click,TweenInfo.new(0.2),{
+            BackgroundColor3 = Color3.fromRGB(0,170,255)
+        }):Play()
+
+    else
+
+        click.Text = "Auto Click : OFF"
+
+        TweenService:Create(click,TweenInfo.new(0.2),{
+            BackgroundColor3 = Color3.fromRGB(40,40,40)
+        }):Play()
+    end
+end)
+
+-- MINIMIZE
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+    icon.Visible = true
+end)
+
+-- RESTORE
+icon.MouseButton1Click:Connect(function()
+    main.Visible = true
+    icon.Visible = false
+end)
+
+-- DESTROY
+close.MouseButton1Click:Connect(function()
+
+    _G.FighterAura = false
+    _G.AutoClick = false
+
+    gui:Destroy()
+end)
