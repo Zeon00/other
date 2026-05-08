@@ -7,7 +7,6 @@ end)
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
@@ -17,6 +16,7 @@ local Bridge = RS:WaitForChild("Remotes"):WaitForChild("Bridge")
 --// STATES
 _G.FighterAura = false
 _G.AutoClick = false
+_G.AutoClaim = false
 
 --// GUI
 local gui = Instance.new("ScreenGui")
@@ -27,8 +27,8 @@ gui.ResetOnSpawn = false
 -- MAIN
 local main = Instance.new("Frame")
 main.Parent = gui
-main.Size = UDim2.new(0,280,0,190)
-main.Position = UDim2.new(0.5,-140,0.5,-95)
+main.Size = UDim2.new(0,280,0,250)
+main.Position = UDim2.new(0.5,-140,0.5,-125)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.BorderSizePixel = 0
 main.Active = true
@@ -53,12 +53,12 @@ title.TextColor3 = Color3.new(1,1,1)
 -- AURA BUTTON
 local aura = Instance.new("TextButton")
 aura.Parent = main
-aura.Size = UDim2.new(0,240,0,50)
+aura.Size = UDim2.new(0,240,0,45)
 aura.Position = UDim2.new(0.5,-120,0,55)
 aura.BackgroundColor3 = Color3.fromRGB(40,40,40)
 aura.Text = "Aura : OFF"
 aura.Font = Enum.Font.GothamBold
-aura.TextSize = 20
+aura.TextSize = 18
 aura.TextColor3 = Color3.new(1,1,1)
 aura.BorderSizePixel = 0
 
@@ -67,16 +67,30 @@ Instance.new("UICorner",aura).CornerRadius = UDim.new(0,14)
 -- CLICK BUTTON
 local click = Instance.new("TextButton")
 click.Parent = main
-click.Size = UDim2.new(0,240,0,50)
-click.Position = UDim2.new(0.5,-120,0,115)
+click.Size = UDim2.new(0,240,0,45)
+click.Position = UDim2.new(0.5,-120,0,110)
 click.BackgroundColor3 = Color3.fromRGB(40,40,40)
 click.Text = "Auto Click : OFF"
 click.Font = Enum.Font.GothamBold
-click.TextSize = 20
+click.TextSize = 18
 click.TextColor3 = Color3.new(1,1,1)
 click.BorderSizePixel = 0
 
 Instance.new("UICorner",click).CornerRadius = UDim.new(0,14)
+
+-- CLAIM BUTTON
+local claim = Instance.new("TextButton")
+claim.Parent = main
+claim.Size = UDim2.new(0,240,0,45)
+claim.Position = UDim2.new(0.5,-120,0,165)
+claim.BackgroundColor3 = Color3.fromRGB(40,40,40)
+claim.Text = "Auto Claim : OFF"
+claim.Font = Enum.Font.GothamBold
+claim.TextSize = 18
+claim.TextColor3 = Color3.new(1,1,1)
+claim.BorderSizePixel = 0
+
+Instance.new("UICorner",claim).CornerRadius = UDim.new(0,14)
 
 -- CLOSE
 local close = Instance.new("TextButton")
@@ -130,8 +144,11 @@ iconStroke.Thickness = 2
 -- FUNCTIONS
 
 local function GetFighters()
+
     local folder = workspace.Server.Fighters:FindFirstChild(tostring(player.UserId))
-    if not folder then return {} end
+    if not folder then
+        return {}
+    end
 
     local t = {}
 
@@ -145,15 +162,21 @@ local function GetFighters()
 end
 
 local function GetMobs()
+
     local t = {}
 
     local char = player.Character
-    if not char then return t end
+    if not char then
+        return t
+    end
 
     local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return t end
+    if not hrp then
+        return t
+    end
 
     for _,mob in pairs(workspace.Server.Enemies:GetDescendants()) do
+
         if mob:IsA("BasePart")
         and mob:GetAttribute("ID")
         and not mob:GetAttribute("Died") then
@@ -169,6 +192,7 @@ end
 
 -- AURA LOOP
 task.spawn(function()
+
     while task.wait(0.03) do
 
         if _G.FighterAura then
@@ -208,6 +232,7 @@ end)
 
 -- AUTO CLICK LOOP
 task.spawn(function()
+
     while task.wait() do
 
         if _G.AutoClick then
@@ -217,6 +242,32 @@ task.spawn(function()
                 "Attack",
                 "Click"
             )
+        end
+    end
+end)
+
+-- AUTO CLAIM LOOP
+task.spawn(function()
+
+    while task.wait(5) do
+
+        if _G.AutoClaim then
+
+            for i = 1,8 do
+
+                pcall(function()
+
+                    Bridge:FireServer(
+                        "General",
+                        "DailyRewards",
+                        "Claim",
+                        i
+                    )
+
+                end)
+
+                task.wait(0.2)
+            end
         end
     end
 end)
@@ -267,16 +318,43 @@ click.MouseButton1Click:Connect(function()
     end
 end)
 
+-- TOGGLE CLAIM
+claim.MouseButton1Click:Connect(function()
+
+    _G.AutoClaim = not _G.AutoClaim
+
+    if _G.AutoClaim then
+
+        claim.Text = "Auto Claim : ON"
+
+        TweenService:Create(claim,TweenInfo.new(0.2),{
+            BackgroundColor3 = Color3.fromRGB(255,170,0)
+        }):Play()
+
+    else
+
+        claim.Text = "Auto Claim : OFF"
+
+        TweenService:Create(claim,TweenInfo.new(0.2),{
+            BackgroundColor3 = Color3.fromRGB(40,40,40)
+        }):Play()
+    end
+end)
+
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
+
     main.Visible = false
     icon.Visible = true
+
 end)
 
 -- RESTORE
 icon.MouseButton1Click:Connect(function()
+
     main.Visible = true
     icon.Visible = false
+
 end)
 
 -- DESTROY
@@ -284,6 +362,8 @@ close.MouseButton1Click:Connect(function()
 
     _G.FighterAura = false
     _G.AutoClick = false
+    _G.AutoClaim = false
 
     gui:Destroy()
+
 end)
