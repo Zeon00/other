@@ -17,6 +17,10 @@ local Bridge = RS:WaitForChild("Remotes"):WaitForChild("Bridge")
 _G.FighterAura = false
 _G.AutoClick = false
 _G.AutoClaim = false
+_G.AutoTP = false
+
+--// SELECTED MOBS
+local SelectedMobs = {}
 
 --// GUI
 local gui = Instance.new("ScreenGui")
@@ -27,8 +31,8 @@ gui.ResetOnSpawn = false
 -- MAIN
 local main = Instance.new("Frame")
 main.Parent = gui
-main.Size = UDim2.new(0,280,0,250)
-main.Position = UDim2.new(0.5,-140,0.5,-125)
+main.Size = UDim2.new(0,300,0,420)
+main.Position = UDim2.new(0.5,-150,0.5,-210)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.BorderSizePixel = 0
 main.Active = true
@@ -53,44 +57,76 @@ title.TextColor3 = Color3.new(1,1,1)
 -- AURA BUTTON
 local aura = Instance.new("TextButton")
 aura.Parent = main
-aura.Size = UDim2.new(0,240,0,45)
-aura.Position = UDim2.new(0.5,-120,0,55)
+aura.Size = UDim2.new(0,260,0,45)
+aura.Position = UDim2.new(0.5,-130,0,55)
 aura.BackgroundColor3 = Color3.fromRGB(40,40,40)
 aura.Text = "Aura : OFF"
 aura.Font = Enum.Font.GothamBold
 aura.TextSize = 18
 aura.TextColor3 = Color3.new(1,1,1)
 aura.BorderSizePixel = 0
-
 Instance.new("UICorner",aura).CornerRadius = UDim.new(0,14)
 
 -- CLICK BUTTON
 local click = Instance.new("TextButton")
 click.Parent = main
-click.Size = UDim2.new(0,240,0,45)
-click.Position = UDim2.new(0.5,-120,0,110)
+click.Size = UDim2.new(0,260,0,45)
+click.Position = UDim2.new(0.5,-130,0,110)
 click.BackgroundColor3 = Color3.fromRGB(40,40,40)
 click.Text = "Auto Click : OFF"
 click.Font = Enum.Font.GothamBold
 click.TextSize = 18
 click.TextColor3 = Color3.new(1,1,1)
 click.BorderSizePixel = 0
-
 Instance.new("UICorner",click).CornerRadius = UDim.new(0,14)
 
 -- CLAIM BUTTON
 local claim = Instance.new("TextButton")
 claim.Parent = main
-claim.Size = UDim2.new(0,240,0,45)
-claim.Position = UDim2.new(0.5,-120,0,165)
+claim.Size = UDim2.new(0,260,0,45)
+claim.Position = UDim2.new(0.5,-130,0,165)
 claim.BackgroundColor3 = Color3.fromRGB(40,40,40)
 claim.Text = "Auto Claim : OFF"
 claim.Font = Enum.Font.GothamBold
 claim.TextSize = 18
 claim.TextColor3 = Color3.new(1,1,1)
 claim.BorderSizePixel = 0
-
 Instance.new("UICorner",claim).CornerRadius = UDim.new(0,14)
+
+-- TP BUTTON
+local tp = Instance.new("TextButton")
+tp.Parent = main
+tp.Size = UDim2.new(0,260,0,45)
+tp.Position = UDim2.new(0.5,-130,0,220)
+tp.BackgroundColor3 = Color3.fromRGB(40,40,40)
+tp.Text = "Auto TP : OFF"
+tp.Font = Enum.Font.GothamBold
+tp.TextSize = 18
+tp.TextColor3 = Color3.new(1,1,1)
+tp.BorderSizePixel = 0
+Instance.new("UICorner",tp).CornerRadius = UDim.new(0,14)
+
+-- DROPDOWN
+local dropdown = Instance.new("Frame")
+dropdown.Parent = main
+dropdown.Size = UDim2.new(0,260,0,120)
+dropdown.Position = UDim2.new(0.5,-130,0,275)
+dropdown.BackgroundColor3 = Color3.fromRGB(30,30,30)
+dropdown.BorderSizePixel = 0
+Instance.new("UICorner",dropdown).CornerRadius = UDim.new(0,14)
+
+local scroll = Instance.new("ScrollingFrame")
+scroll.Parent = dropdown
+scroll.Size = UDim2.new(1,-10,1,-10)
+scroll.Position = UDim2.new(0,5,0,5)
+scroll.CanvasSize = UDim2.new(0,0,0,0)
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
+scroll.ScrollBarThickness = 4
+
+local layout = Instance.new("UIListLayout")
+layout.Parent = scroll
+layout.Padding = UDim.new(0,5)
 
 -- CLOSE
 local close = Instance.new("TextButton")
@@ -103,7 +139,6 @@ close.Font = Enum.Font.GothamBold
 close.TextSize = 18
 close.TextColor3 = Color3.new(1,1,1)
 close.BorderSizePixel = 0
-
 Instance.new("UICorner",close).CornerRadius = UDim.new(1,0)
 
 -- MINIMIZE
@@ -117,7 +152,6 @@ mini.Font = Enum.Font.GothamBold
 mini.TextSize = 20
 mini.TextColor3 = Color3.new(1,1,1)
 mini.BorderSizePixel = 0
-
 Instance.new("UICorner",mini).CornerRadius = UDim.new(1,0)
 
 -- ICON
@@ -134,7 +168,6 @@ icon.TextColor3 = Color3.new(1,1,1)
 icon.BorderSizePixel = 0
 icon.Active = true
 icon.Draggable = true
-
 Instance.new("UICorner",icon).CornerRadius = UDim.new(1,0)
 
 local iconStroke = Instance.new("UIStroke",icon)
@@ -142,6 +175,56 @@ iconStroke.Color = Color3.fromRGB(0,255,120)
 iconStroke.Thickness = 2
 
 -- FUNCTIONS
+local function RefreshDropdown()
+
+    for _,v in pairs(scroll:GetChildren()) do
+        if v:IsA("TextButton") then
+            v:Destroy()
+        end
+    end
+
+    local added = {}
+
+    for _,enemy in pairs(workspace.Client.Enemies:GetChildren()) do
+
+        if not added[enemy.Name] then
+            added[enemy.Name] = true
+
+            local btn = Instance.new("TextButton")
+            btn.Parent = scroll
+            btn.Size = UDim2.new(1,-5,0,35)
+            btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.GothamBold
+            btn.TextSize = 16
+            btn.BorderSizePixel = 0
+            btn.Text = enemy.Name
+
+            Instance.new("UICorner",btn).CornerRadius = UDim.new(0,10)
+
+            btn.MouseButton1Click:Connect(function()
+
+                SelectedMobs[enemy.Name] = not SelectedMobs[enemy.Name]
+
+                if SelectedMobs[enemy.Name] then
+                    btn.BackgroundColor3 = Color3.fromRGB(0,255,120)
+                else
+                    btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+                end
+            end)
+        end
+    end
+
+    task.wait()
+    scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
+end
+
+RefreshDropdown()
+
+workspace.Client.Enemies.ChildAdded:Connect(function()
+    task.wait(1)
+    RefreshDropdown()
+end)
 
 local function GetFighters()
 
@@ -181,8 +264,11 @@ local function GetMobs()
         and mob:GetAttribute("ID")
         and not mob:GetAttribute("Died") then
 
-            if (mob.Position - hrp.Position).Magnitude <= 70 then
-                table.insert(t,mob)
+            if SelectedMobs[mob.Name] then
+
+                if (mob.Position - hrp.Position).Magnitude <= 70 then
+                    table.insert(t,mob)
+                end
             end
         end
     end
@@ -272,89 +358,98 @@ task.spawn(function()
     end
 end)
 
--- TOGGLE AURA
+-- AUTO TP LOOP
+task.spawn(function()
+
+    while task.wait(0.15) do
+
+        if _G.AutoTP then
+
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+
+                local hrp = char.HumanoidRootPart
+
+                for _,enemy in pairs(workspace.Client.Enemies:GetChildren()) do
+
+                    if SelectedMobs[enemy.Name] then
+
+                        local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
+
+                        if enemyHRP then
+                            hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,5)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- TOGGLES
 aura.MouseButton1Click:Connect(function()
 
     _G.FighterAura = not _G.FighterAura
 
     if _G.FighterAura then
-
         aura.Text = "Aura : ON"
-
-        TweenService:Create(aura,TweenInfo.new(0.2),{
-            BackgroundColor3 = Color3.fromRGB(0,255,120)
-        }):Play()
-
+        aura.BackgroundColor3 = Color3.fromRGB(0,255,120)
     else
-
         aura.Text = "Aura : OFF"
-
-        TweenService:Create(aura,TweenInfo.new(0.2),{
-            BackgroundColor3 = Color3.fromRGB(40,40,40)
-        }):Play()
+        aura.BackgroundColor3 = Color3.fromRGB(40,40,40)
     end
 end)
 
--- TOGGLE CLICK
 click.MouseButton1Click:Connect(function()
 
     _G.AutoClick = not _G.AutoClick
 
     if _G.AutoClick then
-
         click.Text = "Auto Click : ON"
-
-        TweenService:Create(click,TweenInfo.new(0.2),{
-            BackgroundColor3 = Color3.fromRGB(0,170,255)
-        }):Play()
-
+        click.BackgroundColor3 = Color3.fromRGB(0,170,255)
     else
-
         click.Text = "Auto Click : OFF"
-
-        TweenService:Create(click,TweenInfo.new(0.2),{
-            BackgroundColor3 = Color3.fromRGB(40,40,40)
-        }):Play()
+        click.BackgroundColor3 = Color3.fromRGB(40,40,40)
     end
 end)
 
--- TOGGLE CLAIM
 claim.MouseButton1Click:Connect(function()
 
     _G.AutoClaim = not _G.AutoClaim
 
     if _G.AutoClaim then
-
         claim.Text = "Auto Claim : ON"
-
-        TweenService:Create(claim,TweenInfo.new(0.2),{
-            BackgroundColor3 = Color3.fromRGB(255,170,0)
-        }):Play()
-
+        claim.BackgroundColor3 = Color3.fromRGB(255,170,0)
     else
-
         claim.Text = "Auto Claim : OFF"
+        claim.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    end
+end)
 
-        TweenService:Create(claim,TweenInfo.new(0.2),{
-            BackgroundColor3 = Color3.fromRGB(40,40,40)
-        }):Play()
+tp.MouseButton1Click:Connect(function()
+
+    _G.AutoTP = not _G.AutoTP
+
+    if _G.AutoTP then
+        tp.Text = "Auto TP : ON"
+        tp.BackgroundColor3 = Color3.fromRGB(170,0,255)
+    else
+        tp.Text = "Auto TP : OFF"
+        tp.BackgroundColor3 = Color3.fromRGB(40,40,40)
     end
 end)
 
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
-
     main.Visible = false
     icon.Visible = true
-
 end)
 
 -- RESTORE
 icon.MouseButton1Click:Connect(function()
-
     main.Visible = true
     icon.Visible = false
-
 end)
 
 -- DESTROY
@@ -363,7 +458,8 @@ close.MouseButton1Click:Connect(function()
     _G.FighterAura = false
     _G.AutoClick = false
     _G.AutoClaim = false
+    _G.AutoTP = false
 
     gui:Destroy()
-
 end)
+
