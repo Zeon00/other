@@ -96,8 +96,8 @@ Instance.new("UICorner",claim).CornerRadius = UDim.new(0,14)
 -- TP BUTTON
 local tp = Instance.new("TextButton")
 tp.Parent = main
-tp.Size = UDim2.new(0,260,0,45)
-tp.Position = UDim2.new(0,200,0,38)
+tp.Size = UDim2.new(0,200,0,38)
+tp.Position = UDim2.new(0.5,-100,0,220)
 tp.BackgroundColor3 = Color3.fromRGB(40,40,40)
 tp.Text = "Auto TP : OFF"
 tp.Font = Enum.Font.GothamBold
