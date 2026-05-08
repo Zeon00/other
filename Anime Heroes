@@ -31,8 +31,8 @@ gui.ResetOnSpawn = false
 -- MAIN
 local main = Instance.new("Frame")
 main.Parent = gui
-main.Size = UDim2.new(0,300,0,420)
-main.Position = UDim2.new(0.5,-150,0.5,-210)
+main.Size = UDim2.new(0,230,0,340)
+main.Position = UDim2.new(0.5,-115,0.5,-170)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.BorderSizePixel = 0
 main.Active = true
@@ -57,12 +57,12 @@ title.TextColor3 = Color3.new(1,1,1)
 -- AURA BUTTON
 local aura = Instance.new("TextButton")
 aura.Parent = main
-aura.Size = UDim2.new(0,260,0,45)
-aura.Position = UDim2.new(0.5,-130,0,55)
+aura.Size = UDim2.new(0,200,0,38)
+aura.Position = UDim2.new(0.5,-100,0,55)
 aura.BackgroundColor3 = Color3.fromRGB(40,40,40)
 aura.Text = "Aura : OFF"
 aura.Font = Enum.Font.GothamBold
-aura.TextSize = 18
+aura.TextSize = 15
 aura.TextColor3 = Color3.new(1,1,1)
 aura.BorderSizePixel = 0
 Instance.new("UICorner",aura).CornerRadius = UDim.new(0,14)
@@ -70,12 +70,12 @@ Instance.new("UICorner",aura).CornerRadius = UDim.new(0,14)
 -- CLICK BUTTON
 local click = Instance.new("TextButton")
 click.Parent = main
-click.Size = UDim2.new(0,260,0,45)
-click.Position = UDim2.new(0.5,-130,0,110)
+click.Size = UDim2.new(0,200,0,38)
+click.Position = UDim2.new(0.5,-100,0,110)
 click.BackgroundColor3 = Color3.fromRGB(40,40,40)
 click.Text = "Auto Click : OFF"
 click.Font = Enum.Font.GothamBold
-click.TextSize = 18
+click.TextSize = 15
 click.TextColor3 = Color3.new(1,1,1)
 click.BorderSizePixel = 0
 Instance.new("UICorner",click).CornerRadius = UDim.new(0,14)
@@ -83,12 +83,12 @@ Instance.new("UICorner",click).CornerRadius = UDim.new(0,14)
 -- CLAIM BUTTON
 local claim = Instance.new("TextButton")
 claim.Parent = main
-claim.Size = UDim2.new(0,260,0,45)
-claim.Position = UDim2.new(0.5,-130,0,165)
+claim.Size = UDim2.new(0,200,0,38)
+claim.Position = UDim2.new(0.5,-100,0,165)
 claim.BackgroundColor3 = Color3.fromRGB(40,40,40)
 claim.Text = "Auto Claim : OFF"
 claim.Font = Enum.Font.GothamBold
-claim.TextSize = 18
+claim.TextSize = 15
 claim.TextColor3 = Color3.new(1,1,1)
 claim.BorderSizePixel = 0
 Instance.new("UICorner",claim).CornerRadius = UDim.new(0,14)
@@ -97,11 +97,11 @@ Instance.new("UICorner",claim).CornerRadius = UDim.new(0,14)
 local tp = Instance.new("TextButton")
 tp.Parent = main
 tp.Size = UDim2.new(0,260,0,45)
-tp.Position = UDim2.new(0.5,-130,0,220)
+tp.Position = UDim2.new(0,200,0,38)
 tp.BackgroundColor3 = Color3.fromRGB(40,40,40)
 tp.Text = "Auto TP : OFF"
 tp.Font = Enum.Font.GothamBold
-tp.TextSize = 18
+tp.TextSize = 15
 tp.TextColor3 = Color3.new(1,1,1)
 tp.BorderSizePixel = 0
 Instance.new("UICorner",tp).CornerRadius = UDim.new(0,14)
@@ -109,16 +109,25 @@ Instance.new("UICorner",tp).CornerRadius = UDim.new(0,14)
 -- DROPDOWN
 local dropdown = Instance.new("Frame")
 dropdown.Parent = main
-dropdown.Size = UDim2.new(0,260,0,120)
-dropdown.Position = UDim2.new(0.5,-130,0,275)
+dropdown.Size = UDim2.new(0,170,0,250)
+dropdown.Position = UDim2.new(1,10,0,40)
 dropdown.BackgroundColor3 = Color3.fromRGB(30,30,30)
 dropdown.BorderSizePixel = 0
 Instance.new("UICorner",dropdown).CornerRadius = UDim.new(0,14)
 
+local dropTitle = Instance.new("TextLabel")
+dropTitle.Parent = dropdown
+dropTitle.Size = UDim2.new(1,0,0,30)
+dropTitle.BackgroundTransparency = 1
+dropTitle.Text = "Mob List"
+dropTitle.Font = Enum.Font.GothamBold
+dropTitle.TextSize = 16
+dropTitle.TextColor3 = Color3.new(1,1,1)
+
 local scroll = Instance.new("ScrollingFrame")
 scroll.Parent = dropdown
-scroll.Size = UDim2.new(1,-10,1,-10)
-scroll.Position = UDim2.new(0,5,0,5)
+scroll.Position = UDim2.new(0,5,0,35)
+scroll.Size = UDim2.new(1,-10,1,-40)
 scroll.CanvasSize = UDim2.new(0,0,0,0)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
@@ -136,7 +145,7 @@ close.Position = UDim2.new(1,-35,0,5)
 close.BackgroundColor3 = Color3.fromRGB(255,70,70)
 close.Text = "X"
 close.Font = Enum.Font.GothamBold
-close.TextSize = 18
+close.TextSize = 15
 close.TextColor3 = Color3.new(1,1,1)
 close.BorderSizePixel = 0
 Instance.new("UICorner",close).CornerRadius = UDim.new(1,0)
@@ -199,19 +208,30 @@ local function RefreshDropdown()
             btn.TextSize = 16
             btn.BorderSizePixel = 0
             btn.Text = enemy.Name
-
+			if SelectedMobs[enemy.Name] then
+    btn.BackgroundColor3 = Color3.fromRGB(0,255,120)
+else
+    btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+end
             Instance.new("UICorner",btn).CornerRadius = UDim.new(0,10)
 
             btn.MouseButton1Click:Connect(function()
 
-                SelectedMobs[enemy.Name] = not SelectedMobs[enemy.Name]
+    SelectedMobs[enemy.Name] = not SelectedMobs[enemy.Name]
 
-                if SelectedMobs[enemy.Name] then
-                    btn.BackgroundColor3 = Color3.fromRGB(0,255,120)
-                else
-                    btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-                end
-            end)
+    if SelectedMobs[enemy.Name] then
+
+        TweenService:Create(btn,TweenInfo.new(0.15),{
+            BackgroundColor3 = Color3.fromRGB(0,255,120)
+        }):Play()
+
+    else
+
+        TweenService:Create(btn,TweenInfo.new(0.15),{
+            BackgroundColor3 = Color3.fromRGB(45,45,45)
+        }):Play()
+    end
+end)
         end
     end
 
