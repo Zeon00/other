@@ -18,6 +18,7 @@ _G.FighterAura = false
 _G.AutoClick = false
 _G.AutoClaim = false
 _G.AutoTP = false
+_G.TrialAura = false
 
 --// SELECTED MOBS
 local SelectedMobs = {}
@@ -31,7 +32,7 @@ gui.ResetOnSpawn = false
 -- MAIN
 local main = Instance.new("Frame")
 main.Parent = gui
-main.Size = UDim2.new(0,230,0,340)
+main.Size = UDim2.new(0,230,0,400)
 main.Position = UDim2.new(0.5,-115,0.5,-170)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.BorderSizePixel = 0
@@ -105,6 +106,20 @@ tp.TextSize = 15
 tp.TextColor3 = Color3.new(1,1,1)
 tp.BorderSizePixel = 0
 Instance.new("UICorner",tp).CornerRadius = UDim.new(0,14)
+
+-- TRIAL BUTTON
+local trial = Instance.new("TextButton")
+trial.Parent = main
+trial.Size = UDim2.new(0,200,0,38)
+trial.Position = UDim2.new(0.5,-100,0,275)
+trial.BackgroundColor3 = Color3.fromRGB(40,40,40)
+trial.Text = "Trial Aura : OFF"
+trial.Font = Enum.Font.GothamBold
+trial.TextSize = 15
+trial.TextColor3 = Color3.new(1,1,1)
+trial.BorderSizePixel = 0
+
+Instance.new("UICorner",trial).CornerRadius = UDim.new(0,14)
 
 -- DROPDOWN
 local dropdown = Instance.new("Frame")
@@ -407,6 +422,45 @@ task.spawn(function()
     end
 end)
 
+-- TRIAL LOOP
+task.spawn(function()
+
+    while task.wait(0.03) do
+
+        if _G.TrialAura then
+
+            local fighters = GetFighters()
+
+            for _,fighter in pairs(fighters) do
+
+                for _,enemy in pairs(workspace.Server.Gamemodes.Trial:GetDescendants()) do
+
+                    if enemy:IsA("BasePart")
+                    and enemy:GetAttribute("ID")
+                    and not enemy:GetAttribute("Died") then
+
+                        Bridge:FireServer(
+                            "Fighters",
+                            "Attack",
+                            "Attack",
+                            "Trial",
+                            enemy,
+                            fighter.Name
+                        )
+
+                        Bridge:FireServer(
+                            "Fighters",
+                            "Attack",
+                            "Do_Damage",
+                            fighter.Name
+                        )
+                    end
+                end
+            end
+        end
+    end
+end)
+
 -- TOGGLES
 aura.MouseButton1Click:Connect(function()
 
@@ -460,6 +514,18 @@ tp.MouseButton1Click:Connect(function()
     end
 end)
 
+trial.MouseButton1Click:Connect(function()
+
+    _G.TrialAura = not _G.TrialAura
+
+    if _G.TrialAura then
+        trial.Text = "Trial Aura : ON"
+        trial.BackgroundColor3 = Color3.fromRGB(255,0,120)
+    else
+        trial.Text = "Trial Aura : OFF"
+        trial.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    end
+end)
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
     main.Visible = false
@@ -479,6 +545,7 @@ close.MouseButton1Click:Connect(function()
     _G.AutoClick = false
     _G.AutoClaim = false
     _G.AutoTP = false
+	_G.TrialAura = false
 
     gui:Destroy()
 end)
