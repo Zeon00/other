@@ -260,50 +260,64 @@ local function RefreshDropdown()
 
     local added = {}
 
-    local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
+    for _,enemy in pairs(workspace.Client.Enemies:GetChildren()) do
 
-if enemyHRP and not added[enemy.Name] then
+        local blacklist = {
+            ["Dummy"] = true,
+            ["Training Dummy"] = true,
+            ["Damage Dummy"] = true
+        }
 
-    added[enemy.Name] = true
+        if blacklist[enemy.Name] then
+            continue
+        end
 
-    local btn = Instance.new("TextButton")
-    btn.Parent = scroll
-    btn.Size = UDim2.new(1,-5,0,35)
-    btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 16
-    btn.BorderSizePixel = 0
-    btn.Text = enemy.Name
+        local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
 
-    if SelectedMobs[enemy.Name] then
-        btn.BackgroundColor3 = Color3.fromRGB(0,255,120)
-    else
-        btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+        if enemyHRP and not added[enemy.Name] then
+
+            added[enemy.Name] = true
+
+            local btn = Instance.new("TextButton")
+            btn.Parent = scroll
+            btn.Size = UDim2.new(1,-5,0,35)
+            btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.GothamBold
+            btn.TextSize = 16
+            btn.BorderSizePixel = 0
+            btn.Text = enemy.Name
+
+            if SelectedMobs[enemy.Name] then
+                btn.BackgroundColor3 = Color3.fromRGB(0,255,120)
+            else
+                btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+            end
+
+            Instance.new("UICorner",btn).CornerRadius = UDim.new(0,10)
+
+            btn.MouseButton1Click:Connect(function()
+
+                SelectedMobs[enemy.Name] = not SelectedMobs[enemy.Name]
+
+                if SelectedMobs[enemy.Name] then
+
+                    TweenService:Create(btn,TweenInfo.new(0.15),{
+                        BackgroundColor3 = Color3.fromRGB(0,255,120)
+                    }):Play()
+
+                else
+
+                    TweenService:Create(btn,TweenInfo.new(0.15),{
+                        BackgroundColor3 = Color3.fromRGB(45,45,45)
+                    }):Play()
+                end
+            end)
+        end
     end
 
-    Instance.new("UICorner",btn).CornerRadius = UDim.new(0,10)
-
-    btn.MouseButton1Click:Connect(function()
-
-        SelectedMobs[enemy.Name] = not SelectedMobs[enemy.Name]
-
-        if SelectedMobs[enemy.Name] then
-
-            TweenService:Create(btn,TweenInfo.new(0.15),{
-                BackgroundColor3 = Color3.fromRGB(0,255,120)
-            }):Play()
-
-        else
-
-            TweenService:Create(btn,TweenInfo.new(0.15),{
-                BackgroundColor3 = Color3.fromRGB(45,45,45)
-            }):Play()
-        end
-    end)
-end
-
     task.wait()
+
     scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
 end
 
