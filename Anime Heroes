@@ -476,7 +476,15 @@ task.spawn(function()
                 local shortest = math.huge
 
                 for _,enemy in pairs(workspace.Client.Enemies:GetChildren()) do
+ 				local blacklist = {
+  			     			  ["Dummy"] = true,
+   							 ["Training Dummy"] = true,
+   							 ["Damage Dummy"] = true
+                           }
 
+                if blacklist[enemy.Name] then
+                continue
+                end
                     local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
 
                     if enemyHRP then
