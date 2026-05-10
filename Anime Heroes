@@ -686,13 +686,13 @@ trial.MouseButton1Click:Connect(function()
 end)
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
-    main.Visible = false
+    holder.Visible = false
     icon.Visible = true
 end)
 
 -- RESTORE
 icon.MouseButton1Click:Connect(function()
-    main.Visible = true
+    holder.Visible = true
     icon.Visible = false
 end)
 
