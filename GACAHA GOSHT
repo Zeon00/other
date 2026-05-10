@@ -1,243 +1,129 @@
---// DESTROY GUI LAMA
-pcall(function()
-    game.CoreGui.AutoSpinGUI:Destroy()
-end)
+_G.AutoSpin = true
 
---// SERVICES
-local RS = game:GetService("ReplicatedStorage")
-
-local Remote = RS
+local remote = game:GetService("ReplicatedStorage")
     :WaitForChild("ffrostflame_bridgenet2@1.0.0")
     :WaitForChild("dataRemoteEvent")
 
---// FUNCTION
-local function sendSpin(data)
-    pcall(function()
-        Remote:FireServer(unpack(data))
-    end)
-end
-
---// GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoSpinGUI"
-ScreenGui.Parent = game.CoreGui
-
-local Main = Instance.new("Frame")
-Main.Parent = ScreenGui
-Main.Size = UDim2.new(0,220,0,120)
-Main.Position = UDim2.new(0.5,-110,0.5,-60)
-Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0,10)
-
-local Title = Instance.new("TextLabel")
-Title.Parent = Main
-Title.Size = UDim2.new(1,0,0,30)
-Title.BackgroundTransparency = 1
-Title.Text = "ONE CLICK SPIN"
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-
-local SpinBtn = Instance.new("TextButton")
-SpinBtn.Parent = Main
-SpinBtn.Size = UDim2.new(0,180,0,40)
-SpinBtn.Position = UDim2.new(0.5,-90,0.5,-10)
-SpinBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
-SpinBtn.TextColor3 = Color3.new(1,1,1)
-SpinBtn.Font = Enum.Font.GothamBold
-SpinBtn.TextSize = 16
-SpinBtn.Text = "SPIN ALL"
-
-Instance.new("UICorner", SpinBtn).CornerRadius = UDim.new(0,8)
-
-local Close = Instance.new("TextButton")
-Close.Parent = Main
-Close.Size = UDim2.new(0,25,0,25)
-Close.Position = UDim2.new(1,-30,0,5)
-Close.BackgroundColor3 = Color3.fromRGB(170,0,0)
-Close.Text = "X"
-Close.TextColor3 = Color3.new(1,1,1)
-Close.Font = Enum.Font.GothamBold
-Close.TextSize = 14
-
-Instance.new("UICorner", Close).CornerRadius = UDim.new(1,0)
-
---// SPIN SEKALI
-SpinBtn.MouseButton1Click:Connect(function()
-
-    -- FIRE
-    sendSpin({
+local spinList = {
+    {
+        "Soul Fundation",
+        "Normal",
         {
-            {
-                "StatsSystem",
-                "Spin",
-                "Fire",
-                "Spark",
-                {
-                    Ghost = 8,
-                    ElementalGhost = 8,
-                    ElementalDamage = 8,
-                    Energy = 8,
-                    ElementalEnergy = 8,
-                    Damage = 8
-                },
-                n = 5
-            },
-            "\002"
+            TrueQuincy = false,
+            Mythical = true,
+            Secret = true,
+            Visored = false,
+            Transcendent = true,
+            Ghostly = true
         }
-    })
+    },
 
-    task.wait(0.2)
-
-    -- FIRE COLOR
-    sendSpin({
+    {
+        "Zanpakuto",
+        "Normal",
         {
-            {
-                "GachaSystem",
-                "Spin",
-                "Fire Color",
-                "Normal",
-                {
-                    Secret = true,
-                    RainbowFire = true,
-                    Mythical = true,
-                    WhiteFire = true,
-                    Ghostly = true
-                },
-                n = 6
-            },
-            "\002"
+            Nozarashi = false,
+            Shirayuki = false,
+            Mythical = true,
+            RyujinJakka = true,
+            Secret = true,
+            Ghostly = true
         }
-    })
+    },
 
-    task.wait(0.2)
-
-    -- EASTER
-    sendSpin({
+    {
+        "Warrior",
+        "Shadow",
         {
-            {
-                "StatsSystem",
-                "Spin",
-                "Easter",
-                "Normal",
-                {
-                    Ghost = 8,
-                    Easter2026Damage = 8,
-                    Easter2026Ghost = 8,
-                    Energy = 8,
-                    Easter2026Energy = 8,
-                    Damage = 8
-                },
-                n = 5
-            },
-            "\002"
+            ColossalTitan = true,
+            Mythical = false,
+            BeastTitan = true,
+            IgrisShadow = true,
+            Secret = false,
+            TuskAct4 = true,
+            Ghostly = true,
+            BellionShadow = true,
+            WarhammerTitan = true,
+            TheWorldOverHeaven = true,
+            BeruShadow = true,
+            D4C = true
         }
-    })
+    },
 
-    task.wait(0.2)
-
-    -- WEAPON
-    sendSpin({
+    {
+        "Hunter Rank",
+        "Normal",
         {
-            {
-                "GachaSystem",
-                "Spin",
-                "Weapon",
-                "Blood-Red",
-                {
-                    Lostvayne = true,
-                    Secret = true,
-                    SwordZ = true,
-                    Yoru = true,
-                    CarrotSword = true,
-                    FrierenStaff = true,
-                    DragonSlayer = true,
-                    IgrisSword = true,
-                    Samehada = true,
-                    Ghostly = true
-                },
-                n = 6
-            },
-            "\002"
+            SRank = false,
+            Mythical = true,
+            Ghostly = true,
+            Monarch = true,
+            National = false,
+            Secret = true
         }
-    })
+    },
 
-    task.wait(0.2)
-
-    -- ENCHANTMENT
-    sendSpin({
+    {
+        "Devil Fruit",
+        "Normal",
         {
-            {
-                "GachaSystem",
-                "Spin",
-                "Enchantment",
-                "Normal",
-                {
-                    Mythical = true,
-                    Secret = true,
-                    Electric7 = true,
-                    Ghostly = true
-                },
-                "84d5caf89d6845b5aca2ed783e832d80",
-                n = 6
-            },
-            "\002"
+            Ghostly = true,
+            OperationFruit = false,
+            SunGodFruit = true,
+            Mythical = true,
+            DragonFruit = false,
+            PhoenixFruit = false,
+            Secret = true,
+            DarkFruit = false
         }
-    })
+    },
 
-    task.wait(0.2)
-
-    -- PASSIVE
-    sendSpin({
+    {
+        "Haki Color",
+        "Normal",
         {
-            {
-                "GachaSystem",
-                "Spin",
-                "Passive",
-                "Normal",
-                {
-                    Mythical = true,
-                    Secret = true,
-                    Undead = true,
-                    Ghostly = true
-                },
-                "770fd52c18e54356a4d597ea97e4b2fa",
-                n = 6
-            },
-            "\002"
+            RedHaki = false,
+            Mythical = true,
+            Ghostly = true,
+            BlackHaki = false,
+            RainbowHaki = true,
+            Secret = true
         }
-    })
+    }
+}
 
-    task.wait(0.2)
+local current = 1
 
-    -- TRAIT
-    sendSpin({
-        {
+task.spawn(function()
+    while _G.AutoSpin do
+
+        local data = spinList[current]
+
+        local args = {
             {
-                "GachaSystem",
-                "Spin",
-                "Trait",
-                "Normal",
                 {
-                    Secret = true,
-                    Afterlife = true,
-                    Mythical = true,
-                    Ethereal = true,
-                    Ghostly = true
+                    "GachaSystem",
+                    "Spin",
+                    data[1],
+                    data[2],
+                    data[3],
+                    n = 5
                 },
-                n = 6
-            },
-            "\002"
+                "\002"
+            }
         }
-    })
 
-end)
+        remote:FireServer(unpack(args))
 
---// DESTROY
-Close.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+        print("Spin:", data[1])
+
+        current = current + 1
+
+        if current > #spinList then
+            current = 1
+        end
+
+        -- tunggu result/server cooldown
+        task.wait(3)
+    end
 end)
