@@ -462,6 +462,7 @@ task.spawn(function()
     end
 end)
 
+
 -- AUTO TP LOOP
 task.spawn(function()
 
@@ -470,6 +471,7 @@ task.spawn(function()
         if _G.AutoTP or _G.TPNearest then
 
             local char = player.Character
+
             if char and char:FindFirstChild("HumanoidRootPart") then
 
                 local hrp = char.HumanoidRootPart
@@ -477,35 +479,37 @@ task.spawn(function()
                 local nearest = nil
                 local shortest = math.huge
 
+                local blacklist = {
+                    ["Dummy"] = true,
+                    ["Training Dummy"] = true,
+                    ["Damage Dummy"] = true
+                }
+
                 for _,enemy in pairs(workspace.Client.Enemies:GetChildren()) do
- 				local blacklist = {
-    ["Dummy"] = true,
-    ["Training Dummy"] = true,
-    ["Damage Dummy"] = true
-}
 
-for _,enemy in pairs(workspace.Client.Enemies:GetChildren()) do
+                    if not blacklist[enemy.Name] then
 
-    if not blacklist[enemy.Name] then
+                        local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
 
-        local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
+                        if enemyHRP then
 
-        if enemyHRP then
+                            local dist = (enemyHRP.Position - hrp.Position).Magnitude
 
-                        local dist = (enemyHRP.Position - hrp.Position).Magnitude
+                            -- TP NEAREST
+                            if _G.TPNearest then
 
-                        if _G.TPNearest then
+                                if dist < shortest then
+                                    shortest = dist
+                                    nearest = enemyHRP
+                                end
 
-                            if dist < shortest then
-                                shortest = dist
-                                nearest = enemyHRP
-                            end
+                            -- AUTO TP SELECTED
+                            else
 
-                        else
-
-                            if SelectedMobs[enemy.Name] then
-                                hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,5)
-                                break
+                                if SelectedMobs[enemy.Name] then
+                                    hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,5)
+                                    break
+                                end
                             end
                         end
                     end
