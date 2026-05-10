@@ -20,6 +20,8 @@ _G.AutoClaim = false
 _G.AutoTP = false
 _G.TrialAura = false
 _G.TPNearest = false
+_G.AutoTrial1 = false
+_G.AutoTrial2 = false
 
 --// SELECTED MOBS
 local SelectedMobs = {}
@@ -31,20 +33,29 @@ gui.Parent = game.CoreGui
 gui.ResetOnSpawn = false
 
 -- MAIN
-local main = Instance.new("Frame")
-main.Parent = gui
-main.Size = UDim2.new(0,230,0,460)
-main.Position = UDim2.new(0.5,-115,0.5,-170)
-main.BackgroundColor3 = Color3.fromRGB(18,18,18)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
+local holder = Instance.new("Frame")
+holder.Parent = gui
+holder.Size = UDim2.new(0,250,0,470)
+holder.Position = UDim2.new(0.5,-125,0.5,-200)
+holder.BackgroundColor3 = Color3.fromRGB(18,18,18)
+holder.BorderSizePixel = 0
+holder.Active = true
+holder.Draggable = true
 
-Instance.new("UICorner",main).CornerRadius = UDim.new(0,18)
+Instance.new("UICorner",holder).CornerRadius = UDim.new(0,18)
 
-local stroke = Instance.new("UIStroke",main)
+local stroke = Instance.new("UIStroke",holder)
 stroke.Color = Color3.fromRGB(0,255,120)
 stroke.Thickness = 2
+
+local main = Instance.new("ScrollingFrame")
+main.Parent = holder
+main.Size = UDim2.new(1,0,1,0)
+main.CanvasSize = UDim2.new(0,0,0,700)
+main.BackgroundTransparency = 1
+main.BorderSizePixel = 0
+main.ScrollBarThickness = 4
+
 
 -- TITLE
 local title = Instance.new("TextLabel")
@@ -68,6 +79,32 @@ aura.TextSize = 15
 aura.TextColor3 = Color3.new(1,1,1)
 aura.BorderSizePixel = 0
 Instance.new("UICorner",aura).CornerRadius = UDim.new(0,14)
+
+-- TRIAL 1 BUTTON
+local trial1 = Instance.new("TextButton")
+trial1.Parent = main
+trial1.Size = UDim2.new(0,200,0,38)
+trial1.Position = UDim2.new(0.5,-100,0,385)
+trial1.BackgroundColor3 = Color3.fromRGB(40,40,40)
+trial1.Text = "Auto Join Trial 1 : OFF"
+trial1.Font = Enum.Font.GothamBold
+trial1.TextSize = 15
+trial1.TextColor3 = Color3.new(1,1,1)
+trial1.BorderSizePixel = 0
+Instance.new("UICorner",trial1).CornerRadius = UDim.new(0,14)
+
+-- TRIAL 2 BUTTON
+local trial2 = Instance.new("TextButton")
+trial2.Parent = main
+trial2.Size = UDim2.new(0,200,0,38)
+trial2.Position = UDim2.new(0.5,-100,0,440)
+trial2.BackgroundColor3 = Color3.fromRGB(40,40,40)
+trial2.Text = "Auto Join Trial 2 : OFF"
+trial2.Font = Enum.Font.GothamBold
+trial2.TextSize = 15
+trial2.TextColor3 = Color3.new(1,1,1)
+trial2.BorderSizePixel = 0
+Instance.new("UICorner",trial2).CornerRadius = UDim.new(0,14)
 
 -- CLICK BUTTON
 local click = Instance.new("TextButton")
@@ -223,46 +260,48 @@ local function RefreshDropdown()
 
     local added = {}
 
-    for _,enemy in pairs(workspace.Client.Enemies:GetChildren()) do
+    local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
 
-        if not added[enemy.Name] then
-            added[enemy.Name] = true
+if enemyHRP and not added[enemy.Name] then
 
-            local btn = Instance.new("TextButton")
-            btn.Parent = scroll
-            btn.Size = UDim2.new(1,-5,0,35)
-            btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.Font = Enum.Font.GothamBold
-            btn.TextSize = 16
-            btn.BorderSizePixel = 0
-            btn.Text = enemy.Name
-			if SelectedMobs[enemy.Name] then
-    btn.BackgroundColor3 = Color3.fromRGB(0,255,120)
-else
+    added[enemy.Name] = true
+
+    local btn = Instance.new("TextButton")
+    btn.Parent = scroll
+    btn.Size = UDim2.new(1,-5,0,35)
     btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-end
-            Instance.new("UICorner",btn).CornerRadius = UDim.new(0,10)
-
-            btn.MouseButton1Click:Connect(function()
-
-    SelectedMobs[enemy.Name] = not SelectedMobs[enemy.Name]
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.BorderSizePixel = 0
+    btn.Text = enemy.Name
 
     if SelectedMobs[enemy.Name] then
-
-        TweenService:Create(btn,TweenInfo.new(0.15),{
-            BackgroundColor3 = Color3.fromRGB(0,255,120)
-        }):Play()
-
+        btn.BackgroundColor3 = Color3.fromRGB(0,255,120)
     else
+        btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+    end
 
-        TweenService:Create(btn,TweenInfo.new(0.15),{
-            BackgroundColor3 = Color3.fromRGB(45,45,45)
-        }):Play()
-    end
-end)
+    Instance.new("UICorner",btn).CornerRadius = UDim.new(0,10)
+
+    btn.MouseButton1Click:Connect(function()
+
+        SelectedMobs[enemy.Name] = not SelectedMobs[enemy.Name]
+
+        if SelectedMobs[enemy.Name] then
+
+            TweenService:Create(btn,TweenInfo.new(0.15),{
+                BackgroundColor3 = Color3.fromRGB(0,255,120)
+            }):Play()
+
+        else
+
+            TweenService:Create(btn,TweenInfo.new(0.15),{
+                BackgroundColor3 = Color3.fromRGB(45,45,45)
+            }):Play()
         end
-    end
+    end)
+end
 
     task.wait()
     scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
@@ -493,7 +532,40 @@ task.spawn(function()
         end
     end
 end)
+-- AUTO JOIN TRIAL LOOP
+task.spawn(function()
 
+    while task.wait(3) do
+
+        if _G.AutoTrial1 then
+
+            pcall(function()
+
+                Bridge:FireServer(
+                    "Gamemodes",
+                    "Trial",
+                    "Join",
+                    1
+                )
+
+            end)
+        end
+
+        if _G.AutoTrial2 then
+
+            pcall(function()
+
+                Bridge:FireServer(
+                    "Gamemodes",
+                    "Trial",
+                    "Join",
+                    2
+                )
+
+            end)
+        end
+    end
+end)
 -- TOGGLES
 aura.MouseButton1Click:Connect(function()
 
@@ -560,6 +632,32 @@ tpnearest.MouseButton1Click:Connect(function()
     end
 end)
 
+trial1.MouseButton1Click:Connect(function()
+
+    _G.AutoTrial1 = not _G.AutoTrial1
+
+    if _G.AutoTrial1 then
+        trial1.Text = "Auto Join Trial 1 : ON"
+        trial1.BackgroundColor3 = Color3.fromRGB(0,170,255)
+    else
+        trial1.Text = "Auto Join Trial 1 : OFF"
+        trial1.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    end
+end)
+
+trial2.MouseButton1Click:Connect(function()
+
+    _G.AutoTrial2 = not _G.AutoTrial2
+
+    if _G.AutoTrial2 then
+        trial2.Text = "Auto Join Trial 2 : ON"
+        trial2.BackgroundColor3 = Color3.fromRGB(255,120,0)
+    else
+        trial2.Text = "Auto Join Trial 2 : OFF"
+        trial2.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    end
+end)
+
 trial.MouseButton1Click:Connect(function()
 
     _G.TrialAura = not _G.TrialAura
@@ -592,6 +690,9 @@ close.MouseButton1Click:Connect(function()
     _G.AutoClaim = false
     _G.AutoTP = false
 	_G.TrialAura = false
+	_G.TPNearest = false
+	_G.AutoTrial1 = false
+    _G.AutoTrial2 = false
 
     gui:Destroy()
 end)
