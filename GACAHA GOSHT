@@ -1,129 +1,229 @@
-_G.AutoSpin = true
+--// DESTROY GUI LAMA
+pcall(function()
+    game.CoreGui.AutoSpinGui:Destroy()
+end)
 
-local remote = game:GetService("ReplicatedStorage")
+--// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+local remote = RS
     :WaitForChild("ffrostflame_bridgenet2@1.0.0")
     :WaitForChild("dataRemoteEvent")
 
-local spinList = {
-    {
-        "Soul Fundation",
-        "Normal",
-        {
-            TrueQuincy = false,
-            Mythical = true,
-            Secret = true,
-            Visored = false,
-            Transcendent = true,
-            Ghostly = true
-        }
-    },
+--// STATE
+_G.SoulSpin = false
+_G.ZanpakutoSpin = false
+_G.WarriorSpin = false
+_G.HunterSpin = false
+_G.DevilFruitSpin = false
+_G.HakiSpin = false
 
-    {
-        "Zanpakuto",
-        "Normal",
+--// SPIN FUNCTION
+local function doSpin(name, mode, data)
+    local args = {
         {
-            Nozarashi = false,
-            Shirayuki = false,
-            Mythical = true,
-            RyujinJakka = true,
-            Secret = true,
-            Ghostly = true
-        }
-    },
-
-    {
-        "Warrior",
-        "Shadow",
-        {
-            ColossalTitan = true,
-            Mythical = false,
-            BeastTitan = true,
-            IgrisShadow = true,
-            Secret = false,
-            TuskAct4 = true,
-            Ghostly = true,
-            BellionShadow = true,
-            WarhammerTitan = true,
-            TheWorldOverHeaven = true,
-            BeruShadow = true,
-            D4C = true
-        }
-    },
-
-    {
-        "Hunter Rank",
-        "Normal",
-        {
-            SRank = false,
-            Mythical = true,
-            Ghostly = true,
-            Monarch = true,
-            National = false,
-            Secret = true
-        }
-    },
-
-    {
-        "Devil Fruit",
-        "Normal",
-        {
-            Ghostly = true,
-            OperationFruit = false,
-            SunGodFruit = true,
-            Mythical = true,
-            DragonFruit = false,
-            PhoenixFruit = false,
-            Secret = true,
-            DarkFruit = false
-        }
-    },
-
-    {
-        "Haki Color",
-        "Normal",
-        {
-            RedHaki = false,
-            Mythical = true,
-            Ghostly = true,
-            BlackHaki = false,
-            RainbowHaki = true,
-            Secret = true
+            {
+                "GachaSystem",
+                "Spin",
+                name,
+                mode,
+                data,
+                n = 5
+            },
+            "\002"
         }
     }
-}
 
-local current = 1
+    remote:FireServer(unpack(args))
+end
 
+--// LOOP
 task.spawn(function()
-    while _G.AutoSpin do
+    while task.wait(0.1) do
 
-        local data = spinList[current]
-
-        local args = {
-            {
-                {
-                    "GachaSystem",
-                    "Spin",
-                    data[1],
-                    data[2],
-                    data[3],
-                    n = 5
-                },
-                "\002"
-            }
-        }
-
-        remote:FireServer(unpack(args))
-
-        print("Spin:", data[1])
-
-        current = current + 1
-
-        if current > #spinList then
-            current = 1
+        if _G.SoulSpin then
+            doSpin("Soul Fundation", "Normal", {
+                TrueQuincy = false,
+                Mythical = true,
+                Secret = true,
+                Visored = false,
+                Transcendent = true,
+                Ghostly = true
+            })
         end
 
-        -- tunggu result/server cooldown
-        task.wait(3)
+        if _G.ZanpakutoSpin then
+            doSpin("Zanpakuto", "Normal", {
+                Nozarashi = false,
+                Shirayuki = false,
+                Mythical = true,
+                RyujinJakka = true,
+                Secret = true,
+                Ghostly = true
+            })
+        end
+
+        if _G.WarriorSpin then
+            doSpin("Warrior", "Shadow", {
+                ColossalTitan = true,
+                BeastTitan = true,
+                IgrisShadow = true,
+                TuskAct4 = true,
+                Ghostly = true,
+                BellionShadow = true,
+                WarhammerTitan = true,
+                TheWorldOverHeaven = true,
+                BeruShadow = true,
+                D4C = true
+            })
+        end
+
+        if _G.HunterSpin then
+            doSpin("Hunter Rank", "Normal", {
+                Mythical = true,
+                Ghostly = true,
+                Monarch = true,
+                Secret = true
+            })
+        end
+
+        if _G.DevilFruitSpin then
+            doSpin("Devil Fruit", "Normal", {
+                Ghostly = true,
+                SunGodFruit = true,
+                Mythical = true,
+                Secret = true
+            })
+        end
+
+        if _G.HakiSpin then
+            doSpin("Haki Color", "Normal", {
+                Mythical = true,
+                Ghostly = true,
+                RainbowHaki = true,
+                Secret = true
+            })
+        end
     end
 end)
+
+--// GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "AutoSpinGui"
+gui.Parent = game.CoreGui
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame")
+main.Parent = gui
+main.Size = UDim2.new(0, 260, 0, 320)
+main.Position = UDim2.new(0.35, 0, 0.2, 0)
+main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
+
+local title = Instance.new("TextLabel")
+title.Parent = main
+title.Size = UDim2.new(1,0,0,35)
+title.BackgroundTransparency = 1
+title.Text = "Auto Spin"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextColor3 = Color3.new(1,1,1)
+
+-- CLOSE
+local close = Instance.new("TextButton")
+close.Parent = main
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-35,0,3)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 16
+close.BackgroundColor3 = Color3.fromRGB(170,40,40)
+close.TextColor3 = Color3.new(1,1,1)
+
+Instance.new("UICorner", close).CornerRadius = UDim.new(1,0)
+
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+-- MINIMIZE
+local mini = Instance.new("TextButton")
+mini.Parent = main
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-70,0,3)
+mini.Text = "-"
+mini.Font = Enum.Font.GothamBold
+mini.TextSize = 18
+mini.BackgroundColor3 = Color3.fromRGB(50,50,50)
+mini.TextColor3 = Color3.new(1,1,1)
+
+Instance.new("UICorner", mini).CornerRadius = UDim.new(1,0)
+
+local icon = Instance.new("TextButton")
+icon.Parent = gui
+icon.Size = UDim2.new(0,55,0,55)
+icon.Position = UDim2.new(0,20,0.5,0)
+icon.Visible = false
+icon.Text = "SPIN"
+icon.Font = Enum.Font.GothamBold
+icon.TextSize = 14
+icon.BackgroundColor3 = Color3.fromRGB(25,25,25)
+icon.TextColor3 = Color3.new(1,1,1)
+icon.Active = true
+icon.Draggable = true
+
+Instance.new("UICorner", icon).CornerRadius = UDim.new(1,0)
+
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    main.Visible = true
+    icon.Visible = false
+end)
+
+--// TOGGLE CREATOR
+local function createToggle(text, posY, globalName)
+
+    local btn = Instance.new("TextButton")
+    btn.Parent = main
+    btn.Size = UDim2.new(0,220,0,35)
+    btn.Position = UDim2.new(0,20,0,posY)
+    btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.Text = text .. " : OFF"
+
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+    btn.MouseButton1Click:Connect(function()
+
+        _G[globalName] = not _G[globalName]
+
+        if _G[globalName] then
+            btn.Text = text .. " : ON"
+            btn.BackgroundColor3 = Color3.fromRGB(40,120,40)
+        else
+            btn.Text = text .. " : OFF"
+            btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+        end
+    end)
+end
+
+createToggle("Soul Fundation", 50, "SoulSpin")
+createToggle("Zanpakuto", 90, "ZanpakutoSpin")
+createToggle("Warrior", 130, "WarriorSpin")
+createToggle("Hunter Rank", 170, "HunterSpin")
+createToggle("Devil Fruit", 210, "DevilFruitSpin")
+createToggle("Haki Color", 250, "HakiSpin")
