@@ -19,6 +19,7 @@ _G.AutoClick = false
 _G.AutoClaim = false
 _G.AutoTP = false
 _G.TrialAura = false
+_G.TPNearest = false
 
 --// SELECTED MOBS
 local SelectedMobs = {}
@@ -32,7 +33,7 @@ gui.ResetOnSpawn = false
 -- MAIN
 local main = Instance.new("Frame")
 main.Parent = gui
-main.Size = UDim2.new(0,230,0,400)
+main.Size = UDim2.new(0,230,0,460)
 main.Position = UDim2.new(0.5,-115,0.5,-170)
 main.BackgroundColor3 = Color3.fromRGB(18,18,18)
 main.BorderSizePixel = 0
@@ -107,11 +108,24 @@ tp.TextColor3 = Color3.new(1,1,1)
 tp.BorderSizePixel = 0
 Instance.new("UICorner",tp).CornerRadius = UDim.new(0,14)
 
+-- TP NEAREST BUTTON
+local tpnearest = Instance.new("TextButton")
+tpnearest.Parent = main
+tpnearest.Size = UDim2.new(0,200,0,38)
+tpnearest.Position = UDim2.new(0.5,-100,0,275)
+tpnearest.BackgroundColor3 = Color3.fromRGB(40,40,40)
+tpnearest.Text = "TP Nearest : OFF"
+tpnearest.Font = Enum.Font.GothamBold
+tpnearest.TextSize = 15
+tpnearest.TextColor3 = Color3.new(1,1,1)
+tpnearest.BorderSizePixel = 0
+Instance.new("UICorner",tpnearest).CornerRadius = UDim.new(0,14)
+
 -- TRIAL BUTTON
 local trial = Instance.new("TextButton")
 trial.Parent = main
 trial.Size = UDim2.new(0,200,0,38)
-trial.Position = UDim2.new(0.5,-100,0,275)
+trial.Position = UDim2.new(0.5,-100,0,330)
 trial.BackgroundColor3 = Color3.fromRGB(40,40,40)
 trial.Text = "Trial Aura : OFF"
 trial.Font = Enum.Font.GothamBold
@@ -398,24 +412,43 @@ task.spawn(function()
 
     while task.wait(0.15) do
 
-        if _G.AutoTP then
+        if _G.AutoTP or _G.TPNearest then
 
             local char = player.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
 
                 local hrp = char.HumanoidRootPart
 
+                local nearest = nil
+                local shortest = math.huge
+
                 for _,enemy in pairs(workspace.Client.Enemies:GetChildren()) do
 
-                    if SelectedMobs[enemy.Name] then
+                    local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
 
-                        local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
+                    if enemyHRP then
 
-                        if enemyHRP then
-                            hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,5)
-                            break
+                        local dist = (enemyHRP.Position - hrp.Position).Magnitude
+
+                        if _G.TPNearest then
+
+                            if dist < shortest then
+                                shortest = dist
+                                nearest = enemyHRP
+                            end
+
+                        else
+
+                            if SelectedMobs[enemy.Name] then
+                                hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,5)
+                                break
+                            end
                         end
                     end
+                end
+
+                if _G.TPNearest and nearest then
+                    hrp.CFrame = nearest.CFrame * CFrame.new(0,0,5)
                 end
             end
         end
@@ -511,6 +544,19 @@ tp.MouseButton1Click:Connect(function()
     else
         tp.Text = "Auto TP : OFF"
         tp.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    end
+end)
+
+tpnearest.MouseButton1Click:Connect(function()
+
+    _G.TPNearest = not _G.TPNearest
+
+    if _G.TPNearest then
+        tpnearest.Text = "TP Nearest : ON"
+        tpnearest.BackgroundColor3 = Color3.fromRGB(255,80,80)
+    else
+        tpnearest.Text = "TP Nearest : OFF"
+        tpnearest.BackgroundColor3 = Color3.fromRGB(40,40,40)
     end
 end)
 
