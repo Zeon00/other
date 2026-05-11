@@ -23,6 +23,7 @@ _G.TPNearest = false
 _G.AutoTrial1 = false
 _G.AutoTrial2 = false
 _G.SelectAllMobs = false 
+_G.AutoHeroEvent = false
 
 --// SELECTED MOBS
 local SelectedMobs = {}
@@ -52,7 +53,7 @@ stroke.Thickness = 2
 local main = Instance.new("ScrollingFrame")
 main.Parent = holder
 main.Size = UDim2.new(1,0,1,0)
-main.CanvasSize = UDim2.new(0,0,0,900)
+main.CanvasSize = UDim2.new(0,0,0,1050)
 main.BackgroundTransparency = 1
 main.BorderSizePixel = 0
 main.ScrollBarThickness = 4
@@ -185,11 +186,24 @@ selectall.TextColor3 = Color3.new(1,1,1)
 selectall.BorderSizePixel = 0
 Instance.new("UICorner",selectall).CornerRadius = UDim.new(0,14)
 
+-- HERO EVENT BUTTON
+local heroevent = Instance.new("TextButton")
+heroevent.Parent = main
+heroevent.Size = UDim2.new(0,200,0,38)
+heroevent.Position = UDim2.new(0.5,-100,0,550)
+heroevent.BackgroundColor3 = Color3.fromRGB(40,40,40)
+heroevent.Text = "Auto Hero Event : OFF"
+heroevent.Font = Enum.Font.GothamBold
+heroevent.TextSize = 15
+heroevent.TextColor3 = Color3.new(1,1,1)
+heroevent.BorderSizePixel = 0
+Instance.new("UICorner",heroevent).CornerRadius = UDim.new(0,14)
+
 -- DROPDOWN
 local dropdown = Instance.new("Frame")
 dropdown.Parent = main
 dropdown.Size = UDim2.new(0,200,0,180)
-dropdown.Position = UDim2.new(0.5,-100,0,550)
+dropdown.Position = UDim2.new(0.5,-100,0,605)
 dropdown.BackgroundColor3 = Color3.fromRGB(30,30,30)
 dropdown.BorderSizePixel = 0
 Instance.new("UICorner",dropdown).CornerRadius = UDim.new(0,14)
@@ -339,8 +353,23 @@ end
 
 RefreshDropdown()
 
-workspace.Client.Enemies.ChildAdded:Connect(function()
+workspace.Client.Enemies.ChildAdded:Connect(function(enemy)
+
     task.wait(1)
+
+    if _G.SelectAllMobs then
+
+        local blacklist = {
+            ["Dummy"] = true,
+            ["Training Dummy"] = true,
+            ["Damage Dummy"] = true
+        }
+
+        if not blacklist[enemy.Name] then
+            SelectedMobs[enemy.Name] = true
+        end
+    end
+
     RefreshDropdown()
 end)
 
@@ -609,6 +638,41 @@ task.spawn(function()
         end
     end
 end)
+
+-- AUTO HERO EVENT
+task.spawn(function()
+
+    while task.wait(3) do
+
+        if _G.AutoHeroEvent then
+
+            pcall(function()
+
+                Bridge:FireServer(
+                    "Gamemodes",
+                    "HeroEvent",
+                    "Start"
+                )
+
+            end)
+
+            task.wait(8)
+
+            local char = player.Character
+
+            if char and char:FindFirstChild("HumanoidRootPart") then
+
+                char.HumanoidRootPart.CFrame = CFrame.new(
+                    2606.727783203125,
+                    11.117384910583496,
+                    -4065.142333984375
+                )
+
+            end
+        end
+    end
+end)
+
 -- TOGGLES
 aura.MouseButton1Click:Connect(function()
 
@@ -749,6 +813,23 @@ selectall.MouseButton1Click:Connect(function()
     RefreshDropdown()
 end)
 
+heroevent.MouseButton1Click:Connect(function()
+
+    _G.AutoHeroEvent = not _G.AutoHeroEvent
+
+    if _G.AutoHeroEvent then
+
+        heroevent.Text = "Auto Hero Event : ON"
+        heroevent.BackgroundColor3 = Color3.fromRGB(255,0,120)
+
+    else
+
+        heroevent.Text = "Auto Hero Event : OFF"
+        heroevent.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+    end
+end)
+
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
     holder.Visible = false
@@ -773,7 +854,7 @@ close.MouseButton1Click:Connect(function()
 	_G.AutoTrial1 = false
     _G.AutoTrial2 = false
 	_G.SelectAllMobs = false
-
+	_G.AutoHeroEvent = false
     gui:Destroy()
 end)
 
