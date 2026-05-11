@@ -22,6 +22,7 @@ _G.TrialAura = false
 _G.TPNearest = false
 _G.AutoTrial1 = false
 _G.AutoTrial2 = false
+_G.SelectAllMobs = false 
 
 --// SELECTED MOBS
 local SelectedMobs = {}
@@ -51,7 +52,7 @@ stroke.Thickness = 2
 local main = Instance.new("ScrollingFrame")
 main.Parent = holder
 main.Size = UDim2.new(1,0,1,0)
-main.CanvasSize = UDim2.new(0,0,0,750)
+main.CanvasSize = UDim2.new(0,0,0,900)
 main.BackgroundTransparency = 1
 main.BorderSizePixel = 0
 main.ScrollBarThickness = 4
@@ -169,14 +170,26 @@ trial.Font = Enum.Font.GothamBold
 trial.TextSize = 15
 trial.TextColor3 = Color3.new(1,1,1)
 trial.BorderSizePixel = 0
-
 Instance.new("UICorner",trial).CornerRadius = UDim.new(0,14)
+
+-- SELECT ALL BUTTON
+local selectall = Instance.new("TextButton")
+selectall.Parent = main
+selectall.Size = UDim2.new(0,200,0,38)
+selectall.Position = UDim2.new(0.5,-100,0,495)
+selectall.BackgroundColor3 = Color3.fromRGB(40,40,40)
+selectall.Text = "Select All Mobs : OFF"
+selectall.Font = Enum.Font.GothamBold
+selectall.TextSize = 15
+selectall.TextColor3 = Color3.new(1,1,1)
+selectall.BorderSizePixel = 0
+Instance.new("UICorner",selectall).CornerRadius = UDim.new(0,14)
 
 -- DROPDOWN
 local dropdown = Instance.new("Frame")
 dropdown.Parent = main
 dropdown.Size = UDim2.new(0,200,0,180)
-dropdown.Position = UDim2.new(0.5,-100,0,500)
+dropdown.Position = UDim2.new(0.5,-100,0,550)
 dropdown.BackgroundColor3 = Color3.fromRGB(30,30,30)
 dropdown.BorderSizePixel = 0
 Instance.new("UICorner",dropdown).CornerRadius = UDim.new(0,14)
@@ -700,6 +713,42 @@ trial.MouseButton1Click:Connect(function()
         trial.BackgroundColor3 = Color3.fromRGB(40,40,40)
     end
 end)
+
+selectall.MouseButton1Click:Connect(function()
+
+    _G.SelectAllMobs = not _G.SelectAllMobs
+
+    if _G.SelectAllMobs then
+
+        selectall.Text = "Select All Mobs : ON"
+        selectall.BackgroundColor3 = Color3.fromRGB(0,255,120)
+
+        for _,enemy in pairs(workspace.Client.Enemies:GetChildren()) do
+
+            local blacklist = {
+                ["Dummy"] = true,
+                ["Training Dummy"] = true,
+                ["Damage Dummy"] = true
+            }
+
+            if not blacklist[enemy.Name] then
+                SelectedMobs[enemy.Name] = true
+            end
+        end
+
+    else
+
+        selectall.Text = "Select All Mobs : OFF"
+        selectall.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+        for mobName,_ in pairs(SelectedMobs) do
+            SelectedMobs[mobName] = false
+        end
+    end
+
+    RefreshDropdown()
+end)
+
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
     holder.Visible = false
@@ -723,6 +772,7 @@ close.MouseButton1Click:Connect(function()
 	_G.TPNearest = false
 	_G.AutoTrial1 = false
     _G.AutoTrial2 = false
+	_G.SelectAllMobs = false
 
     gui:Destroy()
 end)
