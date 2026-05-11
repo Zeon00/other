@@ -463,7 +463,7 @@ task.spawn(function()
 
                     Bridge:FireServer(
                         "General",
-                        "DailyRewards",
+                        "TimeRewards",
                         "Claim",
                         i
                     )
