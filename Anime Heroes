@@ -978,14 +978,20 @@ end)
 
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
+
     holder.Visible = false
+    dropdown.Visible = false
     icon.Visible = true
+
 end)
 
 -- RESTORE
 icon.MouseButton1Click:Connect(function()
+
     holder.Visible = true
+    dropdown.Visible = true
     icon.Visible = false
+
 end)
 
 -- DESTROY
