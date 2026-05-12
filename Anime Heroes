@@ -24,6 +24,7 @@ _G.AutoTrial1 = false
 _G.AutoTrial2 = false
 _G.SelectAllMobs = false 
 _G.AutoHeroEvent = false
+_G.AutoTower = false
 
 --// SELECTED MOBS
 local SelectedMobs = {}
@@ -53,7 +54,7 @@ stroke.Thickness = 2
 local main = Instance.new("ScrollingFrame")
 main.Parent = holder
 main.Size = UDim2.new(1,0,1,0)
-main.CanvasSize = UDim2.new(0,0,0,1050)
+main.CanvasSize = UDim2.new(0,0,0,1150)
 main.BackgroundTransparency = 1
 main.BorderSizePixel = 0
 main.ScrollBarThickness = 4
@@ -61,13 +62,16 @@ main.ScrollBarThickness = 4
 
 -- TITLE
 local title = Instance.new("TextLabel")
-title.Parent = main
+title.Parent = holder
 title.Size = UDim2.new(1,0,0,40)
+title.Position = UDim2.new(0,0,0,0)
 title.BackgroundTransparency = 1
 title.Text = "Fighter Hub"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 22
 title.TextColor3 = Color3.new(1,1,1)
+main.Position = UDim2.new(0,0,0,45)
+main.Size = UDim2.new(1,0,1,-45)
 
 -- AURA BUTTON
 local aura = Instance.new("TextButton")
@@ -199,6 +203,19 @@ heroevent.TextColor3 = Color3.new(1,1,1)
 heroevent.BorderSizePixel = 0
 Instance.new("UICorner",heroevent).CornerRadius = UDim.new(0,14)
 
+-- TOWER BUTTON
+local tower = Instance.new("TextButton")
+tower.Parent = main
+tower.Size = UDim2.new(0,200,0,38)
+tower.Position = UDim2.new(0.5,-100,0,805)
+tower.BackgroundColor3 = Color3.fromRGB(40,40,40)
+tower.Text = "Auto Tower : OFF"
+tower.Font = Enum.Font.GothamBold
+tower.TextSize = 15
+tower.TextColor3 = Color3.new(1,1,1)
+tower.BorderSizePixel = 0
+Instance.new("UICorner",tower).CornerRadius = UDim.new(0,14)
+
 -- DROPDOWN
 local dropdown = Instance.new("Frame")
 dropdown.Parent = main
@@ -230,11 +247,12 @@ local layout = Instance.new("UIListLayout")
 layout.Parent = scroll
 layout.Padding = UDim.new(0,5)
 
+
 -- CLOSE
 local close = Instance.new("TextButton")
-close.Parent = main
+close.Parent = holder
 close.Size = UDim2.new(0,30,0,30)
-close.Position = UDim2.new(1,-35,0,5)
+close.Position = UDim2.new(1,-40,0,8)
 close.BackgroundColor3 = Color3.fromRGB(255,70,70)
 close.Text = "X"
 close.Font = Enum.Font.GothamBold
@@ -245,9 +263,9 @@ Instance.new("UICorner",close).CornerRadius = UDim.new(1,0)
 
 -- MINIMIZE
 local mini = Instance.new("TextButton")
-mini.Parent = main
+mini.Parent = holder
 mini.Size = UDim2.new(0,30,0,30)
-mini.Position = UDim2.new(1,-70,0,5)
+mini.Position = UDim2.new(1,-75,0,8)
 mini.BackgroundColor3 = Color3.fromRGB(255,200,0)
 mini.Text = "-"
 mini.Font = Enum.Font.GothamBold
@@ -673,6 +691,27 @@ task.spawn(function()
     end
 end)
 
+-- AUTO TOWER
+task.spawn(function()
+
+    while task.wait(3) do
+
+        if _G.AutoTower then
+
+            pcall(function()
+
+                Bridge:FireServer(
+                    "Gamemodes",
+                    "Tower",
+                    "Join",
+                    4
+                )
+
+            end)
+        end
+    end
+end)
+
 -- TOGGLES
 aura.MouseButton1Click:Connect(function()
 
@@ -830,6 +869,22 @@ heroevent.MouseButton1Click:Connect(function()
     end
 end)
 
+tower.MouseButton1Click:Connect(function()
+
+    _G.AutoTower = not _G.AutoTower
+
+    if _G.AutoTower then
+
+        tower.Text = "Auto Tower : ON"
+        tower.BackgroundColor3 = Color3.fromRGB(120,0,255)
+
+    else
+
+        tower.Text = "Auto Tower : OFF"
+        tower.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+    end
+end) 
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
     holder.Visible = false
@@ -855,6 +910,8 @@ close.MouseButton1Click:Connect(function()
     _G.AutoTrial2 = false
 	_G.SelectAllMobs = false
 	_G.AutoHeroEvent = false
+	_G.AutoTower = false
+
     gui:Destroy()
 end)
 
