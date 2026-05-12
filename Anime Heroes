@@ -550,9 +550,14 @@ task.spawn(function()
 
                     if not blacklist[enemy.Name] then
 
+                        local humanoid = enemy:FindFirstChildOfClass("Humanoid")
                         local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
 
-                        if enemyHRP then
+                        if humanoid
+                        and humanoid.Health > 0
+                        and enemyHRP
+                        and enemyHRP:IsDescendantOf(workspace)
+                        and enemyHRP.Position.Y > -50 then
 
                             local dist = (enemyHRP.Position - hrp.Position).Magnitude
 
