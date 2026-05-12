@@ -721,7 +721,7 @@ task.spawn(function()
 
             pcall(function()
 
-                local towers = workspace.Client.Gamemodes:FindFirstChild("Tower")
+                local towers = workspace.Server.Gamemodes:FindFirstChild("Tower")
 
                 if towers then
 
