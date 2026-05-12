@@ -39,7 +39,7 @@ gui.ResetOnSpawn = false
 -- MAIN
 local holder = Instance.new("Frame")
 holder.Parent = gui
-holder.Size = UDim2.new(0,470,0,470)
+holder.Size = UDim2.new(0,250,0,470)
 holder.Position = UDim2.new(0.5,-125,0.5,-200)
 holder.BackgroundColor3 = Color3.fromRGB(18,18,18)
 holder.BorderSizePixel = 0
@@ -55,7 +55,7 @@ stroke.Thickness = 2
 local main = Instance.new("ScrollingFrame")
 main.Parent = holder
 main.Size = UDim2.new(1,0,1,0)
-main.CanvasSize = UDim2.new(0,0,0,900)
+main.CanvasSize = UDim2.new(0,0,0,880)
 main.BackgroundTransparency = 1
 main.BorderSizePixel = 0
 main.ScrollBarThickness = 4
@@ -229,13 +229,16 @@ createtower.TextSize = 15
 createtower.TextColor3 = Color3.new(1,1,1)
 createtower.BorderSizePixel = 0
 Instance.new("UICorner",createtower).CornerRadius = UDim.new(0,14)
+
 -- DROPDOWN
 local dropdown = Instance.new("Frame")
-dropdown.Parent = main
-dropdown.Size = UDim2.new(0,200,0,380)
-dropdown.Position = UDim2.new(0,250,0,55)
+dropdown.Parent = gui
+dropdown.Size = UDim2.new(0,170,0,260)
+dropdown.Position = UDim2.new(0.5,130,0.5,-130)
 dropdown.BackgroundColor3 = Color3.fromRGB(30,30,30)
 dropdown.BorderSizePixel = 0
+dropdown.Active = true
+dropdown.Draggable = true
 Instance.new("UICorner",dropdown).CornerRadius = UDim.new(0,14)
 
 local dropTitle = Instance.new("TextLabel")
