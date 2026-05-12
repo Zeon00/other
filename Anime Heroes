@@ -705,13 +705,29 @@ task.spawn(function()
 
             pcall(function()
 
-                Bridge:FireServer(
-                    "Gamemodes",
-                    "Tower",
-                    "Join",
-                    4
-                )
+                local towers = workspace:FindFirstChild("Client")
+                and workspace.Client:FindFirstChild("Gamemodes")
+                and workspace.Client.Gamemodes:FindFirstChild("Tower")
 
+                if towers then
+
+                    for _,v in pairs(towers:GetChildren()) do
+
+                        local towerId = tonumber(v.Name)
+
+                        if towerId then
+
+                            Bridge:FireServer(
+                                "Gamemodes",
+                                "Tower",
+                                "Join",
+                                towerId
+                            )
+
+                            break
+                        end
+                    end
+                end
             end)
         end
     end
