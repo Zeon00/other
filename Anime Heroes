@@ -721,19 +721,15 @@ local function IsInTrial()
         return false
     end
 
-    for _,v in pairs(trials:GetChildren()) do
+    local trial1 = trials:FindFirstChild("1")
+    local trial2 = trials:FindFirstChild("2")
 
-        if v:IsA("Folder") or v:IsA("Model") then
+    if trial1 and #trial1:GetChildren() > 0 then
+        return true
+    end
 
-            for _,obj in pairs(v:GetDescendants()) do
-
-                if obj:IsA("BasePart")
-                and obj:GetAttribute("ID") then
-
-                    return true
-                end
-            end
-        end
+    if trial2 and #trial2:GetChildren() > 0 then
+        return true
     end
 
     return false
