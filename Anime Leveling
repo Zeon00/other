@@ -441,79 +441,95 @@ local function DropdownMulti(title, list)
     btn.TextScaled = true
 
     -- DROPDOWN FRAME (KE SAMPING)
-    local dropFrame = Instance.new("Frame")
-    dropFrame.Parent = gui
-    dropFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
-    dropFrame.Visible = false
-    dropFrame.BorderSizePixel = 0
-    dropFrame.ZIndex = 100
-    Instance.new("UICorner", dropFrame)
+local dropFrame = Instance.new("Frame")
+dropFrame.Parent = gui
+dropFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+dropFrame.Visible = false
+dropFrame.BorderSizePixel = 0
+dropFrame.ZIndex = 100
+dropFrame.ClipsDescendants = true
+Instance.new("UICorner", dropFrame)
 
-    local scroll = Instance.new("ScrollingFrame", dropFrame)
-    scroll.Size = UDim2.new(1,0,1,0)
-    scroll.CanvasSize = UDim2.new(0,0,0,0)
-    scroll.ScrollBarThickness = 4
-    scroll.BackgroundTransparency = 1
-    scroll.ZIndex = 101
+local scroll = Instance.new("ScrollingFrame", dropFrame)
+scroll.Size = UDim2.new(1,0,1,0)
+scroll.CanvasSize = UDim2.new(0,0,0,0)
+scroll.ScrollBarThickness = 4
+scroll.BackgroundTransparency = 1
+scroll.ZIndex = 101
+scroll.ClipsDescendants = true
 
-    local layout = Instance.new("UIListLayout", scroll)
-    layout.Padding = UDim.new(0,4)
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0,4)
 
-    local opened = false
-    local itemCount = 0
+local opened = false
+local itemCount = 0
 
-    btn.MouseButton1Click:Connect(function()
-        opened = not opened
-        dropFrame.Visible = opened
+btn.MouseButton1Click:Connect(function()
+    opened = not opened
+    dropFrame.Visible = opened
 
-        if opened then
-            local pos = main.AbsolutePosition
-            local size = main.AbsoluteSize
+    if opened then
+        local pos = main.AbsolutePosition
+        local size = main.AbsoluteSize
 
-            local width = size.X
-            local contentHeight = itemCount * 32
-            local maxHeight = 200
+        local width = size.X
+        local contentHeight = itemCount * 32
+        local maxHeight = 200
 
-            dropFrame.Position = UDim2.new(
-                0,
-                pos.X + size.X + -5, -- 👉 KE SAMPING KANAN
-                0,
-                pos.Y
-            )
+        local finalY = pos.Y
+        local finalHeight = math.min(contentHeight, maxHeight)
 
-            dropFrame.Size = UDim2.new(
-                0,
-                width,
-                0,
-                math.min(contentHeight, maxHeight)
-            )
-
-            scroll.CanvasSize = UDim2.new(0,0,0,contentHeight)
+        -- 🔥 kalau kebawah layar → naik
+        if finalY + finalHeight > camera.ViewportSize.Y then
+            finalY = camera.ViewportSize.Y - finalHeight - 10
         end
-    end)
 
-    for name, callback in pairs(list) do
-        itemCount = itemCount +1
+        -- 🔥 jangan minus
+        if finalY < 10 then
+            finalY = 10
+        end
 
-        local b = Instance.new("TextButton", scroll)
-        b.Size = UDim2.new(1,0,0,30)
-        b.Text = name.." OFF"
-        b.BackgroundColor3 = Color3.fromRGB(100,0,0)
-        b.TextColor3 = Color3.new(1,1,1)
-        b.Font = Enum.Font.Gotham
-        b.TextScaled = true
-        b.ZIndex = 102
-        Instance.new("UICorner", b)
+        dropFrame.Position = UDim2.new(
+            0,
+            pos.X + size.X - 5,
+            0,
+            finalY
+        )
 
-        local state = false
+        dropFrame.Size = UDim2.new(
+            0,
+            width,
+            0,
+            finalHeight
+        )
 
-        b.MouseButton1Click:Connect(function()
-            state = not state
-            b.Text = name.." "..(state and "ON" or "OFF")
-            b.BackgroundColor3 = state and Color3.fromRGB(0,150,0) or Color3.fromRGB(100,0,0)
-            callback(state)
-        end)
+        scroll.CanvasSize = UDim2.new(0,0,0,contentHeight)
     end
+end)
+
+for name, callback in pairs(list) do
+    itemCount += 1
+
+    local b = Instance.new("TextButton", scroll)
+    b.Size = UDim2.new(1,0,0,30)
+    b.Text = name.." OFF"
+    b.BackgroundColor3 = Color3.fromRGB(100,0,0)
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.Gotham
+    b.TextScaled = true
+    b.ZIndex = 102
+    Instance.new("UICorner", b)
+
+    local state = false
+
+    b.MouseButton1Click:Connect(function()
+        state = not state
+        b.Text = name.." "..(state and "ON" or "OFF")
+        b.BackgroundColor3 = state and Color3.fromRGB(0,150,0)
+            or Color3.fromRGB(100,0,0)
+
+        callback(state)
+    end)
 end
 local UIS = game:GetService("UserInputService")
 
