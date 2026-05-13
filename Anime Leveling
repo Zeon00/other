@@ -43,6 +43,8 @@ local AutoBankai = false
 local AutoDivisions = false
 local AutoClaim = false
 local AutoRollTechnique = false
+local ManaPower = false
+local HashiraPower = false
 local AutoWorld8 = false
 local AutoGateRaid = false
 local LastGate = 0
@@ -763,6 +765,8 @@ end
 				if RollMediumArtifact then Remotes.RollMediumArtifactPower:FireServer() end
 				if RollHunterPower then Remotes.RollHunterPower:FireServer() end
 				if RollChakraPower then Remotes.RollChakraPower:FireServer() end
+				if RollManaPower then Remotes.RollManaPower:FireServer() end
+				if RollHashiraPower then Remotes.RollHashiraPower:FireServer() end
             end
         end
     end
@@ -811,4 +815,6 @@ DropdownMulti("AUTO POWERS", {
 	["Medium"] = function(v) RollMediumArtifact = v end,
 	["Hunter"] = function(v) RollHunterPower = v end,
 	["Cakra"] = function(v) RollChakraPower = v end,
+	["Mana"] = function(v) RollManaPower = v end,
+	["Hashira"] = function(v) RollHashiraPower = v end,
 })
