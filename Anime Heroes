@@ -679,6 +679,7 @@ task.spawn(function()
 end)
 
 -- AUTO HERO EVENT
+-- AUTO HERO EVENT
 task.spawn(function()
 
     while task.wait(3) do
@@ -699,28 +700,13 @@ task.spawn(function()
 
             if char and char:FindFirstChild("HumanoidRootPart") then
 
-                local hrp = char.HumanoidRootPart
+                repeat task.wait(5)
 
-                repeat task.wait(1)
-
-                    local heroFolder = workspace.Server.Gamemodes.HeroEvent:FindFirstChild("Enemies")
-
-                    if heroFolder then
-
-                        for _,boss in pairs(heroFolder:GetDescendants()) do
-
-                            if boss:IsA("Model") then
-
-                                local enemyHRP = boss:FindFirstChild("HumanoidRootPart")
-
-                                if enemyHRP then
-
-                                    hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,5)
-                                    break
-                                end
-                            end
-                        end
-                    end
+                    char.HumanoidRootPart.CFrame = CFrame.new(
+                        2606.727783203125,
+                        11.117384910583496,
+                        -4065.142333984375
+                    )
 
                 until not _G.AutoHeroEvent
             end
