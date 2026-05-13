@@ -522,7 +522,7 @@ for name, callback in pairs(list) do
 
     local state = false
 
-    b.MouseButton1Click:Connect(function()
+        b.MouseButton1Click:Connect(function()
         state = not state
         b.Text = name.." "..(state and "ON" or "OFF")
         b.BackgroundColor3 = state and Color3.fromRGB(0,150,0)
@@ -531,8 +531,9 @@ for name, callback in pairs(list) do
         callback(state)
     end)
 end
-local UIS = game:GetService("UserInputService")
+end
 
+local UIS = game:GetService("UserInputService")
 local function MakeDraggable(frame)
     local dragging = false
     local dragStart
