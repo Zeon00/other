@@ -26,6 +26,7 @@ _G.SelectAllMobs = false
 _G.AutoHeroEvent = false
 _G.AutoTower = false
 _G.AutoCreateTower = false
+_G.TowerAura = false
 
 --// SELECTED MOBS
 local SelectedMobs = {}
@@ -55,7 +56,7 @@ stroke.Thickness = 2
 local main = Instance.new("ScrollingFrame")
 main.Parent = holder
 main.Size = UDim2.new(1,0,1,0)
-main.CanvasSize = UDim2.new(0,0,0,960)
+main.CanvasSize = UDim2.new(0,0,0,1030)
 main.BackgroundTransparency = 1
 main.BorderSizePixel = 0
 main.ScrollBarThickness = 4
@@ -242,6 +243,19 @@ buyallslots.TextSize = 15
 buyallslots.TextColor3 = Color3.new(1,1,1)
 buyallslots.BorderSizePixel = 0
 Instance.new("UICorner",buyallslots).CornerRadius = UDim.new(0,14)
+
+-- TOWER AURA BUTTON
+local toweraura = Instance.new("TextButton")
+toweraura.Parent = main
+toweraura.Size = UDim2.new(0,200,0,38)
+toweraura.Position = UDim2.new(0.5,-100,0,770)
+toweraura.BackgroundColor3 = Color3.fromRGB(40,40,40)
+toweraura.Text = "Tower Aura : OFF"
+toweraura.Font = Enum.Font.GothamBold
+toweraura.TextSize = 15
+toweraura.TextColor3 = Color3.new(1,1,1)
+toweraura.BorderSizePixel = 0
+Instance.new("UICorner",toweraura).CornerRadius = UDim.new(0,14)
 
 -- DROPDOWN
 local dropdown = Instance.new("Frame")
@@ -797,7 +811,59 @@ task.spawn(function()
         end
     end
 end)
+-- TOWER AURA LOOP
+task.spawn(function()
 
+    while task.wait(0.15) do
+
+        if _G.TowerAura then
+
+            local fighters = GetFighters()
+
+            local towers = workspace.Server.Gamemodes:FindFirstChild("Tower")
+
+            if towers then
+
+                for _,tower in pairs(towers:GetChildren()) do
+
+                    local enemies = tower:FindFirstChild("Enemies")
+
+                    if enemies then
+
+                        for _,enemy in pairs(enemies:GetChildren()) do
+
+                            if enemy:IsA("BasePart")
+                            and enemy:GetAttribute("ID")
+                            and not enemy:GetAttribute("Died") then
+
+                                for _,fighter in pairs(fighters) do
+
+                                    Bridge:FireServer(
+                                        "Fighters",
+                                        "Attack",
+                                        "Attack",
+                                        "Tower",
+                                        enemy,
+                                        fighter.Name
+                                    )
+
+                                    task.wait(0.03)
+
+                                    Bridge:FireServer(
+                                        "Fighters",
+                                        "Attack",
+                                        "Do_Damage",
+                                        fighter.Name
+                                    )
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
 -- TOGGLES
 aura.MouseButton1Click:Connect(function()
 
@@ -1031,6 +1097,23 @@ buyallslots.MouseButton1Click:Connect(function()
     buyallslots.Text = "Buy All Trial Slots"
 
 end)
+
+toweraura.MouseButton1Click:Connect(function()
+
+    _G.TowerAura = not _G.TowerAura
+
+    if _G.TowerAura then
+
+        toweraura.Text = "Tower Aura : ON"
+        toweraura.BackgroundColor3 = Color3.fromRGB(255,0,120)
+
+    else
+
+        toweraura.Text = "Tower Aura : OFF"
+        toweraura.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+    end
+end)
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
 
@@ -1064,6 +1147,7 @@ close.MouseButton1Click:Connect(function()
 	_G.AutoHeroEvent = false
 	_G.AutoTower = false
 	_G.AutoCreateTower = false
+	_G.TowerAura = false
 
     gui:Destroy()
 end)
