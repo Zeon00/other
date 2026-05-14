@@ -618,22 +618,35 @@ task.spawn(function()
     end
 end)
 
--- TRIAL LOOP
+-- TRIAL LOOP OPTIMIZED
 task.spawn(function()
 
-    while task.wait(0.03) do
+    while task.wait(0.15) do
 
         if _G.TrialAura then
 
             local fighters = GetFighters()
 
-            for _,fighter in pairs(fighters) do
+            local enemies = {}
 
-                for _,enemy in pairs(workspace.Server.Gamemodes.Trial:GetDescendants()) do
+            for _,enemy in pairs(workspace.Server.Gamemodes.Trial:GetDescendants()) do
 
-                    if enemy:IsA("BasePart")
-                    and enemy:GetAttribute("ID")
-                    and not enemy:GetAttribute("Died") then
+                if enemy:IsA("BasePart")
+                and enemy:GetAttribute("ID")
+                and not enemy:GetAttribute("Died") then
+
+                    table.insert(enemies, enemy)
+
+                end
+            end
+
+            if #fighters > 0 and #enemies > 0 then
+
+                for i,fighter in pairs(fighters) do
+
+                    local enemy = enemies[(i % #enemies) + 1]
+
+                    if enemy then
 
                         Bridge:FireServer(
                             "Fighters",
@@ -643,6 +656,8 @@ task.spawn(function()
                             enemy,
                             fighter.Name
                         )
+
+                        task.wait(0.03)
 
                         Bridge:FireServer(
                             "Fighters",
@@ -656,6 +671,7 @@ task.spawn(function()
         end
     end
 end)
+
 -- AUTO JOIN TRIAL LOOP
 task.spawn(function()
 
@@ -691,7 +707,6 @@ task.spawn(function()
     end
 end)
 
--- AUTO HERO EVENT
 -- AUTO HERO EVENT
 task.spawn(function()
 
