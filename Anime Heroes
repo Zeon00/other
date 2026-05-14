@@ -55,7 +55,7 @@ stroke.Thickness = 2
 local main = Instance.new("ScrollingFrame")
 main.Parent = holder
 main.Size = UDim2.new(1,0,1,0)
-main.CanvasSize = UDim2.new(0,0,0,880)
+main.CanvasSize = UDim2.new(0,0,0,960)
 main.BackgroundTransparency = 1
 main.BorderSizePixel = 0
 main.ScrollBarThickness = 4
@@ -229,6 +229,19 @@ createtower.TextSize = 15
 createtower.TextColor3 = Color3.new(1,1,1)
 createtower.BorderSizePixel = 0
 Instance.new("UICorner",createtower).CornerRadius = UDim.new(0,14)
+
+-- BUY ALL SLOTS BUTTON
+local buyallslots = Instance.new("TextButton")
+buyallslots.Parent = main
+buyallslots.Size = UDim2.new(0,200,0,38)
+buyallslots.Position = UDim2.new(0.5,-100,0,715)
+buyallslots.BackgroundColor3 = Color3.fromRGB(40,40,40)
+buyallslots.Text = "Buy All Trial Slots"
+buyallslots.Font = Enum.Font.GothamBold
+buyallslots.TextSize = 15
+buyallslots.TextColor3 = Color3.new(1,1,1)
+buyallslots.BorderSizePixel = 0
+Instance.new("UICorner",buyallslots).CornerRadius = UDim.new(0,14)
 
 -- DROPDOWN
 local dropdown = Instance.new("Frame")
@@ -961,6 +974,48 @@ createtower.MouseButton1Click:Connect(function()
     end
 end)
 
+-- BUY ALL TRIAL SLOTS
+buyallslots.MouseButton1Click:Connect(function()
+
+    pcall(function()
+
+        Bridge:FireServer(
+            "General",
+            "Trial_Merchant",
+            "Buy",
+            "Slot4",
+            1000
+        )
+
+        task.wait(0.2)
+
+        Bridge:FireServer(
+            "General",
+            "Trial_Merchant",
+            "Buy",
+            "Slot5",
+            500
+        )
+
+        task.wait(0.2)
+
+        Bridge:FireServer(
+            "General",
+            "Trial_Merchant",
+            "Buy",
+            "Slot6",
+            15
+        )
+
+    end)
+
+    buyallslots.Text = "Purchased!"
+
+    task.wait(1)
+
+    buyallslots.Text = "Buy All Trial Slots"
+
+end)
 -- MINIMIZE
 mini.MouseButton1Click:Connect(function()
 
