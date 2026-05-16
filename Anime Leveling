@@ -233,7 +233,7 @@ task.spawn(function()
                         debounce = true
                         lastTrigger = tick()
 
-                        Remotes:WaitForChild("Teleport"):FireServer("World10")
+                        Remotes:WaitForChild("Teleport"):FireServer("World2")
 
                         task.wait(2)
 
@@ -508,7 +508,7 @@ btn.MouseButton1Click:Connect(function()
 end)
 
 for name, callback in pairs(list) do
-    itemCount += 1
+    itemCount = itemCount + 1
 
     local b = Instance.new("TextButton", scroll)
     b.Size = UDim2.new(1,0,0,30)
