@@ -1,13 +1,13 @@
 --// SERVICES
 local VirtualUser = game:GetService("VirtualUser")
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 game.Players.LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
     VirtualUser:ClickButton2(Vector2.new())
 end)
-
-local Players = game:GetService("Players")
-local RS = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 
@@ -16,63 +16,30 @@ local Library = require(RS:WaitForChild("Framework"):WaitForChild("Library"))
 local Remote = Library.Remote
 local MultiplierService = Library:GetService("MultiplierService")
 
---// REMOTE
+--// SETTINGS
+getgenv().Aura = false
+getgenv().TP = false
+getgenv().Skill = false
+getgenv().AutoClaim = false
+getgenv().AutoRaid = false
+
+local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
 local ScrollRemote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
 
---// ENEMY
-local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
-
---// SETTINGS
-local Aura, TP, Skill = false, false, false
-local WarriorAura = false -- TAMBAHAN
-local TPMode = "Nearest"
-local SelectedMobs = {}
-
 local lastSkill = 0
-local skillDelay = 2
-local lastTP = 0
-local AutoRaid = false
-local AutoClaim = false
-local lastClaim = 0
-local claimDelay = 600 -- 10 menit
-local lastReset = 0
-local resetDelay = 21600 -- 5 jam
+local skillDelay = 1
 
-local START_CF = CFrame.new(
-    -3035.23071, 784.099609, 7447.69922,
-    -0.837066889, 0, 0.54710114,
-    0, 1, 0,
-    -0.54710114, 0, -0.837066889
-)
-
-local RAID_DURATION = 900
-local POST_DELAY = 600
-
-local RemoteEvent = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
---// GET NAME
-local function GetMobName(mob)
-    return mob:GetAttribute("Name") or mob.Name
-end
-
---// TARGET SELECTED
-local function GetTarget()
-    for _,mob in pairs(EnemyFolder:GetChildren()) do
-        if SelectedMobs[GetMobName(mob)] then
-            local hrp = mob:FindFirstChild("HumanoidRootPart")
-            if hrp then return hrp end
-        end
-    end
-end
-
---// TARGET NEAREST
+--// FASTEST NEAREST
 local function GetNearest()
     local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    if not char then return end
 
-    local root = char.HumanoidRootPart
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
     local nearest, dist = nil, math.huge
 
-    for _,mob in pairs(EnemyFolder:GetChildren()) do
+    for _, mob in ipairs(EnemyFolder:GetChildren()) do
         local hrp = mob:FindFirstChild("HumanoidRootPart")
         if hrp then
             local d = (hrp.Position - root.Position).Magnitude
@@ -85,122 +52,35 @@ local function GetNearest()
 
     return nearest
 end
-local function CreateRaid()
-    local args = {
-        {
-            {
-                "GamemodeSystem",
-                "Create",
-                "Easter Raid",
-                "ChocolateKingdom",
-                "Easy",
-                true,
-                n = 6
-            },
-            "\002"
-        }
-    }
-    RemoteEvent:FireServer(unpack(args))
-end
 
-local function StartRaid()
-    local args = {
-        {
-            {
-                "GamemodeSystem",
-                "Start",
-                "Easter Raid",
-                8594485805,
-                n = 4
-            },
-            "\002"
-        }
-    }
-    RemoteEvent:FireServer(unpack(args))
-end
+--// FAST TP
+RunService.RenderStepped:Connect(function()
+    if not getgenv().TP then return end
 
-local function ClickReturn()
-    for i = 1,20 do
-        local results = player.PlayerGui:FindFirstChild("Results")
-
-        if results and results.Enabled then
-            local btn = results:FindFirstChild("Content", true)
-            if btn then
-                local returnBtn = btn:FindFirstChild("Return", true)
-                if returnBtn and returnBtn.Visible then
-                    pcall(function()
-                        firesignal(returnBtn.MouseButton1Click)
-                    end)
-                    break
-                end
-            end
-        end
-
-        task.wait(1)
-    end
-end
-
-local AutoRaid = false
-
-local function JoinRaid()
-    local args = {
-        {
-            {
-                "GamemodeSystem",
-                "Join",
-                "Easter Raid",
-                8594485805, -- ID dari temen lu
-                n = 4
-            },
-            "\002"
-        }
-    }
-
-    game:GetService("ReplicatedStorage")
-        :WaitForChild("ffrostflame_bridgenet2@1.0.0")
-        :WaitForChild("dataRemoteEvent")
-        :FireServer(unpack(args))
-end
---// TP SMOOTH
-local function TPTo(hrp)
     local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    if not char then return end
 
-    local root = char.HumanoidRootPart
-    local dist = (hrp.Position - root.Position).Magnitude
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
 
-    if dist < 6 then return end
-    if tick() - lastTP < 0.25 then return end
-    lastTP = tick()
-
-    root.CFrame = root.CFrame:Lerp(hrp.CFrame * CFrame.new(0,0,4), 0.5)
-end
-
---// LOOP TP
-task.spawn(function()
-    while task.wait(0.25) do
-        if TP then
-            local target = (TPMode == "Selected") and GetTarget() or GetNearest()
-            if target then
-                TPTo(target)
-            end
-        end
+    local target = GetNearest()
+    if target then
+        root.CFrame = target.CFrame * CFrame.new(0,0,3)
     end
 end)
 
---// LOOP AURA
+--// FAST AURA
 task.spawn(function()
     while task.wait() do
-        if Aura then
+        if getgenv().Aura then
             pcall(function()
                 Remote:Fire("ClickSystem","Execute",Library.Target)
-            if WarriorAura then
-    Remote:Fire("WarriorSystem","Attack",Library.Target, true)
-end
-			end)
+                Remote:Fire("WarriorSystem","Attack",Library.Target, true)
+            end)
 
-            if Skill and tick() - lastSkill > skillDelay then
+            if getgenv().Skill and tick() - lastSkill > skillDelay then
                 lastSkill = tick()
+
                 pcall(function()
                     ScrollRemote:FireServer({
                         {
@@ -215,272 +95,105 @@ end
                 end)
             end
 
-            local atkspd = 1
             pcall(function()
-                atkspd = MultiplierService:AtkSPD(player)
-            end)
-            atkspd = (atkspd and atkspd > 0) and atkspd or 1
-            atkspd = atkspd * 1.5
-
-            pcall(function()
-                local char = player.Character
-                if char and char:FindFirstChild("Humanoid") then
-                    char.Humanoid.WalkSpeed = 45
+                local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+                if hum then
+                    hum.WalkSpeed = 60
                 end
             end)
-
-            task.wait(math.max(0.05, 0.6 / atkspd))
         end
     end
 end)
-task.spawn(function()
-    while task.wait() do
-        if AutoRaid then
 
-            -- TP ke posisi
-            local char = player.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.CFrame = START_CF
-            end
-
-            task.wait(1)
-
-            -- CREATE
-            CreateRaid()
-            task.wait(1)
-
-            -- START
-            StartRaid()
-
-            -- tunggu masuk raid
-            task.wait(10)
-
-            -- tunggu 15 menit
-            task.wait(RAID_DURATION)
-
-            -- klik return
-            ClickReturn()
-
-            -- delay 10 menit
-            task.wait(POST_DELAY)
-
-        end
-    end
-end)
-task.spawn(function()
-    while task.wait(1) do
-        if AutoClaim then
-
-            -- CLAIM tiap 10 menit
-            if tick() - lastClaim >= claimDelay then
-                lastClaim = tick()
-
-                for i = 1,9 do
-                    local args = {
-                        {
-                            {
-                                "TimeRewardSystem",
-                                "Claim",
-                                "General",
-                                i,
-                                n = 4
-                            },
-                            "\002"
-                        }
-                    }
-                    ScrollRemote:FireServer(unpack(args))
-                    task.wait(0.5)
-                end
-            end
-
-            -- RESET tiap 5 jam
-            if tick() - lastReset >= resetDelay then
-                lastReset = tick()
-
-                local args = {
-                    {
-                        {
-                            "TimeRewardSystem",
-                            "Reset",
-                            "General",
-                            n = 3
-                        },
-                        "\002"
-                    }
-                }
-                ScrollRemote:FireServer(unpack(args))
-            end
-
-        end
-    end
-end)
-task.spawn(function()
-    while task.wait(1.5) do
-        if AutoRaid then
-            pcall(JoinRaid)
-        end
-    end
-end)
 --// GUI
+pcall(function()
+    game.CoreGui.FastAuraHub:Destroy()
+end)
+
 local gui = Instance.new("ScreenGui")
-gui.Parent = player:WaitForChild("PlayerGui")
-gui.ResetOnSpawn = false
+gui.Name = "FastAuraHub"
+gui.Parent = game.CoreGui
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,250,0,500)
-main.Position = UDim2.new(1,-260,0.3,0)
-main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+main.Size = UDim2.new(0,220,0,220)
+main.Position = UDim2.new(1,-230,0.35,0)
+main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.Active = true
 main.Draggable = true
 Instance.new("UICorner", main)
 
--- TITLE
 local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,-60,0,30)
+title.Size = UDim2.new(1,-70,0,30)
 title.Position = UDim2.new(0,10,0,0)
-title.Text = "Aura System"
-title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
+title.Text = "Fast Aura"
+title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 14
 title.TextXAlignment = Enum.TextXAlignment.Left
 
--- CLOSE
 local close = Instance.new("TextButton", main)
 close.Size = UDim2.new(0,30,0,30)
-close.Position = UDim2.new(1,-30,0,0)
+close.Position = UDim2.new(1,-35,0,0)
 close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(200,50,50)
+close.BackgroundColor3 = Color3.fromRGB(180,40,40)
 close.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", close)
-close.MouseButton1Click:Connect(function() gui:Destroy() end)
 
--- MINIMIZE BUTTON
-local mini = Instance.new("TextButton", main)
-mini.Size = UDim2.new(0,30,0,30)
-mini.Position = UDim2.new(1,-60,0,0)
-mini.Text = "-"
-mini.BackgroundColor3 = Color3.fromRGB(80,80,80)
-mini.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", mini)
-
--- ICON (KALO DI MINIMIZE)
-local icon = Instance.new("TextButton", gui)
-icon.Size = UDim2.new(0,50,0,50)
-icon.Position = UDim2.new(1,-60,0.5,0)
-icon.Text = "OPEN"
-icon.Visible = false
-icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
-icon.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", icon)
-
--- FUNCTION MINIMIZE
-mini.MouseButton1Click:Connect(function()
-    main.Visible = false
-    icon.Visible = true
+close.MouseButton1Click:Connect(function()
+    gui:Destroy()
 end)
 
--- FUNCTION BALIKIN
-icon.MouseButton1Click:Connect(function()
-    main.Visible = true
-    icon.Visible = false
-end)
--- TOGGLE
-local function createToggle(text, posY, callback)
+local function Toggle(text, y, callback)
+    local state = false
+
     local btn = Instance.new("TextButton", main)
     btn.Size = UDim2.new(1,-20,0,35)
-    btn.Position = UDim2.new(0,10,0,posY)
-    btn.Text = text.." OFF"
-    btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+    btn.Position = UDim2.new(0,10,0,y)
+    btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
     btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.Text = text.." OFF"
+
     Instance.new("UICorner", btn)
 
-    local state = false
     btn.MouseButton1Click:Connect(function()
         state = not state
+
         btn.Text = text.." "..(state and "ON" or "OFF")
-        btn.BackgroundColor3 = state and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
+        btn.BackgroundColor3 = state
+            and Color3.fromRGB(0,170,0)
+            or Color3.fromRGB(45,45,45)
+
         callback(state)
     end)
 end
 
-createToggle("Aura",40,function(v) Aura = v end)
-createToggle("TP",80,function(v) TP = v end)
-createToggle("Skill",120,function(v) Skill = v end)
-createToggle("Warrior Aura",160,function(v) WarriorAura = v end)
-createToggle("Auto Claim",200,function(v) AutoClaim = v end)
-createToggle("Auto Join Raid",280,function(v) AutoRaid = v end)
--- MODE
-local modeBtn = Instance.new("TextButton", main)
-modeBtn.Size = UDim2.new(1,-20,0,35)
-modeBtn.Position = UDim2.new(0,10,0,240)
-modeBtn.Text = "Mode: Nearest"
-modeBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-modeBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", modeBtn)
-
-modeBtn.MouseButton1Click:Connect(function()
-    TPMode = (TPMode == "Nearest") and "Selected" or "Nearest"
-    modeBtn.Text = "Mode: "..TPMode
+Toggle("Aura",40,function(v)
+    getgenv().Aura = v
 end)
 
--- SCROLL LIST (FIXED)
-local scroll = Instance.new("ScrollingFrame", main)
-scroll.Size = UDim2.new(1,-10,1,-210)
-scroll.Position = UDim2.new(0,5,0,320)
-scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0,0,0,0)
-scroll.ScrollBarThickness = 6
-local layout = Instance.new("UIListLayout", scroll)
-layout.Padding = UDim.new(0,5)
+Toggle("TP",85,function(v)
+    getgenv().TP = v
+end)
 
-local added = {}
+Toggle("Skill",130,function(v)
+    getgenv().Skill = v
+end)
 
-local function RefreshList()
-    for _,v in pairs(scroll:GetChildren()) do
-        if v:IsA("TextButton") then v:Destroy() end
-    end
+Toggle("Auto Claim",175,function(v)
+    getgenv().AutoClaim = v
+end)
 
-    table.clear(added)
-
-    for _,mob in pairs(EnemyFolder:GetChildren()) do
-        local name = GetMobName(mob)
-
-        if not added[name] then
-            added[name] = true
-
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1,-5,0,25)
-            btn.Text = "[ ] "..name
-            btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.Parent = scroll
-            Instance.new("UICorner", btn)
-
-            btn.MouseButton1Click:Connect(function()
-                SelectedMobs[name] = not SelectedMobs[name]
-                btn.Text = (SelectedMobs[name] and "[✔] " or "[ ] ")..name
-            end)
-        end
-    end
-
-    scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
-end
-
--- AUTO REFRESH LIST
-RefreshList()
-EnemyFolder.ChildAdded:Connect(RefreshList)
-EnemyFolder.ChildRemoved:Connect(RefreshList)
--- ANTI AFK
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
+--// ANTI AFK
 task.spawn(function()
-    while true do
-        local char = player.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.Jump = true
-        end
-        task.wait(8) -- bisa ubah 5–10 detik
+    while task.wait(10) do
+        pcall(function()
+            local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+            if hum then
+                hum.Jump = true
+            end
+        end)
     end
 end)
