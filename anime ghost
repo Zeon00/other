@@ -155,7 +155,7 @@ end
 
 -- ULTRA FAST CLOSEST
 task.spawn(function()
-    while task.wait(0.05) do
+    while task.wait() do
         if getgenv().AutoClosest then
 
             local mobFolder = GetEnemyFolder()
@@ -178,19 +178,21 @@ task.spawn(function()
                         table.insert(args[1], "\002")
                     end
 
-                    pcall(function()
-                        RemoteEvent:FireServer(unpack(args))
-                    end)
+                    -- SPAM FAST
+                    for i = 1,10 do
+                        task.spawn(function()
+                            pcall(function()
+                                RemoteEvent:FireServer(unpack(args))
+                            end)
+                        end)
+                    end
+
                 end
             end
         end
     end
 end)
 
--- TOGGLE
-Toggle("Auto Closest",220,function(v)
-    getgenv().AutoClosest = v
-end)
 --// GUI
 pcall(function()
     game.CoreGui.FastAuraHub:Destroy()
@@ -256,10 +258,11 @@ mini.MouseButton1Click:Connect(function()
    openBtn.Visible = true
 end)
 
+
 -- OPEN FUNCTION
 openBtn.MouseButton1Click:Connect(function()
     main.Visible = true
-    openBtn.Visible = true
+    openBtn.Visible = false
 end)
 local function Toggle(text, y, callback)
     local state = false
@@ -303,6 +306,9 @@ Toggle("Auto Claim",175,function(v)
     getgenv().AutoClaim = v
 end)
 
+Toggle("Auto Closest",220,function(v)
+    getgenv().AutoClosest = v
+end)
 --// ANTI AFK
 task.spawn(function()
     while task.wait(10) do
