@@ -69,42 +69,61 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
---// FAST AURA
+--// ULTRA FAST AURA
 task.spawn(function()
-    while task.wait() do
+    while true do
         if getgenv().Aura then
-            pcall(function()
-                Remote:Fire("ClickSystem","Execute",Library.Target)
-                Remote:Fire("WarriorSystem","Attack",Library.Target, true)
-            end)
 
-            if getgenv().Skill and tick() - lastSkill > skillDelay then
-                lastSkill = tick()
-
-                pcall(function()
-                    ScrollRemote:FireServer({
-                        {
-                            "PetSystem",
-                            "Open",
-                            "Easter 2026 Scroll",
-                            "One",
-                            n = 4
-                        },
-                        "\002"
-                    })
+            -- spam click aura
+            for i = 1,10 do
+                task.spawn(function()
+                    pcall(function()
+                        Remote:Fire("ClickSystem","Execute",Library.Target)
+                    end)
                 end)
             end
 
+            -- warrior spam
+            for i = 1,10 do
+                task.spawn(function()
+                    pcall(function()
+                        Remote:Fire("WarriorSystem","Attack",Library.Target, true)
+                    end)
+                end)
+            end
+
+            -- auto skill
+            if getgenv().Skill and tick() - lastSkill > 0.25 then
+                lastSkill = tick()
+
+                task.spawn(function()
+                    pcall(function()
+                        ScrollRemote:FireServer({
+                            {
+                                "PetSystem",
+                                "Open",
+                                "Easter 2026 Scroll",
+                                "One",
+                                n = 4
+                            },
+                            "\002"
+                        })
+                    end)
+                end)
+            end
+
+            -- walkspeed
             pcall(function()
                 local hum = player.Character and player.Character:FindFirstChild("Humanoid")
                 if hum then
-                    hum.WalkSpeed = 60
+                    hum.WalkSpeed = 75
                 end
             end)
         end
+
+        task.wait()
     end
 end)
-
 --// GUI
 pcall(function()
     game.CoreGui.FastAuraHub:Destroy()
