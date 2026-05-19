@@ -124,6 +124,73 @@ task.spawn(function()
         task.wait()
     end
 end)
+
+--// AUTO CLOSEST
+getgenv().AutoClosest = false
+
+local ClosestIDs = {
+    "3f35c4977dcd480e850543f5e831c178",
+    "3d07267fe51e4fba895e38458cc4b868",
+    "22d0716260164b7ebdd55a134723544b",
+    "2812a9cb0e1a47d59bed2829e29f86c8",
+    "7a2e9d45427a4586b7881b9004749c77",
+    "bb1387ac35004b06b96b07e57f5d9b74",
+    "67f1aa8cf8a54ed18c97a2071cebf314",
+    "f600f2460d254be1b089e9e8a0de55e3"
+}
+
+local ServerEnemies = workspace:WaitForChild("_ENEMIES"):WaitForChild("Server")
+local RemoteEvent = game:GetService("ReplicatedStorage")
+    :WaitForChild("ffrostflame_bridgenet2@1.0.0")
+    :WaitForChild("dataRemoteEvent")
+
+-- DETECT ACTIVE MAP
+local function GetEnemyFolder()
+    for _, folder in pairs(ServerEnemies:GetChildren()) do
+        if #folder:GetChildren() > 0 then
+            return folder
+        end
+    end
+end
+
+-- ULTRA FAST CLOSEST
+task.spawn(function()
+    while task.wait(0.05) do
+        if getgenv().AutoClosest then
+
+            local mobFolder = GetEnemyFolder()
+
+            if mobFolder then
+                local targetMob = mobFolder:GetChildren()[1]
+
+                if targetMob then
+
+                    local args = {{}}
+
+                    for _, id in ipairs(ClosestIDs) do
+                        table.insert(args[1], {
+                            "WarriorSystem",
+                            "Closest",
+                            id,
+                            n = 3
+                        })
+
+                        table.insert(args[1], "\002")
+                    end
+
+                    pcall(function()
+                        RemoteEvent:FireServer(unpack(args))
+                    end)
+                end
+            end
+        end
+    end
+end)
+
+-- TOGGLE
+Toggle("Auto Closest",220,function(v)
+    getgenv().AutoClosest = v
+end)
 --// GUI
 pcall(function()
     game.CoreGui.FastAuraHub:Destroy()
@@ -134,7 +201,7 @@ gui.Name = "FastAuraHub"
 gui.Parent = game.CoreGui
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,220,0,220)
+main.Size = UDim2.new(0,220,0,270)
 main.Position = UDim2.new(1,-230,0.35,0)
 main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.Active = true
