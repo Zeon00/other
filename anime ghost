@@ -143,7 +143,38 @@ Instance.new("UICorner", close)
 close.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
+-- MINIMIZE
+local mini = Instance.new("TextButton", main)
+mini.Size = UDim2.new(0,30,0,30)
+mini.Position = UDim2.new(1,-70,0,0)
+mini.Text = "-"
+mini.BackgroundColor3 = Color3.fromRGB(70,70,70)
+mini.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", mini)
 
+-- ICON OPEN
+local openBtn = Instance.new("TextButton", gui)
+openBtn.Size = UDim2.new(0,50,0,50)
+openBtn.Position = UDim2.new(1,-60,0.5,0)
+openBtn.Text = "OPEN"
+openBtn.Visible = false
+openBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+openBtn.TextColor3 = Color3.new(1,1,1)
+openBtn.Active = true
+openBtn.Draggable = true
+Instance.new("UICorner", openBtn)
+
+-- MINIMIZE FUNCTION
+mini.MouseButton1Click:Connect(function()
+    main.Visible = false
+   openBtn.Visible = true
+end)
+
+-- OPEN FUNCTION
+openBtn.MouseButton1Click:Connect(function()
+    main.Visible = true
+    openBtn.Visible = true
+end)
 local function Toggle(text, y, callback)
     local state = false
 
