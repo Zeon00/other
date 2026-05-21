@@ -22,6 +22,7 @@ _G.TrialAura = false
 _G.TPNearest = false
 _G.AutoTrial1 = false
 _G.AutoTrial2 = false
+_G.AutoTrial3 = false
 _G.SelectAllMobs = false 
 _G.AutoHeroEvent = false
 _G.AutoTower = false
@@ -40,7 +41,7 @@ gui.ResetOnSpawn = false
 -- MAIN
 local holder = Instance.new("Frame")
 holder.Parent = gui
-holder.Size = UDim2.new(0,250,0,470)
+holder.Size = UDim2.new(0,250,0,520)
 holder.Position = UDim2.new(0.5,-125,0.5,-200)
 holder.BackgroundColor3 = Color3.fromRGB(18,18,18)
 holder.BorderSizePixel = 0
@@ -56,7 +57,7 @@ stroke.Thickness = 2
 local main = Instance.new("ScrollingFrame")
 main.Parent = holder
 main.Size = UDim2.new(1,0,1,0)
-main.CanvasSize = UDim2.new(0,0,0,1030)
+main.CanvasSize = UDim2.new(0,0,0,1150)
 main.BackgroundTransparency = 1
 main.BorderSizePixel = 0
 main.ScrollBarThickness = 4
@@ -113,6 +114,19 @@ trial2.TextSize = 15
 trial2.TextColor3 = Color3.new(1,1,1)
 trial2.BorderSizePixel = 0
 Instance.new("UICorner",trial2).CornerRadius = UDim.new(0,14)
+
+-- TRIAL 3 BUTTON
+local trial3 = Instance.new("TextButton")
+trial3.Parent = main
+trial3.Size = UDim2.new(0,200,0,38)
+trial3.Position = UDim2.new(0.5,-100,0,495)
+trial3.BackgroundColor3 = Color3.fromRGB(40,40,40)
+trial3.Text = "Auto Join Trial 3 : OFF"
+trial3.Font = Enum.Font.GothamBold
+trial3.TextSize = 15
+trial3.TextColor3 = Color3.new(1,1,1)
+trial3.BorderSizePixel = 0
+Instance.new("UICorner",trial3).CornerRadius = UDim.new(0,14)
 
 -- CLICK BUTTON
 local click = Instance.new("TextButton")
@@ -183,7 +197,7 @@ Instance.new("UICorner",trial).CornerRadius = UDim.new(0,14)
 local selectall = Instance.new("TextButton")
 selectall.Parent = main
 selectall.Size = UDim2.new(0,200,0,38)
-selectall.Position = UDim2.new(0.5,-100,0,495)
+selectall.Position = UDim2.new(0.5,-100,0,550)
 selectall.BackgroundColor3 = Color3.fromRGB(40,40,40)
 selectall.Text = "Select All Mobs : OFF"
 selectall.Font = Enum.Font.GothamBold
@@ -196,7 +210,7 @@ Instance.new("UICorner",selectall).CornerRadius = UDim.new(0,14)
 local heroevent = Instance.new("TextButton")
 heroevent.Parent = main
 heroevent.Size = UDim2.new(0,200,0,38)
-heroevent.Position = UDim2.new(0.5,-100,0,550)
+heroevent.Position = UDim2.new(0.5,-100,0,605)
 heroevent.BackgroundColor3 = Color3.fromRGB(40,40,40)
 heroevent.Text = "Auto Hero Event : OFF"
 heroevent.Font = Enum.Font.GothamBold
@@ -209,7 +223,7 @@ Instance.new("UICorner",heroevent).CornerRadius = UDim.new(0,14)
 local tower = Instance.new("TextButton")
 tower.Parent = main
 tower.Size = UDim2.new(0,200,0,38)
-tower.Position = UDim2.new(0.5,-100,0,605)
+tower.Position = UDim2.new(0.5,-100,0,660)
 tower.BackgroundColor3 = Color3.fromRGB(40,40,40)
 tower.Text = "Auto Tower : OFF"
 tower.Font = Enum.Font.GothamBold
@@ -222,7 +236,7 @@ Instance.new("UICorner",tower).CornerRadius = UDim.new(0,14)
 local createtower = Instance.new("TextButton")
 createtower.Parent = main
 createtower.Size = UDim2.new(0,200,0,38)
-createtower.Position = UDim2.new(0.5,-100,0,660)
+createtower.Position = UDim2.new(0.5,-100,0,715)
 createtower.BackgroundColor3 = Color3.fromRGB(40,40,40)
 createtower.Text = "Auto Create Tower : OFF"
 createtower.Font = Enum.Font.GothamBold
@@ -235,7 +249,7 @@ Instance.new("UICorner",createtower).CornerRadius = UDim.new(0,14)
 local buyallslots = Instance.new("TextButton")
 buyallslots.Parent = main
 buyallslots.Size = UDim2.new(0,200,0,38)
-buyallslots.Position = UDim2.new(0.5,-100,0,715)
+buyallslots.Position = UDim2.new(0.5,-100,0,770)
 buyallslots.BackgroundColor3 = Color3.fromRGB(40,40,40)
 buyallslots.Text = "Buy All Trial Slots"
 buyallslots.Font = Enum.Font.GothamBold
@@ -248,7 +262,7 @@ Instance.new("UICorner",buyallslots).CornerRadius = UDim.new(0,14)
 local toweraura = Instance.new("TextButton")
 toweraura.Parent = main
 toweraura.Size = UDim2.new(0,200,0,38)
-toweraura.Position = UDim2.new(0.5,-100,0,770)
+toweraura.Position = UDim2.new(0.5,-100,0,825)
 toweraura.BackgroundColor3 = Color3.fromRGB(40,40,40)
 toweraura.Text = "Tower Aura : OFF"
 toweraura.Font = Enum.Font.GothamBold
@@ -686,6 +700,7 @@ task.spawn(function()
     end
 end)
 
+
 -- AUTO JOIN TRIAL LOOP
 task.spawn(function()
 
@@ -718,9 +733,22 @@ task.spawn(function()
 
             end)
         end
+
+        if _G.AutoTrial3 then
+
+            pcall(function()
+
+                Bridge:FireServer(
+                    "Gamemodes",
+                    "Trial",
+                    "Join",
+                    3
+                )
+
+            end)
+        end
     end
 end)
-
 -- AUTO HERO EVENT
 task.spawn(function()
 
@@ -978,6 +1006,18 @@ trial2.MouseButton1Click:Connect(function()
     end
 end)
 
+trial3.MouseButton1Click:Connect(function()
+
+    _G.AutoTrial3 = not _G.AutoTrial3
+
+    if _G.AutoTrial3 then
+        trial3.Text = "Auto Join Trial 3 : ON"
+        trial3.BackgroundColor3 = Color3.fromRGB(170,0,255)
+    else
+        trial3.Text = "Auto Join Trial 3 : OFF"
+        trial3.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    end
+end)
 trial.MouseButton1Click:Connect(function()
 
     _G.TrialAura = not _G.TrialAura
@@ -1165,6 +1205,7 @@ close.MouseButton1Click:Connect(function()
 	_G.TPNearest = false
 	_G.AutoTrial1 = false
     _G.AutoTrial2 = false
+	_G.AutoTrial3 = false
 	_G.SelectAllMobs = false
 	_G.AutoHeroEvent = false
 	_G.AutoTower = false
