@@ -426,6 +426,47 @@ local function Toggle(name, callback)
         callback(state)
     end)
 end
+-- STAR INPUT
+local function StarInput()
+    local frameBox = Instance.new("Frame", scrollToggle)
+    frameBox.Size = UDim2.new(0.9,0,0,36)
+    frameBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    Instance.new("UICorner", frameBox)
+
+    local label = Instance.new("TextLabel", frameBox)
+    label.Size = UDim2.new(0.45,0,1,0)
+    label.Text = "EGG STAR"
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1,1,1)
+    label.Font = Enum.Font.Gotham
+    label.TextScaled = true
+
+    local box = Instance.new("TextBox", frameBox)
+    box.Size = UDim2.new(0.5,0,0.8,0)
+    box.Position = UDim2.new(0.48,0,0.1,0)
+    box.Text = "4"
+    box.PlaceholderText = "1-20"
+    box.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    box.TextColor3 = Color3.new(1,1,1)
+    box.Font = Enum.Font.Gotham
+    box.TextScaled = true
+    Instance.new("UICorner", box)
+
+    box.FocusLost:Connect(function()
+        local num = tonumber(box.Text)
+
+        if num then
+            num = math.clamp(math.floor(num),1,20)
+
+            SelectedEgg = "Star"..num
+            box.Text = tostring(num)
+        else
+            box.Text = "4"
+            SelectedEgg = "Star4"
+        end
+    end)
+end
+
 local function DropdownMulti(title, list)
     local main = Instance.new("Frame", scrollToggle)
     main.Size = UDim2.new(0.9,0,0,36)
@@ -802,6 +843,7 @@ Toggle("FAST HIT", function(v) FastHit = v end)
 Toggle("AUTO TP", function(v) AutoTP = v end)
 Toggle("BYPASS", function(v) BypassAll = v end)
 Toggle("EGG", function(v) AutoEgg = v end)
+StarInput()
 Toggle("AUTO MEDIUM TOWER", function(v) AutoMediumTower = v end)
 Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
