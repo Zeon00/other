@@ -514,7 +514,7 @@ btn.MouseButton1Click:Connect(function()
         local size = main.AbsoluteSize
 
         local width = size.X
-        local contentHeight = itemCount * 36
+        local contentHeight = layout.AbsoluteContentSize.Y + 10
         local maxHeight = 200
 
         local finalY = pos.Y
