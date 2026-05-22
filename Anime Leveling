@@ -212,8 +212,8 @@ task.spawn(function()
     end
 end)
 task.spawn(function()
-    local CheckPos = Vector3.new(-106.1825942993164, 147.36544799804688, 2233.121826171875)
-    local TPPos = Vector3.new(262.02056884765625, 182.20741271972656, 20654.439453125)
+    local CheckPos = Vector3.new(-104.9377670288086, 147.36544799804688, 2234.048828125)
+    local TPPos = Vector3.new(-50.03346633911133, 179.9573516845703, 20469.431640625)
 
     local Radius = 10
     local debounce = false
@@ -233,7 +233,7 @@ task.spawn(function()
                         debounce = true
                         lastTrigger = tick()
 
-                        Remotes:WaitForChild("Teleport"):FireServer("World2")
+                        Remotes:WaitForChild("Teleport"):FireServer("World7")
 
                         task.wait(2)
 
