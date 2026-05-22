@@ -376,11 +376,6 @@ scrollToggle.CanvasSize = UDim2.new(0,0,0,0)
 scrollToggle.ScrollBarThickness = 4
 scrollToggle.BackgroundTransparency = 1
 
--- FIX DROPDOWN TENGGELAM
-left.ClipsDescendants = false
-scrollToggle.ClipsDescendants = false
-frame.ClipsDescendants = false
-
 local layout1 = Instance.new("UIListLayout", scrollToggle)
 layout1.Padding = UDim.new(0,6)
 layout1:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -489,7 +484,6 @@ local function DropdownMulti(title, list)
     -- DROPDOWN FRAME (KE SAMPING)
 local dropFrame = Instance.new("Frame")
 dropFrame.Parent = gui
-dropFrame.ClipsDescendants = false
 dropFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 dropFrame.Visible = false
 dropFrame.BorderSizePixel = 0
@@ -520,7 +514,7 @@ btn.MouseButton1Click:Connect(function()
         local size = main.AbsoluteSize
 
         local width = size.X
-        local contentHeight = itemCount * 32
+        local contentHeight = itemCount * 36
         local maxHeight = 200
 
         local finalY = pos.Y
