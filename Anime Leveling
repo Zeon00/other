@@ -43,8 +43,8 @@ local AutoBankai = false
 local AutoDivisions = false
 local AutoClaim = false
 local AutoRollTechnique = false
-local ManaPower = false
-local HashiraPower = false
+local RollManaPower = false
+local RollHashiraPower = false
 local AutoWorld8 = false
 local AutoGateRaid = false
 local LastGate = 0
@@ -213,7 +213,6 @@ task.spawn(function()
 end)
 task.spawn(function()
     local CheckPos = Vector3.new(-104.9377670288086, 147.36544799804688, 2234.048828125)
-    local TPPos = Vector3.new(-50.03346633911133, 179.9573516845703, 20469.431640625)
 
     local Radius = 10
     local debounce = false
@@ -233,7 +232,7 @@ task.spawn(function()
                         debounce = true
                         lastTrigger = tick()
 
-                        Remotes:WaitForChild("Teleport"):FireServer("World7")
+                        Remotes:WaitForChild("Teleport"):FireServer(SelectedWorld)
 
                         task.wait(2)
 
@@ -466,7 +465,55 @@ local function StarInput()
         end
     end)
 end
+local SelectedWorld = "World7"
+local TPPos = Vector3.new(-50.03346633911133, 179.9573516845703, 20469.431640625)
 
+local function TPSettings()
+    local frameBox = Instance.new("Frame", scrollToggle)
+    frameBox.Size = UDim2.new(0.9,0,0,80)
+    frameBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    Instance.new("UICorner", frameBox)
+
+    local worldBox = Instance.new("TextBox", frameBox)
+    worldBox.Size = UDim2.new(0.9,0,0.35,0)
+    worldBox.Position = UDim2.new(0.05,0,0.05,0)
+    worldBox.Text = SelectedWorld
+    worldBox.PlaceholderText = "World Name"
+    worldBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    worldBox.TextColor3 = Color3.new(1,1,1)
+    worldBox.Font = Enum.Font.Gotham
+    worldBox.TextScaled = true
+    Instance.new("UICorner", worldBox)
+
+    local posBox = Instance.new("TextBox", frameBox)
+    posBox.Size = UDim2.new(0.9,0,0.35,0)
+    posBox.Position = UDim2.new(0.05,0,0.55,0)
+    posBox.Text = tostring(TPPos.X)..","..tostring(TPPos.Y)..","..tostring(TPPos.Z)
+    posBox.PlaceholderText = "X,Y,Z"
+    posBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    posBox.TextColor3 = Color3.new(1,1,1)
+    posBox.Font = Enum.Font.Gotham
+    posBox.TextScaled = true
+    Instance.new("UICorner", posBox)
+
+    worldBox.FocusLost:Connect(function()
+        SelectedWorld = worldBox.Text
+    end)
+
+    posBox.FocusLost:Connect(function()
+        local split = string.split(posBox.Text, ",")
+
+        if #split == 3 then
+            local x = tonumber(split[1])
+            local y = tonumber(split[2])
+            local z = tonumber(split[3])
+
+            if x and y and z then
+                TPPos = Vector3.new(x,y,z)
+            end
+        end
+    end)
+end
 local function DropdownMulti(title, list)
     local main = Instance.new("Frame", scrollToggle)
     main.Size = UDim2.new(0.9,0,0,60)
@@ -844,6 +891,7 @@ Toggle("AUTO TP", function(v) AutoTP = v end)
 Toggle("BYPASS", function(v) BypassAll = v end)
 Toggle("EGG", function(v) AutoEgg = v end)
 StarInput()
+TPSettings()
 Toggle("AUTO MEDIUM TOWER", function(v) AutoMediumTower = v end)
 Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
