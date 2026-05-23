@@ -212,14 +212,14 @@ task.spawn(function()
     end
 end)
 task.spawn(function()
-
     local CheckPos = Vector3.new(
         -104.9377670288086,
         147.36544799804688,
         2234.048828125
     )
 
-    local Radius = 25
+    local Radius = 20
+    local debounce = false
     local cooldown = 5
     local lastTrigger = 0
 
@@ -230,26 +230,34 @@ task.spawn(function()
                 local char = player.Character
                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-                if hrp then
-
+                if hrp and not debounce then
                     local dist = (hrp.Position - CheckPos).Magnitude
 
-                    if dist <= Radius and tick() - lastTrigger >= cooldown then
-
+                    if dist <= Radius and tick() - lastTrigger > cooldown then
+                        debounce = true
                         lastTrigger = tick()
 
-                        Remotes:WaitForChild("Teleport"):FireServer(SelectedWorld)
+                        print("TP WORLD:", SelectedWorld)
+                        print("TP POS:", TPPos)
 
-                        task.wait(2)
+                        -- TELEPORT WORLD
+                        Remotes.Teleport:FireServer(SelectedWorld)
 
-                        local newChar = player.Character or player.CharacterAdded:Wait()
-                        local newHrp = newChar:WaitForChild("HumanoidRootPart")
+                        -- TUNGGU LOAD
+                        task.wait(4)
+
+                        local newChar = player.Character
+                        local newHrp = newChar and newChar:FindFirstChild("HumanoidRootPart")
 
                         if newHrp then
                             newHrp.CFrame = CFrame.new(TPPos)
                         end
+
+                        task.wait(2)
+                        debounce = false
                     end
                 end
+
             end)
         end
     end
@@ -543,21 +551,17 @@ saveCurrent.MouseButton1Click:Connect(function()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-    local data = State.GetData()
-
     if hrp then
         TPPos = hrp.Position
 
         posBox.Text =
-            math.floor(TPPos.X)..","..
-            math.floor(TPPos.Y)..","..
-            math.floor(TPPos.Z)
+            tostring(math.floor(TPPos.X))..","..
+            tostring(math.floor(TPPos.Y))..","..
+            tostring(math.floor(TPPos.Z))
     end
 
-    if data and data.LastArea then
-        SelectedWorld = data.LastArea
-        worldBox.Text = SelectedWorld
-    end
+    -- JANGAN AUTO AMBIL LastArea
+    -- kadang invalid buat teleport
 
     saveCurrent.Text = "SAVED!"
     task.wait(1)
