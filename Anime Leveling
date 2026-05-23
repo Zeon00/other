@@ -212,7 +212,7 @@ task.spawn(function()
     end
 end)
 task.spawn(function()
-    local CheckPos = Vector3.new(-104.9377670288086, 147.36544799804688, 2234.048828125)
+    local CheckPos = Vector3.new(-105.00383758544922, 147.36544799804688, 2234.50537109375)
 
     local Radius = 20
     local debounce = false
