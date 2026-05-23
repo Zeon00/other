@@ -489,12 +489,12 @@ local TPPos = Vector3.new(-50.03346633911133, 179.9573516845703, 20469.431640625
 
 local function TPSettings()
     local frameBox = Instance.new("Frame", scrollToggle)
-    frameBox.Size = UDim2.new(0.9,0,0,80)
+    frameBox.Size = UDim2.new(0.9,0,0,120)
     frameBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
     Instance.new("UICorner", frameBox)
 
     local worldBox = Instance.new("TextBox", frameBox)
-    worldBox.Size = UDim2.new(0.9,0,0.35,0)
+    worldBox.Size = UDim2.new(0.9,0,0.25,0)
     worldBox.Position = UDim2.new(0.05,0,0.05,0)
     worldBox.Text = SelectedWorld
     worldBox.PlaceholderText = "World Name"
@@ -505,8 +505,8 @@ local function TPSettings()
     Instance.new("UICorner", worldBox)
 
     local posBox = Instance.new("TextBox", frameBox)
-    posBox.Size = UDim2.new(0.9,0,0.35,0)
-    posBox.Position = UDim2.new(0.05,0,0.55,0)
+    posBox.Size = UDim2.new(0.9,0,0.25,0)
+    posBox.Position = UDim2.new(0.05,0,0.38,0)
     posBox.Text = tostring(TPPos.X)..","..tostring(TPPos.Y)..","..tostring(TPPos.Z)
     posBox.PlaceholderText = "X,Y,Z"
     posBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
@@ -515,23 +515,68 @@ local function TPSettings()
     posBox.TextScaled = true
     Instance.new("UICorner", posBox)
 
-    worldBox.FocusLost:Connect(function()
+	worldBox.FocusLost:Connect(function()
+    if worldBox.Text ~= "" then
         SelectedWorld = worldBox.Text
-    end)
+    else
+        worldBox.Text = SelectedWorld
+    end
+end)
 
-    posBox.FocusLost:Connect(function()
-        local split = string.split(posBox.Text, ",")
+posBox.FocusLost:Connect(function()
+    local split = string.split(posBox.Text, ",")
 
-        if #split == 3 then
-            local x = tonumber(split[1])
-            local y = tonumber(split[2])
-            local z = tonumber(split[3])
+    if #split == 3 then
+        local x = tonumber(split[1])
+        local y = tonumber(split[2])
+        local z = tonumber(split[3])
 
-            if x and y and z then
-                TPPos = Vector3.new(x,y,z)
-            end
+        if x and y and z then
+            TPPos = Vector3.new(x,y,z)
         end
-    end)
+    end
+
+    posBox.Text =
+        math.floor(TPPos.X)..","..
+        math.floor(TPPos.Y)..","..
+        math.floor(TPPos.Z)
+end)
+
+   local saveCurrent = Instance.new("TextButton", frameBox)
+saveCurrent.Size = UDim2.new(0.9,0,0.22,0)
+saveCurrent.Position = UDim2.new(0.05,0,0.7,0)
+saveCurrent.Text = "SAVE CURRENT POSITION"
+saveCurrent.BackgroundColor3 = Color3.fromRGB(0,170,100)
+saveCurrent.TextColor3 = Color3.new(1,1,1)
+saveCurrent.Font = Enum.Font.GothamBold
+saveCurrent.TextScaled = true
+Instance.new("UICorner", saveCurrent)
+
+saveCurrent.MouseButton1Click:Connect(function()
+
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+    local data = State.GetData()
+
+    if hrp then
+        TPPos = hrp.Position
+
+        posBox.Text =
+            math.floor(TPPos.X)..","..
+            math.floor(TPPos.Y)..","..
+            math.floor(TPPos.Z)
+    end
+
+    if data and data.LastArea then
+        SelectedWorld = data.LastArea
+        worldBox.Text = SelectedWorld
+    end
+
+    saveCurrent.Text = "SAVED!"
+    task.wait(1)
+    saveCurrent.Text = "SAVE CURRENT POSITION"
+end)
 end
 local function DropdownMulti(title, list)
     local main = Instance.new("Frame", scrollToggle)
