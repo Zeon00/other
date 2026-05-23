@@ -212,56 +212,42 @@ task.spawn(function()
     end
 end)
 task.spawn(function()
-    local CheckPos = Vector3.new(-104.9377670288086, 147.36544799804688, 2234.048828125)
 
-    local Radius = 10
-    local debounce = false
+    local CheckPos = Vector3.new(
+        -104.9377670288086,
+        147.36544799804688,
+        2234.048828125
+    )
+
+    local Radius = 25
     local cooldown = 5
     local lastTrigger = 0
 
     while task.wait(0.5) do
         if AutoWorld8 then
             pcall(function()
+
                 local char = player.Character
                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-                if hrp and not debounce then
+                if hrp then
+
                     local dist = (hrp.Position - CheckPos).Magnitude
 
-                    if dist <= Radius and tick() - lastTrigger > cooldown then
-                        debounce = true
-                        lastTrigger = tick()
+                    if dist <= Radius and tick() - lastTrigger >= cooldown then
 
-                        -- 🔥 CHECK SEBELUM TP
-                        if not AutoWorld8 then
-                            debounce = false
-                            return
-                        end
+                        lastTrigger = tick()
 
                         Remotes:WaitForChild("Teleport"):FireServer(SelectedWorld)
 
                         task.wait(2)
 
-                        -- 🔥 CHECK LAGI SETELAH WAIT
-                        if not AutoWorld8 then
-                            debounce = false
-                            return
-                        end
-
                         local newChar = player.Character or player.CharacterAdded:Wait()
                         local newHrp = newChar:WaitForChild("HumanoidRootPart")
 
-                        -- 🔥 CHECK LAGI
-                        if not AutoWorld8 then
-                            debounce = false
-                            return
+                        if newHrp then
+                            newHrp.CFrame = CFrame.new(TPPos)
                         end
-
-                        newHrp.CFrame = CFrame.new(TPPos)
-
-                        task.wait(2)
-
-                        debounce = false
                     end
                 end
             end)
