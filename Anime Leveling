@@ -232,16 +232,35 @@ task.spawn(function()
                         debounce = true
                         lastTrigger = tick()
 
+                        -- 🔥 CHECK SEBELUM TP
+                        if not AutoWorld8 then
+                            debounce = false
+                            return
+                        end
+
                         Remotes:WaitForChild("Teleport"):FireServer(SelectedWorld)
 
                         task.wait(2)
 
+                        -- 🔥 CHECK LAGI SETELAH WAIT
+                        if not AutoWorld8 then
+                            debounce = false
+                            return
+                        end
+
                         local newChar = player.Character or player.CharacterAdded:Wait()
                         local newHrp = newChar:WaitForChild("HumanoidRootPart")
+
+                        -- 🔥 CHECK LAGI
+                        if not AutoWorld8 then
+                            debounce = false
+                            return
+                        end
 
                         newHrp.CFrame = CFrame.new(TPPos)
 
                         task.wait(2)
+
                         debounce = false
                     end
                 end
