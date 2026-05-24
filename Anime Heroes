@@ -611,10 +611,11 @@ task.spawn(function()
                         local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
 
                         if humanoid
-                        and humanoid.Health > 0
-                        and enemyHRP
-                        and enemyHRP:IsDescendantOf(workspace)
-                        and enemyHRP.Position.Y > -50 then
+						and humanoid.Health > 0
+						and enemyHRP
+						and enemyHRP:IsDescendantOf(workspace)
+						and enemyHRP.Position.Y > 5
+						and enemyHRP.AssemblyLinearVelocity.Magnitude < 120 then
 
                             local dist = (enemyHRP.Position - hrp.Position).Magnitude
 
@@ -629,18 +630,42 @@ task.spawn(function()
                             -- AUTO TP SELECTED
                             else
 
-                                if SelectedMobs[enemy.Name] then
-                                    hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,5)
-                                    break
-                                end
+                               if SelectedMobs[enemy.Name] then
+
+    local pos = enemyHRP.Position
+
+    if pos.Y > 5 then
+
+        hrp.CFrame = CFrame.new(
+            pos.X,
+            pos.Y + 3,
+            pos.Z + 5
+        )
+
+    end
+
+    break
+end
                             end
                         end
                     end
                 end
 
                 if _G.TPNearest and nearest then
-                    hrp.CFrame = nearest.CFrame * CFrame.new(0,0,5)
-                end
+
+    local targetPos = nearest.Position
+
+    -- anti void
+    if targetPos.Y > 5 then
+
+        hrp.CFrame = CFrame.new(
+            targetPos.X,
+            targetPos.Y + 3,
+            targetPos.Z + 5
+        )
+
+    end
+end
             end
         end
     end
