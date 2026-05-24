@@ -22,7 +22,7 @@ local AutoDemon = false
 local AutoEaster = false
 local AutoJoinTower = false
 local AutoTPNearest = false
-local AutoGroup = false
+local AutoEasterRaid = false
 local InWisteria = false
 local LastWisteria = 0
 local WisteriaDelay = 5 -- delay buka raid
@@ -45,6 +45,9 @@ local AutoClaim = false
 local AutoRollTechnique = false
 local RollManaPower = false
 local RollHashiraPower = false
+local RollCellPower = false
+local RollPyrokeneticPower = false
+local RollTechniquePower = false
 local AutoWorld8 = false
 local AutoGateRaid = false
 local LastGate = 0
@@ -259,6 +262,17 @@ task.spawn(function()
                         LastGate = tick()
                         Remotes:WaitForChild("OpenGateRaid"):FireServer()
                     end
+                end
+            end)
+        end
+    end
+end)
+task.spawn(function()
+    while task.wait(5) do
+        if AutoEasterRaid then
+            pcall(function()
+                if not InTower and not InWisteria then
+                    Remotes:WaitForChild("OpenEasterRaid"):FireServer()
                 end
             end)
         end
@@ -781,16 +795,6 @@ task.spawn(function()
                                 lastTP = tick()
                             end
                         end
-
-                        -- 🔥 GROUP
-                        if AutoGroup then
-                            for _, e in pairs(enemies) do
-                                local e2 = e:FindFirstChild("HumanoidRootPart")
-                                if e2 then
-                                    e2.CFrame = ehrp.CFrame * CFrame.new(math.random(-2,2),0,math.random(-2,2))
-                                end
-                            end
-                        end
                     end
                 end
 
@@ -824,6 +828,9 @@ end
 				if RollChakraPower then Remotes.RollChakraPower:FireServer() end
 				if RollManaPower then Remotes.RollManaPower:FireServer() end
 				if RollHashiraPower then Remotes.RollHashiraPower:FireServer() end
+				if RollCellPower then Remotes.RollCellPower:FireServer() end
+				if RollPyrokeneticPower then Remotes.RollPyrokeneticPower:FireServer() end
+				if RollTechniquePower then Remotes.RollTechniquePower:FireServer() end
             end
         end
     end
@@ -846,7 +853,7 @@ StarInput()
 Toggle("AUTO MEDIUM TOWER", function(v) AutoMediumTower = v end)
 Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
-Toggle("AUTO GROUP", function(v) AutoGroup = v end)
+Toggle("AUTO EASTER RAID", function(v) AutoEasterRaid = v end)
 Toggle("WISTERIA RAID", function(v) AutoWisteria = v end)
 Toggle("WANDEN RAID", function(v) AutoWandenRaid = v end)
 Toggle("AUTO WORLD8 TP", function(v) AutoWorld8 = v end)
@@ -875,4 +882,7 @@ DropdownMulti("AUTO POWERS", {
 	["Cakra"] = function(v) RollChakraPower = v end,
 	["Mana"] = function(v) RollManaPower = v end,
 	["Hashira"] = function(v) RollHashiraPower = v end,
+	["CellPower"] = function(v) RollCellPower = v end,
+	["PyrokeneticPower"] = function(v) RollPyrokeneticPower = v end,
+	["TechniquePower"] = function(v) RollTechniquePower = v end,
 })
