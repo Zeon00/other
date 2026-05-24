@@ -644,14 +644,17 @@ local function UpdateEnemyList()
     local enemies = GetEnemies()
     local used = {}
 
+    -- HAPUS UI LAMA
     for _, child in pairs(scrollMob:GetChildren()) do
         if child:IsA("Frame") and child.Name == "EnemyCheckbox" then
             child:Destroy()
         end
     end
 
+    -- BUAT LIST BARU
     for _, enemy in pairs(enemies) do
         local name = enemy.Name
+
         if not used[name] then
             used[name] = true
 
@@ -673,13 +676,20 @@ local function UpdateEnemyList()
             btn.Size = UDim2.new(0.35,0,1,0)
             btn.Position = UDim2.new(0.65,0,0,0)
             btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.Gotham
+            btn.TextScaled = true
             Instance.new("UICorner", btn)
 
-            SelectedEnemies[name] = true
+            -- 🔥 DEFAULT ON CUMA SEKALI
+            if SelectedEnemies[name] == nil then
+                SelectedEnemies[name] = true
+            end
 
             local function Refresh()
                 btn.Text = SelectedEnemies[name] and "ON" or "OFF"
-                btn.BackgroundColor3 = SelectedEnemies[name]
+
+                btn.BackgroundColor3 =
+                    SelectedEnemies[name]
                     and Color3.fromRGB(0,150,0)
                     or Color3.fromRGB(120,0,0)
             end
