@@ -480,6 +480,74 @@ local function StarInput()
         end
     end)
 end
+--// TOKEN EXCHANGE
+local ExchangeFrom = "BloodArtCoins"
+local ExchangeTo = "WaterCoins"
+local ExchangeAmount = 10000
+local AutoExchange = false
+
+local function ExchangeInput()
+    local holder = Instance.new("Frame", scrollToggle)
+    holder.Size = UDim2.new(0.9,0,0,120)
+    holder.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    Instance.new("UICorner", holder)
+
+    -- FROM
+    local fromBox = Instance.new("TextBox", holder)
+    fromBox.Size = UDim2.new(0.9,0,0,30)
+    fromBox.Position = UDim2.new(0.05,0,0,5)
+    fromBox.PlaceholderText = "FROM ITEM"
+    fromBox.Text = ExchangeFrom
+    fromBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    fromBox.TextColor3 = Color3.new(1,1,1)
+    fromBox.Font = Enum.Font.Gotham
+    fromBox.TextScaled = true
+    Instance.new("UICorner", fromBox)
+
+    -- TO
+    local toBox = Instance.new("TextBox", holder)
+    toBox.Size = UDim2.new(0.9,0,0,30)
+    toBox.Position = UDim2.new(0.05,0,0,42)
+    toBox.PlaceholderText = "TO ITEM"
+    toBox.Text = ExchangeTo
+    toBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    toBox.TextColor3 = Color3.new(1,1,1)
+    toBox.Font = Enum.Font.Gotham
+    toBox.TextScaled = true
+    Instance.new("UICorner", toBox)
+
+    -- AMOUNT
+    local amountBox = Instance.new("TextBox", holder)
+    amountBox.Size = UDim2.new(0.9,0,0,30)
+    amountBox.Position = UDim2.new(0.05,0,0,79)
+    amountBox.PlaceholderText = "AMOUNT"
+    amountBox.Text = tostring(ExchangeAmount)
+    amountBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    amountBox.TextColor3 = Color3.new(1,1,1)
+    amountBox.Font = Enum.Font.Gotham
+    amountBox.TextScaled = true
+    Instance.new("UICorner", amountBox)
+
+    fromBox.FocusLost:Connect(function()
+        ExchangeFrom = fromBox.Text ~= "" and fromBox.Text or "BloodArtCoins"
+    end)
+
+    toBox.FocusLost:Connect(function()
+        ExchangeTo = toBox.Text ~= "" and toBox.Text or "WaterCoins"
+    end)
+
+    amountBox.FocusLost:Connect(function()
+        local num = tonumber(amountBox.Text)
+
+        if num then
+            ExchangeAmount = math.floor(num)
+            amountBox.Text = tostring(ExchangeAmount)
+        else
+            ExchangeAmount = 10000
+            amountBox.Text = "10000"
+        end
+    end)
+end
 local function DropdownMulti(title, list)
     local main = Instance.new("Frame", scrollToggle)
     main.Size = UDim2.new(0.9,0,0,60)
@@ -841,6 +909,7 @@ end
 				if RollCellPower then Remotes.RollCellPower:FireServer() end
 				if RollPyrokeneticPower then Remotes.RollPyrokeneticPower:FireServer() end
 				if RollTechniquePower then Remotes.RollTechniquePower:FireServer() end
+				if AutoExchange then Remotes:WaitForChild("ExchangeTokens"):InvokeServer(ExchangeFrom,ExchangeTo,ExchangeAmount) end
             end
         end
     end
@@ -860,6 +929,7 @@ Toggle("AUTO TP", function(v) AutoTP = v end)
 Toggle("BYPASS", function(v) BypassAll = v end)
 Toggle("EGG", function(v) AutoEgg = v end)
 StarInput()
+ExchangeInput()
 Toggle("AUTO MEDIUM TOWER", function(v) AutoMediumTower = v end)
 Toggle("AUTO JOIN TOWER", function(v) AutoJoinTower = v end)
 Toggle("AUTO TP NEAREST", function(v) AutoTPNearest = v end)
@@ -868,6 +938,7 @@ Toggle("WISTERIA RAID", function(v) AutoWisteria = v end)
 Toggle("WANDEN RAID", function(v) AutoWandenRaid = v end)
 Toggle("AUTO WORLD8 TP", function(v) AutoWorld8 = v end)
 Toggle("GATE RAID", function(v) AutoGateRaid = v end)
+Toggle("AUTO EXCHANGE", function(v) AutoExchange = v end)
 
 DropdownMulti("AUTO POWERS", {
 	["Fruit"] = function(v) AutoFruit = v end,
