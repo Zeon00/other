@@ -109,44 +109,53 @@ end)
 
 --// AUTO RAID
 task.spawn(function()
-    while task.wait(10) do
+    while task.wait(2) do
         if getgenv().AutoRaid then
             pcall(function()
 
-                -- CREATE RAID
-                local args = {
-                    {
+                -- cek kalau belum di raid
+                local InRaid = workspace:FindFirstChild("_MAP")
+                    and workspace._MAP:FindFirstChild("Raid")
+
+                if not InRaid then
+
+                    -- CREATE
+                    local args = {
                         {
-                            "GamemodeSystem",
-                            "Create",
-                            "Elemental Mode",
-                            "WindRaid",
-                            "Easy",
-                            n = 6
-                        },
-                        "\002"
+                            {
+                                "GamemodeSystem",
+                                "Create",
+                                "Elemental Mode",
+                                "WindRaid",
+                                "Easy",
+                                n = 6
+                            },
+                            "\002"
+                        }
                     }
-                }
 
-                ScrollRemote:FireServer(unpack(args))
+                    ScrollRemote:FireServer(unpack(args))
 
-                task.wait(2)
+                    task.wait(2)
 
-                -- START RAID
-                local args2 = {
-                    {
+                    -- START
+                    local args2 = {
                         {
-                            "GamemodeSystem",
-                            "Start",
-                            "Elemental Mode",
-                            8594485805,
-                            n = 4
-                        },
-                        "\002"
+                            {
+                                "GamemodeSystem",
+                                "Start",
+                                "Elemental Mode",
+                                8594485805,
+                                n = 4
+                            },
+                            "\002"
+                        }
                     }
-                }
 
-                ScrollRemote:FireServer(unpack(args2))
+                    ScrollRemote:FireServer(unpack(args2))
+
+                    task.wait(15)
+                end
             end)
         end
     end
