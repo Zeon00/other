@@ -97,22 +97,6 @@ task.spawn(function()
             if getgenv().Skill and tick() - lastSkill > 0.25 then
                 lastSkill = tick()
 
-                task.spawn(function()
-                    pcall(function()
-                        ScrollRemote:FireServer({
-                            {
-                                "PetSystem",
-                                "Open",
-                                "Easter 2026 Scroll",
-                                "One",
-                                n = 4
-                            },
-                            "\002"
-                        })
-                    end)
-                end)
-            end
-
             pcall(function()
                 local hum = player.Character and player.Character:FindFirstChild("Humanoid")
                 if hum then
