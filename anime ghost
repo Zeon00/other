@@ -20,7 +20,6 @@ local MultiplierService = Library:GetService("MultiplierService")
 --// SETTINGS
 getgenv().Aura = false
 getgenv().TP = false
-getgenv().Skill = false
 getgenv().AutoClaim = false
 getgenv().AutoRaid = false
 getgenv().AutoClosest = false
@@ -29,9 +28,6 @@ local ExitWave = 20
 
 local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
 local ScrollRemote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
-
-local lastSkill = 0
-local skillDelay = 1
 
 --// FASTEST NEAREST
 local function GetNearest()
@@ -94,8 +90,12 @@ task.spawn(function()
                 end)
             end
 
-            if getgenv().Skill and tick() - lastSkill > 0.25 then
-                lastSkill = tick()
+pcall(function()
+    local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+    if hum then
+        hum.WalkSpeed = 75
+    end
+end)
 
             pcall(function()
                 local hum = player.Character and player.Character:FindFirstChild("Humanoid")
@@ -251,7 +251,7 @@ gui.Name = "FastAuraHub"
 gui.Parent = game.CoreGui
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,220,0,360)
+main.Size = UDim2.new(0,220,0,315)
 main.Position = UDim2.new(1,-230,0.35,0)
 main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.Active = true
@@ -345,19 +345,15 @@ Toggle("TP",85,function(v)
     getgenv().TP = v
 end)
 
-Toggle("Skill",130,function(v)
-    getgenv().Skill = v
-end)
-
-Toggle("Auto Claim",175,function(v)
+Toggle("Auto Claim",130,function(v)
     getgenv().AutoClaim = v
 end)
 
-Toggle("Auto Closest",220,function(v)
+Toggle("Auto Closest",175,function(v)
     getgenv().AutoClosest = v
 end)
 
-Toggle("Auto Raid",265,function(v)
+Toggle("Auto Raid",220,function(v)
     getgenv().AutoRaid = v
 end)
 
