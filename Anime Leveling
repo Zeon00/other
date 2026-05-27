@@ -50,6 +50,9 @@ local RollPyrokeneticPower = false
 local RollTechniquePower = false
 local RollExchangePower = false
 local RollMonarchPower = false
+local RollScoutPower = false
+local RollTitanPower = false
+local RollStandPower = fals
 local AutoWorld8 = false
 local AutoGateRaid = false
 local LastGate = 0
@@ -913,6 +916,9 @@ end
 				if RollTechniquePower then Remotes.RollTechniquePower:FireServer() end
 				if RollExchangePower then Remotes.RollExchangePower:FireServer() end
 				if RollMonarchPower then Remotes.RollMonarchPower:FireServer() end
+				if RollScoutPower then Remotes.RollScoutPower:FireServer() end
+				if RollTitanPower then Remotes.RollTitanPower:FireServer() end
+				if RollStandPower then Remotes.RollStandPower:FireServer() end
 				if AutoExchange then Remotes:WaitForChild("ExchangeTokens"):InvokeServer(ExchangeFrom,ExchangeTo,ExchangeAmount) end
             end
         end
@@ -972,4 +978,7 @@ DropdownMulti("AUTO POWERS", {
 	["TechniquePower"] = function(v) RollTechniquePower = v end,
 	["ExchangePower"] = function(v) RollExchangePower = v end,
 	["MonarchPower"] = function(v) RollMonarchPower = v end,
+	["ScoutPower"] = function(v) RollScoutPower = v end,
+	["TitanPower"] = function(v) RollTitanPower = v end,
+	["StandPower"] = function(v) RollStandPower = v end,
 })
