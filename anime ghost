@@ -3,6 +3,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
 
 game.Players.LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
@@ -22,6 +23,9 @@ getgenv().TP = false
 getgenv().Skill = false
 getgenv().AutoClaim = false
 getgenv().AutoRaid = false
+getgenv().AutoClosest = false
+
+local ExitWave = 20
 
 local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
 local ScrollRemote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
@@ -74,7 +78,6 @@ task.spawn(function()
     while true do
         if getgenv().Aura then
 
-            -- spam click aura
             for i = 1,10 do
                 task.spawn(function()
                     pcall(function()
@@ -83,7 +86,6 @@ task.spawn(function()
                 end)
             end
 
-            -- warrior spam
             for i = 1,10 do
                 task.spawn(function()
                     pcall(function()
@@ -92,7 +94,6 @@ task.spawn(function()
                 end)
             end
 
-            -- auto skill
             if getgenv().Skill and tick() - lastSkill > 0.25 then
                 lastSkill = tick()
 
@@ -112,7 +113,6 @@ task.spawn(function()
                 end)
             end
 
-            -- walkspeed
             pcall(function()
                 local hum = player.Character and player.Character:FindFirstChild("Humanoid")
                 if hum then
@@ -125,9 +125,79 @@ task.spawn(function()
     end
 end)
 
---// AUTO CLOSEST
-getgenv().AutoClosest = false
+--// AUTO RAID
+task.spawn(function()
+    while task.wait(10) do
+        if getgenv().AutoRaid then
+            pcall(function()
 
+                -- CREATE RAID
+                local args = {
+                    {
+                        {
+                            "GamemodeSystem",
+                            "Create",
+                            "Elemental Mode",
+                            "WindRaid",
+                            "Easy",
+                            n = 6
+                        },
+                        "\002"
+                    }
+                }
+
+                ScrollRemote:FireServer(unpack(args))
+
+                task.wait(2)
+
+                -- START RAID
+                local args2 = {
+                    {
+                        {
+                            "GamemodeSystem",
+                            "Start",
+                            "Elemental Mode",
+                            8594485805,
+                            n = 4
+                        },
+                        "\002"
+                    }
+                }
+
+                ScrollRemote:FireServer(unpack(args2))
+            end)
+        end
+    end
+end)
+
+--// AUTO EXIT WAVE
+task.spawn(function()
+    while task.wait(3) do
+        pcall(function()
+
+            local gui = player.PlayerGui
+            local waveText
+
+            for _,v in pairs(gui:GetDescendants()) do
+                if v:IsA("TextLabel") and string.find(string.lower(v.Text),"wave") then
+                    waveText = v.Text
+                    break
+                end
+            end
+
+            if waveText then
+                local currentWave = tonumber(string.match(waveText,"%d+"))
+
+                if currentWave and currentWave >= ExitWave then
+                    TeleportService:Teleport(game.PlaceId, player)
+                end
+            end
+
+        end)
+    end
+end)
+
+--// AUTO CLOSEST
 local ClosestIDs = {
     "3f35c4977dcd480e850543f5e831c178",
     "3d07267fe51e4fba895e38458cc4b868",
@@ -140,11 +210,7 @@ local ClosestIDs = {
 }
 
 local ServerEnemies = workspace:WaitForChild("_ENEMIES"):WaitForChild("Server")
-local RemoteEvent = game:GetService("ReplicatedStorage")
-    :WaitForChild("ffrostflame_bridgenet2@1.0.0")
-    :WaitForChild("dataRemoteEvent")
 
--- DETECT ACTIVE MAP
 local function GetEnemyFolder()
     for _, folder in pairs(ServerEnemies:GetChildren()) do
         if #folder:GetChildren() > 0 then
@@ -153,7 +219,6 @@ local function GetEnemyFolder()
     end
 end
 
--- ULTRA FAST CLOSEST
 task.spawn(function()
     while task.wait() do
         if getgenv().AutoClosest then
@@ -178,11 +243,10 @@ task.spawn(function()
                         table.insert(args[1], "\002")
                     end
 
-                    -- SPAM FAST
                     for i = 1,10 do
                         task.spawn(function()
                             pcall(function()
-                                RemoteEvent:FireServer(unpack(args))
+                                ScrollRemote:FireServer(unpack(args))
                             end)
                         end)
                     end
@@ -203,7 +267,7 @@ gui.Name = "FastAuraHub"
 gui.Parent = game.CoreGui
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0,220,0,270)
+main.Size = UDim2.new(0,220,0,360)
 main.Position = UDim2.new(1,-230,0.35,0)
 main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.Active = true
@@ -231,7 +295,8 @@ Instance.new("UICorner", close)
 close.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
--- MINIMIZE
+
+--// MINIMIZE
 local mini = Instance.new("TextButton", main)
 mini.Size = UDim2.new(0,30,0,30)
 mini.Position = UDim2.new(1,-70,0,0)
@@ -240,7 +305,6 @@ mini.BackgroundColor3 = Color3.fromRGB(70,70,70)
 mini.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", mini)
 
--- ICON OPEN
 local openBtn = Instance.new("TextButton", gui)
 openBtn.Size = UDim2.new(0,50,0,50)
 openBtn.Position = UDim2.new(1,-60,0.5,0)
@@ -252,18 +316,17 @@ openBtn.Active = true
 openBtn.Draggable = true
 Instance.new("UICorner", openBtn)
 
--- MINIMIZE FUNCTION
 mini.MouseButton1Click:Connect(function()
     main.Visible = false
-   openBtn.Visible = true
+    openBtn.Visible = true
 end)
 
-
--- OPEN FUNCTION
 openBtn.MouseButton1Click:Connect(function()
     main.Visible = true
     openBtn.Visible = false
 end)
+
+--// TOGGLE
 local function Toggle(text, y, callback)
     local state = false
 
@@ -309,6 +372,34 @@ end)
 Toggle("Auto Closest",220,function(v)
     getgenv().AutoClosest = v
 end)
+
+Toggle("Auto Raid",265,function(v)
+    getgenv().AutoRaid = v
+end)
+
+--// EXIT WAVE BOX
+local waveBox = Instance.new("TextBox", main)
+waveBox.Size = UDim2.new(1,-20,0,35)
+waveBox.Position = UDim2.new(0,10,0,310)
+waveBox.BackgroundColor3 = Color3.fromRGB(45,45,45)
+waveBox.TextColor3 = Color3.new(1,1,1)
+waveBox.Font = Enum.Font.GothamBold
+waveBox.TextSize = 13
+waveBox.PlaceholderText = "Auto Exit Wave"
+waveBox.Text = tostring(ExitWave)
+
+Instance.new("UICorner", waveBox)
+
+waveBox.FocusLost:Connect(function()
+    local num = tonumber(waveBox.Text)
+
+    if num then
+        ExitWave = num
+    else
+        waveBox.Text = tostring(ExitWave)
+    end
+end)
+
 --// ANTI AFK
 task.spawn(function()
     while task.wait(10) do
