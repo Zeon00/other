@@ -3,7 +3,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local TeleportService = game:GetService("TeleportService")
+
 
 game.Players.LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
@@ -23,8 +23,6 @@ getgenv().TP = false
 getgenv().AutoClaim = false
 getgenv().AutoRaid = false
 getgenv().AutoClosest = false
-
-local ExitWave = 20
 
 local EnemyFolder = workspace:WaitForChild("_ENEMIES"):WaitForChild("Client")
 local ScrollRemote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
@@ -151,33 +149,6 @@ task.spawn(function()
                 ScrollRemote:FireServer(unpack(args2))
             end)
         end
-    end
-end)
-
---// AUTO EXIT WAVE
-task.spawn(function()
-    while task.wait(3) do
-        pcall(function()
-
-            local gui = player.PlayerGui
-            local waveText
-
-            for _,v in pairs(gui:GetDescendants()) do
-                if v:IsA("TextLabel") and string.find(string.lower(v.Text),"wave") then
-                    waveText = v.Text
-                    break
-                end
-            end
-
-            if waveText then
-                local currentWave = tonumber(string.match(waveText,"%d+"))
-
-                if currentWave and currentWave >= ExitWave then
-                    TeleportService:Teleport(game.PlaceId, player)
-                end
-            end
-
-        end)
     end
 end)
 
@@ -355,29 +326,6 @@ end)
 
 Toggle("Auto Raid",220,function(v)
     getgenv().AutoRaid = v
-end)
-
---// EXIT WAVE BOX
-local waveBox = Instance.new("TextBox", main)
-waveBox.Size = UDim2.new(1,-20,0,35)
-waveBox.Position = UDim2.new(0,10,0,310)
-waveBox.BackgroundColor3 = Color3.fromRGB(45,45,45)
-waveBox.TextColor3 = Color3.new(1,1,1)
-waveBox.Font = Enum.Font.GothamBold
-waveBox.TextSize = 13
-waveBox.PlaceholderText = "Auto Exit Wave"
-waveBox.Text = tostring(ExitWave)
-
-Instance.new("UICorner", waveBox)
-
-waveBox.FocusLost:Connect(function()
-    local num = tonumber(waveBox.Text)
-
-    if num then
-        ExitWave = num
-    else
-        waveBox.Text = tostring(ExitWave)
-    end
 end)
 
 --// ANTI AFK
