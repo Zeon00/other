@@ -83,7 +83,7 @@ task.spawn(function()
             for i = 1,10 do
                 task.spawn(function()
                     pcall(function()
-                        Remote:Fire("WarriorSystem","Attack",Library.Target, true)
+                        Remote:Fire("WarriorSystem","Attack",Library.Target)
                     end)
                 end)
             end
@@ -158,7 +158,7 @@ task.spawn(function()
 
                     -- kalau raid ada -> tunggu 7 menit
                     if CurrentRaid and getgenv().AutoRaid then
-                        task.wait(420)
+                        task.wait(180)
 
                         -- TELEPORT WIND ZONE
                         local tpArgs = {
