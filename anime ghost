@@ -88,13 +88,6 @@ task.spawn(function()
                 end)
             end
 
-pcall(function()
-    local hum = player.Character and player.Character:FindFirstChild("Humanoid")
-    if hum then
-        hum.WalkSpeed = 75
-    end
-end)
-
             pcall(function()
                 local hum = player.Character and player.Character:FindFirstChild("Humanoid")
                 if hum then
