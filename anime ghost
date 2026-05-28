@@ -113,13 +113,16 @@ task.spawn(function()
         if getgenv().AutoRaid then
             pcall(function()
 
-                -- cek kalau belum di raid
-                local InRaid = workspace:FindFirstChild("_MAP")
-                    and workspace._MAP:FindFirstChild("Raid")
+                local RaidFolder = workspace:FindFirstChild("_MAP")
+                    and workspace._MAP:FindFirstChild("Gamemode")
 
-                if not InRaid then
+                local CurrentRaid = RaidFolder
+                    and RaidFolder:FindFirstChild("Elemental Mode_8594485805")
 
-                    -- CREATE
+                -- kalau belum ada raid -> create + start
+                if not CurrentRaid then
+
+                    -- CREATE RAID
                     local args = {
                         {
                             {
@@ -136,9 +139,9 @@ task.spawn(function()
 
                     ScrollRemote:FireServer(unpack(args))
 
-                    task.wait(2)
+                    task.wait(3)
 
-                    -- START
+                    -- START RAID
                     local args2 = {
                         {
                             {
@@ -154,7 +157,50 @@ task.spawn(function()
 
                     ScrollRemote:FireServer(unpack(args2))
 
-                    task.wait(15)
+                    -- tunggu raid jalan
+                    repeat task.wait(1)
+                        CurrentRaid = RaidFolder
+                            and RaidFolder:FindFirstChild("Elemental Mode_8594485805")
+                    until CurrentRaid or not getgenv().AutoRaid
+
+                    -- kalau raid ada -> tunggu 7 menit
+                    if CurrentRaid and getgenv().AutoRaid then
+                        task.wait(420)
+
+                        -- TELEPORT WIND ZONE
+                        local tpArgs = {
+                            {
+                                {
+                                    "TeleportSystem",
+                                    "To",
+                                    "Wind Zone",
+                                    n = 3
+                                },
+                                "\002"
+                            }
+                        }
+
+                        ScrollRemote:FireServer(unpack(tpArgs))
+
+                        task.wait(2)
+
+                        -- USE TICKET
+                        local ticketArgs = {
+                            {
+                                {
+                                    "ItemSystem",
+                                    "Use",
+                                    "ElementalTickets",
+                                    n = 3
+                                },
+                                "\002"
+                            }
+                        }
+
+                        ScrollRemote:FireServer(unpack(ticketArgs))
+
+                        task.wait(3)
+                    end
                 end
             end)
         end
