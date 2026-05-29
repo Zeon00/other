@@ -16,6 +16,8 @@ local ClickRemote = RS:WaitForChild("RemotesFolder"):WaitForChild("Click")
 local AutoClick = false
 local AutoTP = false
 local AutoWalk = false
+local AutoRoll = false
+local RollNumber = 1
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -113,6 +115,48 @@ WalkToggle.TextColor3 = Color3.fromRGB(255,255,255)
 WalkToggle.BorderSizePixel = 0
 Instance.new("UICorner", WalkToggle).CornerRadius = UDim.new(0,12)
 
+-- TARUH INI DI BAWAH AUTO WALK BUTTON
+
+-- AUTO ROLL
+local RollToggle = Instance.new("TextButton")
+RollToggle.Parent = Main
+RollToggle.Size = UDim2.new(0,240,0,45)
+RollToggle.Position = UDim2.new(0.5,-120,0,230)
+RollToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+RollToggle.Text = "AUTO ROLL : OFF"
+RollToggle.Font = Enum.Font.GothamBold
+RollToggle.TextSize = 15
+RollToggle.TextColor3 = Color3.fromRGB(255,255,255)
+RollToggle.BorderSizePixel = 0
+Instance.new("UICorner", RollToggle).CornerRadius = UDim.new(0,12)
+
+-- INPUT NUMBER
+local RollBox = Instance.new("TextBox")
+RollBox.Parent = Main
+RollBox.Size = UDim2.new(0,80,0,35)
+RollBox.Position = UDim2.new(0.5,-40,0,285)
+RollBox.BackgroundColor3 = Color3.fromRGB(30,30,30)
+RollBox.Text = "1"
+RollBox.PlaceholderText = "1"
+RollBox.Font = Enum.Font.GothamBold
+RollBox.TextSize = 15
+RollBox.TextColor3 = Color3.fromRGB(255,255,255)
+RollBox.BorderSizePixel = 0
+Instance.new("UICorner", RollBox).CornerRadius = UDim.new(0,10)
+
+-- LABEL
+local RollLabel = Instance.new("TextLabel")
+RollLabel.Parent = Main
+RollLabel.Size = UDim2.new(0,240,0,20)
+RollLabel.Position = UDim2.new(0.5,-120,0,260)
+RollLabel.BackgroundTransparency = 1
+RollLabel.Text = "ROLL NUMBER (1,2,3...)"
+RollLabel.Font = Enum.Font.Gotham
+RollLabel.TextSize = 13
+RollLabel.TextColor3 = Color3.fromRGB(180,180,180)
+
+-- BESARIN GUI
+Main.Size = UDim2.new(0,300,0,380)
 -- STATUS
 local Status = Instance.new("TextLabel")
 Status.Parent = Main
@@ -138,7 +182,8 @@ MiniIcon.Visible = false
 MiniIcon.BorderSizePixel = 0
 Instance.new("UICorner", MiniIcon).CornerRadius = UDim.new(1,0)
 
--- UPDATE BUTTONS
+-- GANTI UpdateButtons JADI INI
+
 local function UpdateButtons()
     ClickToggle.Text = "AUTO CLICK : "..(AutoClick and "ON" or "OFF")
     ClickToggle.BackgroundColor3 =
@@ -154,10 +199,27 @@ local function UpdateButtons()
     WalkToggle.BackgroundColor3 =
         AutoWalk and Color3.fromRGB(0,170,90)
         or Color3.fromRGB(40,40,40)
+
+    RollToggle.Text = "AUTO ROLL : "..(AutoRoll and "ON" or "OFF")
+    RollToggle.BackgroundColor3 =
+        AutoRoll and Color3.fromRGB(0,170,90)
+        or Color3.fromRGB(40,40,40)
 end
 
 UpdateButtons()
+-- TARUH DI BAWAH UpdateButtons()
 
+RollBox.FocusLost:Connect(function()
+    local num = tonumber(RollBox.Text)
+
+    if num and num >= 1 then
+        RollNumber = math.floor(num)
+        RollBox.Text = tostring(RollNumber)
+    else
+        RollNumber = 1
+        RollBox.Text = "1"
+    end
+end)
 -- TOGGLES
 ClickToggle.MouseButton1Click:Connect(function()
     AutoClick = not AutoClick
@@ -174,6 +236,10 @@ WalkToggle.MouseButton1Click:Connect(function()
     UpdateButtons()
 end)
 
+RollToggle.MouseButton1Click:Connect(function()
+    AutoRoll = not AutoRoll
+    UpdateButtons()
+end)
 -- MINIMIZE
 MinBtn.MouseButton1Click:Connect(function()
     Main.Visible = false
@@ -190,6 +256,7 @@ CloseBtn.MouseButton1Click:Connect(function()
     AutoClick = false
     AutoTP = false
     AutoWalk = false
+    AutoRoll = false
     ScreenGui:Destroy()
 end)
 
@@ -288,5 +355,36 @@ task.spawn(function()
                 end
             end)
         end
+    end
+end)
+-- TARUH PALING BAWAH
+
+task.spawn(function()
+    while task.wait(0.5) do
+        if AutoRoll then
+            pcall(function()
+                local args = {
+                    RollNumber
+                }
+
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("RemotesFolder")
+                    :WaitForChild("RollToken")
+                    :FireServer(unpack(args))
+
+                Status.Text = "Rolling : "..RollNumber
+            end)
+        end
+    end
+end)
+--// ANTI AFK
+task.spawn(function()
+    while task.wait(10) do
+        pcall(function()
+            local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+            if hum then
+                hum.Jump = true
+            end
+        end)
     end
 end)
