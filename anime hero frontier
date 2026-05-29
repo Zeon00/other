@@ -383,14 +383,4 @@ task.spawn(function()
     end
 end)
 
---// ANTI AFK
-task.spawn(function()
-    while task.wait(10) do
-        pcall(function()
-            local hum = player.Character and player.Character:FindFirstChild("Humanoid")
-            if hum then
-                hum.Jump = true
-            end
-        end)
-    end
-end)
+
