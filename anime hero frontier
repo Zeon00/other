@@ -17,7 +17,7 @@ local AutoClick = false
 local AutoTP = false
 local AutoWalk = false
 local AutoRoll = false
-local RollNumber = 1
+local RollNumbers = {}
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -207,19 +207,20 @@ local function UpdateButtons()
 end
 
 UpdateButtons()
--- TARUH DI BAWAH UpdateButtons()
 
 RollBox.FocusLost:Connect(function()
-    local num = tonumber(RollBox.Text)
+    RollNumbers = {}
 
-    if num and num >= 1 then
-        RollNumber = math.floor(num)
-        RollBox.Text = tostring(RollNumber)
-    else
-        RollNumber = 1
+    for num in string.gmatch(RollBox.Text, "%d+") do
+        table.insert(RollNumbers, tonumber(num))
+    end
+
+    if #RollNumbers == 0 then
+        RollNumbers = {1}
         RollBox.Text = "1"
     end
 end)
+
 -- TOGGLES
 ClickToggle.MouseButton1Click:Connect(function()
     AutoClick = not AutoClick
@@ -357,26 +358,31 @@ task.spawn(function()
         end
     end
 end)
--- TARUH PALING BAWAH
+
+-- GANTI AUTO ROLL LOOP JADI INI
 
 task.spawn(function()
-    while task.wait(2) do
+    while task.wait(0.5) do
         if AutoRoll then
             pcall(function()
-                local args = {
-                    RollNumber
-                }
 
-                game:GetService("ReplicatedStorage")
-                    :WaitForChild("RemotesFolder")
-                    :WaitForChild("RollToken")
-                    :FireServer(unpack(args))
+                for _, number in pairs(RollNumbers) do
+                    local args = {
+                        number
+                    }
 
-                Status.Text = "Rolling : "..RollNumber
+                    game:GetService("ReplicatedStorage")
+                        :WaitForChild("RemotesFolder")
+                        :WaitForChild("RollToken")
+                        :FireServer(unpack(args))
+                end
+
+                Status.Text = "Rolling : "..RollBox.Text
             end)
         end
     end
 end)
+
 --// ANTI AFK
 task.spawn(function()
     while task.wait(10) do
