@@ -18,6 +18,7 @@ local AutoTP = false
 local AutoWalk = false
 local AutoRoll = false
 local RollNumbers = {}
+local AutoTrial = false
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -28,7 +29,7 @@ ScreenGui.ResetOnSpawn = false
 -- MAIN
 local Main = Instance.new("Frame")
 Main.Parent = ScreenGui
-Main.Size = UDim2.new(0, 300, 0, 280)
+Main.Size = UDim2.new(0, 300, 0, 440)
 Main.Position = UDim2.new(0.5, -150, 0.5, -140)
 Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Main.BorderSizePixel = 0
@@ -115,8 +116,6 @@ WalkToggle.TextColor3 = Color3.fromRGB(255,255,255)
 WalkToggle.BorderSizePixel = 0
 Instance.new("UICorner", WalkToggle).CornerRadius = UDim.new(0,12)
 
--- TARUH INI DI BAWAH AUTO WALK BUTTON
-
 -- AUTO ROLL
 local RollToggle = Instance.new("TextButton")
 RollToggle.Parent = Main
@@ -129,6 +128,20 @@ RollToggle.TextSize = 15
 RollToggle.TextColor3 = Color3.fromRGB(255,255,255)
 RollToggle.BorderSizePixel = 0
 Instance.new("UICorner", RollToggle).CornerRadius = UDim.new(0,12)
+-- TARUH DI BAWAH AUTO ROLL
+
+local TrialToggle = Instance.new("TextButton")
+TrialToggle.Parent = Main
+TrialToggle.Size = UDim2.new(0,240,0,45)
+TrialToggle.Position = UDim2.new(0.5,-120,0,335)
+TrialToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+TrialToggle.Text = "AUTO TRIAL : OFF"
+TrialToggle.Font = Enum.Font.GothamBold
+TrialToggle.TextSize = 15
+TrialToggle.TextColor3 = Color3.fromRGB(255,255,255)
+TrialToggle.BorderSizePixel = 0
+Instance.new("UICorner", TrialToggle).CornerRadius = UDim.new(0,12)
+
 
 -- INPUT NUMBER
 local RollBox = Instance.new("TextBox")
@@ -204,6 +217,11 @@ local function UpdateButtons()
     RollToggle.BackgroundColor3 =
         AutoRoll and Color3.fromRGB(0,170,90)
         or Color3.fromRGB(40,40,40)
+
+    TrialToggle.Text = "AUTO TRIAL : "..(AutoTrial and "ON" or "OFF")
+    TrialToggle.BackgroundColor3 =
+        AutoTrial and Color3.fromRGB(0,170,90)
+        or Color3.fromRGB(40,40,40)
 end
 
 UpdateButtons()
@@ -241,6 +259,12 @@ RollToggle.MouseButton1Click:Connect(function()
     AutoRoll = not AutoRoll
     UpdateButtons()
 end)
+
+TrialToggle.MouseButton1Click:Connect(function()
+    AutoTrial = not AutoTrial
+    UpdateButtons()
+end)
+
 -- MINIMIZE
 MinBtn.MouseButton1Click:Connect(function()
     Main.Visible = false
@@ -258,6 +282,7 @@ CloseBtn.MouseButton1Click:Connect(function()
     AutoTP = false
     AutoWalk = false
     AutoRoll = false
+    AutoTrial = false
     ScreenGui:Destroy()
 end)
 
@@ -383,4 +408,24 @@ task.spawn(function()
     end
 end)
 
+-- TARUH PALING BAWAH
 
+task.spawn(function()
+    while task.wait(1) do
+        if AutoTrial then
+            pcall(function()
+
+                local args = {
+                    1
+                }
+
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("RemotesFolder")
+                    :WaitForChild("EnterTrial")
+                    :FireServer(unpack(args))
+
+                Status.Text = "Entering Trial"
+            end)
+        end
+    end
+end)
