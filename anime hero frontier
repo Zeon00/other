@@ -13,7 +13,8 @@ local player = Players.LocalPlayer
 local ClickRemote = RS:WaitForChild("RemotesFolder"):WaitForChild("Click")
 
 --// STATE
-local AutoFarm = false
+local AutoClick = false
+local AutoTP = false
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -24,8 +25,8 @@ ScreenGui.ResetOnSpawn = false
 -- MAIN
 local Main = Instance.new("Frame")
 Main.Parent = ScreenGui
-Main.Size = UDim2.new(0, 280, 0, 170)
-Main.Position = UDim2.new(0.5, -140, 0.5, -85)
+Main.Size = UDim2.new(0, 300, 0, 220)
+Main.Position = UDim2.new(0.5, -150, 0.5, -110)
 Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Main.BorderSizePixel = 0
 Main.Active = true
@@ -41,7 +42,7 @@ local Title = Instance.new("TextLabel")
 Title.Parent = Main
 Title.Size = UDim2.new(1,0,0,40)
 Title.BackgroundTransparency = 1
-Title.Text = "Modern Auto Farm"
+Title.Text = "Modern Farm GUI"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
 Title.TextColor3 = Color3.fromRGB(255,255,255)
@@ -72,18 +73,31 @@ CloseBtn.TextColor3 = Color3.fromRGB(255,255,255)
 CloseBtn.BorderSizePixel = 0
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1,0)
 
--- TOGGLE
-local Toggle = Instance.new("TextButton")
-Toggle.Parent = Main
-Toggle.Size = UDim2.new(0,220,0,45)
-Toggle.Position = UDim2.new(0.5,-110,0,70)
-Toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
-Toggle.Text = "AUTO FARM : OFF"
-Toggle.Font = Enum.Font.GothamBold
-Toggle.TextSize = 16
-Toggle.TextColor3 = Color3.fromRGB(255,255,255)
-Toggle.BorderSizePixel = 0
-Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0,12)
+-- AUTO CLICK
+local ClickToggle = Instance.new("TextButton")
+ClickToggle.Parent = Main
+ClickToggle.Size = UDim2.new(0,240,0,45)
+ClickToggle.Position = UDim2.new(0.5,-120,0,65)
+ClickToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+ClickToggle.Text = "AUTO CLICK : OFF"
+ClickToggle.Font = Enum.Font.GothamBold
+ClickToggle.TextSize = 15
+ClickToggle.TextColor3 = Color3.fromRGB(255,255,255)
+ClickToggle.BorderSizePixel = 0
+Instance.new("UICorner", ClickToggle).CornerRadius = UDim.new(0,12)
+
+-- AUTO TP
+local TPToggle = Instance.new("TextButton")
+TPToggle.Parent = Main
+TPToggle.Size = UDim2.new(0,240,0,45)
+TPToggle.Position = UDim2.new(0.5,-120,0,120)
+TPToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+TPToggle.Text = "AUTO TP : OFF"
+TPToggle.Font = Enum.Font.GothamBold
+TPToggle.TextSize = 15
+TPToggle.TextColor3 = Color3.fromRGB(255,255,255)
+TPToggle.BorderSizePixel = 0
+Instance.new("UICorner", TPToggle).CornerRadius = UDim.new(0,12)
 
 -- STATUS
 local Status = Instance.new("TextLabel")
@@ -110,23 +124,27 @@ MiniIcon.Visible = false
 MiniIcon.BorderSizePixel = 0
 Instance.new("UICorner", MiniIcon).CornerRadius = UDim.new(1,0)
 
--- UPDATE
-local function UpdateToggle()
-    if AutoFarm then
-        Toggle.Text = "AUTO FARM : ON"
-        Toggle.BackgroundColor3 = Color3.fromRGB(0,170,90)
-    else
-        Toggle.Text = "AUTO FARM : OFF"
-        Toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    end
+-- UPDATE BUTTONS
+local function UpdateButtons()
+    ClickToggle.Text = "AUTO CLICK : "..(AutoClick and "ON" or "OFF")
+    ClickToggle.BackgroundColor3 = AutoClick and Color3.fromRGB(0,170,90) or Color3.fromRGB(40,40,40)
+
+    TPToggle.Text = "AUTO TP : "..(AutoTP and "ON" or "OFF")
+    TPToggle.BackgroundColor3 = AutoTP and Color3.fromRGB(0,170,90) or Color3.fromRGB(40,40,40)
 end
 
-Toggle.MouseButton1Click:Connect(function()
-    AutoFarm = not AutoFarm
-    UpdateToggle()
+UpdateButtons()
+
+-- TOGGLES
+ClickToggle.MouseButton1Click:Connect(function()
+    AutoClick = not AutoClick
+    UpdateButtons()
 end)
 
-UpdateToggle()
+TPToggle.MouseButton1Click:Connect(function()
+    AutoTP = not AutoTP
+    UpdateButtons()
+end)
 
 -- MINIMIZE
 MinBtn.MouseButton1Click:Connect(function()
@@ -141,7 +159,8 @@ end)
 
 -- DESTROY
 CloseBtn.MouseButton1Click:Connect(function()
-    AutoFarm = false
+    AutoClick = false
+    AutoTP = false
     ScreenGui:Destroy()
 end)
 
@@ -158,7 +177,7 @@ local function GetNearestEnemy()
     local distance = math.huge
 
     local enemiesFolder = workspace:FindFirstChild("Enemies")
-    and workspace.Enemies:FindFirstChild("Character")
+        and workspace.Enemies:FindFirstChild("Character")
 
     if not enemiesFolder then
         return nil
@@ -181,22 +200,32 @@ local function GetNearestEnemy()
     return closest
 end
 
--- FARM LOOP
+-- AUTO CLICK LOOP
 task.spawn(function()
     while task.wait() do
-        if AutoFarm then
+        if AutoClick then
+            pcall(function()
+                ClickRemote:FireServer()
+            end)
+        end
+    end
+end)
+
+-- AUTO TP LOOP
+task.spawn(function()
+    while task.wait(0.15) do
+        if AutoTP then
             pcall(function()
                 local enemy = GetNearestEnemy()
 
                 if enemy then
-                    local hrp = player.Character.HumanoidRootPart
-                    local enemyHRP = enemy.HumanoidRootPart
+                    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
 
-                    hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,3)
-
-                    ClickRemote:FireServer()
-
-                    Status.Text = "Target : "..enemy.Name
+                    if hrp and enemyHRP then
+                        hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,3)
+                        Status.Text = "Target : "..enemy.Name
+                    end
                 else
                     Status.Text = "No Enemy"
                 end
