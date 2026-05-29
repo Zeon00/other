@@ -362,7 +362,7 @@ end)
 -- GANTI AUTO ROLL LOOP JADI INI
 
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(3) do
         if AutoRoll then
             pcall(function()
 
