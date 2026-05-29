@@ -205,7 +205,11 @@ task.spawn(function()
     while task.wait() do
         if AutoClick then
             pcall(function()
-                ClickRemote:FireServer()
+                for i = 1,10 do
+                    task.spawn(function()
+                        ClickRemote:FireServer()
+                    end)
+                end
             end)
         end
     end
