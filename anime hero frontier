@@ -1,0 +1,208 @@
+--// DESTROY GUI LAMA
+pcall(function()
+    game.CoreGui.ModernFarmGUI:Destroy()
+end)
+
+--// SERVICES
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+--// REMOTE
+local ClickRemote = RS:WaitForChild("RemotesFolder"):WaitForChild("Click")
+
+--// STATE
+local AutoFarm = false
+
+--// GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ModernFarmGUI"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
+
+-- MAIN
+local Main = Instance.new("Frame")
+Main.Parent = ScreenGui
+Main.Size = UDim2.new(0, 280, 0, 170)
+Main.Position = UDim2.new(0.5, -140, 0.5, -85)
+Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,16)
+
+local Stroke = Instance.new("UIStroke", Main)
+Stroke.Color = Color3.fromRGB(80,80,80)
+Stroke.Thickness = 1.5
+
+-- TITLE
+local Title = Instance.new("TextLabel")
+Title.Parent = Main
+Title.Size = UDim2.new(1,0,0,40)
+Title.BackgroundTransparency = 1
+Title.Text = "Modern Auto Farm"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- MINIMIZE
+local MinBtn = Instance.new("TextButton")
+MinBtn.Parent = Main
+MinBtn.Size = UDim2.new(0,30,0,30)
+MinBtn.Position = UDim2.new(1,-70,0,5)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 20
+MinBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+MinBtn.TextColor3 = Color3.fromRGB(255,255,255)
+MinBtn.BorderSizePixel = 0
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1,0)
+
+-- CLOSE
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Parent = Main
+CloseBtn.Size = UDim2.new(0,30,0,30)
+CloseBtn.Position = UDim2.new(1,-35,0,5)
+CloseBtn.Text = "X"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 16
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255,60,60)
+CloseBtn.TextColor3 = Color3.fromRGB(255,255,255)
+CloseBtn.BorderSizePixel = 0
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1,0)
+
+-- TOGGLE
+local Toggle = Instance.new("TextButton")
+Toggle.Parent = Main
+Toggle.Size = UDim2.new(0,220,0,45)
+Toggle.Position = UDim2.new(0.5,-110,0,70)
+Toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Toggle.Text = "AUTO FARM : OFF"
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextSize = 16
+Toggle.TextColor3 = Color3.fromRGB(255,255,255)
+Toggle.BorderSizePixel = 0
+Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0,12)
+
+-- STATUS
+local Status = Instance.new("TextLabel")
+Status.Parent = Main
+Status.Size = UDim2.new(1,0,0,25)
+Status.Position = UDim2.new(0,0,1,-30)
+Status.BackgroundTransparency = 1
+Status.Text = "Ready"
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 14
+Status.TextColor3 = Color3.fromRGB(180,180,180)
+
+-- MINI ICON
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Parent = ScreenGui
+MiniIcon.Size = UDim2.new(0,55,0,55)
+MiniIcon.Position = UDim2.new(0,20,0.5,-25)
+MiniIcon.BackgroundColor3 = Color3.fromRGB(25,25,25)
+MiniIcon.Text = "GUI"
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.TextSize = 15
+MiniIcon.TextColor3 = Color3.fromRGB(255,255,255)
+MiniIcon.Visible = false
+MiniIcon.BorderSizePixel = 0
+Instance.new("UICorner", MiniIcon).CornerRadius = UDim.new(1,0)
+
+-- UPDATE
+local function UpdateToggle()
+    if AutoFarm then
+        Toggle.Text = "AUTO FARM : ON"
+        Toggle.BackgroundColor3 = Color3.fromRGB(0,170,90)
+    else
+        Toggle.Text = "AUTO FARM : OFF"
+        Toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    end
+end
+
+Toggle.MouseButton1Click:Connect(function()
+    AutoFarm = not AutoFarm
+    UpdateToggle()
+end)
+
+UpdateToggle()
+
+-- MINIMIZE
+MinBtn.MouseButton1Click:Connect(function()
+    Main.Visible = false
+    MiniIcon.Visible = true
+end)
+
+MiniIcon.MouseButton1Click:Connect(function()
+    Main.Visible = true
+    MiniIcon.Visible = false
+end)
+
+-- DESTROY
+CloseBtn.MouseButton1Click:Connect(function()
+    AutoFarm = false
+    ScreenGui:Destroy()
+end)
+
+-- GET NEAREST ENEMY
+local function GetNearestEnemy()
+    local character = player.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+    if not hrp then
+        return nil
+    end
+
+    local closest
+    local distance = math.huge
+
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    and workspace.Enemies:FindFirstChild("Character")
+
+    if not enemiesFolder then
+        return nil
+    end
+
+    for _, enemy in pairs(enemiesFolder:GetChildren()) do
+        local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
+        local humanoid = enemy:FindFirstChildOfClass("Humanoid")
+
+        if enemyHRP and humanoid and humanoid.Health > 0 then
+            local mag = (hrp.Position - enemyHRP.Position).Magnitude
+
+            if mag < distance then
+                distance = mag
+                closest = enemy
+            end
+        end
+    end
+
+    return closest
+end
+
+-- FARM LOOP
+task.spawn(function()
+    while task.wait() do
+        if AutoFarm then
+            pcall(function()
+                local enemy = GetNearestEnemy()
+
+                if enemy then
+                    local hrp = player.Character.HumanoidRootPart
+                    local enemyHRP = enemy.HumanoidRootPart
+
+                    hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,3)
+
+                    ClickRemote:FireServer()
+
+                    Status.Text = "Target : "..enemy.Name
+                else
+                    Status.Text = "No Enemy"
+                end
+            end)
+        else
+            Status.Text = "Idle"
+        end
+    end
+end)
