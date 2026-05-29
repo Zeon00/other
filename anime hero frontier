@@ -360,7 +360,7 @@ end)
 -- TARUH PALING BAWAH
 
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(2) do
         if AutoRoll then
             pcall(function()
                 local args = {
