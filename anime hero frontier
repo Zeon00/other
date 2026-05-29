@@ -15,6 +15,7 @@ local ClickRemote = RS:WaitForChild("RemotesFolder"):WaitForChild("Click")
 --// STATE
 local AutoClick = false
 local AutoTP = false
+local AutoWalk = false
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -25,8 +26,8 @@ ScreenGui.ResetOnSpawn = false
 -- MAIN
 local Main = Instance.new("Frame")
 Main.Parent = ScreenGui
-Main.Size = UDim2.new(0, 300, 0, 220)
-Main.Position = UDim2.new(0.5, -150, 0.5, -110)
+Main.Size = UDim2.new(0, 300, 0, 280)
+Main.Position = UDim2.new(0.5, -150, 0.5, -140)
 Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Main.BorderSizePixel = 0
 Main.Active = true
@@ -99,6 +100,19 @@ TPToggle.TextColor3 = Color3.fromRGB(255,255,255)
 TPToggle.BorderSizePixel = 0
 Instance.new("UICorner", TPToggle).CornerRadius = UDim.new(0,12)
 
+-- AUTO WALK
+local WalkToggle = Instance.new("TextButton")
+WalkToggle.Parent = Main
+WalkToggle.Size = UDim2.new(0,240,0,45)
+WalkToggle.Position = UDim2.new(0.5,-120,0,175)
+WalkToggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+WalkToggle.Text = "AUTO WALK : OFF"
+WalkToggle.Font = Enum.Font.GothamBold
+WalkToggle.TextSize = 15
+WalkToggle.TextColor3 = Color3.fromRGB(255,255,255)
+WalkToggle.BorderSizePixel = 0
+Instance.new("UICorner", WalkToggle).CornerRadius = UDim.new(0,12)
+
 -- STATUS
 local Status = Instance.new("TextLabel")
 Status.Parent = Main
@@ -127,10 +141,19 @@ Instance.new("UICorner", MiniIcon).CornerRadius = UDim.new(1,0)
 -- UPDATE BUTTONS
 local function UpdateButtons()
     ClickToggle.Text = "AUTO CLICK : "..(AutoClick and "ON" or "OFF")
-    ClickToggle.BackgroundColor3 = AutoClick and Color3.fromRGB(0,170,90) or Color3.fromRGB(40,40,40)
+    ClickToggle.BackgroundColor3 =
+        AutoClick and Color3.fromRGB(0,170,90)
+        or Color3.fromRGB(40,40,40)
 
     TPToggle.Text = "AUTO TP : "..(AutoTP and "ON" or "OFF")
-    TPToggle.BackgroundColor3 = AutoTP and Color3.fromRGB(0,170,90) or Color3.fromRGB(40,40,40)
+    TPToggle.BackgroundColor3 =
+        AutoTP and Color3.fromRGB(0,170,90)
+        or Color3.fromRGB(40,40,40)
+
+    WalkToggle.Text = "AUTO WALK : "..(AutoWalk and "ON" or "OFF")
+    WalkToggle.BackgroundColor3 =
+        AutoWalk and Color3.fromRGB(0,170,90)
+        or Color3.fromRGB(40,40,40)
 end
 
 UpdateButtons()
@@ -143,6 +166,11 @@ end)
 
 TPToggle.MouseButton1Click:Connect(function()
     AutoTP = not AutoTP
+    UpdateButtons()
+end)
+
+WalkToggle.MouseButton1Click:Connect(function()
+    AutoWalk = not AutoWalk
     UpdateButtons()
 end)
 
@@ -161,6 +189,7 @@ end)
 CloseBtn.MouseButton1Click:Connect(function()
     AutoClick = false
     AutoTP = false
+    AutoWalk = false
     ScreenGui:Destroy()
 end)
 
@@ -217,7 +246,7 @@ end)
 
 -- AUTO TP LOOP
 task.spawn(function()
-    while task.wait(0.15) do
+    while task.wait(0.1) do
         if AutoTP then
             pcall(function()
                 local enemy = GetNearestEnemy()
@@ -228,14 +257,36 @@ task.spawn(function()
 
                     if hrp and enemyHRP then
                         hrp.CFrame = enemyHRP.CFrame * CFrame.new(0,0,3)
-                        Status.Text = "Target : "..enemy.Name
+                        Status.Text = "TP To : "..enemy.Name
                     end
                 else
                     Status.Text = "No Enemy"
                 end
             end)
-        else
-            Status.Text = "Idle"
+        end
+    end
+end)
+
+-- AUTO WALK LOOP
+task.spawn(function()
+    while task.wait(0.1) do
+        if AutoWalk then
+            pcall(function()
+                local enemy = GetNearestEnemy()
+
+                if enemy then
+                    local character = player.Character
+                    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                    local enemyHRP = enemy:FindFirstChild("HumanoidRootPart")
+
+                    if humanoid and enemyHRP then
+                        humanoid:MoveTo(enemyHRP.Position)
+                        Status.Text = "Walking To : "..enemy.Name
+                    end
+                else
+                    Status.Text = "No Enemy"
+                end
+            end)
         end
     end
 end)
