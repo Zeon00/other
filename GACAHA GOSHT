@@ -1,4 +1,4 @@
---// CLEAN OLD GUI
+--// CLEAN GUI
 pcall(function()
     local g = game.CoreGui:FindFirstChild("DefenseFarmGUI")
     if g then g:Destroy() end
@@ -14,10 +14,6 @@ local DefenseON = false
 local ElementalON = false
 local Running = true
 
---// DATA FIXED
-local DefenseMap = "SinVillage"
-local ElementalMap = "WindRaid"
-
 --// GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "DefenseFarmGUI"
@@ -27,29 +23,28 @@ local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0, 260, 0, 180)
 main.Position = UDim2.new(0.5, -130, 0.5, -90)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
-main.BorderSizePixel = 0
 Instance.new("UICorner", main)
 
 --// DRAG
-local dragging, dragStart, startPos
+local dragging, startPos, dragStart
 
-main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+main.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
-        dragStart = input.Position
+        dragStart = i.Position
         startPos = main.Position
 
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
+        i.Changed:Connect(function()
+            if i.UserInputState == Enum.UserInputState.End then
                 dragging = false
             end
         end)
     end
 end)
 
-UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
+UIS.InputChanged:Connect(function(i)
+    if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = i.Position - dragStart
         main.Position = UDim2.new(
             startPos.X.Scale,
             startPos.X.Offset + delta.X,
@@ -62,11 +57,9 @@ end)
 --// TITLE
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,25)
+title.Text = "AUTO FARM FIXED REMOTE"
 title.BackgroundTransparency = 1
-title.Text = "AUTO FARM SIMPLE"
 title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 14
 
 --// CLOSE
 local close = Instance.new("TextButton", main)
@@ -74,7 +67,6 @@ close.Size = UDim2.new(0,20,0,20)
 close.Position = UDim2.new(1,-25,0,3)
 close.Text = "X"
 close.BackgroundColor3 = Color3.fromRGB(200,50,50)
-close.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", close)
 
 close.MouseButton1Click:Connect(function()
@@ -88,7 +80,6 @@ min.Size = UDim2.new(0,20,0,20)
 min.Position = UDim2.new(1,-50,0,3)
 min.Text = "-"
 min.BackgroundColor3 = Color3.fromRGB(70,70,70)
-min.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", min)
 
 local icon
@@ -101,7 +92,6 @@ min.MouseButton1Click:Connect(function()
     icon.Position = UDim2.new(0,20,0.5,0)
     icon.Text = "GUI"
     icon.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    icon.TextColor3 = Color3.new(1,1,1)
     Instance.new("UICorner", icon)
 
     icon.MouseButton1Click:Connect(function()
@@ -110,53 +100,76 @@ min.MouseButton1Click:Connect(function()
     end)
 end)
 
---// BUTTON DEFENSE
-local defBtn = Instance.new("TextButton", main)
-defBtn.Size = UDim2.new(1,-20,0,40)
-defBtn.Position = UDim2.new(0,10,0,35)
-defBtn.Text = "Defense: OFF (SinVillage)"
-defBtn.BackgroundColor3 = Color3.fromRGB(150,50,50)
-defBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", defBtn)
+--// BUTTONS
+local def = Instance.new("TextButton", main)
+def.Size = UDim2.new(1,-20,0,40)
+def.Position = UDim2.new(0,10,0,35)
+def.Text = "Defense: OFF"
+def.BackgroundColor3 = Color3.fromRGB(150,50,50)
+Instance.new("UICorner", def)
 
-defBtn.MouseButton1Click:Connect(function()
+def.MouseButton1Click:Connect(function()
     DefenseON = not DefenseON
-    defBtn.Text = "Defense: "..(DefenseON and "ON" or "OFF").." (SinVillage)"
-    defBtn.BackgroundColor3 = DefenseON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
+    def.Text = "Defense: "..(DefenseON and "ON" or "OFF")
+    def.BackgroundColor3 = DefenseON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
 end)
 
---// BUTTON ELEMENTAL
-local eleBtn = Instance.new("TextButton", main)
-eleBtn.Size = UDim2.new(1,-20,0,40)
-eleBtn.Position = UDim2.new(0,10,0,85)
-eleBtn.Text = "Elemental: OFF (WindRaid)"
-eleBtn.BackgroundColor3 = Color3.fromRGB(150,50,50)
-eleBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", eleBtn)
+local ele = Instance.new("TextButton", main)
+ele.Size = UDim2.new(1,-20,0,40)
+ele.Position = UDim2.new(0,10,0,85)
+ele.Text = "Elemental: OFF"
+ele.BackgroundColor3 = Color3.fromRGB(150,50,50)
+Instance.new("UICorner", ele)
 
-eleBtn.MouseButton1Click:Connect(function()
+ele.MouseButton1Click:Connect(function()
     ElementalON = not ElementalON
-    eleBtn.Text = "Elemental: "..(ElementalON and "ON" or "OFF").." (WindRaid)"
-    eleBtn.BackgroundColor3 = ElementalON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
+    ele.Text = "Elemental: "..(ElementalON and "ON" or "OFF")
+    ele.BackgroundColor3 = ElementalON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
 end)
+
+--// EXACT REMOTE FUNCTION (INI FIX UTAMA)
+local function FireCreate(mode, map)
+    local args = {
+        {
+            {
+                "GamemodeSystem",
+                "Create",
+                mode,
+                map,
+                "Easy",
+                n = 6
+            },
+            "\002"
+        }
+    }
+
+    Remote:FireServer(unpack(args))
+end
+
+local function FireStart(mode)
+    local args = {
+        {
+            {
+                "GamemodeSystem",
+                "Start",
+                mode,
+                8594485805,
+                n = 4
+            },
+            "\002"
+        }
+    }
+
+    Remote:FireServer(unpack(args))
+end
 
 --// LOOP DEFENSE
 task.spawn(function()
     while task.wait(2) do
         if DefenseON and Running then
-            pcall(function()
-                Remote:FireServer({
-                    {{"GamemodeSystem","Create","Defense Mode",DefenseMap,"Easy",n=6},""}
-                })
-            end)
-
+            FireCreate("Defense Mode","SinVillage")
             task.wait(1.5)
-
-            pcall(function()
-                Remote:FireServer({
-                    {{"GamemodeSystem","Start","Defense Mode",8594485805,n=4},""}
-                })
-            end)
+            FireStart("Defense Mode")
         end
     end
 end)
@@ -165,19 +178,9 @@ end)
 task.spawn(function()
     while task.wait(2) do
         if ElementalON and Running then
-            pcall(function()
-                Remote:FireServer({
-                    {{"GamemodeSystem","Create","Elemental Mode",ElementalMap,"Easy",n=6},""}
-                })
-            end)
-
+            FireCreate("Elemental Mode","WindRaid")
             task.wait(1.5)
-
-            pcall(function()
-                Remote:FireServer({
-                    {{"GamemodeSystem","Start","Elemental Mode",8594485805,n=4},""}
-                })
-            end)
+            FireStart("Elemental Mode")
         end
     end
 end)
