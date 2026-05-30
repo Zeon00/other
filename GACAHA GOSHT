@@ -11,27 +11,16 @@ local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local Remote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
 
---// MAP LIST
+--// DATA
 local Modes = {
-    ["Defense Mode"] = {
-        "SinVillage",
-        "DestroyedVillage",
-        "CursedZone",
-        "BizarreDesert"
-    },
-
-    ["Elemental Mode"] = {
-        "FireRaid",
-        "WaterRaid",
-        "WindRaid"
-    }
+    ["Defense Mode"] = {"SinVillage","DestroyedVillage","CursedZone","BizarreDesert"},
+    ["Elemental Mode"] = {"FireRaid","WaterRaid","WindRaid"}
 }
 
 local SelectedMode = "Defense Mode"
 local Maps = Modes[SelectedMode]
 local SelectedMap = Maps[1]
 local AutoFarm = false
-
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -44,9 +33,9 @@ Main.Size = UDim2.new(0,280,0,230)
 Main.Position = UDim2.new(0.5,-140,0.5,-90)
 Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Main.BorderSizePixel = 0
+Instance.new("UICorner", Main)
 
-local Corner = Instance.new("UICorner", Main)
-
+-- TITLE
 local Title = Instance.new("TextLabel")
 Title.Parent = Main
 Title.Size = UDim2.new(1,0,0,35)
@@ -56,6 +45,7 @@ Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
 
+-- MODE BUTTON
 local ModeBtn = Instance.new("TextButton")
 ModeBtn.Parent = Main
 ModeBtn.Size = UDim2.new(0,240,0,35)
@@ -63,10 +53,9 @@ ModeBtn.Position = UDim2.new(0,20,0,45)
 ModeBtn.Text = "Mode : "..SelectedMode
 ModeBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
 ModeBtn.TextColor3 = Color3.new(1,1,1)
-
 Instance.new("UICorner", ModeBtn)
 
--- Destroy
+-- CLOSE
 local Close = Instance.new("TextButton")
 Close.Parent = Main
 Close.Size = UDim2.new(0,30,0,30)
@@ -74,10 +63,9 @@ Close.Position = UDim2.new(1,-35,0,3)
 Close.Text = "X"
 Close.BackgroundColor3 = Color3.fromRGB(200,50,50)
 Close.TextColor3 = Color3.new(1,1,1)
-
 Instance.new("UICorner", Close)
 
--- Minimize
+-- MINIMIZE
 local Min = Instance.new("TextButton")
 Min.Parent = Main
 Min.Size = UDim2.new(0,30,0,30)
@@ -85,10 +73,9 @@ Min.Position = UDim2.new(1,-70,0,3)
 Min.Text = "_"
 Min.BackgroundColor3 = Color3.fromRGB(60,60,60)
 Min.TextColor3 = Color3.new(1,1,1)
-
 Instance.new("UICorner", Min)
 
--- Dropdown
+-- DROPDOWN
 local Dropdown = Instance.new("TextButton")
 Dropdown.Parent = Main
 Dropdown.Size = UDim2.new(0,240,0,35)
@@ -96,21 +83,29 @@ Dropdown.Position = UDim2.new(0,20,0,90)
 Dropdown.Text = "Map : "..SelectedMap
 Dropdown.BackgroundColor3 = Color3.fromRGB(40,40,40)
 Dropdown.TextColor3 = Color3.new(1,1,1)
-
 Instance.new("UICorner", Dropdown)
 
-local ListFrame = Instance.new("Frame")
+-- LIST (SCROLL FIXED)
+local ListFrame = Instance.new("ScrollingFrame")
 ListFrame.Parent = Main
 ListFrame.Position = UDim2.new(0,20,0,130)
 ListFrame.Size = UDim2.new(0,240,0,0)
-ListFrame.ClipsDescendants = true
 ListFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
+ListFrame.ClipsDescendants = true
+
+ListFrame.ScrollingEnabled = true
+ListFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+ListFrame.ScrollBarThickness = 4
+ListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ListFrame.CanvasSize = UDim2.new(0,0,0,0)
 
 Instance.new("UICorner", ListFrame)
 
 local Layout = Instance.new("UIListLayout", ListFrame)
+Layout.Padding = UDim.new(0,6)
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
-local Open = false
+-- REFRESH MAPS
 local function RefreshMaps()
 
     for _,v in ipairs(ListFrame:GetChildren()) do
@@ -120,25 +115,25 @@ local function RefreshMaps()
     end
 
     for _,MapName in ipairs(Maps) do
-
         local Btn = Instance.new("TextButton")
         Btn.Parent = ListFrame
         Btn.Size = UDim2.new(1,0,0,30)
         Btn.Text = MapName
         Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
         Btn.TextColor3 = Color3.new(1,1,1)
+        Instance.new("UICorner", Btn)
 
         Btn.MouseButton1Click:Connect(function()
             SelectedMap = MapName
             Dropdown.Text = "Map : "..MapName
-
-            Open = false
-            ListFrame.Size = UDim2.new(0,240,0,0)
+            ListFrame.Visible = false
         end)
     end
 end
 
 RefreshMaps()
+
+-- MODE SWITCH
 ModeBtn.MouseButton1Click:Connect(function()
 
     if SelectedMode == "Defense Mode" then
@@ -155,13 +150,15 @@ ModeBtn.MouseButton1Click:Connect(function()
 
     RefreshMaps()
 end)
+
+-- DROPDOWN TOGGLE
+local Open = false
 Dropdown.MouseButton1Click:Connect(function()
     Open = not Open
-    ListFrame.Size = Open and UDim2.new(0,240,0,#Maps*30) or UDim2.new(0,240,0,0)
+    ListFrame.Visible = Open
 end)
 
-
--- Toggle
+-- TOGGLE AUTO
 local Toggle = Instance.new("TextButton")
 Toggle.Parent = Main
 Toggle.Size = UDim2.new(0,240,0,35)
@@ -169,26 +166,21 @@ Toggle.Position = UDim2.new(0,20,0,175)
 Toggle.Text = "AUTO : OFF"
 Toggle.BackgroundColor3 = Color3.fromRGB(170,50,50)
 Toggle.TextColor3 = Color3.new(1,1,1)
-
 Instance.new("UICorner", Toggle)
 
 Toggle.MouseButton1Click:Connect(function()
     AutoFarm = not AutoFarm
-
     Toggle.Text = AutoFarm and "AUTO : ON" or "AUTO : OFF"
-    Toggle.BackgroundColor3 = AutoFarm
-        and Color3.fromRGB(50,170,50)
-        or Color3.fromRGB(170,50,50)
+    Toggle.BackgroundColor3 = AutoFarm and Color3.fromRGB(50,170,50) or Color3.fromRGB(170,50,50)
 end)
 
--- Destroy
+-- CLOSE GUI
 Close.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Minimize
+-- MINIMIZE
 local MiniIcon
-
 Min.MouseButton1Click:Connect(function()
     Main.Visible = false
 
@@ -199,7 +191,6 @@ Min.MouseButton1Click:Connect(function()
     MiniIcon.Text = "GUI"
     MiniIcon.BackgroundColor3 = Color3.fromRGB(40,40,40)
     MiniIcon.TextColor3 = Color3.new(1,1,1)
-
     Instance.new("UICorner", MiniIcon)
 
     MiniIcon.MouseButton1Click:Connect(function()
@@ -208,17 +199,12 @@ Min.MouseButton1Click:Connect(function()
     end)
 end)
 
--- Drag
+-- DRAG
 local dragging, dragInput, dragStart, startPos
 
 local function update(input)
     local delta = input.Position - dragStart
-    Main.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
-    )
+    Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
 Title.InputBegan:Connect(function(input)
@@ -226,23 +212,14 @@ Title.InputBegan:Connect(function(input)
         dragging = true
         dragStart = input.Position
         startPos = Main.Position
-
         input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
         end)
     end
 end)
 
-Title.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-
 UIS.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
         update(input)
     end
 end)
@@ -251,42 +228,20 @@ end)
 task.spawn(function()
     while task.wait(3) do
         if AutoFarm then
-
-            local CreateArgs = {
-                {
-                    {
-                        "GamemodeSystem",
-                        "Create",
-                        SelectedMode,
-                        SelectedMap,
-                        "Easy",
-                        n = 6
-                    },
-                    "\002"
-                }
-            }
-
             pcall(function()
-                Remote:FireServer(unpack(CreateArgs))
+                Remote:FireServer({
+                    {"GamemodeSystem","Create",SelectedMode,SelectedMap,"Easy",n=6},
+                    "\002"
+                })
             end)
 
             task.wait(2)
 
-            local StartArgs = {
-                {
-                    {
-                        "GamemodeSystem",
-                        "Start",
-                        SelectedMode,
-                        8594485805,
-                        n = 4
-                    },
-                    "\002"
-                }
-            }
-
             pcall(function()
-                Remote:FireServer(unpack(StartArgs))
+                Remote:FireServer({
+                    {"GamemodeSystem","Start",SelectedMode,8594485805,n=4},
+                    "\002"
+                })
             end)
         end
     end
