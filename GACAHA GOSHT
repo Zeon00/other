@@ -1,6 +1,6 @@
 --// DESTROY GUI LAMA
 pcall(function()
-    game.CoreGui.AutoSpinGui:Destroy()
+    game.CoreGui.DefenseFarmGUI:Destroy()
 end)
 
 --// SERVICES
@@ -9,221 +9,236 @@ local RS = game:GetService("ReplicatedStorage")
 local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
+local Remote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
 
-local remote = RS
-    :WaitForChild("ffrostflame_bridgenet2@1.0.0")
-    :WaitForChild("dataRemoteEvent")
+--// MAP LIST
+local Maps = {
+    "SinVillage",
+    "DestroyedVillage",
+    "CursedZone",
+    "BizarreDesert"
+}
 
---// STATE
-_G.SoulSpin = false
-_G.ZanpakutoSpin = false
-_G.WarriorSpin = false
-_G.HunterSpin = false
-_G.DevilFruitSpin = false
-_G.HakiSpin = false
-
---// SPIN FUNCTION
-local function doSpin(name, mode, data)
-    local args = {
-        {
-            {
-                "GachaSystem",
-                "Spin",
-                name,
-                mode,
-                data,
-                n = 5
-            },
-            "\002"
-        }
-    }
-
-    remote:FireServer(unpack(args))
-end
-
---// LOOP
-task.spawn(function()
-    while task.wait(0.1) do
-
-        if _G.SoulSpin then
-            doSpin("Soul Fundation", "Normal", {
-                TrueQuincy = false,
-                Mythical = true,
-                Secret = true,
-                Visored = false,
-                Transcendent = true,
-                Ghostly = true
-            })
-        end
-
-        if _G.ZanpakutoSpin then
-            doSpin("Zanpakuto", "Normal", {
-                Nozarashi = false,
-                Shirayuki = false,
-                Mythical = true,
-                RyujinJakka = true,
-                Secret = true,
-                Ghostly = true
-            })
-        end
-
-        if _G.WarriorSpin then
-            doSpin("Warrior", "Shadow", {
-                ColossalTitan = true,
-                BeastTitan = true,
-                IgrisShadow = true,
-                TuskAct4 = true,
-                Ghostly = true,
-                BellionShadow = true,
-                WarhammerTitan = true,
-                TheWorldOverHeaven = true,
-                BeruShadow = true,
-                D4C = true
-            })
-        end
-
-        if _G.HunterSpin then
-            doSpin("Hunter Rank", "Normal", {
-                Mythical = true,
-                Ghostly = true,
-                Monarch = true,
-                Secret = true
-            })
-        end
-
-        if _G.DevilFruitSpin then
-            doSpin("Devil Fruit", "Normal", {
-                Ghostly = true,
-                SunGodFruit = true,
-                Mythical = true,
-                Secret = true
-            })
-        end
-
-        if _G.HakiSpin then
-            doSpin("Haki Color", "Normal", {
-                Mythical = true,
-                Ghostly = true,
-                RainbowHaki = true,
-                Secret = true
-            })
-        end
-    end
-end)
+local SelectedMap = Maps[1]
+local AutoFarm = false
 
 --// GUI
-local gui = Instance.new("ScreenGui")
-gui.Name = "AutoSpinGui"
-gui.Parent = game.CoreGui
-gui.ResetOnSpawn = false
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DefenseFarmGUI"
+ScreenGui.Parent = game.CoreGui
 
-local main = Instance.new("Frame")
-main.Parent = gui
-main.Size = UDim2.new(0, 260, 0, 320)
-main.Position = UDim2.new(0.35, 0, 0.2, 0)
-main.BackgroundColor3 = Color3.fromRGB(25,25,25)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
+local Main = Instance.new("Frame")
+Main.Parent = ScreenGui
+Main.Size = UDim2.new(0,280,0,180)
+Main.Position = UDim2.new(0.5,-140,0.5,-90)
+Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Main.BorderSizePixel = 0
 
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
+local Corner = Instance.new("UICorner", Main)
 
-local title = Instance.new("TextLabel")
-title.Parent = main
-title.Size = UDim2.new(1,0,0,35)
-title.BackgroundTransparency = 1
-title.Text = "Auto Spin"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-title.TextColor3 = Color3.new(1,1,1)
+local Title = Instance.new("TextLabel")
+Title.Parent = Main
+Title.Size = UDim2.new(1,0,0,35)
+Title.BackgroundTransparency = 1
+Title.Text = "Defense Auto Create"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
 
--- CLOSE
-local close = Instance.new("TextButton")
-close.Parent = main
-close.Size = UDim2.new(0,30,0,30)
-close.Position = UDim2.new(1,-35,0,3)
-close.Text = "X"
-close.Font = Enum.Font.GothamBold
-close.TextSize = 16
-close.BackgroundColor3 = Color3.fromRGB(170,40,40)
-close.TextColor3 = Color3.new(1,1,1)
+-- Destroy
+local Close = Instance.new("TextButton")
+Close.Parent = Main
+Close.Size = UDim2.new(0,30,0,30)
+Close.Position = UDim2.new(1,-35,0,3)
+Close.Text = "X"
+Close.BackgroundColor3 = Color3.fromRGB(200,50,50)
+Close.TextColor3 = Color3.new(1,1,1)
 
-Instance.new("UICorner", close).CornerRadius = UDim.new(1,0)
+Instance.new("UICorner", Close)
 
-close.MouseButton1Click:Connect(function()
-    gui:Destroy()
+-- Minimize
+local Min = Instance.new("TextButton")
+Min.Parent = Main
+Min.Size = UDim2.new(0,30,0,30)
+Min.Position = UDim2.new(1,-70,0,3)
+Min.Text = "_"
+Min.BackgroundColor3 = Color3.fromRGB(60,60,60)
+Min.TextColor3 = Color3.new(1,1,1)
+
+Instance.new("UICorner", Min)
+
+-- Dropdown
+local Dropdown = Instance.new("TextButton")
+Dropdown.Parent = Main
+Dropdown.Size = UDim2.new(0,240,0,35)
+Dropdown.Position = UDim2.new(0,20,0,50)
+Dropdown.Text = "Map : "..SelectedMap
+Dropdown.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Dropdown.TextColor3 = Color3.new(1,1,1)
+
+Instance.new("UICorner", Dropdown)
+
+local ListFrame = Instance.new("Frame")
+ListFrame.Parent = Main
+ListFrame.Position = UDim2.new(0,20,0,90)
+ListFrame.Size = UDim2.new(0,240,0,0)
+ListFrame.ClipsDescendants = true
+ListFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
+
+Instance.new("UICorner", ListFrame)
+
+local Layout = Instance.new("UIListLayout", ListFrame)
+
+local Open = false
+
+Dropdown.MouseButton1Click:Connect(function()
+    Open = not Open
+    ListFrame.Size = Open and UDim2.new(0,240,0,#Maps*30) or UDim2.new(0,240,0,0)
 end)
 
--- MINIMIZE
-local mini = Instance.new("TextButton")
-mini.Parent = main
-mini.Size = UDim2.new(0,30,0,30)
-mini.Position = UDim2.new(1,-70,0,3)
-mini.Text = "-"
-mini.Font = Enum.Font.GothamBold
-mini.TextSize = 18
-mini.BackgroundColor3 = Color3.fromRGB(50,50,50)
-mini.TextColor3 = Color3.new(1,1,1)
+for _,MapName in ipairs(Maps) do
+    local Btn = Instance.new("TextButton")
+    Btn.Parent = ListFrame
+    Btn.Size = UDim2.new(1,0,0,30)
+    Btn.Text = MapName
+    Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    Btn.TextColor3 = Color3.new(1,1,1)
 
-Instance.new("UICorner", mini).CornerRadius = UDim.new(1,0)
-
-local icon = Instance.new("TextButton")
-icon.Parent = gui
-icon.Size = UDim2.new(0,55,0,55)
-icon.Position = UDim2.new(0,20,0.5,0)
-icon.Visible = false
-icon.Text = "SPIN"
-icon.Font = Enum.Font.GothamBold
-icon.TextSize = 14
-icon.BackgroundColor3 = Color3.fromRGB(25,25,25)
-icon.TextColor3 = Color3.new(1,1,1)
-icon.Active = true
-icon.Draggable = true
-
-Instance.new("UICorner", icon).CornerRadius = UDim.new(1,0)
-
-mini.MouseButton1Click:Connect(function()
-    main.Visible = false
-    icon.Visible = true
-end)
-
-icon.MouseButton1Click:Connect(function()
-    main.Visible = true
-    icon.Visible = false
-end)
-
---// TOGGLE CREATOR
-local function createToggle(text, posY, globalName)
-
-    local btn = Instance.new("TextButton")
-    btn.Parent = main
-    btn.Size = UDim2.new(0,220,0,35)
-    btn.Position = UDim2.new(0,20,0,posY)
-    btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
-    btn.Text = text .. " : OFF"
-
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
-
-    btn.MouseButton1Click:Connect(function()
-
-        _G[globalName] = not _G[globalName]
-
-        if _G[globalName] then
-            btn.Text = text .. " : ON"
-            btn.BackgroundColor3 = Color3.fromRGB(40,120,40)
-        else
-            btn.Text = text .. " : OFF"
-            btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-        end
+    Btn.MouseButton1Click:Connect(function()
+        SelectedMap = MapName
+        Dropdown.Text = "Map : "..MapName
+        Open = false
+        ListFrame.Size = UDim2.new(0,240,0,0)
     end)
 end
 
-createToggle("Soul Fundation", 50, "SoulSpin")
-createToggle("Zanpakuto", 90, "ZanpakutoSpin")
-createToggle("Warrior", 130, "WarriorSpin")
-createToggle("Hunter Rank", 170, "HunterSpin")
-createToggle("Devil Fruit", 210, "DevilFruitSpin")
-createToggle("Haki Color", 250, "HakiSpin")
+-- Toggle
+local Toggle = Instance.new("TextButton")
+Toggle.Parent = Main
+Toggle.Size = UDim2.new(0,240,0,35)
+Toggle.Position = UDim2.new(0,20,0,135)
+Toggle.Text = "AUTO : OFF"
+Toggle.BackgroundColor3 = Color3.fromRGB(170,50,50)
+Toggle.TextColor3 = Color3.new(1,1,1)
+
+Instance.new("UICorner", Toggle)
+
+Toggle.MouseButton1Click:Connect(function()
+    AutoFarm = not AutoFarm
+
+    Toggle.Text = AutoFarm and "AUTO : ON" or "AUTO : OFF"
+    Toggle.BackgroundColor3 = AutoFarm
+        and Color3.fromRGB(50,170,50)
+        or Color3.fromRGB(170,50,50)
+end)
+
+-- Destroy
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Minimize
+local MiniIcon
+
+Min.MouseButton1Click:Connect(function()
+    Main.Visible = false
+
+    MiniIcon = Instance.new("TextButton")
+    MiniIcon.Parent = ScreenGui
+    MiniIcon.Size = UDim2.new(0,50,0,50)
+    MiniIcon.Position = UDim2.new(0,20,0.5,0)
+    MiniIcon.Text = "GUI"
+    MiniIcon.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    MiniIcon.TextColor3 = Color3.new(1,1,1)
+
+    Instance.new("UICorner", MiniIcon)
+
+    MiniIcon.MouseButton1Click:Connect(function()
+        Main.Visible = true
+        MiniIcon:Destroy()
+    end)
+end)
+
+-- Drag
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    Main.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+Title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+Title.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- AUTO LOOP
+task.spawn(function()
+    while task.wait(3) do
+        if AutoFarm then
+
+            local CreateArgs = {
+                {
+                    {
+                        "GamemodeSystem",
+                        "Create",
+                        "Defense Mode",
+                        SelectedMap,
+                        "Easy",
+                        n = 6
+                    },
+                    "\002"
+                }
+            }
+
+            pcall(function()
+                Remote:FireServer(unpack(CreateArgs))
+            end)
+
+            task.wait(2)
+
+            local StartArgs = {
+                {
+                    {
+                        "GamemodeSystem",
+                        "Start",
+                        "Defense Mode",
+                        8594485805,
+                        n = 4
+                    },
+                    "\002"
+                }
+            }
+
+            pcall(function()
+                Remote:FireServer(unpack(StartArgs))
+            end)
+        end
+    end
+end)
