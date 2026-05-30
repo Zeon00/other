@@ -37,7 +37,7 @@ Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Main.BorderSizePixel = 0
 Instance.new("UICorner", Main)
 
--- Title
+-- TITLE
 local Title = Instance.new("TextLabel")
 Title.Parent = Main
 Title.Size = UDim2.new(1,0,0,35)
@@ -47,7 +47,7 @@ Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
 
--- Mode Button
+-- MODE BUTTON
 local ModeBtn = Instance.new("TextButton")
 ModeBtn.Parent = Main
 ModeBtn.Size = UDim2.new(0,240,0,35)
@@ -57,57 +57,59 @@ ModeBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
 ModeBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", ModeBtn)
 
--- Close
+-- CLOSE
 local Close = Instance.new("TextButton")
 Close.Parent = Main
 Close.Size = UDim2.new(0,30,0,30)
 Close.Position = UDim2.new(1,-35,0,3)
 Close.Text = "X"
 Close.BackgroundColor3 = Color3.fromRGB(200,50,50)
-Close.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Close)
 
--- Min
+-- MIN
 local Min = Instance.new("TextButton")
 Min.Parent = Main
 Min.Size = UDim2.new(0,30,0,30)
 Min.Position = UDim2.new(1,-70,0,3)
 Min.Text = "_"
 Min.BackgroundColor3 = Color3.fromRGB(60,60,60)
-Min.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Min)
 
--- Dropdown
+-- DROPDOWN
 local Dropdown = Instance.new("TextButton")
 Dropdown.Parent = Main
 Dropdown.Size = UDim2.new(0,240,0,35)
 Dropdown.Position = UDim2.new(0,20,0,90)
 Dropdown.Text = "Map : "..SelectedMap
 Dropdown.BackgroundColor3 = Color3.fromRGB(40,40,40)
-Dropdown.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Dropdown)
 
--- LIST (FIXED SCROLLING)
+-- LIST FRAME (SCROLL FIXED)
 local ListFrame = Instance.new("ScrollingFrame")
 ListFrame.Parent = Main
 ListFrame.Position = UDim2.new(0,20,0,130)
 ListFrame.Size = UDim2.new(0,240,0,0)
 ListFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
-
-ListFrame.ClipsDescendants = true
-ListFrame.ScrollBarThickness = 4
+ListFrame.ScrollBarThickness = 5
 ListFrame.ScrollingDirection = Enum.ScrollingDirection.Y
 ListFrame.ScrollingEnabled = true
 ListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 ListFrame.Visible = false
-
 Instance.new("UICorner", ListFrame)
 
-local Layout = Instance.new("UIListLayout", ListFrame)
+-- LAYOUT
+local Layout = Instance.new("UIListLayout")
+Layout.Parent = ListFrame
 Layout.Padding = UDim.new(0,5)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- refresh maps
+Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ListFrame.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y)
+end)
+
+-- STATE
+local Open = false
+
 local function RefreshMaps()
 
     for _,v in ipairs(ListFrame:GetChildren()) do
@@ -116,17 +118,21 @@ local function RefreshMaps()
         end
     end
 
-    for _,map in ipairs(Maps) do
-        local b = Instance.new("TextButton")
-        b.Parent = ListFrame
-        b.Size = UDim2.new(1,0,0,30)
-        b.Text = map
-        b.BackgroundColor3 = Color3.fromRGB(50,50,50)
-        b.TextColor3 = Color3.new(1,1,1)
+    task.wait()
 
-        b.MouseButton1Click:Connect(function()
+    for i, map in ipairs(Maps) do
+        local btn = Instance.new("TextButton")
+        btn.Parent = ListFrame
+        btn.Size = UDim2.new(1,0,0,30)
+        btn.Text = map
+        btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        btn.TextColor3 = Color3.new(1,1,1)
+        btn.LayoutOrder = i
+
+        btn.MouseButton1Click:Connect(function()
             SelectedMap = map
             Dropdown.Text = "Map : "..map
+            Open = false
             ListFrame.Visible = false
         end)
     end
@@ -134,7 +140,7 @@ end
 
 RefreshMaps()
 
--- mode switch
+-- TOGGLE MODE
 ModeBtn.MouseButton1Click:Connect(function()
     if SelectedMode == "Defense Mode" then
         SelectedMode = "Elemental Mode"
@@ -151,19 +157,21 @@ ModeBtn.MouseButton1Click:Connect(function()
     RefreshMaps()
 end)
 
--- dropdown FIX
+-- DROPDOWN FIX
 Dropdown.MouseButton1Click:Connect(function()
-    ListFrame.Visible = not ListFrame.Visible
+    Open = not Open
+
+    ListFrame.Visible = Open
+    ListFrame.Size = Open and UDim2.new(0,240,0,120) or UDim2.new(0,240,0,0)
 end)
 
--- toggle auto
+-- AUTO TOGGLE
 local Toggle = Instance.new("TextButton")
 Toggle.Parent = Main
 Toggle.Size = UDim2.new(0,240,0,35)
 Toggle.Position = UDim2.new(0,20,0,175)
 Toggle.Text = "AUTO : OFF"
 Toggle.BackgroundColor3 = Color3.fromRGB(170,50,50)
-Toggle.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Toggle)
 
 Toggle.MouseButton1Click:Connect(function()
@@ -172,12 +180,12 @@ Toggle.MouseButton1Click:Connect(function()
     Toggle.BackgroundColor3 = AutoFarm and Color3.fromRGB(50,170,50) or Color3.fromRGB(170,50,50)
 end)
 
--- close
+-- CLOSE
 Close.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- minimize
+-- MINIMIZE
 local MiniIcon
 Min.MouseButton1Click:Connect(function()
     Main.Visible = false
@@ -187,9 +195,6 @@ Min.MouseButton1Click:Connect(function()
     MiniIcon.Size = UDim2.new(0,50,0,50)
     MiniIcon.Position = UDim2.new(0,20,0.5,0)
     MiniIcon.Text = "GUI"
-    MiniIcon.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    MiniIcon.TextColor3 = Color3.new(1,1,1)
-
     Instance.new("UICorner", MiniIcon)
 
     MiniIcon.MouseButton1Click:Connect(function()
