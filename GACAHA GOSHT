@@ -10,8 +10,8 @@ local Remote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dat
 
 --// DATA
 local Modes = {
-    Defense = {"SinVillage","DestroyedVillage","CursedZone","BizarreDesert"},
-    Elemental = {"FireRaid","WaterRaid","WindRaid"}
+    Defense = {"SinVillage"},
+    Elemental = {"WindRaid"}
 }
 
 local Selected = {
