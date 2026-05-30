@@ -1,4 +1,4 @@
---// CLEAN OLD GUI
+--// DESTROY OLD GUI
 pcall(function()
     if game.CoreGui:FindFirstChild("DefenseFarmGUI") then
         game.CoreGui.DefenseFarmGUI:Destroy()
@@ -6,7 +6,9 @@ pcall(function()
 end)
 
 --// SERVICES
+local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
+
 local Remote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
 
 --// DATA
@@ -16,18 +18,13 @@ local Modes = {
 }
 
 local ModeOrder = {"Defense Mode","Elemental Mode"}
-local ModeIndex = 1
+local SelectedModeIndex = 1
 
-local SelectedMode = ModeOrder[ModeIndex]
+local SelectedMode = ModeOrder[SelectedModeIndex]
 local Maps = Modes[SelectedMode]
 local SelectedMap = Maps[1]
 
--- TOGGLES PER MODE
-local DefenseON = false
-local ElementalON = false
-
--- GLOBAL AUTO
-local Running = true
+local AutoFarm = false
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -35,235 +32,169 @@ ScreenGui.Name = "DefenseFarmGUI"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
--- MAIN
 local Main = Instance.new("Frame")
 Main.Parent = ScreenGui
-Main.Size = UDim2.new(0, 320, 0, 220)
-Main.Position = UDim2.new(0.5, -160, 0.5, -110)
+Main.Size = UDim2.new(0, 300, 0, 240)
+Main.Position = UDim2.new(0.5, -150, 0.5, -120)
 Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Main.BorderSizePixel = 0
 Instance.new("UICorner", Main)
---// DRAG SYSTEM
-local UIS = game:GetService("UserInputService")
-
-local dragging = false
-local dragStart
-local startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    Main.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
-    )
-end
-
-Main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = Main.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        update(input)
-    end
-end)
 
 -- TITLE
 local Title = Instance.new("TextLabel")
 Title.Parent = Main
-Title.Size = UDim2.new(1,0,0,30)
-Title.Text = "AUTO DEFENSE / ELEMENTAL"
-Title.TextColor3 = Color3.new(1,1,1)
+Title.Size = UDim2.new(1,0,0,35)
 Title.BackgroundTransparency = 1
+Title.Text = "Defense Auto Farm"
+Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
+Title.TextSize = 16
 
--- CLOSE BUTTON
-local Close = Instance.new("TextButton")
-Close.Parent = Main
-Close.Size = UDim2.new(0,25,0,25)
-Close.Position = UDim2.new(1,-30,0,3)
-Close.Text = "X"
-Close.BackgroundColor3 = Color3.fromRGB(200,50,50)
-Close.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", Close)
+-- MODE BUTTON
+local ModeBtn = Instance.new("TextButton")
+ModeBtn.Parent = Main
+ModeBtn.Size = UDim2.new(0,260,0,30)
+ModeBtn.Position = UDim2.new(0,20,0,45)
+ModeBtn.Text = "Mode: "..SelectedMode
+ModeBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+ModeBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", ModeBtn)
 
-Close.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
+-- MAP BUTTON
+local Dropdown = Instance.new("TextButton")
+Dropdown.Parent = Main
+Dropdown.Size = UDim2.new(0,260,0,30)
+Dropdown.Position = UDim2.new(0,20,0,80)
+Dropdown.Text = "Map: "..SelectedMap
+Dropdown.BackgroundColor3 = Color3.fromRGB(45,45,45)
+Dropdown.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Dropdown)
 
--- MINIMIZE
-local Min = Instance.new("TextButton")
-Min.Parent = Main
-Min.Size = UDim2.new(0,25,0,25)
-Min.Position = UDim2.new(1,-60,0,3)
-Min.Text = "-"
-Min.BackgroundColor3 = Color3.fromRGB(70,70,70)
-Min.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", Min)
+-- SCROLL MAP LIST
+local ListFrame = Instance.new("ScrollingFrame")
+ListFrame.Parent = Main
+ListFrame.Position = UDim2.new(0,20,0,115)
+ListFrame.Size = UDim2.new(0,260,0,0)
+ListFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
+ListFrame.Visible = false
+ListFrame.ScrollBarThickness = 6
+ListFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+ListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ListFrame.CanvasSize = UDim2.new(0,0,0,0)
+ListFrame.ClipsDescendants = true
+Instance.new("UICorner", ListFrame)
 
-local MiniIcon
-
-Min.MouseButton1Click:Connect(function()
-    Main.Visible = false
-
-    MiniIcon = Instance.new("TextButton")
-    MiniIcon.Parent = ScreenGui
-    MiniIcon.Size = UDim2.new(0,60,0,60)
-    MiniIcon.Position = UDim2.new(0,20,0.5,0)
-    MiniIcon.Text = "GUI"
-    MiniIcon.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    MiniIcon.TextColor3 = Color3.new(1,1,1)
-    Instance.new("UICorner", MiniIcon)
-
-    MiniIcon.MouseButton1Click:Connect(function()
-        Main.Visible = true
-        MiniIcon:Destroy()
-    end)
-end)
-
--- LEFT PANEL (CONTROLS)
-local Left = Instance.new("Frame")
-Left.Parent = Main
-Left.Size = UDim2.new(0, 180, 0, 180)
-Left.Position = UDim2.new(0,10,0,35)
-Left.BackgroundTransparency = 1
-
--- DEFENSE TOGGLE
-local DefToggle = Instance.new("TextButton")
-DefToggle.Parent = Left
-DefToggle.Size = UDim2.new(1,0,0,35)
-DefToggle.Text = "Defense: OFF"
-DefToggle.BackgroundColor3 = Color3.fromRGB(150,50,50)
-DefToggle.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", DefToggle)
-
-DefToggle.MouseButton1Click:Connect(function()
-    DefenseON = not DefenseON
-    DefToggle.Text = "Defense: "..(DefenseON and "ON" or "OFF")
-    DefToggle.BackgroundColor3 = DefenseON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
-end)
-
--- ELEMENTAL TOGGLE
-local EleToggle = Instance.new("TextButton")
-EleToggle.Parent = Left
-EleToggle.Size = UDim2.new(1,0,0,35)
-EleToggle.Position = UDim2.new(0,0,0,45)
-EleToggle.Text = "Elemental: OFF"
-EleToggle.BackgroundColor3 = Color3.fromRGB(150,50,50)
-EleToggle.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", EleToggle)
-
-EleToggle.MouseButton1Click:Connect(function()
-    ElementalON = not ElementalON
-    EleToggle.Text = "Elemental: "..(ElementalON and "ON" or "OFF")
-    EleToggle.BackgroundColor3 = ElementalON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
-end)
-
--- RIGHT PANEL (MAP DROPDOWN)
-local Right = Instance.new("Frame")
-Right.Parent = Main
-Right.Size = UDim2.new(0, 120, 0, 180)
-Right.Position = UDim2.new(0,200,0,35)
-Right.BackgroundColor3 = Color3.fromRGB(35,35,35)
-Instance.new("UICorner", Right)
-
-local MapBtn = Instance.new("TextButton")
-MapBtn.Parent = Right
-MapBtn.Size = UDim2.new(1,0,0,30)
-MapBtn.Text = "Maps"
-MapBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-MapBtn.TextColor3 = Color3.new(1,1,1)
-
-local List = Instance.new("ScrollingFrame")
-List.Parent = Right
-List.Size = UDim2.new(1,0,0,0)
-List.Position = UDim2.new(0,0,0,35)
-List.BackgroundColor3 = Color3.fromRGB(30,30,30)
-List.ScrollBarThickness = 4
-List.AutomaticCanvasSize = Enum.AutomaticSize.Y
-List.Visible = false
-
-Instance.new("UICorner", List)
-
-local Layout = Instance.new("UIListLayout", List)
+local Layout = Instance.new("UIListLayout", ListFrame)
 Layout.Padding = UDim.new(0,5)
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
-local function LoadMaps()
-    for _,v in ipairs(List:GetChildren()) do
-        if v:IsA("TextButton") then v:Destroy() end
+-- REFRESH MAPS
+local function RefreshMaps()
+    for _,v in ipairs(ListFrame:GetChildren()) do
+        if v:IsA("TextButton") then
+            v:Destroy()
+        end
     end
 
-    for _,m in ipairs(Maps) do
+    for _,map in ipairs(Maps) do
         local b = Instance.new("TextButton")
-        b.Parent = List
-        b.Size = UDim2.new(1,0,0,25)
-        b.Text = m
-        b.BackgroundColor3 = Color3.fromRGB(70,70,70)
+        b.Parent = ListFrame
+        b.Size = UDim2.new(1,0,0,30)
+        b.Text = map
+        b.BackgroundColor3 = Color3.fromRGB(60,60,60)
         b.TextColor3 = Color3.new(1,1,1)
 
         b.MouseButton1Click:Connect(function()
-            SelectedMap = m
-            MapBtn.Text = m
-            List.Visible = false
-            List.Size = UDim2.new(1,0,0,0)
+            SelectedMap = map
+            Dropdown.Text = "Map: "..map
+            ListFrame.Visible = false
+            ListFrame.Size = UDim2.new(0,260,0,0)
         end)
     end
 end
 
-LoadMaps()
+RefreshMaps()
 
-MapBtn.MouseButton1Click:Connect(function()
-    List.Visible = not List.Visible
-    List.Size = List.Visible and UDim2.new(1,0,0,120) or UDim2.new(1,0,0,0)
+-- TOGGLE AUTO
+local Toggle = Instance.new("TextButton")
+Toggle.Parent = Main
+Toggle.Size = UDim2.new(0,260,0,30)
+Toggle.Position = UDim2.new(0,20,0,200)
+Toggle.Text = "AUTO: OFF"
+Toggle.BackgroundColor3 = Color3.fromRGB(170,50,50)
+Toggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Toggle)
+
+Toggle.MouseButton1Click:Connect(function()
+    AutoFarm = not AutoFarm
+    Toggle.Text = AutoFarm and "AUTO: ON" or "AUTO: OFF"
+    Toggle.BackgroundColor3 = AutoFarm and Color3.fromRGB(50,170,50) or Color3.fromRGB(170,50,50)
 end)
 
--- MODE ROTATION + AUTO SYSTEM
+-- MODE SWITCH
+ModeBtn.MouseButton1Click:Connect(function()
+    SelectedModeIndex += 1
+    if SelectedModeIndex > #ModeOrder then
+        SelectedModeIndex = 1
+    end
+
+    SelectedMode = ModeOrder[SelectedModeIndex]
+    Maps = Modes[SelectedMode]
+    SelectedMap = Maps[1]
+
+    ModeBtn.Text = "Mode: "..SelectedMode
+    Dropdown.Text = "Map: "..SelectedMap
+
+    RefreshMaps()
+end)
+
+-- DROPDOWN
+Dropdown.MouseButton1Click:Connect(function()
+    ListFrame.Visible = not ListFrame.Visible
+    ListFrame.Size = ListFrame.Visible and UDim2.new(0,260,0,120) or UDim2.new(0,260,0,0)
+end)
+
+-- AUTO SEQUENCE SYSTEM
 task.spawn(function()
     while task.wait(2) do
+        if AutoFarm then
 
-        if not Running then continue end
-
-        for _,mode in ipairs(ModeOrder) do
-
-            if (mode == "Defense Mode" and DefenseON)
-            or (mode == "Elemental Mode" and ElementalON) then
+            -- LOOP MODE ORDER: Defense → Elemental
+            for _,mode in ipairs(ModeOrder) do
 
                 local maps = Modes[mode]
 
                 for _,map in ipairs(maps) do
 
-                    if not Running then return end
+                    if not AutoFarm then return end
 
                     -- CREATE
+                    local createArgs = {
+                        {
+                            {"GamemodeSystem","Create",mode,map,"Easy", n = 6},
+                            "\002"
+                        }
+                    }
+
                     pcall(function()
-                        Remote:FireServer({
-                            {{"GamemodeSystem","Create",mode,map,"Easy",n=6}, "\002"}
-                        })
+                        Remote:FireServer(unpack(createArgs))
                     end)
 
                     task.wait(1.5)
 
                     -- START
+                    local startArgs = {
+                        {
+                            {"GamemodeSystem","Start",mode,8594485805, n = 4},
+                            "\002"
+                        }
+                    }
+
                     pcall(function()
-                        Remote:FireServer({
-                            {{"GamemodeSystem","Start",mode,8594485805,n=4}, "\002"}
-                        })
+                        Remote:FireServer(unpack(startArgs))
                     end)
 
-                    task.wait(6)
+                    task.wait(8) -- ⬅️ timing biar game sempet jalan
                 end
             end
         end
