@@ -1,4 +1,4 @@
---// DESTROY GUI LAMA
+--// CLEAN DESTROY
 pcall(function()
     if game.CoreGui:FindFirstChild("DefenseFarmGUI") then
         game.CoreGui.DefenseFarmGUI:Destroy()
@@ -34,7 +34,6 @@ Main.Parent = ScreenGui
 Main.Size = UDim2.new(0,280,0,230)
 Main.Position = UDim2.new(0.5,-140,0.5,-90)
 Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
-Main.BorderSizePixel = 0
 Instance.new("UICorner", Main)
 
 -- TITLE
@@ -47,14 +46,13 @@ Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
 
--- MODE BUTTON
+-- MODE BTN
 local ModeBtn = Instance.new("TextButton")
 ModeBtn.Parent = Main
 ModeBtn.Size = UDim2.new(0,240,0,35)
 ModeBtn.Position = UDim2.new(0,20,0,45)
 ModeBtn.Text = "Mode : "..SelectedMode
 ModeBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-ModeBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", ModeBtn)
 
 -- CLOSE
@@ -72,7 +70,6 @@ Min.Parent = Main
 Min.Size = UDim2.new(0,30,0,30)
 Min.Position = UDim2.new(1,-70,0,3)
 Min.Text = "_"
-Min.BackgroundColor3 = Color3.fromRGB(60,60,60)
 Instance.new("UICorner", Min)
 
 -- DROPDOWN
@@ -84,7 +81,7 @@ Dropdown.Text = "Map : "..SelectedMap
 Dropdown.BackgroundColor3 = Color3.fromRGB(40,40,40)
 Instance.new("UICorner", Dropdown)
 
--- LIST FRAME (SCROLL FIXED)
+-- LIST FRAME
 local ListFrame = Instance.new("ScrollingFrame")
 ListFrame.Parent = Main
 ListFrame.Position = UDim2.new(0,20,0,130)
@@ -97,9 +94,7 @@ ListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 ListFrame.Visible = false
 Instance.new("UICorner", ListFrame)
 
--- LAYOUT
-local Layout = Instance.new("UIListLayout")
-Layout.Parent = ListFrame
+local Layout = Instance.new("UIListLayout", ListFrame)
 Layout.Padding = UDim.new(0,5)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -120,7 +115,7 @@ local function RefreshMaps()
 
     task.wait()
 
-    for i, map in ipairs(Maps) do
+    for i,map in ipairs(Maps) do
         local btn = Instance.new("TextButton")
         btn.Parent = ListFrame
         btn.Size = UDim2.new(1,0,0,30)
@@ -140,7 +135,7 @@ end
 
 RefreshMaps()
 
--- TOGGLE MODE
+-- MODE SWITCH
 ModeBtn.MouseButton1Click:Connect(function()
     if SelectedMode == "Defense Mode" then
         SelectedMode = "Elemental Mode"
@@ -157,7 +152,7 @@ ModeBtn.MouseButton1Click:Connect(function()
     RefreshMaps()
 end)
 
--- DROPDOWN FIX
+-- DROPDOWN
 Dropdown.MouseButton1Click:Connect(function()
     Open = not Open
 
@@ -165,7 +160,7 @@ Dropdown.MouseButton1Click:Connect(function()
     ListFrame.Size = Open and UDim2.new(0,240,0,120) or UDim2.new(0,240,0,0)
 end)
 
--- AUTO TOGGLE
+-- TOGGLE AUTO
 local Toggle = Instance.new("TextButton")
 Toggle.Parent = Main
 Toggle.Size = UDim2.new(0,240,0,35)
@@ -201,4 +196,34 @@ Min.MouseButton1Click:Connect(function()
         Main.Visible = true
         MiniIcon:Destroy()
     end)
+end)
+
+-- 🔥 AUTO FARM LOOP (FIXED REAL WORKING)
+task.spawn(function()
+    while task.wait(3) do
+        if AutoFarm then
+
+            pcall(function()
+                Remote:FireServer(
+                    "GamemodeSystem",
+                    "Create",
+                    SelectedMode,
+                    SelectedMap,
+                    "Easy"
+                )
+            end)
+
+            task.wait(2)
+
+            pcall(function()
+                Remote:FireServer(
+                    "GamemodeSystem",
+                    "Start",
+                    SelectedMode,
+                    8594485805
+                )
+            end)
+
+        end
+    end
 end)
