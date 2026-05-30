@@ -1,6 +1,8 @@
 --// DESTROY GUI LAMA
 pcall(function()
-    game.CoreGui.DefenseFarmGUI:Destroy()
+    if game.CoreGui:FindFirstChild("DefenseFarmGUI") then
+        game.CoreGui.DefenseFarmGUI:Destroy()
+    end
 end)
 
 --// SERVICES
@@ -35,7 +37,7 @@ Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Main.BorderSizePixel = 0
 Instance.new("UICorner", Main)
 
--- TITLE
+-- Title
 local Title = Instance.new("TextLabel")
 Title.Parent = Main
 Title.Size = UDim2.new(1,0,0,35)
@@ -45,7 +47,7 @@ Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
 
--- MODE BUTTON
+-- Mode Button
 local ModeBtn = Instance.new("TextButton")
 ModeBtn.Parent = Main
 ModeBtn.Size = UDim2.new(0,240,0,35)
@@ -55,7 +57,7 @@ ModeBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
 ModeBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", ModeBtn)
 
--- CLOSE
+-- Close
 local Close = Instance.new("TextButton")
 Close.Parent = Main
 Close.Size = UDim2.new(0,30,0,30)
@@ -65,7 +67,7 @@ Close.BackgroundColor3 = Color3.fromRGB(200,50,50)
 Close.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Close)
 
--- MINIMIZE
+-- Min
 local Min = Instance.new("TextButton")
 Min.Parent = Main
 Min.Size = UDim2.new(0,30,0,30)
@@ -75,7 +77,7 @@ Min.BackgroundColor3 = Color3.fromRGB(60,60,60)
 Min.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Min)
 
--- DROPDOWN
+-- Dropdown
 local Dropdown = Instance.new("TextButton")
 Dropdown.Parent = Main
 Dropdown.Size = UDim2.new(0,240,0,35)
@@ -85,27 +87,27 @@ Dropdown.BackgroundColor3 = Color3.fromRGB(40,40,40)
 Dropdown.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Dropdown)
 
--- LIST (SCROLL FIXED)
+-- LIST (FIXED SCROLLING)
 local ListFrame = Instance.new("ScrollingFrame")
 ListFrame.Parent = Main
 ListFrame.Position = UDim2.new(0,20,0,130)
 ListFrame.Size = UDim2.new(0,240,0,0)
 ListFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
-ListFrame.ClipsDescendants = true
 
-ListFrame.ScrollingEnabled = true
-ListFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+ListFrame.ClipsDescendants = true
 ListFrame.ScrollBarThickness = 4
+ListFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+ListFrame.ScrollingEnabled = true
 ListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ListFrame.CanvasSize = UDim2.new(0,0,0,0)
+ListFrame.Visible = false
 
 Instance.new("UICorner", ListFrame)
 
 local Layout = Instance.new("UIListLayout", ListFrame)
-Layout.Padding = UDim.new(0,6)
+Layout.Padding = UDim.new(0,5)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- REFRESH MAPS
+-- refresh maps
 local function RefreshMaps()
 
     for _,v in ipairs(ListFrame:GetChildren()) do
@@ -114,18 +116,17 @@ local function RefreshMaps()
         end
     end
 
-    for _,MapName in ipairs(Maps) do
-        local Btn = Instance.new("TextButton")
-        Btn.Parent = ListFrame
-        Btn.Size = UDim2.new(1,0,0,30)
-        Btn.Text = MapName
-        Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-        Btn.TextColor3 = Color3.new(1,1,1)
-        Instance.new("UICorner", Btn)
+    for _,map in ipairs(Maps) do
+        local b = Instance.new("TextButton")
+        b.Parent = ListFrame
+        b.Size = UDim2.new(1,0,0,30)
+        b.Text = map
+        b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        b.TextColor3 = Color3.new(1,1,1)
 
-        Btn.MouseButton1Click:Connect(function()
-            SelectedMap = MapName
-            Dropdown.Text = "Map : "..MapName
+        b.MouseButton1Click:Connect(function()
+            SelectedMap = map
+            Dropdown.Text = "Map : "..map
             ListFrame.Visible = false
         end)
     end
@@ -133,9 +134,8 @@ end
 
 RefreshMaps()
 
--- MODE SWITCH
+-- mode switch
 ModeBtn.MouseButton1Click:Connect(function()
-
     if SelectedMode == "Defense Mode" then
         SelectedMode = "Elemental Mode"
     else
@@ -151,14 +151,12 @@ ModeBtn.MouseButton1Click:Connect(function()
     RefreshMaps()
 end)
 
--- DROPDOWN TOGGLE
-local Open = false
+-- dropdown FIX
 Dropdown.MouseButton1Click:Connect(function()
-    Open = not Open
-    ListFrame.Visible = Open
+    ListFrame.Visible = not ListFrame.Visible
 end)
 
--- TOGGLE AUTO
+-- toggle auto
 local Toggle = Instance.new("TextButton")
 Toggle.Parent = Main
 Toggle.Size = UDim2.new(0,240,0,35)
@@ -174,12 +172,12 @@ Toggle.MouseButton1Click:Connect(function()
     Toggle.BackgroundColor3 = AutoFarm and Color3.fromRGB(50,170,50) or Color3.fromRGB(170,50,50)
 end)
 
--- CLOSE GUI
+-- close
 Close.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- MINIMIZE
+-- minimize
 local MiniIcon
 Min.MouseButton1Click:Connect(function()
     Main.Visible = false
@@ -191,58 +189,11 @@ Min.MouseButton1Click:Connect(function()
     MiniIcon.Text = "GUI"
     MiniIcon.BackgroundColor3 = Color3.fromRGB(40,40,40)
     MiniIcon.TextColor3 = Color3.new(1,1,1)
+
     Instance.new("UICorner", MiniIcon)
 
     MiniIcon.MouseButton1Click:Connect(function()
         Main.Visible = true
         MiniIcon:Destroy()
     end)
-end)
-
--- DRAG
-local dragging, dragInput, dragStart, startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-Title.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = Main.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragging = false end
-        end)
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-        update(input)
-    end
-end)
-
--- AUTO LOOP
-task.spawn(function()
-    while task.wait(3) do
-        if AutoFarm then
-            pcall(function()
-                Remote:FireServer({
-                    {"GamemodeSystem","Create",SelectedMode,SelectedMap,"Easy",n=6},
-                    "\002"
-                })
-            end)
-
-            task.wait(2)
-
-            pcall(function()
-                Remote:FireServer({
-                    {"GamemodeSystem","Start",SelectedMode,8594485805,n=4},
-                    "\002"
-                })
-            end)
-        end
-    end
 end)
