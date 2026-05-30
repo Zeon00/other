@@ -12,15 +12,26 @@ local player = Players.LocalPlayer
 local Remote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dataRemoteEvent")
 
 --// MAP LIST
-local Maps = {
-    "SinVillage",
-    "DestroyedVillage",
-    "CursedZone",
-    "BizarreDesert"
+local Modes = {
+    ["Defense Mode"] = {
+        "SinVillage",
+        "DestroyedVillage",
+        "CursedZone",
+        "BizarreDesert"
+    },
+
+    ["Elemental Mode"] = {
+        "FireRaid",
+        "WaterRaid",
+        "WindRaid"
+    }
 }
 
+local SelectedMode = "Defense Mode"
+local Maps = Modes[SelectedMode]
 local SelectedMap = Maps[1]
 local AutoFarm = false
+
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -29,7 +40,7 @@ ScreenGui.Parent = game.CoreGui
 
 local Main = Instance.new("Frame")
 Main.Parent = ScreenGui
-Main.Size = UDim2.new(0,280,0,180)
+Main.Size = UDim2.new(0,280,0,230)
 Main.Position = UDim2.new(0.5,-140,0.5,-90)
 Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Main.BorderSizePixel = 0
@@ -44,6 +55,16 @@ Title.Text = "Defense Auto Create"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
+
+local ModeBtn = Instance.new("TextButton")
+ModeBtn.Parent = Main
+ModeBtn.Size = UDim2.new(0,240,0,35)
+ModeBtn.Position = UDim2.new(0,20,0,45)
+ModeBtn.Text = "Mode : "..SelectedMode
+ModeBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+ModeBtn.TextColor3 = Color3.new(1,1,1)
+
+Instance.new("UICorner", ModeBtn)
 
 -- Destroy
 local Close = Instance.new("TextButton")
@@ -71,7 +92,7 @@ Instance.new("UICorner", Min)
 local Dropdown = Instance.new("TextButton")
 Dropdown.Parent = Main
 Dropdown.Size = UDim2.new(0,240,0,35)
-Dropdown.Position = UDim2.new(0,20,0,50)
+Dropdown.Position = UDim2.new(0,20,0,90)
 Dropdown.Text = "Map : "..SelectedMap
 Dropdown.BackgroundColor3 = Color3.fromRGB(40,40,40)
 Dropdown.TextColor3 = Color3.new(1,1,1)
@@ -80,7 +101,7 @@ Instance.new("UICorner", Dropdown)
 
 local ListFrame = Instance.new("Frame")
 ListFrame.Parent = Main
-ListFrame.Position = UDim2.new(0,20,0,90)
+ListFrame.Position = UDim2.new(0,20,0,130)
 ListFrame.Size = UDim2.new(0,240,0,0)
 ListFrame.ClipsDescendants = true
 ListFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
@@ -90,33 +111,61 @@ Instance.new("UICorner", ListFrame)
 local Layout = Instance.new("UIListLayout", ListFrame)
 
 local Open = false
+local function RefreshMaps()
 
+    for _,v in ipairs(ListFrame:GetChildren()) do
+        if v:IsA("TextButton") then
+            v:Destroy()
+        end
+    end
+
+    for _,MapName in ipairs(Maps) do
+
+        local Btn = Instance.new("TextButton")
+        Btn.Parent = ListFrame
+        Btn.Size = UDim2.new(1,0,0,30)
+        Btn.Text = MapName
+        Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        Btn.TextColor3 = Color3.new(1,1,1)
+
+        Btn.MouseButton1Click:Connect(function()
+            SelectedMap = MapName
+            Dropdown.Text = "Map : "..MapName
+
+            Open = false
+            ListFrame.Size = UDim2.new(0,240,0,0)
+        end)
+    end
+end
+
+RefreshMaps()
+ModeBtn.MouseButton1Click:Connect(function()
+
+    if SelectedMode == "Defense Mode" then
+        SelectedMode = "Elemental Mode"
+    else
+        SelectedMode = "Defense Mode"
+    end
+
+    Maps = Modes[SelectedMode]
+    SelectedMap = Maps[1]
+
+    ModeBtn.Text = "Mode : "..SelectedMode
+    Dropdown.Text = "Map : "..SelectedMap
+
+    RefreshMaps()
+end)
 Dropdown.MouseButton1Click:Connect(function()
     Open = not Open
     ListFrame.Size = Open and UDim2.new(0,240,0,#Maps*30) or UDim2.new(0,240,0,0)
 end)
 
-for _,MapName in ipairs(Maps) do
-    local Btn = Instance.new("TextButton")
-    Btn.Parent = ListFrame
-    Btn.Size = UDim2.new(1,0,0,30)
-    Btn.Text = MapName
-    Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    Btn.TextColor3 = Color3.new(1,1,1)
-
-    Btn.MouseButton1Click:Connect(function()
-        SelectedMap = MapName
-        Dropdown.Text = "Map : "..MapName
-        Open = false
-        ListFrame.Size = UDim2.new(0,240,0,0)
-    end)
-end
 
 -- Toggle
 local Toggle = Instance.new("TextButton")
 Toggle.Parent = Main
 Toggle.Size = UDim2.new(0,240,0,35)
-Toggle.Position = UDim2.new(0,20,0,135)
+Toggle.Position = UDim2.new(0,20,0,175)
 Toggle.Text = "AUTO : OFF"
 Toggle.BackgroundColor3 = Color3.fromRGB(170,50,50)
 Toggle.TextColor3 = Color3.new(1,1,1)
@@ -208,7 +257,7 @@ task.spawn(function()
                     {
                         "GamemodeSystem",
                         "Create",
-                        "Defense Mode",
+                        SelectedMode,
                         SelectedMap,
                         "Easy",
                         n = 6
@@ -228,7 +277,7 @@ task.spawn(function()
                     {
                         "GamemodeSystem",
                         "Start",
-                        "Defense Mode",
+                        SelectedMode,
                         8594485805,
                         n = 4
                     },
