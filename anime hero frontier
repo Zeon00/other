@@ -17,8 +17,9 @@ local AutoClick = false
 local AutoTP = false
 local AutoWalk = false
 local AutoRoll = false
-local RollNumbers = {}
+local RollNumbers = {1}
 local AutoTrial = false
+
 
 --// GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -168,8 +169,6 @@ RollLabel.Font = Enum.Font.Gotham
 RollLabel.TextSize = 13
 RollLabel.TextColor3 = Color3.fromRGB(180,180,180)
 
--- BESARIN GUI
-Main.Size = UDim2.new(0,300,0,380)
 -- STATUS
 local Status = Instance.new("TextLabel")
 Status.Parent = Main
@@ -408,24 +407,21 @@ task.spawn(function()
     end
 end)
 
--- TARUH PALING BAWAH
 
 task.spawn(function()
     while task.wait(1) do
         if AutoTrial then
-            pcall(function()
+            local Trials = workspace:FindFirstChild("Trials")
 
-                local args = {
-                    1
-                }
-
-                game:GetService("ReplicatedStorage")
-                    :WaitForChild("RemotesFolder")
-                    :WaitForChild("EnterTrial")
-                    :FireServer(unpack(args))
-
-                Status.Text = "Entering Trial"
-            end)
+            -- Belum ada trial aktif
+            if Trials and #Trials:GetChildren() == 0 then
+                pcall(function()
+                    RS.RemotesFolder.EnterTrial:FireServer(1)
+                    Status.Text = "Joining Trial..."
+                end)
+            else
+                Status.Text = "In Trial"
+            end
         end
     end
 end)
