@@ -1,19 +1,19 @@
 -- Hapus GUI lama
 pcall(function()
-    game.CoreGui:FindFirstChild("AttackGUI"):Destroy()
+    game.CoreGui:FindFirstChild("MaderaGUI"):Destroy()
 end)
 
 local UIS = game:GetService("UserInputService")
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AttackGUI"
+ScreenGui.Name = "MaderaGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.CoreGui
 
 -- FRAME
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 280, 0, 200)
-Frame.Position = UDim2.new(0.5, -140, 0.5, -100)
+Frame.Size = UDim2.new(0, 260, 0, 160)
+Frame.Position = UDim2.new(0.5, -130, 0.5, -80)
 Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
@@ -38,7 +38,7 @@ local Title = Instance.new("TextLabel")
 Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1,-80,1,0)
 Title.Position = UDim2.new(0,10,0,0)
-Title.Text = "Attack GUI"
+Title.Text = "Madera Farm"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
 Title.TextColor3 = Color3.new(1,1,1)
@@ -69,41 +69,18 @@ Minimize.BackgroundColor3 = Color3.fromRGB(80,80,80)
 Minimize.Parent = TopBar
 Instance.new("UICorner", Minimize)
 
--- TOGGLE 1 (ID ATTACK)
-local Toggle1 = Instance.new("TextButton")
-Toggle1.Size = UDim2.new(0,120,0,35)
-Toggle1.Position = UDim2.new(0.5,-60,0,55)
-Toggle1.Text = "ID OFF"
-Toggle1.Font = Enum.Font.GothamBold
-Toggle1.TextColor3 = Color3.new(1,1,1)
-Toggle1.BackgroundColor3 = Color3.fromRGB(170,0,0)
-Toggle1.Parent = Frame
-Instance.new("UICorner", Toggle1)
+-- TOGGLE
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.new(0,120,0,40)
+Toggle.Position = UDim2.new(0.5,-60,0.5,-10)
+Toggle.Text = "OFF"
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextColor3 = Color3.new(1,1,1)
+Toggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
+Toggle.Parent = Frame
+Instance.new("UICorner", Toggle)
 
--- TOGGLE 2 (NO ARG)
-local Toggle2 = Instance.new("TextButton")
-Toggle2.Size = UDim2.new(0,120,0,35)
-Toggle2.Position = UDim2.new(0.5,-60,0,95)
-Toggle2.Text = "NO ARG OFF"
-Toggle2.Font = Enum.Font.GothamBold
-Toggle2.TextColor3 = Color3.new(1,1,1)
-Toggle2.BackgroundColor3 = Color3.fromRGB(170,0,0)
-Toggle2.Parent = Frame
-Instance.new("UICorner", Toggle2)
-
--- TEXTBOX
-local Input = Instance.new("TextBox")
-Input.Size = UDim2.new(0,120,0,30)
-Input.Position = UDim2.new(0.5,-60,0,140)
-Input.PlaceholderText = "ID (1-20)"
-Input.Text = "1"
-Input.Font = Enum.Font.Gotham
-Input.TextColor3 = Color3.new(1,1,1)
-Input.BackgroundColor3 = Color3.fromRGB(40,40,40)
-Input.Parent = Frame
-Instance.new("UICorner", Input)
-
--- ICON MINIMIZE
+-- ICON
 local Icon = Instance.new("TextButton")
 Icon.Size = UDim2.new(0,50,0,50)
 Icon.Position = UDim2.new(0,20,0.5,0)
@@ -122,37 +99,47 @@ local Remote = game:GetService("ReplicatedStorage")
     :WaitForChild("container")
     :WaitForChild("attack")
 
--- STATES
-local a1 = false
-local a2 = false
+-- STATE
+local enabled = false
 
--- LOOP
+-- LOOP FARM MADERA
 task.spawn(function()
     while task.wait() do
-        if a1 then
-            local id = tonumber(Input.Text)
-            if id then
-                Remote:FireServer(id)
-            end
-        end
+        if enabled then
+            local enemies = workspace:WaitForChild("RaidArenas")
+                :WaitForChild("World1")
+                :WaitForChild("Enemies")
 
-        if a2 then
-            Remote:FireServer()
+            local char = game.Players.LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+            if hrp then
+                for _, enemyFolder in pairs(enemies:GetChildren()) do
+                    for _, mob in pairs(enemyFolder:GetChildren()) do
+                        local root = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Torso")
+
+                        if root then
+                            hrp.CFrame = root.CFrame + Vector3.new(0, 3, 0)
+                            task.wait(0.2)
+                        end
+                    end
+                end
+            end
         end
     end
 end)
 
--- TOGGLES
-Toggle1.MouseButton1Click:Connect(function()
-    a1 = not a1
-    Toggle1.Text = a1 and "ID ON" or "ID OFF"
-    Toggle1.BackgroundColor3 = a1 and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
-end)
+-- TOGGLE
+Toggle.MouseButton1Click:Connect(function()
+    enabled = not enabled
 
-Toggle2.MouseButton1Click:Connect(function()
-    a2 = not a2
-    Toggle2.Text = a2 and "NO ARG ON" or "NO ARG OFF"
-    Toggle2.BackgroundColor3 = a2 and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
+    if enabled then
+        Toggle.Text = "ON"
+        Toggle.BackgroundColor3 = Color3.fromRGB(0,170,0)
+    else
+        Toggle.Text = "OFF"
+        Toggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
+    end
 end)
 
 -- CLOSE
