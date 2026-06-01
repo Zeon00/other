@@ -86,15 +86,17 @@ Icon.MouseButton1Click:Connect(function()
 end)
 
 -- TOGGLE
-local Toggle = Instance.new("TextButton")
-Toggle.Size = UDim2.new(0,120,0,40)
-Toggle.Position = UDim2.new(0.5,-60,0.5,-10)
-Toggle.Text = "OFF"
-Toggle.Font = Enum.Font.GothamBold
-Toggle.TextColor3 = Color3.new(1,1,1)
-Toggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
-Toggle.Parent = Frame
-Instance.new("UICorner", Toggle)
+Toggle.MouseButton1Click:Connect(function()
+    enabled = not enabled
+
+    if enabled then
+        Toggle.Text = "ON"
+        Toggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        Toggle.Text = "OFF"
+        Toggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+    end
+end)
 
 -- REMOTE (AMAN)
 local Remote = game:GetService("ReplicatedStorage")
