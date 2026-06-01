@@ -1,14 +1,18 @@
--- Hapus GUI lama
+-- SAFE REMOVE GUI
 pcall(function()
-    game.CoreGui:FindFirstChild("MaderaGUI"):Destroy()
+    local g = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("MaderaGUI")
+    if g then g:Destroy() end
 end)
 
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 
+-- GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MaderaGUI"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game.CoreGui
+ScreenGui.Parent = LP:WaitForChild("PlayerGui")
 
 -- FRAME
 local Frame = Instance.new("Frame")
@@ -20,20 +24,14 @@ Frame.Parent = ScreenGui
 
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,12)
 
-local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(60,60,60)
-Stroke.Thickness = 1
-Stroke.Parent = Frame
-
 -- TOPBAR
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1,0,0,36)
 TopBar.BackgroundColor3 = Color3.fromRGB(35,35,35)
-TopBar.BorderSizePixel = 0
 TopBar.Parent = Frame
-
 Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0,12)
 
+-- TITLE
 local Title = Instance.new("TextLabel")
 Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1,-80,1,0)
@@ -50,24 +48,42 @@ local Close = Instance.new("TextButton")
 Close.Size = UDim2.new(0,24,0,24)
 Close.Position = UDim2.new(1,-30,0,6)
 Close.Text = "✕"
-Close.Font = Enum.Font.GothamBold
-Close.TextSize = 14
-Close.TextColor3 = Color3.new(1,1,1)
 Close.BackgroundColor3 = Color3.fromRGB(220,60,60)
+Close.TextColor3 = Color3.new(1,1,1)
 Close.Parent = TopBar
 Instance.new("UICorner", Close)
+
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
 
 -- MINIMIZE
 local Minimize = Instance.new("TextButton")
 Minimize.Size = UDim2.new(0,24,0,24)
 Minimize.Position = UDim2.new(1,-58,0,6)
 Minimize.Text = "−"
-Minimize.Font = Enum.Font.GothamBold
-Minimize.TextSize = 16
-Minimize.TextColor3 = Color3.new(1,1,1)
 Minimize.BackgroundColor3 = Color3.fromRGB(80,80,80)
+Minimize.TextColor3 = Color3.new(1,1,1)
 Minimize.Parent = TopBar
 Instance.new("UICorner", Minimize)
+
+local Icon = Instance.new("TextButton")
+Icon.Size = UDim2.new(0,50,0,50)
+Icon.Position = UDim2.new(0,20,0.5,0)
+Icon.Text = "⚔"
+Icon.Visible = false
+Icon.Parent = ScreenGui
+Instance.new("UICorner", Icon)
+
+Minimize.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    Icon.Visible = true
+end)
+
+Icon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    Icon.Visible = false
+end)
 
 -- TOGGLE
 local Toggle = Instance.new("TextButton")
@@ -80,16 +96,7 @@ Toggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
 Toggle.Parent = Frame
 Instance.new("UICorner", Toggle)
 
--- ICON
-local Icon = Instance.new("TextButton")
-Icon.Size = UDim2.new(0,50,0,50)
-Icon.Position = UDim2.new(0,20,0.5,0)
-Icon.Text = "⚔"
-Icon.Visible = false
-Icon.Parent = ScreenGui
-Instance.new("UICorner", Icon)
-
--- REMOTE
+-- REMOTE (AMAN)
 local Remote = game:GetService("ReplicatedStorage")
     :WaitForChild("rbxts_include")
     :WaitForChild("node_modules")
@@ -102,34 +109,6 @@ local Remote = game:GetService("ReplicatedStorage")
 -- STATE
 local enabled = false
 
--- LOOP FARM MADERA
-task.spawn(function()
-    while task.wait() do
-        if enabled then
-            local enemies = workspace:WaitForChild("RaidArenas")
-                :WaitForChild("World1")
-                :WaitForChild("Enemies")
-
-            local char = game.Players.LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
-            if hrp then
-                for _, enemyFolder in pairs(enemies:GetChildren()) do
-                    for _, mob in pairs(enemyFolder:GetChildren()) do
-                        local root = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Torso")
-
-                        if root then
-                            hrp.CFrame = root.CFrame + Vector3.new(0, 3, 0)
-                            task.wait(0.2)
-                        end
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- TOGGLE
 Toggle.MouseButton1Click:Connect(function()
     enabled = not enabled
 
@@ -142,20 +121,29 @@ Toggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- CLOSE
-Close.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
+-- LOOP TELEPORT FIX
+task.spawn(function()
+    while task.wait(0.2) do
+        if enabled then
+            local enemies = workspace:WaitForChild("RaidArenas")
+                :WaitForChild("World1")
+                :WaitForChild("Enemies")
 
--- MINIMIZE
-Minimize.MouseButton1Click:Connect(function()
-    Frame.Visible = false
-    Icon.Visible = true
-end)
+            local char = LP.Character or LP.CharacterAdded:Wait()
+            local hrp = char:WaitForChild("HumanoidRootPart")
 
-Icon.MouseButton1Click:Connect(function()
-    Frame.Visible = true
-    Icon.Visible = false
+            for _, folder in pairs(enemies:GetChildren()) do
+                for _, mob in pairs(folder:GetChildren()) do
+                    local root = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Torso")
+
+                    if root then
+                        hrp.CFrame = root.CFrame + Vector3.new(0,3,0)
+                        task.wait(0.15)
+                    end
+                end
+            end
+        end
+    end
 end)
 
 -- DRAG
