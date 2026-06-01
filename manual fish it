@@ -113,40 +113,45 @@ end)
 -- LOOP TELEPORT FIX
 task.spawn(function()
     while task.wait(0.2) do
-        if enabled then
-            local enemies = workspace:WaitForChild("RaidArenas")
-                :WaitForChild("World1")
-                :WaitForChild("Enemies")
+        if not enabled then continue end
 
-            local char = game.Players.LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local enemiesFolder = workspace:FindFirstChild("RaidArenas")
+        if not enemiesFolder then continue end
 
-            if hrp then
-                local nearestRoot = nil
-                local nearestDist = math.huge
+        enemiesFolder = enemiesFolder:FindFirstChild("World1")
+        if not enemiesFolder then continue end
 
-                for _, folder in pairs(enemies:GetChildren()) do
-                    for _, mob in pairs(folder:GetChildren()) do
+        enemiesFolder = enemiesFolder:FindFirstChild("Enemies")
+        if not enemiesFolder then continue end
 
-                        local root =
-                            mob:FindFirstChild("HumanoidRootPart")
-                            or mob:FindFirstChildWhichIsA("BasePart", true)
+        local char = LP.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
 
-                        if root then
-                            local dist = (hrp.Position - root.Position).Magnitude
+        local nearestRoot = nil
+        local nearestDist = math.huge
 
-                            if dist < nearestDist then
-                                nearestDist = dist
-                                nearestRoot = root
-                            end
+        for _, folder in pairs(enemiesFolder:GetChildren()) do
+            for _, mob in pairs(folder:GetChildren()) do
+
+                if mob and mob:IsA("Model") then
+                    local root = mob:FindFirstChild("HumanoidRootPart")
+                        or mob:FindFirstChildWhichIsA("BasePart")
+
+                    if root then
+                        local dist = (hrp.Position - root.Position).Magnitude
+
+                        if dist < nearestDist then
+                            nearestDist = dist
+                            nearestRoot = root
                         end
                     end
                 end
-
-                if nearestRoot then
-                    hrp.CFrame = nearestRoot.CFrame + Vector3.new(0, 3, 0)
-                end
             end
+        end
+
+        if nearestRoot then
+            hrp.CFrame = nearestRoot.CFrame + Vector3.new(0, 3, 0)
         end
     end
 end)
