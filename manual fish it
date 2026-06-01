@@ -129,17 +129,33 @@ task.spawn(function()
                 :WaitForChild("World1")
                 :WaitForChild("Enemies")
 
-            local char = LP.Character or LP.CharacterAdded:Wait()
-            local hrp = char:WaitForChild("HumanoidRootPart")
+            local char = game.Players.LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-            for _, folder in pairs(enemies:GetChildren()) do
-                for _, mob in pairs(folder:GetChildren()) do
-                    local root = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Torso")
+            if hrp then
+                local nearestRoot = nil
+                local nearestDist = math.huge
 
-                    if root then
-                        hrp.CFrame = root.CFrame + Vector3.new(0,3,0)
-                        task.wait(0.15)
+                for _, folder in pairs(enemies:GetChildren()) do
+                    for _, mob in pairs(folder:GetChildren()) do
+
+                        local root =
+                            mob:FindFirstChild("HumanoidRootPart")
+                            or mob:FindFirstChildWhichIsA("BasePart", true)
+
+                        if root then
+                            local dist = (hrp.Position - root.Position).Magnitude
+
+                            if dist < nearestDist then
+                                nearestDist = dist
+                                nearestRoot = root
+                            end
+                        end
                     end
+                end
+
+                if nearestRoot then
+                    hrp.CFrame = nearestRoot.CFrame + Vector3.new(0, 3, 0)
                 end
             end
         end
