@@ -1,171 +1,202 @@
--- Universal Multi-Village Auto Attack
--- Scans all folders in WorldMobs and attacks the closest valid enemy.
+-- Hapus GUI lama
+pcall(function()
+    game.CoreGui:FindFirstChild("AttackGUI"):Destroy()
+end)
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
-
--- Wait for the main folder
-local WorldMobs = workspace:WaitForChild("Server"):WaitForChild("WorldMobs")
-local Bridge = ReplicatedStorage:WaitForChild("Bridge")
-
--- Configuration
-local Toggled = false
-local AttackConnection = nil
-
--- FUNCTION: Find the closest enemy in ANY village
-local function getClosestTarget()
-    local Character = Player.Character or Player.CharacterAdded:Wait()
-    local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
-    
-    if not HumanoidRootPart then return nil end
-
-    local closestDistance = math.huge
-    local closestMob = nil
-
-    -- 1. Loop through all Villages (Folders inside WorldMobs)
-    for _, villageFolder in pairs(WorldMobs:GetChildren()) do
-        if villageFolder:IsA("Folder") then
-            -- 2. Loop through all items inside the village
-            for _, potentialMob in pairs(villageFolder:GetChildren()) do
-                
-                -- 3. Check if it is a valid Enemy
-                -- Checks if it is a Model AND has a Humanoid (Alive)
-                if potentialMob:IsA("Model") then
-                    local mobHumanoid = potentialMob:FindFirstChild("Humanoid")
-                    local mobHRP = potentialMob:FindFirstChild("HumanoidRootPart")
-
-                    if mobHumanoid and mobHRP and mobHumanoid.Health > 0 then
-                        -- Calculate Distance
-                        local distance = (HumanoidRootPart.Position - mobHRP.Position).Magnitude
-                        
-                        -- Update closest if this one is nearer
-                        if distance < closestDistance then
-                            closestDistance = distance
-                            closestMob = potentialMob
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    return closestMob
-end
-
--- FUNCTION: The Attack Loop
-local function attackLoop()
-    if not Toggled then return end
-
-    local target = getClosestTarget()
-
-    if target then
-        -- Update GUI text to show who we are attacking
-        if ScreenGui:FindFirstChild("MainFrame") then
-            ScreenGui.MainFrame.StatusLabel.Text = "Target: " .. target.Name
-        end
-
-        -- Fire the attack
-        local args = {
-            "Attack",
-            "Click",
-            target
-        }
-        Bridge:FireServer(unpack(args))
-    else
-         -- Update GUI text if no target found
-         if ScreenGui:FindFirstChild("MainFrame") then
-            ScreenGui.MainFrame.StatusLabel.Text = "Target: Searching..."
-        end
-    end
-end
-
--- ==========================================
--- GUI SETUP
--- ==========================================
+local UIS = game:GetService("UserInputService")
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "UniversalAttackGui"
-ScreenGui.Parent = PlayerGui
+ScreenGui.Name = "AttackGUI"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game.CoreGui
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 220, 0, 120)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -60)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.Parent = ScreenGui
-MainFrame.Active = true
-MainFrame.Draggable = true
+-- FRAME
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 280, 0, 200)
+Frame.Position = UDim2.new(0.5, -140, 0.5, -100)
+Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Frame.BorderSizePixel = 0
+Frame.Parent = ScreenGui
 
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,12)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(60,60,60)
+Stroke.Thickness = 1
+Stroke.Parent = Frame
+
+-- TOPBAR
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1,0,0,36)
+TopBar.BackgroundColor3 = Color3.fromRGB(35,35,35)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = Frame
+
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0,12)
 
 local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Size = UDim2.new(1, 0, 0, 35)
 Title.BackgroundTransparency = 1
-Title.Text = "Universal Auto Farm"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Size = UDim2.new(1,-80,1,0)
+Title.Position = UDim2.new(0,10,0,0)
+Title.Text = "Attack GUI"
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.Parent = MainFrame
+Title.TextSize = 14
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
 
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Name = "ToggleBtn"
-ToggleBtn.Size = UDim2.new(0, 160, 0, 40)
-ToggleBtn.Position = UDim2.new(0.5, -80, 0.5, -10)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.Text = "OFF"
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 20
-ToggleBtn.Parent = MainFrame
+-- CLOSE
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.new(0,24,0,24)
+Close.Position = UDim2.new(1,-30,0,6)
+Close.Text = "✕"
+Close.Font = Enum.Font.GothamBold
+Close.TextSize = 14
+Close.TextColor3 = Color3.new(1,1,1)
+Close.BackgroundColor3 = Color3.fromRGB(220,60,60)
+Close.Parent = TopBar
+Instance.new("UICorner", Close)
 
-local BtnCorner = Instance.new("UICorner")
-BtnCorner.CornerRadius = UDim.new(0, 8)
-BtnCorner.Parent = ToggleBtn
+-- MINIMIZE
+local Minimize = Instance.new("TextButton")
+Minimize.Size = UDim2.new(0,24,0,24)
+Minimize.Position = UDim2.new(1,-58,0,6)
+Minimize.Text = "−"
+Minimize.Font = Enum.Font.GothamBold
+Minimize.TextSize = 16
+Minimize.TextColor3 = Color3.new(1,1,1)
+Minimize.BackgroundColor3 = Color3.fromRGB(80,80,80)
+Minimize.Parent = TopBar
+Instance.new("UICorner", Minimize)
 
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Name = "StatusLabel"
-StatusLabel.Size = UDim2.new(1, 0, 0, 20)
-StatusLabel.Position = UDim2.new(0, 0, 1, -20)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Text = "Target: Waiting..."
-StatusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-StatusLabel.TextSize = 12
-StatusLabel.Font = Enum.Font.Gotham
-StatusLabel.Parent = MainFrame
+-- TOGGLE 1 (ID ATTACK)
+local Toggle1 = Instance.new("TextButton")
+Toggle1.Size = UDim2.new(0,120,0,35)
+Toggle1.Position = UDim2.new(0.5,-60,0,55)
+Toggle1.Text = "ID OFF"
+Toggle1.Font = Enum.Font.GothamBold
+Toggle1.TextColor3 = Color3.new(1,1,1)
+Toggle1.BackgroundColor3 = Color3.fromRGB(170,0,0)
+Toggle1.Parent = Frame
+Instance.new("UICorner", Toggle1)
 
--- ==========================================
--- TOGGLE LOGIC
--- ==========================================
+-- TOGGLE 2 (NO ARG)
+local Toggle2 = Instance.new("TextButton")
+Toggle2.Size = UDim2.new(0,120,0,35)
+Toggle2.Position = UDim2.new(0.5,-60,0,95)
+Toggle2.Text = "NO ARG OFF"
+Toggle2.Font = Enum.Font.GothamBold
+Toggle2.TextColor3 = Color3.new(1,1,1)
+Toggle2.BackgroundColor3 = Color3.fromRGB(170,0,0)
+Toggle2.Parent = Frame
+Instance.new("UICorner", Toggle2)
 
-ToggleBtn.MouseButton1Click:Connect(function()
-    Toggled = not Toggled
-    
-    if Toggled then
-        -- ON State
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        ToggleBtn.Text = "ON"
-        
-        -- Start the loop (Runs every 0.1 seconds to avoid lag/kicks)
-        if AttackConnection then AttackConnection:Disconnect() end
-        AttackConnection = RunService.Heartbeat:Connect(attackLoop)
-        
-    else
-        -- OFF State
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        ToggleBtn.Text = "OFF"
-        StatusLabel.Text = "Target: Stopped"
-        
-        -- Stop the loop
-        if AttackConnection then
-            AttackConnection:Disconnect()
-            AttackConnection = nil
+-- TEXTBOX
+local Input = Instance.new("TextBox")
+Input.Size = UDim2.new(0,120,0,30)
+Input.Position = UDim2.new(0.5,-60,0,140)
+Input.PlaceholderText = "ID (1-20)"
+Input.Text = "1"
+Input.Font = Enum.Font.Gotham
+Input.TextColor3 = Color3.new(1,1,1)
+Input.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Input.Parent = Frame
+Instance.new("UICorner", Input)
+
+-- ICON MINIMIZE
+local Icon = Instance.new("TextButton")
+Icon.Size = UDim2.new(0,50,0,50)
+Icon.Position = UDim2.new(0,20,0.5,0)
+Icon.Text = "⚔"
+Icon.Visible = false
+Icon.Parent = ScreenGui
+Instance.new("UICorner", Icon)
+
+-- REMOTE
+local Remote = game:GetService("ReplicatedStorage")
+    :WaitForChild("rbxts_include")
+    :WaitForChild("node_modules")
+    :WaitForChild("@rbxts")
+    :WaitForChild("remo")
+    :WaitForChild("src")
+    :WaitForChild("container")
+    :WaitForChild("attack")
+
+-- STATES
+local a1 = false
+local a2 = false
+
+-- LOOP
+task.spawn(function()
+    while task.wait() do
+        if a1 then
+            local id = tonumber(Input.Text)
+            if id then
+                Remote:FireServer(id)
+            end
         end
+
+        if a2 then
+            Remote:FireServer()
+        end
+    end
+end)
+
+-- TOGGLES
+Toggle1.MouseButton1Click:Connect(function()
+    a1 = not a1
+    Toggle1.Text = a1 and "ID ON" or "ID OFF"
+    Toggle1.BackgroundColor3 = a1 and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
+end)
+
+Toggle2.MouseButton1Click:Connect(function()
+    a2 = not a2
+    Toggle2.Text = a2 and "NO ARG ON" or "NO ARG OFF"
+    Toggle2.BackgroundColor3 = a2 and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
+end)
+
+-- CLOSE
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- MINIMIZE
+Minimize.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    Icon.Visible = true
+end)
+
+Icon.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    Icon.Visible = false
+end)
+
+-- DRAG
+local dragging, dragStart, startPos
+
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Frame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+
+        Frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
     end
 end)
