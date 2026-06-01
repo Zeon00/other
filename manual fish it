@@ -86,27 +86,14 @@ Icon.MouseButton1Click:Connect(function()
 end)
 
 -- TOGGLE
-Toggle.MouseButton1Click:Connect(function()
-    enabled = not enabled
-
-    if enabled then
-        Toggle.Text = "ON"
-        Toggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-    else
-        Toggle.Text = "OFF"
-        Toggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-    end
-end)
-
--- REMOTE (AMAN)
-local Remote = game:GetService("ReplicatedStorage")
-    :WaitForChild("rbxts_include")
-    :WaitForChild("node_modules")
-    :WaitForChild("@rbxts")
-    :WaitForChild("remo")
-    :WaitForChild("src")
-    :WaitForChild("container")
-    :WaitForChild("attack")
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.new(0, 100, 0, 30)
+Toggle.Position = UDim2.new(0.5, -50, 0.6, 0)
+Toggle.Text = "OFF"
+Toggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+Toggle.TextColor3 = Color3.new(1,1,1)
+Toggle.Parent = Frame
+Instance.new("UICorner", Toggle)
 
 -- STATE
 local enabled = false
@@ -116,10 +103,10 @@ Toggle.MouseButton1Click:Connect(function()
 
     if enabled then
         Toggle.Text = "ON"
-        Toggle.BackgroundColor3 = Color3.fromRGB(0,170,0)
+        Toggle.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
         Toggle.Text = "OFF"
-        Toggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
+        Toggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
     end
 end)
 
