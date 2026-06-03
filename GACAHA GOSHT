@@ -14,10 +14,7 @@ local DefenseON = false
 local ElementalON = false
 local Running = true
 local LightningON = false
-local RaidStartTime = 0
-local AutoTeleportDelay = 120 -- 2 menit
-local InRaid = false
-local CurrentMode = nil
+
 
 --// GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
@@ -145,21 +142,6 @@ light.MouseButton1Click:Connect(function()
     light.BackgroundColor3 = LightningON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
 end)
 
-local function UseTickets()
-    local args = {
-        {
-            {
-                "ItemSystem",
-                "Use",
-                "ElementalTickets",
-                n = 3
-            },
-            "\002"
-        }
-    }
-
-    Remote:FireServer(unpack(args))
-end
 --// EXACT REMOTE FUNCTION (INI FIX UTAMA)
 local function FireCreate(mode, map)
     local args = {
@@ -178,10 +160,8 @@ local function FireCreate(mode, map)
 
     Remote:FireServer(unpack(args))
 end
+
 local function FireStart(mode)
-
-    CurrentMode = mode
-
     local args = {
         {
             {
@@ -196,15 +176,12 @@ local function FireStart(mode)
     }
 
     Remote:FireServer(unpack(args))
-
-    InRaid = true
-    RaidStartTime = tick()
 end
 
--- LOOP DEFENSE
+--// LOOP DEFENSE
 task.spawn(function()
     while task.wait(2) do
-        if DefenseON and Running and not InRaid then
+        if DefenseON and Running then
             FireCreate("Defense Mode","SinVillage")
             task.wait(1.5)
             FireStart("Defense Mode")
@@ -212,10 +189,10 @@ task.spawn(function()
     end
 end)
 
--- LOOP ELEMENTAL
+--// LOOP ELEMENTAL
 task.spawn(function()
     while task.wait(2) do
-        if ElementalON and Running and not InRaid then
+        if ElementalON and Running then
             FireCreate("Elemental Mode","WindRaid")
             task.wait(1.5)
             FireStart("Elemental Mode")
@@ -223,42 +200,13 @@ task.spawn(function()
     end
 end)
 
--- LOOP LIGHTNING
+--// LOOP LIGHTNING
 task.spawn(function()
     while task.wait(2) do
-        if LightningON and Running and not InRaid then
+        if LightningON and Running then
             FireCreate("Elemental Mode","LightningRaid")
             task.wait(1.5)
             FireStart("Elemental Mode")
-        end
-    end
-end)
-
-task.spawn(function()
-    while task.wait(1) do
-        if Running and RaidStartTime > 0 then
-            if tick() - RaidStartTime >= AutoTeleportDelay then
-
-                local args = {
-                    {
-                        {
-                            "TeleportSystem",
-                            "To",
-                            "Lightning Zone",
-                            n = 3
-                        },
-                        "\002"
-                    }
-                }
-
-                Remote:FireServer(unpack(args))
-				task.wait(2)
-				UseTickets()
-
-					RaidStartTime = 0
-					InRaid = false
-					CurrentMode = nil
-            end
         end
     end
 end)
