@@ -13,6 +13,8 @@ local Remote = RS:WaitForChild("ffrostflame_bridgenet2@1.0.0"):WaitForChild("dat
 local DefenseON = false
 local ElementalON = false
 local Running = true
+local LightningON = false
+
 
 --// GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
@@ -127,6 +129,19 @@ ele.MouseButton1Click:Connect(function()
     ele.BackgroundColor3 = ElementalON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
 end)
 
+local light = Instance.new("TextButton", main)
+light.Size = UDim2.new(1,-20,0,40)
+light.Position = UDim2.new(0,10,0,135)
+light.Text = "Lightning: OFF"
+light.BackgroundColor3 = Color3.fromRGB(150,50,50)
+Instance.new("UICorner", light)
+
+light.MouseButton1Click:Connect(function()
+    LightningON = not LightningON
+    light.Text = "Lightning: "..(LightningON and "ON" or "OFF")
+    light.BackgroundColor3 = LightningON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
+end)
+
 --// EXACT REMOTE FUNCTION (INI FIX UTAMA)
 local function FireCreate(mode, map)
     local args = {
@@ -179,6 +194,17 @@ task.spawn(function()
     while task.wait(2) do
         if ElementalON and Running then
             FireCreate("Elemental Mode","WindRaid")
+            task.wait(1.5)
+            FireStart("Elemental Mode")
+        end
+    end
+end)
+
+--// LOOP LIGHTNING
+task.spawn(function()
+    while task.wait(2) do
+        if LightningON and Running then
+            FireCreate("Elemental Mode","LightningRaid")
             task.wait(1.5)
             FireStart("Elemental Mode")
         end
