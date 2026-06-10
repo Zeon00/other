@@ -14,7 +14,7 @@ local DefenseON = false
 local ElementalON = false
 local Running = true
 local LightningON = false
-
+local EarthON = false
 
 --// GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
@@ -22,7 +22,7 @@ gui.Name = "DefenseFarmGUI"
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 260, 0, 180)
+main.Size = UDim2.new(0, 260, 0, 220)
 main.Position = UDim2.new(0.5, -130, 0.5, -90)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 Instance.new("UICorner", main)
@@ -142,6 +142,19 @@ light.MouseButton1Click:Connect(function()
     light.BackgroundColor3 = LightningON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
 end)
 
+local earth = Instance.new("TextButton", main)
+earth.Size = UDim2.new(1,-20,0,40)
+earth.Position = UDim2.new(0,10,0,185)
+earth.Text = "Earth: OFF"
+earth.BackgroundColor3 = Color3.fromRGB(150,50,50)
+Instance.new("UICorner", earth)
+
+earth.MouseButton1Click:Connect(function()
+    EarthON = not EarthON
+    earth.Text = "Earth: "..(EarthON and "ON" or "OFF")
+    earth.BackgroundColor3 = EarthON and Color3.fromRGB(50,170,50) or Color3.fromRGB(150,50,50)
+end)
+
 --// EXACT REMOTE FUNCTION (INI FIX UTAMA)
 local function FireCreate(mode, map)
     local args = {
@@ -205,6 +218,16 @@ task.spawn(function()
     while task.wait(2) do
         if LightningON and Running then
             FireCreate("Elemental Mode","LightningRaid")
+            task.wait(1.5)
+            FireStart("Elemental Mode")
+        end
+    end
+end)
+--// LOOP LIGHTNING
+task.spawn(function()
+    while task.wait(2) do
+        if EarthON and Running then
+            FireCreate("Elemental Mode","EarthRaid")
             task.wait(1.5)
             FireStart("Elemental Mode")
         end
