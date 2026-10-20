@@ -1,0 +1,2426 @@
+local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/BloodLetters/Ash-Libs/refs/heads/main/source.lua"))()
+GUI:CreateMain({
+    Name = "Ashlabs",
+    title = "Duneon Loots",
+    ToggleUI = "K",
+    WindowIcon = "home", -- you can use lucid icons
+    -- WindowHeight = 600, -- default height
+    -- WindowWidth = 800, -- default width
+    Theme = {
+        Background = Color3.fromRGB(25, 25, 35),
+        Secondary = Color3.fromRGB(35, 35, 45),
+        Accent = Color3.fromRGB(138, 43, 226),
+        Text = Color3.fromRGB(255, 255, 255),
+        TextSecondary = Color3.fromRGB(180, 180, 180),
+        Border = Color3.fromRGB(50, 50, 60),
+        NavBackground = Color3.fromRGB(20, 20, 30)
+    },
+    Blur = { -- Buggy
+        Enable = false, -- transparent option
+        value = 0.2
+    },
+    Config = { -- not implemented yet
+        Enabled = false,
+    }
+})
+
+local main = GUI:CreateTab("Main", "user-round") -- You can use IconID we didnt impleemnt lucid or any external icons
+GUI:CreateSection({
+    parent = main, 
+    text = "Player"
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+_G.OrbitChallengeNPCs = false
+
+local orbitConnection
+local currentTarget
+local lastSwitch = 0
+local angle = 0
+local nextAction = "orbit"
+local chestTouchTime = 0
+
+-- Pengaturan
+local RADIUS = 15
+local HEIGHT = 7
+local SPEED = 2
+local TARGET_SWITCH_DELAY = 5
+local CHEST_WAIT = 0.7
+
+-- Cari folder Challenge
+local function getChallengeFolder()
+    return workspace:FindFirstChild("Challenge_NPCs")
+end
+
+-- Cari bagian fisik mob
+local function getMobPart(mob)
+    if mob:IsA("BasePart") then
+        return mob
+    end
+
+    local root = mob:FindFirstChild("HumanoidRootPart", true)
+
+    if root and root:IsA("BasePart") then
+        return root
+    end
+
+    if mob:IsA("Model") and mob.PrimaryPart then
+        return mob.PrimaryPart
+    end
+
+    return mob:FindFirstChildWhichIsA("BasePart", true)
+end
+
+-- Ambil semua mob yang belum mati
+local function getMobs(folder)
+    local mobs = {}
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob ~= player.Character then
+            local part = getMobPart(mob)
+            local humanoid = mob:FindFirstChildOfClass("Humanoid")
+
+            if part and part.Parent
+                and (not humanoid or humanoid.Health > 0) then
+
+                table.insert(mobs, {
+                    model = mob,
+                    part = part,
+                    humanoid = humanoid
+                })
+            end
+        end
+    end
+
+    return mobs
+end
+
+-- Cari chest Mage dengan UUID yang berubah
+local function getDungeonChest()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj.Name:match("^DungeonChest_")
+            and (obj:IsA("Model") or obj:IsA("BasePart")) then
+
+            local part
+
+            if obj:IsA("BasePart") then
+                part = obj
+            else
+                part = obj.PrimaryPart
+                    or obj:FindFirstChildWhichIsA("BasePart", true)
+            end
+
+            if part then
+                return obj, part
+            end
+        end
+    end
+
+    return nil, nil
+end
+
+-- TP ke permukaan chest
+local function touchChest(hrp)
+    local chest, part = getDungeonChest()
+
+    if not chest or not part or not part:IsDescendantOf(workspace) then
+        return false
+    end
+
+    local character = player.Character
+    if not character or not hrp.Parent then
+        return false
+    end
+
+    local yOffset = part.Size.Y / 2
+        + (hrp.Size.Y / 2)
+        + 0.15
+
+    hrp.CFrame = CFrame.new(
+        part.Position + Vector3.new(0, yOffset, 0)
+    )
+
+    print("Challenge: TP ke chest", chest.Name)
+
+    return true
+end
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Orbit Challenge + Chest Touch",
+    default = true,
+
+    callback = function(state)
+        _G.OrbitChallengeNPCs = state
+
+        if orbitConnection then
+            orbitConnection:Disconnect()
+            orbitConnection = nil
+        end
+
+        currentTarget = nil
+        lastSwitch = os.clock()
+        angle = 0
+        nextAction = "orbit"
+        chestTouchTime = 0
+
+        if not state then
+            print("Challenge Orbit: OFF")
+            return
+        end
+
+        print("Challenge Orbit: ON")
+
+        orbitConnection = RunService.Heartbeat:Connect(function(dt)
+            if not _G.OrbitChallengeNPCs then
+                return
+            end
+
+            local character = player.Character
+            local hrp = character
+                and character:FindFirstChild("HumanoidRootPart")
+
+            if not hrp then
+                return
+            end
+
+            local folder = getChallengeFolder()
+
+            if not folder then
+                return
+            end
+
+            local now = os.clock()
+
+            -- Tahap chest: tahan posisi sejenak sebelum kembali orbit
+           if nextAction == "chest" then
+    -- Jangan jalankan logika orbit selama berada di chest
+    if now - chestTouchTime < 1.5 then
+        return
+    end
+
+    -- Setelah selesai menyentuh chest, baru lanjut orbit
+    nextAction = "orbit"
+    currentTarget = nil
+    lastSwitch = os.clock()
+    return
+end
+
+            local mobs = getMobs(folder)
+
+            -- Jika tidak ada mob, tetap kunjungi chest berkala
+            if #mobs == 0 then
+                if now - lastSwitch >= TARGET_SWITCH_DELAY then
+                    if touchChest(hrp) then
+    nextAction = "chest"
+    chestTouchTime = os.clock()
+    return
+end
+
+                    lastSwitch = os.clock()
+                end
+
+                return
+            end
+
+            -- Temukan target saat ini dalam daftar mob
+            local targetIndex
+
+            if currentTarget then
+                for i, mob in ipairs(mobs) do
+                    if mob.model == currentTarget.model then
+                        targetIndex = i
+                        break
+                    end
+                end
+            end
+
+            -- Pilih mob hidup jika target lama hilang
+            if not targetIndex then
+                currentTarget = mobs[1]
+                lastSwitch = now
+
+            elseif now - lastSwitch >= TARGET_SWITCH_DELAY then
+                -- Waktunya mengunjungi chest
+                if touchChest(hrp) then
+                    nextAction = "chest"
+                    chestTouchTime = os.clock()
+                    return
+                end
+
+                -- Jika chest tidak ditemukan, lanjut mob berikutnya
+                local nextIndex = (targetIndex % #mobs) + 1
+                currentTarget = mobs[nextIndex]
+                lastSwitch = now
+                return
+            end
+
+            if not currentTarget then
+                return
+            end
+
+            local part = currentTarget.part
+            local humanoid = currentTarget.humanoid
+
+            if not part or not part.Parent
+                or (humanoid and humanoid.Health <= 0) then
+                currentTarget = nil
+                return
+            end
+
+            -- Orbit target
+            angle = angle + dt * SPEED
+
+            local center = part.Position
+
+            local targetPosition = center + Vector3.new(
+                math.cos(angle) * RADIUS,
+                HEIGHT,
+                math.sin(angle) * RADIUS
+            )
+
+            hrp.CFrame = CFrame.lookAt(
+                targetPosition,
+                center
+            )
+        end)
+    end
+})
+GUI:CreateToggle({
+    parent = main,
+    text = "Orbit All Conquest Enemies",
+    default = true,
+
+    callback = function(state)
+        _G.OrbitConquestAll = state
+
+        if not state then
+            _G.OrbitConquestRunId = nil
+            print("Orbit Conquest: OFF")
+            return
+        end
+
+        local runId = os.clock()
+        _G.OrbitConquestRunId = runId
+
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local player = Players.LocalPlayer
+
+            local radius = 15
+            local height = 7
+            local speed = 2
+            local angle = 0
+
+            local function isRunning()
+                return _G.OrbitConquestAll
+                    and _G.OrbitConquestRunId == runId
+            end
+
+            -- Cari folder Conquest terbaru
+            local function getCurrentFolder()
+                for _, folder in ipairs(workspace:GetChildren()) do
+                    if folder.Name:match("^Conquest_")
+                        and folder:FindFirstChild("Enemies") then
+                        return folder
+                    end
+                end
+                return nil
+            end
+
+            local function getTargetPart(npc)
+                local part = npc:FindFirstChild(
+                    "HumanoidRootPart", true
+                )
+
+                if part and part:IsA("BasePart") then
+                    return part
+                end
+
+                if npc:IsA("Model") and npc.PrimaryPart then
+                    return npc.PrimaryPart
+                end
+
+                return npc:FindFirstChildWhichIsA(
+                    "BasePart", true
+                )
+            end
+
+            local function getTargets(folder)
+                local result = {}
+                local enemies = folder:FindFirstChild("Enemies")
+
+                if not enemies then
+                    return result
+                end
+
+                for _, npc in ipairs(enemies:GetChildren()) do
+                    local humanoid =
+                        npc:FindFirstChildOfClass("Humanoid")
+
+                    local part = getTargetPart(npc)
+
+                    if part and part.Parent
+                        and (not humanoid or humanoid.Health > 0) then
+                        table.insert(result, {
+                            model = npc,
+                            part = part
+                        })
+                    end
+                end
+
+                return result
+            end
+
+            print("Orbit Conquest: ON")
+
+            while isRunning() do
+                local folder = getCurrentFolder()
+
+                if not folder then
+                    task.wait(0.5)
+                    continue
+                end
+
+                local targets = getTargets(folder)
+
+                if #targets == 0 then
+                    task.wait(0.3)
+                    continue
+                end
+
+                for _, target in ipairs(targets) do
+                    if not isRunning()
+                        or getCurrentFolder() ~= folder then
+                        break
+                    end
+
+                    local npc = target.model
+                    local startTime = os.clock()
+
+                    while isRunning()
+                        and getCurrentFolder() == folder
+                        and npc.Parent
+                        and os.clock() - startTime < 15 do
+
+                        local character = player.Character
+                        local hrp = character
+                            and character:FindFirstChild(
+                                "HumanoidRootPart"
+                            )
+
+                        if not hrp then
+                            task.wait(0.2)
+                            continue
+                        end
+
+                        local humanoid =
+                            npc:FindFirstChildOfClass("Humanoid")
+
+                        if humanoid and humanoid.Health <= 0 then
+                            break
+                        end
+
+                        local part = getTargetPart(npc)
+
+                        if not part or not part.Parent then
+                            break
+                        end
+
+                        angle = angle + speed * 0.03
+
+                        local offset = Vector3.new(
+                            math.cos(angle) * radius,
+                            height,
+                            math.sin(angle) * radius
+                        )
+
+                        local position = part.Position + offset
+
+                        hrp.CFrame = CFrame.lookAt(
+                            position,
+                            part.Position
+                        )
+
+                        task.wait(0.03)
+                    end
+                end
+
+                task.wait(0.2)
+            end
+
+            print("Orbit Conquest: stopped")
+        end)
+    end
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local FaceMobEnabled = false
+local FaceMobConnection
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Face Mob Terus",
+    default = true,
+
+    callback = function(state)
+        FaceMobEnabled = state
+
+        if FaceMobConnection then
+            FaceMobConnection:Disconnect()
+            FaceMobConnection = nil
+        end
+
+        if not state then
+            return
+        end
+
+        FaceMobConnection = RunService.Heartbeat:Connect(function()
+            if not FaceMobEnabled then
+                return
+            end
+
+            local player = Players.LocalPlayer
+            local character = player.Character
+            local root = character
+                and character:FindFirstChild("HumanoidRootPart")
+
+            if not root then
+                return
+            end
+
+            local folders = {
+                workspace:FindFirstChild("Raid_NPCs"),
+                workspace:FindFirstChild("BossRush_NPCs"),
+                workspace:FindFirstChild("HollowRealmRun")
+                    and workspace.HollowRealmRun:FindFirstChild("NPCs")
+            }
+
+            -- Cari Generated_Mage yang aktif
+            for _, folder in ipairs(workspace:GetChildren()) do
+                if folder.Name:match("^Generated_Mage_") then
+                    table.insert(folders, folder:FindFirstChild("NPCs"))
+
+                    for i = 1, 25 do
+                        local room = folder:FindFirstChild("Room_" .. i)
+                        if room then
+                            table.insert(folders, room)
+                        end
+                    end
+                end
+            end
+
+            local nearestPart
+            local nearestDistance = math.huge
+
+            for _, folder in ipairs(folders) do
+                if folder then
+                    for _, mob in ipairs(folder:GetChildren()) do
+                        if mob ~= character then
+                            local humanoid =
+                                mob:FindFirstChildOfClass("Humanoid")
+
+                            local targetPart =
+                                mob:FindFirstChild("HumanoidRootPart", true)
+                                or mob.PrimaryPart
+
+                            if targetPart
+                                and targetPart:IsA("BasePart")
+                                and (not humanoid or humanoid.Health > 0) then
+
+                                local distance =
+                                    (targetPart.Position - root.Position).Magnitude
+
+                                if distance < nearestDistance
+                                    and distance > 0.1 then
+                                    nearestDistance = distance
+                                    nearestPart = targetPart
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            if nearestPart then
+                local targetPosition = Vector3.new(
+                    nearestPart.Position.X,
+                    root.Position.Y,
+                    nearestPart.Position.Z
+                )
+
+                root.CFrame = CFrame.lookAt(
+                    root.Position,
+                    targetPosition
+                )
+            end
+        end)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Refill Potion",
+    default = true,
+
+    callback = function(state)
+        _G.AutoRefillPotion = state
+
+        if not state then
+            return
+        end
+
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local player = Players.LocalPlayer
+
+            while _G.AutoRefillPotion do
+                local ok, err = pcall(function()
+                    local character = player.Character
+                    local root = character
+                        and character:FindFirstChild("HumanoidRootPart")
+
+                    if not root then
+                        return
+                    end
+
+                    local station, prompt
+
+                    for _, folder in ipairs(workspace:GetChildren()) do
+                        if folder.Name:match("^Generated_Mage_") then
+                            local found = folder:FindFirstChild(
+                                "Potion_Station", true
+                            )
+
+                            if found then
+                                local p = found:FindFirstChildWhichIsA(
+                                    "ProximityPrompt", true
+                                )
+
+                                if p and p.Enabled then
+                                    station = found
+                                    prompt = p
+                                    break
+                                end
+                            end
+                        end
+                    end
+
+                    if not station or not prompt then
+                        return
+                    end
+
+                    local part
+                    if station:IsA("BasePart") then
+                        part = station
+                    elseif station:IsA("Model") then
+                        part = station.PrimaryPart
+                            or station:FindFirstChildWhichIsA(
+                                "BasePart", true
+                            )
+                    else
+                        part = prompt.Parent
+                        if part and not part:IsA("BasePart") then
+                            part = part:FindFirstAncestorWhichIsA(
+                                "BasePart"
+                            )
+                        end
+                    end
+
+                    if not part then
+                        return
+                    end
+
+                    local distance =
+                        (root.Position - part.Position).Magnitude
+
+                    if distance > 10 then
+                        root.CFrame = CFrame.new(
+                            part.Position + Vector3.new(0, 2, 0)
+                        )
+                        task.wait(1)
+                    end
+
+                    if _G.AutoRefillPotion
+                        and prompt.Parent
+                        and prompt.Enabled then
+
+                        local currentRoot = player.Character
+                            and player.Character:FindFirstChild(
+                                "HumanoidRootPart"
+                            )
+
+                        if currentRoot
+                            and (currentRoot.Position - part.Position).Magnitude
+                                <= prompt.MaxActivationDistance then
+
+                            fireproximityprompt(prompt)
+                            task.wait(1.5)
+                        end
+                    end
+                end)
+
+                if not ok then
+                    warn("Auto Refill Potion:", err)
+                end
+
+                task.wait(1)
+            end
+        end)
+    end
+})
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local function getAllChests()
+    local chests = {}
+
+    for _, folder in ipairs(workspace:GetChildren()) do
+        if folder.Name:match("^Generated_Mage_") then
+            for _, obj in ipairs(folder:GetDescendants()) do
+                if obj.Name:match("^DungeonChest_") then
+                    local part
+
+                    if obj:IsA("BasePart") then
+                        part = obj
+                    elseif obj:IsA("Model") then
+                        part = obj.PrimaryPart
+                            or obj:FindFirstChildWhichIsA("BasePart", true)
+                    else
+                        part = obj:FindFirstChildWhichIsA("BasePart", true)
+                    end
+
+                    if part then
+                        table.insert(chests, part)
+                    end
+                end
+            end
+        end
+    end
+
+    return chests
+end
+
+_G.TPAllDungeonChests = false
+
+GUI:CreateToggle({
+    parent = main,
+    text = "TP All Dungeon Chests",
+    default = false,
+
+    callback = function(state)
+        _G.TPAllDungeonChests = state
+
+        if not state then
+            return
+        end
+
+        task.spawn(function()
+            while _G.TPAllDungeonChests do
+                local character = player.Character
+                local hrp = character
+                    and character:FindFirstChild("HumanoidRootPart")
+
+                if hrp then
+                    local chests = getAllChests()
+
+                    for _, part in ipairs(chests) do
+                        if not _G.TPAllDungeonChests then
+                            break
+                        end
+
+                        if part.Parent and part:IsDescendantOf(workspace) then
+                            hrp.CFrame = part.CFrame
+                                + Vector3.new(0, 3, 0)
+
+                            task.wait(0.5)
+                        end
+                    end
+                end
+
+                -- Cari ulang supaya UUID/folder chest baru ikut terdeteksi
+                task.wait(5)
+            end
+        end)
+    end
+})
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Continue",
+    default = true,
+    callback = function(state)
+        _G.AutoContinue = state
+
+        if state then
+            task.spawn(function()
+                local ReplicatedStorage =
+                    game:GetService("ReplicatedStorage")
+
+                local Event = ReplicatedStorage
+                    :WaitForChild("Packages")
+                    :WaitForChild("_Index")
+                    :WaitForChild("sleitnick_knit@1.7.0")
+                    :WaitForChild("knit")
+                    :WaitForChild("Services")
+                    :WaitForChild("DungeonRunService")
+                    :WaitForChild("RF")
+                    :WaitForChild("SubmitEndlessChoice")
+
+                while _G.AutoContinue do
+                    local ok, err = pcall(function()
+                        Event:InvokeServer(true)
+                    end)
+
+                    if not ok then
+                        warn("Auto Continue:", err)
+                    end
+
+                    task.wait(2)
+                end
+            end)
+        end
+    end
+})
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+_G.OrbitMageNPCs = false
+
+local orbitConnection
+local angle = 0
+local currentTarget = nil
+local lastSwitch = 0
+
+-- Pengaturan
+local RADIUS = 30
+local HEIGHT = 15
+local SPEED = 2
+local TARGET_SWITCH_DELAY = 25
+
+-- Cari folder Mage meskipun suffix berubah
+local function getMageFolder()
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj.Name:match("^Generated_Mage_") then
+            local folder = obj:FindFirstChild("NPCs")
+            if folder then
+                return folder
+            end
+        end
+    end
+
+    return nil
+end
+
+-- Cari bagian fisik NPC tanpa membutuhkan Humanoid
+local function getMobPart(mob)
+    if mob:IsA("BasePart") then
+        return mob
+    end
+
+    return mob:FindFirstChild("HumanoidRootPart", true)
+        or mob.PrimaryPart
+        or mob:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function getMobs(folder)
+    local mobs = {}
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        local part = getMobPart(mob)
+
+        if part and part.Parent then
+            table.insert(mobs, part)
+        end
+    end
+
+    return mobs
+end
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+local orbitConnection
+local currentTarget
+local lastSwitch = 0
+local angle = 0
+
+local RADIUS = 15
+local HEIGHT = 7
+local SPEED = 2
+local TARGET_SWITCH_DELAY = 5
+
+-- Cari folder Mage yang suffix-nya berubah
+local function getMageFolder()
+    for _, folder in ipairs(workspace:GetChildren()) do
+        if folder.Name:match("^Generated_Mage_") then
+            return folder
+        end
+    end
+    return nil
+end
+
+-- Cari NPC hidup di semua Room_1 sampai Room_25
+local function getMobs(mageFolder)
+    local mobs = {}
+
+    for roomNumber = 1, 25 do
+        local room = mageFolder:FindFirstChild("Room_" .. roomNumber)
+
+        if room then
+            for _, obj in ipairs(room:GetDescendants()) do
+                if obj:IsA("Model") then
+                    local humanoid = obj:FindFirstChildOfClass("Humanoid")
+                    local root = obj:FindFirstChild("HumanoidRootPart")
+
+                    if humanoid
+                        and humanoid.Health > 0
+                        and root
+                        and root:IsA("BasePart")
+                        and obj ~= player.Character
+                    then
+                        table.insert(mobs, {
+                            model = obj,
+                            humanoid = humanoid,
+                            root = root,
+                            room = room
+                        })
+                    end
+                end
+            end
+        end
+    end
+
+    return mobs
+end
+
+GUI:CreateToggle({
+    parent = main,
+    text = "TP Orbit All Mage Mobs",
+    default = true,
+
+    callback = function(state)
+        _G.OrbitMageNPCs = state
+
+        if orbitConnection then
+            orbitConnection:Disconnect()
+            orbitConnection = nil
+        end
+
+        currentTarget = nil
+        lastSwitch = 0
+        angle = 0
+
+        if not state then
+            return
+        end
+
+        orbitConnection = RunService.Heartbeat:Connect(function(dt)
+            if not _G.OrbitMageNPCs then
+                return
+            end
+
+            local character = player.Character
+            local hrp = character
+                and character:FindFirstChild("HumanoidRootPart")
+
+            if not hrp then
+                return
+            end
+
+            local mageFolder = getMageFolder()
+
+            if not mageFolder then
+                currentTarget = nil
+                return
+            end
+
+            -- Scan ulang semua room agar NPC baru ikut ditemukan
+            local mobs = getMobs(mageFolder)
+
+            if #mobs == 0 then
+                currentTarget = nil
+                return
+            end
+
+            local now = os.clock()
+
+            local function isTargetValid(target)
+                if not target or not target.model
+                    or not target.model.Parent
+                    or not target.model:IsDescendantOf(mageFolder)
+                    or not target.humanoid.Parent
+                    or target.humanoid.Health <= 0
+                    or not target.root.Parent
+                then
+                    return false
+                end
+
+                return true
+            end
+
+            local targetValid = isTargetValid(currentTarget)
+            local targetIndex
+
+            if targetValid then
+                for i, mob in ipairs(mobs) do
+                    if mob.model == currentTarget.model then
+                        targetIndex = i
+                        break
+                    end
+                end
+
+                targetValid = targetIndex ~= nil
+            end
+
+            -- Target mati/hilang: segera pilih NPC hidup berikutnya
+            if not targetValid then
+                currentTarget = mobs[1]
+                lastSwitch = now
+
+            -- Target masih hidup: ganti setelah 5 detik
+            elseif now - lastSwitch >= TARGET_SWITCH_DELAY then
+                local nextIndex = (targetIndex % #mobs) + 1
+                currentTarget = mobs[nextIndex]
+                lastSwitch = now
+            end
+
+            if not isTargetValid(currentTarget) then
+                currentTarget = nil
+                return
+            end
+
+            angle = angle + dt * SPEED
+
+            local center = currentTarget.root.Position
+
+            local targetPosition = center + Vector3.new(
+                math.cos(angle) * RADIUS,
+                HEIGHT,
+                math.sin(angle) * RADIUS
+            )
+
+            hrp.CFrame = CFrame.lookAt(
+                targetPosition,
+                center
+            )
+        end)
+    end
+})
+GUI:CreateToggle({
+    parent = main,
+    text = "Fly Orbit Dark Professor",
+    default = true,
+
+    callback = function(state)
+        _G.FlyDarkProfessor = state
+
+        if state then
+            task.spawn(function()
+                local player = game:GetService("Players").LocalPlayer
+
+                local alignPos, alignOri, attachment
+
+                while _G.FlyDarkProfessor do
+                    local character = player.Character
+                    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+                    local folder = workspace:FindFirstChild("Raid_NPCs")
+                    local boss = folder and folder:FindFirstChild("Dark Professor")
+                    local target = boss and (
+                        boss:FindFirstChild("HumanoidRootPart")
+                        or boss:FindFirstChild("UpperTorso")
+                        or boss:FindFirstChild("Torso")
+                    )
+
+                    local humanoid = boss and boss:FindFirstChildOfClass("Humanoid")
+
+                    if hrp and target and (not humanoid or humanoid.Health > 0) then
+                        if not attachment or attachment.Parent ~= hrp then
+                            if alignPos then alignPos:Destroy() end
+                            if alignOri then alignOri:Destroy() end
+                            if attachment then attachment:Destroy() end
+
+                            attachment = Instance.new("Attachment")
+                            attachment.Parent = hrp
+
+                            alignPos = Instance.new("AlignPosition")
+                            alignPos.Mode = Enum.PositionAlignmentMode.OneAttachment
+                            alignPos.Attachment0 = attachment
+                            alignPos.MaxForce = math.huge
+                            alignPos.MaxVelocity = 100
+                            alignPos.Responsiveness = 40
+                            alignPos.Parent = hrp
+
+                            alignOri = Instance.new("AlignOrientation")
+                            alignOri.Mode = Enum.OrientationAlignmentMode.OneAttachment
+                            alignOri.Attachment0 = attachment
+                            alignOri.MaxTorque = math.huge
+                            alignOri.Responsiveness = 40
+                            alignOri.Parent = hrp
+                        end
+
+                        local angle = os.clock() * 2
+                        local radius = 20
+                        local height = 20
+
+                        alignPos.Position = target.Position + Vector3.new(
+                            math.cos(angle) * radius,
+                            height,
+                            math.sin(angle) * radius
+                        )
+
+                        local direction = target.Position - hrp.Position
+                        if direction.Magnitude > 0.01 then
+                            alignOri.CFrame = CFrame.lookAt(
+                                Vector3.zero,
+                                direction.Unit
+                            )
+                        end
+                    end
+
+                    task.wait(0.05)
+                end
+
+                if alignPos then alignPos:Destroy() end
+                if alignOri then alignOri:Destroy() end
+                if attachment then attachment:Destroy() end
+            end)
+        end
+    end
+})
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Knit = require(ReplicatedStorage.Packages.Knit)
+
+local player = Players.LocalPlayer
+local AutoNextDepth = false
+local NextDepthBusy = false
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Next Depth",
+    default = true,
+
+    callback = function(state)
+        AutoNextDepth = state
+
+        if not state then
+            return
+        end
+
+        task.spawn(function()
+            while AutoNextDepth do
+                local inTower =
+                    player:GetAttribute("InBossRush")
+                    and player:GetAttribute("BossRushRoute")
+
+                local depth =
+                    player:GetAttribute("TowerNextDepth")
+
+                local spectating =
+                    player:GetAttribute("IsSpectating")
+
+                if inTower and depth and not spectating
+                    and not NextDepthBusy then
+
+                    NextDepthBusy = true
+
+                    local ok, err = pcall(function()
+                        local service =
+                            Knit.GetService("InfiniteTowerService")
+
+                        service:NextDepth(depth):catch(function(e)
+                            warn("Auto Next Depth:", e)
+                        end)
+                    end)
+
+                    if not ok then
+                        warn("Auto Next Depth:", err)
+                    end
+
+                    task.wait(3)
+                    NextDepthBusy = false
+                end
+
+                task.wait(0.5)
+            end
+
+            NextDepthBusy = false
+        end)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Replay Dungeon",
+    default = true,
+
+    callback = function(state)
+        _G.AutoReplayDungeon = state
+
+        if state then
+            task.spawn(function()
+                local player = game:GetService("Players").LocalPlayer
+
+                while _G.AutoReplayDungeon do
+                    pcall(function()
+                        local button = player.PlayerGui
+                            .Main.HUD.Dungeon_Container
+                            .Completion_Info.Content
+                            .ActionButtons.ReplayButton
+
+                        if button.Visible then
+                            if button:IsA("GuiButton") then
+                                firesignal(button.Activated)
+                            end
+                        end
+                    end)
+
+                    task.wait(0.2)
+                end
+            end)
+        end
+    end
+})
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Select 2 Chests",
+    default = true,
+
+    callback = function(state)
+        _G.AutoSelectChest = state
+
+        if state then
+            task.spawn(function()
+                local Players = game:GetService("Players")
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local player = Players.LocalPlayer
+
+                local chestUI = player:WaitForChild("PlayerGui")
+                    :WaitForChild("Main")
+                    :WaitForChild("HUD")
+                    :WaitForChild("Chest_Selection")
+
+                local Knit = require(
+                    ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
+                )
+
+                local controller
+
+                pcall(function()
+                    controller = Knit.GetController("ChestSelectionController")
+                end)
+
+                if not controller then
+                    warn("ChestSelectionController tidak ditemukan")
+                    return
+                end
+
+                while _G.AutoSelectChest do
+                    if chestUI.Visible
+                        and controller._active
+                        and controller._ready
+                        and controller._candidates then
+
+                        for i = 1, 2 do
+                            if not _G.AutoSelectChest then
+                                break
+                            end
+
+                            if not controller._selected[i]
+                                and controller._candidates[i] then
+                                pcall(function()
+                                    controller:_OnChestClicked(i)
+                                end)
+
+                                task.wait(0.2)
+                            end
+                        end
+
+                        if _G.AutoSelectChest
+                            and controller._active
+                            and controller._selectedCount >= 2
+                            and controller._finish
+                            and controller._finish.Visible then
+
+                            pcall(function()
+                                controller:_OnFinish()
+                            end)
+                        end
+                    end
+
+                    task.wait(0.2)
+                end
+            end)
+        end
+    end
+})
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Select Boost",
+    default = true,
+
+    callback = function(state)
+        _G.AutoSelectBoost = state
+
+        if state then
+            task.spawn(function()
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+                local Knit = require(
+                    ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
+                )
+
+                local controller
+
+                pcall(function()
+                    controller = Knit.GetController("BoostSelectionController")
+                end)
+
+                if not controller then
+                    warn("BoostSelectionController tidak ditemukan")
+                    return
+                end
+
+                while _G.AutoSelectBoost do
+                    if controller._active
+                        and controller._ready
+                        and not controller._selecting
+                        and controller._candidates
+                        and controller._candidates[1] then
+
+                        pcall(function()
+                            controller:_OnCardClicked(1)
+                        end)
+                    end
+
+                    task.wait(0.2)
+                end
+            end)
+        end
+    end
+})
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Magnet Drops",
+    default = true,
+
+    callback = function(state)
+        _G.AutoMagnetDrops = state
+
+        if state then
+            task.spawn(function()
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local DropSpawner = require(
+                    ReplicatedStorage:WaitForChild("Modules"):WaitForChild("DropSpawner")
+                )
+
+                -- Jarak magnet dan kecepatan
+                DropSpawner.SetMagneticRange(100)
+                DropSpawner.SetMagneticSpeed(150)
+
+                while _G.AutoMagnetDrops do
+                    task.wait(0.5)
+                end
+
+                -- Kembalikan nilai default saat toggle OFF
+                DropSpawner.SetMagneticRange(15)
+                DropSpawner.SetMagneticSpeed(21)
+            end)
+        else
+            _G.AutoMagnetDrops = false
+        end
+    end
+})
+
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Orbit All Hollow NPCs",
+    default = true,
+
+    callback = function(state)
+        _G.OrbitHollowAll = state
+
+        if not state then
+            _G.OrbitHollowRunId = nil
+            print("Orbit Hollow: OFF")
+            return
+        end
+
+        local runId = os.clock()
+        _G.OrbitHollowRunId = runId
+
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local player = Players.LocalPlayer
+
+            local radius = 37
+            local height = 7
+            local speed = 1.8
+            local angle = 0
+
+            local function isRunning()
+                return _G.OrbitHollowAll
+                    and _G.OrbitHollowRunId == runId
+            end
+
+            -- Selalu cari map terbaru setelah restart
+            local function getCurrentFolder()
+                return workspace:FindFirstChild("HollowRealmRun")
+            end
+
+            local function getTargetPart(npc)
+                local hrp = npc:FindFirstChild(
+                    "HumanoidRootPart",
+                    true
+                )
+
+                if hrp and hrp:IsA("BasePart") then
+                    return hrp
+                end
+
+                if npc.Name == "Coyote" then
+                    local torso = npc:FindFirstChild(
+                        "El Hueco Torso",
+                        true
+                    )
+
+                    if torso and torso:IsA("BasePart") then
+                        return torso
+                    end
+                end
+
+                if npc:IsA("Model") and npc.PrimaryPart then
+                    return npc.PrimaryPart
+                end
+
+                return npc:FindFirstChildWhichIsA(
+                    "BasePart",
+                    true
+                )
+            end
+
+            -- Selalu scan NPC dari folder map yang diberikan
+            local function getTargets(folder)
+                local result = {}
+
+                if not folder or folder.Parent ~= workspace then
+                    return result
+                end
+
+                local npcs = folder:FindFirstChild("NPCs")
+
+                if not npcs then
+                    return result
+                end
+
+                for _, npc in ipairs(npcs:GetChildren()) do
+                    local humanoid =
+                        npc:FindFirstChildOfClass("Humanoid")
+
+                    local targetPart = getTargetPart(npc)
+
+                    if targetPart
+                        and targetPart.Parent
+                        and (not humanoid or humanoid.Health > 0) then
+
+                        table.insert(result, {
+                            model = npc,
+                            part = targetPart
+                        })
+                    end
+                end
+
+                return result
+            end
+
+            -- Cari NPC terbaru setelah map restart
+            local function waitForTargets(folder, timeout)
+                local startTime = os.clock()
+
+                while isRunning()
+                    and getCurrentFolder() == folder
+                    and os.clock() - startTime < timeout do
+
+                    local targets = getTargets(folder)
+
+                    if #targets > 0 then
+                        return targets
+                    end
+
+                    task.wait(0.3)
+                end
+
+                return {}
+            end
+
+            -- Cari room yang memiliki NPC hidup
+            
+local function findNextRoom(folder)
+    for i = 1, 10 do
+        if not isRunning()
+            or getCurrentFolder() ~= folder then
+            return false
+        end
+
+        local room = folder:FindFirstChild("Room_" .. i)
+
+        if room then
+            -- Cari titik tujuan di dalam room
+            local destination =
+                room:FindFirstChild("SpawnLocation", true)
+                or room:FindFirstChild("HumanoidRootPart", true)
+                or room:FindFirstChildWhichIsA("BasePart", true)
+
+            if destination and destination:IsA("BasePart") then
+                local character = player.Character
+                local hrp = character
+                    and character:FindFirstChild("HumanoidRootPart")
+
+                if hrp then
+                    hrp.CFrame = CFrame.new(
+                        destination.Position + Vector3.new(0, 5, 0)
+                    )
+                end
+
+                -- Tunggu NPC muncul di room tersebut
+                for attempt = 1, 10 do
+                    if not isRunning()
+                        or getCurrentFolder() ~= folder then
+                        return false
+                    end
+
+                    task.wait(0.3)
+
+                    local targets = getTargets(folder)
+
+                    if #targets > 0 then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+
+            print("Orbit Hollow: ON")
+
+            while isRunning() do
+                -- Ambil folder baru setiap iterasi
+                local folder = getCurrentFolder()
+
+                if not folder then
+                    task.wait(0.5)
+                    continue
+                end
+
+                -- Tunggu NPC muncul di map yang aktif
+                local targets = waitForTargets(folder, 2)
+
+                if not isRunning() then
+                    break
+                end
+
+                -- Jika folder berganti, scan map baru
+                if getCurrentFolder() ~= folder then
+                    task.wait(0.2)
+                    continue
+                end
+
+                if #targets == 0 then
+                    findNextRoom(folder)
+                    task.wait(0.5)
+                    continue
+                end
+
+                -- Orbit NPC yang ditemukan
+                for _, target in ipairs(targets) do
+                    if not isRunning() then
+                        break
+                    end
+
+                    -- Map berubah: hentikan target lama
+                    if getCurrentFolder() ~= folder then
+                        break
+                    end
+
+                    local npc = target.model
+                    local startTime = os.clock()
+
+                    while isRunning()
+                        and getCurrentFolder() == folder
+                        and npc.Parent
+                        and os.clock() - startTime < 15 do
+
+                        local character = player.Character
+                        local hrp = character
+                            and character:FindFirstChild(
+                                "HumanoidRootPart"
+                            )
+
+                        if not hrp then
+                            task.wait(0.2)
+                            continue
+                        end
+
+                        local humanoid =
+                            npc:FindFirstChildOfClass("Humanoid")
+
+                        if humanoid and humanoid.Health <= 0 then
+                            break
+                        end
+
+                        local currentPart = getTargetPart(npc)
+
+                        if not currentPart or not currentPart.Parent then
+                            break
+                        end
+
+                        angle = angle + speed * 0.03
+
+                        local offset = Vector3.new(
+                            math.cos(angle) * radius,
+                            height,
+                            math.sin(angle) * radius
+                        )
+
+                        local position =
+                            currentPart.Position + offset
+
+                        hrp.CFrame = CFrame.lookAt(
+                            position,
+                            currentPart.Position
+                        )
+
+                        task.wait(0.03)
+                    end
+                end
+
+                -- Scan ulang tanpa toggle OFF/ON
+                task.wait(0.2)
+            end
+
+            print("Orbit Hollow: stopped")
+        end)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Orbit All Demon NPCs",
+    default = true,
+
+    callback = function(state)
+        _G.OrbitDemonAll = state
+
+        if not state then
+            _G.OrbitDemonRunId = nil
+            print("Orbit Demon: OFF")
+            return
+        end
+
+        local runId = os.clock()
+        _G.OrbitDemonRunId = runId
+
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local player = Players.LocalPlayer
+
+            local radius = 20
+            local height = 12
+            local speed = 1.8
+            local angle = 0
+
+            local function isRunning()
+                return _G.OrbitDemonAll
+                    and _G.OrbitDemonRunId == runId
+            end
+
+            -- Cari dungeon Demon dengan suffix random
+            local function getCurrentFolder()
+                for _, folder in ipairs(workspace:GetChildren()) do
+                    if folder.Name:match("^Generated_Demon_")
+                        and folder:FindFirstChild("Room_1") then
+                        return folder
+                    end
+                end
+                return nil
+            end
+
+            local function getTargetPart(npc)
+                local part = npc:FindFirstChild(
+                    "HumanoidRootPart", true
+                )
+
+                if part and part:IsA("BasePart") then
+                    return part
+                end
+
+                if npc:IsA("Model") and npc.PrimaryPart then
+                    return npc.PrimaryPart
+                end
+
+                return npc:FindFirstChildWhichIsA(
+                    "BasePart", true
+                )
+            end
+
+            -- Scan NPCs dan semua Room 1-24
+            local function getTargets(folder)
+                local result = {}
+                local seen = {}
+
+                local function scan(container)
+                    if not container then return end
+
+                    for _, npc in ipairs(container:GetChildren()) do
+                        if npc:IsA("Model") and not seen[npc] then
+                            local humanoid =
+                                npc:FindFirstChildOfClass("Humanoid")
+                            local part = getTargetPart(npc)
+
+                            if part and part.Parent
+                                and (not humanoid or humanoid.Health > 0) then
+                                seen[npc] = true
+                                table.insert(result, {
+                                    model = npc,
+                                    part = part
+                                })
+                            end
+                        end
+                    end
+                end
+
+                scan(folder:FindFirstChild("NPCs"))
+
+                for i = 1, 24 do
+                    local room = folder:FindFirstChild("Room_" .. i)
+                    if room then
+                        scan(room)
+                        scan(room:FindFirstChild("NPCs", true))
+                    end
+                end
+
+                return result
+            end
+
+            -- Cari titik teleport di dalam room
+            local function findRoomDestination(room)
+                if not room then return nil end
+
+                local preferred = {
+                    "SpawnLocation",
+                    "RoomSpawn",
+                    "Spawn",
+                    "Entry",
+                    "Entrance"
+                }
+
+                for _, name in ipairs(preferred) do
+                    local obj = room:FindFirstChild(name, true)
+                    if obj and obj:IsA("BasePart") then
+                        return obj
+                    end
+                end
+
+                return room:FindFirstChildWhichIsA(
+                    "BasePart", true
+                )
+            end
+
+            local function moveToRoom(folder, roomNumber)
+                local room = folder:FindFirstChild(
+                    "Room_" .. roomNumber
+                )
+
+                if not room then return false end
+
+                local destination = findRoomDestination(room)
+                if not destination then return false end
+
+                local character = player.Character
+                local hrp = character and character:FindFirstChild(
+                    "HumanoidRootPart"
+                )
+
+                if not hrp then return false end
+
+                hrp.CFrame = CFrame.new(
+                    destination.Position + Vector3.new(0, 5, 0)
+                )
+
+                -- Tunggu NPC muncul atau room selesai dimuat
+                for attempt = 1, 10 do
+                    if not isRunning()
+                        or getCurrentFolder() ~= folder then
+                        return false
+                    end
+
+                    task.wait(0.3)
+
+                    local targets = getTargets(folder)
+                    if #targets > 0 then
+                        return true
+                    end
+                end
+
+                return false
+            end
+
+            print("Orbit Demon: ON")
+
+            local roomIndex = 1
+
+            while isRunning() do
+                local folder = getCurrentFolder()
+
+                if not folder then
+                    task.wait(0.5)
+                    continue
+                end
+
+                local targets = getTargets(folder)
+
+                if #targets == 0 then
+                    -- NPCs kosong: cari room berikutnya
+                    moveToRoom(folder, roomIndex)
+
+                    roomIndex = roomIndex + 1
+                    if roomIndex > 24 then
+                        roomIndex = 1
+                    end
+
+                    task.wait(0.2)
+                    continue
+                end
+
+                -- Orbit setiap NPC yang ditemukan
+                for _, target in ipairs(targets) do
+                    if not isRunning()
+                        or getCurrentFolder() ~= folder then
+                        break
+                    end
+
+                    local npc = target.model
+                    local startTime = os.clock()
+
+                    while isRunning()
+                        and getCurrentFolder() == folder
+                        and npc.Parent
+                        and os.clock() - startTime < 15 do
+
+                        local character = player.Character
+                        local hrp = character
+                            and character:FindFirstChild(
+                                "HumanoidRootPart"
+                            )
+
+                        if not hrp then
+                            task.wait(0.2)
+                            continue
+                        end
+
+                        local humanoid =
+                            npc:FindFirstChildOfClass("Humanoid")
+
+                        if humanoid and humanoid.Health <= 0 then
+                            break
+                        end
+
+                        local currentPart = getTargetPart(npc)
+
+                        if not currentPart or not currentPart.Parent then
+                            break
+                        end
+
+                        angle = angle + speed * 0.03
+
+                        local offset = Vector3.new(
+                            math.cos(angle) * radius,
+                            height,
+                            math.sin(angle) * radius
+                        )
+
+                        local position = currentPart.Position + offset
+
+                        hrp.CFrame = CFrame.lookAt(
+                            position,
+                            currentPart.Position
+                        )
+
+                        task.wait(0.03)
+                    end
+                end
+
+                task.wait(0.2)
+            end
+
+            print("Orbit Demon: stopped")
+        end)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Attack + Skill 1-4",
+    default = true,
+
+    callback = function(state)
+        _G.AutoAttackSkill = state
+
+        if not state then
+            print("Auto Attack + Skill: OFF")
+            return
+        end
+
+        task.spawn(function()
+            local RS = game:GetService("ReplicatedStorage")
+            local Inputs = RS:WaitForChild("Player")
+                :WaitForChild("Remotes")
+                :WaitForChild("Inputs")
+
+            local Attack = Inputs:WaitForChild("Attack")
+            local Skill = Inputs:WaitForChild("Skill")
+
+            while _G.AutoAttackSkill do
+                -- Auto Attack
+                Attack:FireServer(vector.zero)
+
+                -- Skill 1-4
+                for i = 1, 4 do
+                    if not _G.AutoAttackSkill then
+                        break
+                    end
+
+                    Skill:FireServer(i, "tap")
+                    task.wait(0.05)
+                end
+
+                task.wait(0.2)
+            end
+        end)
+
+        print("Auto Attack + Skill: ON")
+    end
+})
+
+GUI:CreateToggle({
+    parent = main, 
+    text = "Add Aura", 
+    default = false, 
+    callback = function(claim)
+	if claim then	
+	_G.claim11 = true
+	while _G.claim11 == true do
+local args = {
+	220
+}
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("MainEvent"):FireServer(unpack(args))
+task.wait()
+end
+		else
+		_G.claim11 = false
+           end
+        print("Toggle state:", claim)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Fly + Auto Attack Payload",
+    default = false,
+
+    callback = function(state)
+        _G.FlyAutoAttack = state
+
+        if state then
+            task.spawn(function()
+                local player = game.Players.LocalPlayer
+                local target = nil
+                local alignPos = nil
+                local alignOri = nil
+                local attachment = nil
+
+                local AttackRemote = game:GetService("ReplicatedStorage")
+                    :WaitForChild("Player")
+                    :WaitForChild("Remotes")
+                    :WaitForChild("Inputs")
+                    :WaitForChild("Attack")
+
+                while _G.FlyAutoAttack do
+                    local character = player.Character
+                    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+                    if not hrp then
+                        task.wait(0.2)
+                        continue
+                    end
+
+                    -- Target tetap dikunci sampai mati / hilang
+                    if target then
+                        local mob = target.Parent
+                        local humanoid = mob and mob:FindFirstChildOfClass("Humanoid")
+
+                        if not mob
+                            or not target:IsDescendantOf(workspace)
+                            or (humanoid and humanoid.Health <= 0) then
+                            target = nil
+                        end
+                    end
+
+                    -- Cari target baru
+                    if not target then
+                        for _, obj in ipairs(workspace:GetDescendants()) do
+                            if obj:IsA("Folder")
+                                and obj.Name:match("^PayloadEnemies_") then
+
+                                for _, mob in ipairs(obj:GetChildren()) do
+                                    local mobHRP = mob:FindFirstChild("HumanoidRootPart")
+                                    local humanoid = mob:FindFirstChildOfClass("Humanoid")
+
+                                    if mobHRP
+                                        and (not humanoid or humanoid.Health > 0) then
+                                        target = mobHRP
+                                        break
+                                    end
+                                end
+
+                                if target then
+                                    break
+                                end
+                            end
+                        end
+                    end
+
+                    if target then
+                        -- Buat attachment + constraints sekali
+                        if not attachment or not attachment.Parent then
+                            attachment = Instance.new("Attachment")
+                            attachment.Parent = hrp
+
+                            alignPos = Instance.new("AlignPosition")
+                            alignPos.Mode = Enum.PositionAlignmentMode.OneAttachment
+                            alignPos.Attachment0 = attachment
+                            alignPos.MaxForce = math.huge
+                            alignPos.MaxVelocity = math.huge
+                            alignPos.Responsiveness = 80
+                            alignPos.RigidityEnabled = true
+                            alignPos.Parent = hrp
+
+                            alignOri = Instance.new("AlignOrientation")
+                            alignOri.Mode = Enum.OrientationAlignmentMode.OneAttachment
+                            alignOri.Attachment0 = attachment
+                            alignOri.MaxTorque = math.huge
+                            alignOri.Responsiveness = 80
+                            alignOri.RigidityEnabled = true
+                            alignOri.Parent = hrp
+                        end
+
+                        -- 12 stud di atas mob
+                        alignPos.Position =
+                            target.Position + Vector3.new(0, 12, 0)
+
+                        -- Hadap ke mob
+                        local direction =
+                            (target.Position - hrp.Position).Unit
+
+                        alignOri.CFrame =
+                            CFrame.lookAt(Vector3.zero, direction)
+
+                        -- Attack
+                        AttackRemote:FireServer(Vector3.zero)
+                    end
+
+                    task.wait(0.1)
+                end
+
+                -- Cleanup
+                if alignPos then
+                    alignPos:Destroy()
+                end
+
+                if alignOri then
+                    alignOri:Destroy()
+                end
+
+                if attachment then
+                    attachment:Destroy()
+                end
+            end)
+        end
+    end
+})
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local AutoPotion = false
+local PotionBusy = false
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Potion HP 50%",
+    default = true,
+
+    callback = function(state)
+        AutoPotion = state
+
+        if not state then
+            return
+        end
+
+        task.spawn(function()
+            while AutoPotion do
+                local character = player.Character
+                local humanoid = character
+                    and character:FindFirstChildOfClass("Humanoid")
+
+                if humanoid
+                    and humanoid.Health > 0
+                    and humanoid.Health <= humanoid.MaxHealth * 0.5
+                    and not PotionBusy then
+
+                    PotionBusy = true
+
+                    -- Gunakan input potion yang terpasang di game.
+                    local ok, err = pcall(function()
+                        local ReplicatedStorage =
+                            game:GetService("ReplicatedStorage")
+
+                        local Knit = require(
+                            ReplicatedStorage.Packages.Knit
+                        )
+
+                        local potionService =
+                            Knit.GetService("PotionService")
+
+                        potionService:UsePotion(1)
+                    end)
+
+                    if not ok then
+                        warn("Auto Potion:", err)
+                    end
+
+                    task.wait(1)
+                    PotionBusy = false
+                end
+
+                task.wait(0.2)
+            end
+
+            PotionBusy = false
+        end)
+    end
+})
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Fly Orbit BossRush",
+    default = true,
+
+    callback = function(state)
+        _G.FlyBossRush = state
+
+        if state then
+            task.spawn(function()
+                local player = game.Players.LocalPlayer
+                local target = nil
+
+                local alignPos = nil
+                local alignOri = nil
+                local attachment = nil
+
+                local NPCFolder = workspace:WaitForChild("BossRush_NPCs")
+
+                while _G.FlyBossRush do
+                    local character = player.Character
+                    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+                    if not hrp then
+                        task.wait(0.2)
+                        continue
+                    end
+
+                    -- Target tetap dikunci sampai mati / hilang
+                    if target then
+                        local mob = target.Parent
+                        local humanoid = mob and mob:FindFirstChildOfClass("Humanoid")
+
+                        if not mob
+                            or not target:IsDescendantOf(NPCFolder)
+                            or (humanoid and humanoid.Health <= 0) then
+                            target = nil
+                        end
+                    end
+
+                    -- Cari mob baru
+                    if not target then
+                        for _, mob in ipairs(NPCFolder:GetChildren()) do
+                            local mobHRP = mob:FindFirstChild("HumanoidRootPart")
+                            local humanoid = mob:FindFirstChildOfClass("Humanoid")
+
+                            if mobHRP
+                                and (not humanoid or humanoid.Health > 0) then
+                                target = mobHRP
+                                break
+                            end
+                        end
+                    end
+
+                    if target then
+                        -- Buat constraint sekali
+                        if not attachment or not attachment.Parent then
+                            attachment = Instance.new("Attachment")
+                            attachment.Parent = hrp
+
+                            alignPos = Instance.new("AlignPosition")
+                            alignPos.Mode = Enum.PositionAlignmentMode.OneAttachment
+                            alignPos.Attachment0 = attachment
+                            alignPos.MaxForce = math.huge
+                            alignPos.MaxVelocity = math.huge
+                            alignPos.Responsiveness = 80
+                            alignPos.RigidityEnabled = true
+                            alignPos.Parent = hrp
+
+                            alignOri = Instance.new("AlignOrientation")
+                            alignOri.Mode = Enum.OrientationAlignmentMode.OneAttachment
+                            alignOri.Attachment0 = attachment
+                            alignOri.MaxTorque = math.huge
+                            alignOri.Responsiveness = 80
+                            alignOri.RigidityEnabled = true
+                            alignOri.Parent = hrp
+                        end
+
+                        -- Orbit radius 12 studs
+                        local angle = os.clock() * 2
+
+                        local offset = Vector3.new(
+                            math.cos(angle) * 37,
+                            12,
+                            math.sin(angle) * 37
+                        )
+
+                        alignPos.Position =
+                            target.Position + offset
+
+                        -- Hadap ke mob
+                        local direction = target.Position - hrp.Position
+
+                        if direction.Magnitude > 0 then
+                            alignOri.CFrame =
+                                CFrame.lookAt(
+                                    Vector3.zero,
+                                    direction.Unit
+                                )
+                        end
+                    end
+
+                    task.wait(0.05)
+                end
+
+                -- Cleanup
+                if alignPos then
+                    alignPos:Destroy()
+                end
+
+                if alignOri then
+                    alignOri:Destroy()
+                end
+
+                if attachment then
+                    attachment:Destroy()
+                end
+            end)
+        end
+    end
+})
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Open Boss Chests",
+    default = true,
+
+    callback = function(state)
+        _G.AutoOpenBossChests = state
+
+        if state then
+            task.spawn(function()
+                local Players = game:GetService("Players")
+                local player = Players.LocalPlayer
+
+                while _G.AutoOpenBossChests do
+                    pcall(function()
+                        local folder = workspace:FindFirstChild(
+                            "_LocalBossLootChests"
+                        )
+
+                        local character = player.Character
+                        local root = character
+                            and character:FindFirstChild("HumanoidRootPart")
+
+                        if folder and root then
+                            for _, chest in ipairs(folder:GetChildren()) do
+                                local prompt = chest:FindFirstChild(
+                                    "ChestPrompt", true
+                                ) or chest:FindFirstChildWhichIsA(
+                                    "ProximityPrompt", true
+                                )
+
+                                local part = prompt
+                                    and prompt.Parent
+
+                                if part and part:IsA("BasePart") then
+                                    local distance =
+                                        (root.Position - part.Position).Magnitude
+
+                                    if prompt.Enabled and distance <=
+                                        prompt.MaxActivationDistance then
+                                        fireproximityprompt(prompt)
+                                        task.wait(0.2)
+                                    end
+                                end
+                            end
+                        end
+                    end)
+
+                    task.wait(0.3)
+                end
+            end)
+        end
+    end
+})
+
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Anti AFK",
+    default = true,
+
+    callback = function(state)
+        _G.AntiAFK = state
+
+        if state then
+            task.spawn(function()
+                while _G.AntiAFK do
+                    pcall(function()
+                        VirtualInputManager:SendMouseButtonEvent(
+                            0, 0, 0, true, game, 0
+                        )
+
+                        task.wait(0.1)
+
+                        VirtualInputManager:SendMouseButtonEvent(
+                            0, 0, 0, false, game, 0
+                        )
+                    end)
+
+                    -- Reset timer AFK jauh sebelum 1000 detik
+                    task.wait(60)
+                end
+            end)
+        end
+    end
+})
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local Knit = require(
+    ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
+)
+local ConquestService = Knit.GetService("ConquestRunService")
+
+local targets = {}
+local visited = {}
+
+ConquestService.Changed:Connect(function(data)
+    if data and data.Targets then
+        targets = data.Targets
+    end
+end)
+
+local function targetKey(pos)
+    return string.format("%d,%d,%d",
+        math.round(pos.X),
+        math.round(pos.Y),
+        math.round(pos.Z)
+    )
+end
+
+GUI:CreateToggle({
+    parent = main,
+    text = "Auto Conquest TP",
+    default = false,
+
+    callback = function(state)
+        _G.AutoConquestTP = state
+
+        if not state then
+            return
+        end
+
+        task.spawn(function()
+            while _G.AutoConquestTP do
+                local character = player.Character
+                local root = character
+                    and character:FindFirstChild("HumanoidRootPart")
+
+                if root and player:GetAttribute("InConquest") == true then
+                    local nearest, nearestDistance
+
+                    for _, pos in pairs(targets) do
+                        if typeof(pos) == "Vector3" then
+                            local key = targetKey(pos)
+                            local distance = (root.Position - pos).Magnitude
+
+                            if not visited[key]
+                                and (not nearestDistance
+                                or distance < nearestDistance) then
+                                nearest = pos
+                                nearestDistance = distance
+                            end
+                        end
+                    end
+
+                    if nearest then
+                        local key = targetKey(nearest)
+
+                        -- TP sedikit di atas target
+                        root.CFrame = CFrame.new(nearest + Vector3.new(0, 3, 0))
+                        task.wait(0.4)
+
+                        visited[key] = true
+                    else
+                        -- Semua target sudah dikunjungi
+                        visited = {}
+                        task.wait(1)
+                    end
+                end
+
+                task.wait(0.15)
+            end
+        end)
+    end
+})
+
+
+
+
