@@ -312,6 +312,7 @@ local function addToggle(label, default, callback)
         initialState = (default == true)
     end
     local enabled = false
+    local userInteracted = false
     local function render()
         button.BackgroundColor3 = enabled and Color3.fromRGB(126,78,220) or Color3.fromRGB(70,68,82)
         knob.Position = enabled and UDim2.new(1,-19,0,3) or UDim2.fromOffset(3,3)
@@ -331,11 +332,14 @@ local function addToggle(label, default, callback)
         if not ok then warn(label .. ": " .. tostring(err)) end
         setStatus(label .. (state and " • ON" or " • OFF"))
     end
-    button.Activated:Connect(function() change(not enabled) end)
+    button.Activated:Connect(function()
+        userInteracted = true
+        change(not enabled)
+    end)
     toggleInitQueue += 1
     local initDelay = math.min((toggleInitQueue - 1) * 0.08, 6)
     task.delay(initDelay, function()
-        if alive() then change(initialState) end
+        if alive() and not userInteracted then change(initialState) end
     end)
     return change
 end
