@@ -1,0 +1,4822 @@
+--[[
+  Standalone Multi-Automation GUI
+  No Ash-Libs dependency. Execute this file in your Roblox client environment.
+  Includes a draggable dark/purple UI, minimize/restore, close/cleanup, and toggles.
+  Note: game-specific remotes/controllers can change; each feature is guarded with pcall.
+]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local CollectionService = game:GetService("CollectionService")
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+local HttpService = game:GetService("HttpService")
+
+-- Persistent toggle config (requires executor file functions such as readfile/writefile).
+local CONFIG_FILE = "StandaloneAutomationConfig.json"
+local savedConfig = {autoSave = false, toggles = {}}
+local autoSaveConfig = false
+local features = {}
+local function loadConfig()
+    local ok, raw = pcall(function()
+        if type(isfile) == "function" and isfile(CONFIG_FILE) and type(readfile) == "function" then
+            return readfile(CONFIG_FILE)
+        end
+        return nil
+    end)
+    if ok and type(raw) == "string" and raw ~= "" then
+        local decodedOk, decoded = pcall(function() return HttpService:JSONDecode(raw) end)
+        if decodedOk and type(decoded) == "table" then
+            savedConfig = decoded
+            savedConfig.toggles = type(savedConfig.toggles) == "table" and savedConfig.toggles or {}
+            if savedConfig.autoSave ~= nil then autoSaveConfig = savedConfig.autoSave == true end
+        elseif not decodedOk then
+            warn("[Auto Save Config] File config rusak: " .. tostring(decoded))
+        end
+    elseif not ok then
+        warn("[Auto Save Config] Gagal membaca config: " .. tostring(raw))
+    end
+end
+local function writeConfig(force)
+    if not force and not autoSaveConfig then return end
+    savedConfig.autoSave = autoSaveConfig
+    savedConfig.toggles = savedConfig.toggles or {}
+    for name, state in pairs(features) do savedConfig.toggles[name] = state end
+    local ok, err = pcall(function()
+        if type(writefile) ~= "function" then
+            error("Executor tidak menyediakan writefile")
+        end
+        writefile(CONFIG_FILE, HttpService:JSONEncode(savedConfig))
+    end)
+    if not ok then
+        warn("[Auto Save Config] Gagal menyimpan: " .. tostring(err))
+    end
+end
+loadConfig()
+
+-- Stop an older copy of this script.
+_G.StandaloneAutomationAlive = true
+_G.StandaloneAutomationRunId = (_G.StandaloneAutomationRunId or 0) + 1
+local RUN_ID = _G.StandaloneAutomationRunId
+_G.StandaloneAutomationAlive = true
+
+local function alive()
+    return _G.StandaloneAutomationAlive and _G.StandaloneAutomationRunId == RUN_ID
+end
+
+
+--========================================================
+-- PERSISTENT GUI PARENT
+--========================================================
+
+local CoreGui = game:GetService("CoreGui")
+
+local function getPersistentGuiParent()
+    if type(gethui) == "function" then
+        local ok, result = pcall(gethui)
+
+        if ok and result then
+            return result
+        end
+    end
+
+    return CoreGui
+end
+
+local guiParent = getPersistentGuiParent()
+
+-- Remove previous GUI from the persistent parent.
+pcall(function()
+    local old = guiParent:FindFirstChild("StandaloneAutomationGUI")
+    if old then
+        old:Destroy()
+    end
+end)
+
+-- Create the GUI outside PlayerGui so it can survive
+-- PlayerGui being recreated during character respawn.
+local gui = Instance.new("ScreenGui")
+gui.Name = "StandaloneAutomationGUI"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 999999
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+gui.Parent = guiParent
+
+
+local function new(class, props, parent)
+    local obj = Instance.new(class)
+    for k, v in pairs(props or {}) do
+        obj[k] = v
+    end
+    obj.Parent = parent
+    return obj
+end
+
+local main = new("Frame", {
+    Name = "Main", Size = UDim2.fromOffset(330, 470),
+    Position = UDim2.new(0, 28, 0.5, -235),
+    BackgroundColor3 = Color3.fromRGB(22, 22, 31),
+    BorderSizePixel = 0, Active = true
+}, gui)
+new("UICorner", {CornerRadius = UDim.new(0, 12)}, main)
+new("UIStroke", {Color = Color3.fromRGB(128, 76, 220), Thickness = 1.4, Transparency = 0.12}, main)
+
+local header = new("Frame", {
+    Name = "Header", Size = UDim2.new(1, 0, 0, 42),
+    BackgroundColor3 = Color3.fromRGB(32, 27, 47), BorderSizePixel = 0
+}, main)
+new("UICorner", {CornerRadius = UDim.new(0, 12)}, header)
+new("Frame", {Position = UDim2.new(0,0,1,-10), Size = UDim2.new(1,0,0,10),
+    BackgroundColor3 = Color3.fromRGB(32,27,47), BorderSizePixel = 0}, header)
+new("TextLabel", {
+    BackgroundTransparency = 1, Position = UDim2.fromOffset(13, 0),
+    Size = UDim2.new(1, -105, 1, 0), Font = Enum.Font.GothamBold,
+    Text = "MULTI AUTOMATION", TextColor3 = Color3.fromRGB(245, 240, 255),
+    TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left
+}, header)
+
+local minimize = new("TextButton", {
+    Text = "—", Font = Enum.Font.GothamBold, TextSize = 17,
+    TextColor3 = Color3.new(1,1,1), BackgroundColor3 = Color3.fromRGB(75,55,110),
+    Size = UDim2.fromOffset(30,26), Position = UDim2.new(1,-70,0,8),
+    BorderSizePixel = 0, AutoButtonColor = true
+}, header)
+new("UICorner", {CornerRadius = UDim.new(0,7)}, minimize)
+local close = new("TextButton", {
+    Text = "×", Font = Enum.Font.GothamBold, TextSize = 19,
+    TextColor3 = Color3.new(1,1,1), BackgroundColor3 = Color3.fromRGB(150,55,75),
+    Size = UDim2.fromOffset(28,26), Position = UDim2.new(1,-35,0,8),
+    BorderSizePixel = 0, AutoButtonColor = true
+}, header)
+new("UICorner", {CornerRadius = UDim.new(0,7)}, close)
+
+local status = new("TextLabel", {
+    BackgroundTransparency = 1, Position = UDim2.fromOffset(13, 47),
+    Size = UDim2.new(1,-26,0,22), Font = Enum.Font.Gotham,
+    Text = "Ready • all features OFF", TextColor3 = Color3.fromRGB(190,175,220),
+    TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left
+}, main)
+
+-- Four clean main tabs: A / B / C / D. Each tab has its own scrolling list.
+local activeCategory = "A"
+local toggleCount = 0
+local tabBar = new("Frame", {
+    Name = "MainTabs", Position = UDim2.fromOffset(10, 72),
+    Size = UDim2.new(1, -20, 0, 34), BackgroundTransparency = 1,
+    BorderSizePixel = 0
+}, main)
+new("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal,
+    Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder}, tabBar)
+local tabButtons, tabPages = {}, {}
+local categories = {
+    A = {title = "A • DUNGEON", color = Color3.fromRGB(126,78,220)},
+    B = {title = "B • EVENTS", color = Color3.fromRGB(126,78,220)},
+    C = {title = "C • MISC", color = Color3.fromRGB(126,78,220)},
+    D = {title = "D • UI", color = Color3.fromRGB(126,78,220)},
+}
+for _, key in ipairs({"A", "B", "C", "D"}) do
+    local info = categories[key]
+    local page = new("ScrollingFrame", {
+        Name = "Tab" .. key, Visible = false,
+        Position = UDim2.fromOffset(10, 112), Size = UDim2.new(1,-20,1,-123),
+        BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Color3.fromRGB(132,88,220),
+        CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y
+    }, main)
+    new("UIListLayout", {Padding = UDim.new(0,6), SortOrder = Enum.SortOrder.LayoutOrder}, page)
+    new("UIPadding", {PaddingTop = UDim.new(0,3), PaddingBottom = UDim.new(0,8),
+        PaddingLeft = UDim.new(0,2), PaddingRight = UDim.new(0,4)}, page)
+    tabPages[key] = page
+    local button = new("TextButton", {
+        Name = "TabButton" .. key, Size = UDim2.new(1/4, -5, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(43,39,57), BorderSizePixel = 0,
+        Text = info.title, TextColor3 = Color3.fromRGB(225,218,240),
+        Font = Enum.Font.GothamBold, TextSize = 8, AutoButtonColor = true
+    }, tabBar)
+    new("UICorner", {CornerRadius = UDim.new(0,7)}, button)
+    tabButtons[key] = button
+    button.Activated:Connect(function()
+        activeCategory = key
+        for tab, tabPage in pairs(tabPages) do
+            tabPage.Visible = (tab == key)
+            tabButtons[tab].BackgroundColor3 = tab == key and Color3.fromRGB(126,78,220) or Color3.fromRGB(43,39,57)
+            tabButtons[tab].TextColor3 = tab == key and Color3.new(1,1,1) or Color3.fromRGB(225,218,240)
+        end
+        if status and status.Parent then status.Text = info.title .. " • selected" end
+    end)
+end
+local scroll = tabPages.A
+scroll.Visible = true
+tabButtons.A.BackgroundColor3 = Color3.fromRGB(126,78,220)
+tabButtons.A.TextColor3 = Color3.new(1,1,1)
+local function setActiveCategory(key)
+    activeCategory = key
+    scroll = tabPages[key]
+end
+
+-- Drag works with mouse and touch.
+local function makeDraggable(handle, target)
+    local dragging, startInput, startPos, startPosition
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            startInput = input
+            startPos = input.Position
+            startPosition = target.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if not dragging then return end
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - startPos
+            target.Position = UDim2.new(
+                startPosition.X.Scale, startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale, startPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input == startInput
+            or input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+makeDraggable(header, main)
+
+local mini = new("TextButton", {
+    Name = "RestoreButton", Visible = false, Text = "❄",
+    Font = Enum.Font.GothamBold, TextSize = 22,
+    TextColor3 = Color3.fromRGB(245,240,255),
+    BackgroundColor3 = Color3.fromRGB(43,31,65),
+    Size = UDim2.fromOffset(48,48), Position = UDim2.new(0,22,0.5,-24),
+    BorderSizePixel = 0, Active = true
+}, gui)
+new("UICorner", {CornerRadius = UDim.new(1,0)}, mini)
+new("UIStroke", {Color = Color3.fromRGB(145,92,240), Thickness = 1.5}, mini)
+makeDraggable(mini, mini)
+
+minimize.Activated:Connect(function()
+    main.Visible = false
+    mini.Visible = true
+    mini.Position = UDim2.new(0, main.Position.X.Offset, main.Position.Y.Scale, main.Position.Y.Offset)
+end)
+mini.Activated:Connect(function()
+    main.Visible = true
+    mini.Visible = false
+end)
+
+local function setStatus(msg)
+    if status and status.Parent then status.Text = msg end
+end
+
+local function addToggle(label, default, callback)
+    toggleCount += 1
+    local targetScroll = tabPages[activeCategory]
+    local row = new("Frame", {
+        Name = label:gsub("%W",""), Size = UDim2.new(1,-3,0,38),
+        BackgroundColor3 = Color3.fromRGB(31,30,43), BorderSizePixel = 0
+    }, targetScroll)
+    row.LayoutOrder = toggleCount
+    new("UICorner", {CornerRadius = UDim.new(0,8)}, row)
+    local textLabel = new("TextLabel", {
+        BackgroundTransparency = 1, Position = UDim2.fromOffset(10,0),
+        Size = UDim2.new(1,-66,1,0), Font = Enum.Font.GothamMedium,
+        Text = label, TextColor3 = Color3.fromRGB(236,232,245),
+        TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left
+    }, row)
+    local button = new("TextButton", {
+        Size = UDim2.fromOffset(42,22), Position = UDim2.new(1,-51,0.5,-11),
+        BorderSizePixel = 0, Text = "", AutoButtonColor = true,
+        BackgroundColor3 = Color3.fromRGB(70,68,82)
+    }, row)
+    new("UICorner", {CornerRadius = UDim.new(1,0)}, button)
+    local knob = new("Frame", {
+        Size = UDim2.fromOffset(16,16), Position = UDim2.fromOffset(3,3),
+        BackgroundColor3 = Color3.fromRGB(245,245,250), BorderSizePixel = 0
+    }, button)
+    new("UICorner", {CornerRadius = UDim.new(1,0)}, knob)
+    -- Safe startup: every toggle starts OFF on each execution.
+    -- Old saved ON values must not automatically start farm loops.
+    local initialState = false
+    local enabled = false
+    local function render()
+        button.BackgroundColor3 = enabled and Color3.fromRGB(126,78,220) or Color3.fromRGB(70,68,82)
+        knob.Position = enabled and UDim2.new(1,-19,0,3) or UDim2.fromOffset(3,3)
+    end
+    local function change(state)
+        enabled = state
+        render()
+        features[label] = state
+        if label == "Auto Save Config" then
+            autoSaveConfig = state
+            writeConfig(true)
+        else
+            writeConfig(false)
+        end
+        local ok, err = pcall(callback, state)
+        if not ok then warn(label .. ": " .. tostring(err)) end
+        setStatus(label .. (state and " • ON" or " • OFF"))
+    end
+    button.Activated:Connect(function() change(not enabled) end)
+    task.defer(function() if alive() then change(initialState) end end)
+    return change
+end
+
+local function addButton(label, callback)
+    toggleCount += 1
+
+    local targetScroll = tabPages[activeCategory]
+
+    local button = new("TextButton", {
+        Name = label:gsub("%W", ""),
+        Size = UDim2.new(1, -3, 0, 36),
+        BackgroundColor3 = Color3.fromRGB(65, 48, 100),
+        BorderSizePixel = 0,
+        Text = label,
+        TextColor3 = Color3.fromRGB(245, 240, 255),
+        Font = Enum.Font.GothamBold,
+        TextSize = 11,
+        AutoButtonColor = true,
+        LayoutOrder = toggleCount
+    }, targetScroll)
+
+    new("UICorner", {
+        CornerRadius = UDim.new(0, 8)
+    }, button)
+
+    button.Activated:Connect(function()
+        if not alive() then return end
+
+        local ok, err = pcall(callback)
+        if not ok then
+            warn(label .. ": " .. tostring(err))
+            setStatus(label .. " • Error")
+        else
+            setStatus(label .. " • Clicked")
+        end
+    end)
+
+    return button
+end
+
+local function rootPart()
+    local char = player.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+local function humanoidOf(model)
+    return model and model:FindFirstChildWhichIsA("Humanoid", true)
+end
+local function mobPart(model)
+    if not model then return nil end
+    if model:IsA("BasePart") then return model end
+    return model:FindFirstChild("HumanoidRootPart", true)
+        or model.PrimaryPart
+        or model:FindFirstChildWhichIsA("BasePart", true)
+end
+local function aliveMob(model)
+    if not model or not model:IsDescendantOf(workspace) then return false end
+    local hum = humanoidOf(model)
+    return (not hum or hum.Health > 0) and mobPart(model) ~= nil
+end
+local function generatedMap(prefix, needsNPC)
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj.Name:match("^" .. prefix) then
+            if not needsNPC or obj:FindFirstChild("NPCs") then return obj end
+        end
+    end
+end
+local function getChildrenMobs(container)
+    local out, seen = {}, {}
+    if not container then return out end
+    for _, obj in ipairs(container:GetChildren()) do
+        if (obj:IsA("Model") or obj:IsA("BasePart")) and not seen[obj] and aliveMob(obj) then
+            seen[obj] = true
+            table.insert(out, {model=obj, part=mobPart(obj), humanoid=humanoidOf(obj)})
+        end
+    end
+    return out
+end
+local function orbitLoop(label, enabledGlobal, runGlobal, config)
+    _G[enabledGlobal] = true
+    _G[runGlobal] = (_G[runGlobal] or 0) + 1
+    local id = _G[runGlobal]
+    task.spawn(function()
+        local angle = 0
+        local target, lastSwitch = nil, 0
+        while alive() and _G[enabledGlobal] and _G[runGlobal] == id do
+            local folder = config.folder()
+            local hrp = rootPart()
+            if not folder or not hrp then
+                task.wait(0.35)
+                continue
+            end
+            local mobs = config.collect(folder)
+            if #mobs == 0 then
+                target = nil
+                if config.empty then pcall(config.empty, folder, hrp) end
+                task.wait(0.35)
+                continue
+            end
+            local now = os.clock()
+            local found = false
+            for _, entry in ipairs(mobs) do
+                if entry.model == target then found = true break end
+            end
+            if not found or now - lastSwitch >= (config.delay or 8) then
+                local idx = 1
+                if found then
+                    for i, entry in ipairs(mobs) do
+                        if entry.model == target then idx = i % #mobs + 1 break end
+                    end
+                end
+                target = mobs[idx] and mobs[idx].model or nil
+                lastSwitch = now
+            end
+            local part = mobPart(target)
+            if part and aliveMob(target) then
+                angle = angle + (config.speed or 2) * 0.03
+                local pos = part.Position + Vector3.new(math.cos(angle)*(config.radius or 15), config.height or 7, math.sin(angle)*(config.radius or 15))
+                hrp.CFrame = CFrame.lookAt(pos, part.Position)
+            end
+            task.wait(0.03)
+        end
+    end)
+end
+
+-- A. Dungeon
+setActiveCategory("A")
+
+--========================================================
+-- AUTO FARM ALL 5 MAPS
+-- NPC ORBIT + ZONE ROOM PATROL + ANTI-STUCK
+-- Replace the five old farm scripts with this one script.
+--========================================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+
+--========================================================
+-- REMOTES
+--========================================================
+
+local function getAttackRemote()
+    local playerFolder = ReplicatedStorage:FindFirstChild("Player")
+    if not playerFolder then return nil end
+
+    local remotes = playerFolder:FindFirstChild("Remotes")
+    if not remotes then return nil end
+
+    local inputs = remotes:FindFirstChild("Inputs")
+    if not inputs then return nil end
+
+    return inputs:FindFirstChild("Attack")
+end
+
+local function getSkillRemote()
+    local playerFolder = ReplicatedStorage:FindFirstChild("Player")
+    if not playerFolder then return nil end
+
+    local remotes = playerFolder:FindFirstChild("Remotes")
+    if not remotes then return nil end
+
+    local inputs = remotes:FindFirstChild("Inputs")
+    if not inputs then return nil end
+
+    return inputs:FindFirstChild("Skill")
+end
+
+--========================================================
+-- FARM CONFIGURATION
+--========================================================
+
+local FarmConfigs = {
+    {
+        name = "Bandits Den",
+        toggle = "Auto Farm Bandits Den",
+        stateKey = "AutoFarmBanditsDen",
+        runKey = "BanditsDenRunId",
+        pattern = "^Generated_Bandits Den_%x+$",
+        folders = {"NPCs"},
+        radius = 12,
+        height = 12,
+        orbitSpeed = 2,
+        switchDelay = 5,
+        tpDistance = 22,
+        tpCooldown = 1,
+    },
+
+    {
+        name = "Goblins",
+        toggle = "Auto Farm Goblins",
+        stateKey = "AutoFarmGoblins",
+        runKey = "GoblinsRunId",
+        pattern = "^Generated_Goblins_%x+$",
+        folders = {"NPCs"},
+        radius = 12,
+        height = 12,
+        orbitSpeed = 2,
+        switchDelay = 5,
+        tpDistance = 22,
+        tpCooldown = 1,
+    },
+
+    {
+        name = "Knights",
+        toggle = "Auto Farm Knights",
+        stateKey = "AutoFarmKnights",
+        runKey = "KnightsRunId",
+        pattern = "^Generated_Knights_%x+$",
+        folders = {"NPCs"},
+        radius = 12,
+        height = 12,
+        orbitSpeed = 2,
+        switchDelay = 5,
+        tpDistance = 22,
+        tpCooldown = 1,
+    },
+
+    {
+        name = "Catacombs",
+        toggle = "Auto Farm Catacombs",
+        stateKey = "AutoFarmCatacombs",
+        runKey = "CatacombsRunId",
+        pattern = "^Generated_Catacombs_%x+$",
+        folders = {"NPCs"},
+        radius = 12,
+        height = 12,
+        orbitSpeed = 2,
+        switchDelay = 5,
+        tpDistance = 22,
+        tpCooldown = 1,
+    },
+
+    {
+        name = "Snow",
+        toggle = "Auto Farm Snow",
+        stateKey = "AutoFarmSnow",
+        runKey = "AutoFarmSnowRunId",
+        pattern = "^Generated_Snow_%x+$",
+        folders = {"NPCs", "Snow_NPC"},
+        radius = 12,
+        height = 12,
+        orbitSpeed = 1.2,
+        switchDelay = 5,
+        tpDistance = 35,
+        tpCooldown = 2,
+        priorityLast = {"valkskar"},
+    },
+}
+
+--========================================================
+-- CHARACTER HELPERS
+--========================================================
+
+local function getCharacter()
+    return LocalPlayer.Character
+end
+
+local function getHumanoid(character)
+    if not character then return nil end
+    return character:FindFirstChildOfClass("Humanoid")
+end
+
+local function getRoot(character)
+    if not character then return nil end
+
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if root and root:IsA("BasePart") then
+        return root
+    end
+
+    if character.PrimaryPart
+        and character.PrimaryPart:IsA("BasePart") then
+        return character.PrimaryPart
+    end
+
+    local torso = character:FindFirstChild("Torso")
+    if torso and torso:IsA("BasePart") then
+        return torso
+    end
+
+    local upperTorso = character:FindFirstChild("UpperTorso")
+    if upperTorso and upperTorso:IsA("BasePart") then
+        return upperTorso
+    end
+
+    return nil
+end
+
+local function characterReady()
+    local character = getCharacter()
+    local humanoid = getHumanoid(character)
+    local root = getRoot(character)
+
+    return character, humanoid, root
+end
+
+--========================================================
+-- NPC HELPERS
+--========================================================
+
+local function getModelRoot(model)
+    if not model or not model:IsA("Model") then
+        return nil
+    end
+
+    local root = model:FindFirstChild("HumanoidRootPart")
+    if root and root:IsA("BasePart") then
+        return root
+    end
+
+    if model.PrimaryPart
+        and model.PrimaryPart:IsA("BasePart") then
+        return model.PrimaryPart
+    end
+
+    for _, name in ipairs({
+        "UpperTorso",
+        "Torso",
+        "Head",
+    }) do
+        local part = model:FindFirstChild(name, true)
+        if part and part:IsA("BasePart") then
+            return part
+        end
+    end
+
+    for _, descendant in ipairs(model:GetDescendants()) do
+        if descendant:IsA("BasePart") then
+            return descendant
+        end
+    end
+
+    return nil
+end
+
+local function getAliveHumanoid(model)
+    if not model or not model:IsA("Model") then
+        return nil
+    end
+
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    if humanoid and humanoid.Health > 0 then
+        return humanoid
+    end
+
+    return nil
+end
+
+local function isAliveNPC(model)
+    if not model or not model.Parent then
+        return false
+    end
+
+    if not getAliveHumanoid(model) then
+        return false
+    end
+
+    return getModelRoot(model) ~= nil
+end
+
+--========================================================
+-- MAP SCANNING
+--========================================================
+
+local function matchesMapName(name, pattern)
+    return string.match(name, pattern) ~= nil
+end
+
+local function getNPCFolder(map, config)
+    for _, folderName in ipairs(config.folders) do
+        local folder = map:FindFirstChild(folderName, true)
+
+        if folder then
+            return folder
+        end
+    end
+
+    return nil
+end
+
+local function getNPCs(map, config)
+    local results = {}
+    local folder = getNPCFolder(map, config)
+
+    if not folder then
+        return results
+    end
+
+    for _, descendant in ipairs(folder:GetDescendants()) do
+        if descendant:IsA("Model")
+            and isAliveNPC(descendant) then
+            table.insert(results, descendant)
+        end
+    end
+
+    return results
+end
+
+local function findActiveMap(config)
+    local bestMap = nil
+    local bestCount = -1
+
+    for _, child in ipairs(Workspace:GetChildren()) do
+        if matchesMapName(child.Name, config.pattern) then
+            local count = #getNPCs(child, config)
+
+            if count > bestCount then
+                bestCount = count
+                bestMap = child
+            end
+        end
+    end
+
+    return bestMap
+end
+
+--========================================================
+-- ZONE HELPERS
+-- Zone is the center point used to navigate each room.
+-- Supports a BasePart, Model, or Folder named "Zone".
+--========================================================
+
+local function isInsideLocked(zone, map)
+    local current = zone
+
+    while current and current ~= map do
+        if string.lower(current.Name) == "locked" then
+            return true
+        end
+
+        current = current.Parent
+    end
+
+    return false
+end
+
+local function getZonePosition(zone)
+    if not zone or not zone.Parent then
+        return nil
+    end
+
+    if zone:IsA("BasePart") then
+        return zone.Position
+    end
+
+    if zone:IsA("Model") then
+        local success, pivot = pcall(function()
+            return zone:GetBoundingBox()
+        end)
+
+        if success and pivot then
+            return pivot.Position
+        end
+    end
+
+    -- Folder or other container: find the center of its parts.
+    local minX, minY, minZ = math.huge, math.huge, math.huge
+    local maxX, maxY, maxZ = -math.huge, -math.huge, -math.huge
+    local foundPart = false
+
+    local descendants = zone:GetDescendants()
+
+    if zone:IsA("BasePart") then
+        descendants = {zone}
+    end
+
+    for _, item in ipairs(descendants) do
+        if item:IsA("BasePart") then
+            local position = item.Position
+            local half = item.Size / 2
+
+            minX = math.min(minX, position.X - half.X)
+            minY = math.min(minY, position.Y - half.Y)
+            minZ = math.min(minZ, position.Z - half.Z)
+
+            maxX = math.max(maxX, position.X + half.X)
+            maxY = math.max(maxY, position.Y + half.Y)
+            maxZ = math.max(maxZ, position.Z + half.Z)
+
+            foundPart = true
+        end
+    end
+
+    if not foundPart then
+        return nil
+    end
+
+    return Vector3.new(
+        (minX + maxX) / 2,
+        (minY + maxY) / 2,
+        (minZ + maxZ) / 2
+    )
+end
+
+local function getRoomNumber(instance, map)
+    local current = instance
+
+    while current and current ~= map do
+        local number = current.Name:match("[Rr]oom[_ ]?(%d+)")
+
+        if number then
+            return tonumber(number)
+        end
+
+        current = current.Parent
+    end
+
+    return math.huge
+end
+
+local function getZoneList(map)
+    local zones = {}
+
+    if not map then
+        return zones
+    end
+
+    for _, descendant in ipairs(map:GetDescendants()) do
+        if descendant.Name == "Zone"
+            and not isInsideLocked(descendant, map) then
+
+            local position = getZonePosition(descendant)
+
+            if position then
+                table.insert(zones, {
+                    instance = descendant,
+                    position = position,
+                    roomNumber = getRoomNumber(descendant, map),
+                    name = descendant:GetFullName(),
+                })
+            end
+        end
+    end
+
+    table.sort(zones, function(a, b)
+        if a.roomNumber ~= b.roomNumber then
+            return a.roomNumber < b.roomNumber
+        end
+
+        return a.name < b.name
+    end)
+
+    return zones
+end
+
+--========================================================
+-- TARGET SELECTION
+--========================================================
+
+local function hasPriorityLast(name, config)
+    if not config.priorityLast then
+        return false
+    end
+
+    local lowerName = string.lower(name)
+
+    for _, word in ipairs(config.priorityLast) do
+        if string.find(lowerName, word, 1, true) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function sortTargets(npcs, config, origin)
+    table.sort(npcs, function(a, b)
+        local aLast = hasPriorityLast(a.Name, config)
+        local bLast = hasPriorityLast(b.Name, config)
+
+        if aLast ~= bLast then
+            return not aLast
+        end
+
+        local aRoot = getModelRoot(a)
+        local bRoot = getModelRoot(b)
+
+        if not aRoot then return false end
+        if not bRoot then return true end
+
+        return (aRoot.Position - origin).Magnitude
+            < (bRoot.Position - origin).Magnitude
+    end)
+
+    return npcs
+end
+
+local function chooseTarget(npcs, currentTarget, config, origin)
+    if #npcs == 0 then
+        return nil
+    end
+
+    sortTargets(npcs, config, origin)
+
+    -- Keep the existing target if it remains alive and available.
+    if currentTarget and isAliveNPC(currentTarget) then
+        for _, npc in ipairs(npcs) do
+            if npc == currentTarget then
+                return currentTarget
+            end
+        end
+    end
+
+    return npcs[1]
+end
+
+--========================================================
+-- COMBAT
+-- No per-frame task.spawn calls; prevents stacked attacks.
+--========================================================
+
+local function attackOnce(target)
+    if not isAliveNPC(target) then
+        return
+    end
+
+    local character, humanoid, root = characterReady()
+    if not character or not humanoid or humanoid.Health <= 0
+        or not root then
+        return
+    end
+
+    local targetRoot = getModelRoot(target)
+    if not targetRoot then
+        return
+    end
+
+    local difference = targetRoot.Position - root.Position
+    local direction = Vector3.new(difference.X, 0, difference.Z)
+
+    if direction.Magnitude > 0.001 then
+        direction = direction.Unit
+    else
+        direction = Vector3.new(0, 0, -1)
+    end
+
+    local attackRemote = getAttackRemote()
+    if attackRemote and attackRemote:IsA("RemoteEvent") then
+        pcall(function()
+            attackRemote:FireServer(direction)
+        end)
+    end
+
+    -- Re-check target and character before each skill.
+    local skillRemote = getSkillRemote()
+
+    if skillRemote and skillRemote:IsA("RemoteEvent") then
+        for skillIndex = 1, 4 do
+            if not isAliveNPC(target) then
+                break
+            end
+
+            local currentCharacter, currentHumanoid, currentRoot =
+                characterReady()
+
+            if not currentCharacter or not currentHumanoid
+                or currentHumanoid.Health <= 0 or not currentRoot then
+                break
+            end
+
+            pcall(function()
+                skillRemote:FireServer(skillIndex, "tap")
+            end)
+        end
+    end
+end
+
+--========================================================
+-- FARM ENGINE
+--========================================================
+
+local function startFarm(config, enabled)
+    _G[config.stateKey] = enabled
+
+    _G[config.runKey] = (_G[config.runKey] or 0) + 1
+    local runId = _G[config.runKey]
+
+    if not enabled then
+        print("[" .. config.name .. "] Farm stopped.")
+        return
+    end
+
+    print("[" .. config.name .. "] Farm started.")
+
+    task.spawn(function()
+        local currentMap = nil
+        local currentTarget = nil
+        local targetChosenAt = 0
+        local lastTeleportAt = 0
+        local lastScanAt = 0
+        local lastAttackAt = 0
+
+        local orbitAngle = 0
+        local zoneIndex = 1
+        local visitedZones = {}
+        local zoneList = {}
+        local currentZone = nil
+        local lastZoneScanAt = 0
+
+        local function running()
+            return _G[config.stateKey] == true
+                and _G[config.runKey] == runId
+        end
+
+        local function refreshMap()
+            local foundMap = findActiveMap(config)
+
+            if foundMap ~= currentMap then
+                currentMap = foundMap
+                currentTarget = nil
+                currentZone = nil
+                zoneIndex = 1
+                visitedZones = {}
+                zoneList = {}
+
+                if currentMap then
+                    print("[" .. config.name .. "] Map: "
+                        .. currentMap.Name)
+                end
+            end
+        end
+
+        local function refreshZones()
+            if not currentMap then
+                zoneList = {}
+                return
+            end
+
+            zoneList = getZoneList(currentMap)
+
+            -- If a Zone was removed or rebuilt, discard stale visits.
+            local valid = {}
+
+            for _, zoneInfo in ipairs(zoneList) do
+                valid[zoneInfo.instance] = true
+            end
+
+            for zoneInstance in pairs(visitedZones) do
+                if not valid[zoneInstance] then
+                    visitedZones[zoneInstance] = nil
+                end
+            end
+
+            if currentZone
+                and (not currentZone.instance
+                or not currentZone.instance.Parent) then
+                currentZone = nil
+            end
+        end
+
+        local function selectNextZone()
+            if #zoneList == 0 then
+                currentZone = nil
+                return
+            end
+
+            local unvisited = {}
+
+            for _, zoneInfo in ipairs(zoneList) do
+                if not visitedZones[zoneInfo.instance] then
+                    table.insert(unvisited, zoneInfo)
+                end
+            end
+
+            -- Revisit all rooms when every valid Zone was visited.
+            if #unvisited == 0 then
+                visitedZones = {}
+
+                for _, zoneInfo in ipairs(zoneList) do
+                    table.insert(unvisited, zoneInfo)
+                end
+            end
+
+            if #unvisited == 0 then
+                currentZone = nil
+                return
+            end
+
+            currentZone = unvisited[1]
+        end
+
+        while running() do
+            local dt = RunService.Heartbeat:Wait()
+
+            if not running() then
+                break
+            end
+
+            local character, humanoid, root = characterReady()
+
+            if not character or not humanoid
+                or humanoid.Health <= 0 or not root then
+                currentTarget = nil
+                currentZone = nil
+                task.wait(0.25)
+                continue
+            end
+
+            -- Periodically reacquire the generated map.
+            if os.clock() - lastScanAt >= 1 then
+                lastScanAt = os.clock()
+                refreshMap()
+            end
+
+            if not currentMap or not currentMap.Parent then
+                currentMap = nil
+                currentTarget = nil
+                currentZone = nil
+                task.wait(0.25)
+                continue
+            end
+
+            -- Refresh zones, including newly created rooms.
+            if os.clock() - lastZoneScanAt >= 2 then
+                lastZoneScanAt = os.clock()
+                refreshZones()
+            end
+
+            local npcs = getNPCs(currentMap, config)
+
+            if #npcs > 0 then
+                --================================================
+                -- NPC MODE: ORBIT + COMBAT
+                --================================================
+
+                if not currentTarget or not isAliveNPC(currentTarget)
+                    or os.clock() - targetChosenAt >= config.switchDelay then
+
+                    local newTarget = chooseTarget(
+                        npcs,
+                        nil,
+                        config,
+                        root.Position
+                    )
+
+                    if newTarget then
+                        currentTarget = newTarget
+                        targetChosenAt = os.clock()
+                    end
+                end
+
+                currentZone = nil
+
+                if currentTarget and isAliveNPC(currentTarget) then
+                    local targetRoot = getModelRoot(currentTarget)
+
+                    if targetRoot then
+                        local targetPosition = targetRoot.Position
+                        local distance = (root.Position - targetPosition).Magnitude
+
+                        -- If far away, close the gap with a cooldown.
+                        if distance > config.tpDistance
+                            and os.clock() - lastTeleportAt
+                                >= config.tpCooldown then
+
+                            lastTeleportAt = os.clock()
+
+                            local offset = Vector3.new(
+                                config.radius,
+                                config.height,
+                                0
+                            )
+
+                            local destination = targetPosition + offset
+
+                            pcall(function()
+                                root.CFrame = CFrame.lookAt(
+                                    destination,
+                                    targetPosition
+                                )
+                            end)
+
+                            orbitAngle = 0
+                        else
+                            orbitAngle += config.orbitSpeed * math.max(dt, 0)
+
+                            local offset = Vector3.new(
+                                math.cos(orbitAngle) * config.radius,
+                                config.height,
+                                math.sin(orbitAngle) * config.radius
+                            )
+
+                            local destination = targetPosition + offset
+
+                            pcall(function()
+                                root.CFrame = CFrame.lookAt(
+                                    destination,
+                                    targetPosition
+                                )
+                            end)
+                        end
+
+                        -- Single controlled combat loop; no stacked tasks.
+                        if os.clock() - lastAttackAt >= 0.15 then
+                            lastAttackAt = os.clock()
+                            attackOnce(currentTarget)
+                        end
+                    else
+                        currentTarget = nil
+                    end
+                else
+                    currentTarget = nil
+                end
+
+            else
+                --================================================
+                -- NO NPC MODE: PATROL THE CENTER OF EACH ZONE
+                --================================================
+
+                currentTarget = nil
+
+                if not currentZone then
+                    selectNextZone()
+                end
+
+                if currentZone then
+                    -- Re-fetch the center in case the Zone moved.
+                    local zonePosition = getZonePosition(
+                        currentZone.instance
+                    )
+
+                    if not zonePosition then
+                        currentZone = nil
+                    else
+                        currentZone.position = zonePosition
+
+                        local destination = zonePosition
+                            + Vector3.new(0, 3, 0)
+
+                        local difference = destination - root.Position
+                        local distance = difference.Magnitude
+
+                        if distance <= 4 then
+                            visitedZones[currentZone.instance] = true
+                            print("[" .. config.name
+                                .. "] Visited Zone: "
+                                .. currentZone.instance:GetFullName())
+
+                            currentZone = nil
+                        elseif distance > 0.05 then
+                            -- Move steadily toward the room's Zone center.
+                            -- Avoid Humanoid:MoveTo and avoid endless
+                            -- repeated teleports to the same room.
+                            local moveSpeed = 40
+                            local step = math.min(
+                                distance,
+                                moveSpeed * math.max(dt, 0)
+                            )
+
+                            local nextPosition = root.Position
+                                + difference.Unit * step
+
+                            pcall(function()
+                                root.CFrame = CFrame.lookAt(
+                                    nextPosition,
+                                    destination
+                                )
+                            end)
+                        end
+                    end
+                else
+                    -- No valid Zone found; rescan instead of getting stuck.
+                    if os.clock() - lastZoneScanAt >= 0.5 then
+                        lastZoneScanAt = os.clock()
+                        refreshZones()
+                    end
+                end
+            end
+        end
+
+        print("[" .. config.name .. "] Loop ended.")
+    end)
+end
+
+--========================================================
+-- REGISTER ALL TOGGLES
+-- Requires your existing addToggle(text, default, callback).
+--========================================================
+
+for _, config in ipairs(FarmConfigs) do
+    local cfg = config
+
+    _G[cfg.stateKey] = _G[cfg.stateKey] or false
+    _G[cfg.runKey] = _G[cfg.runKey] or 0
+
+    addToggle(cfg.toggle, false, function(state)
+        startFarm(cfg, state)
+    end)
+end
+
+print("[Auto Farm All] Loaded: NPC orbit + Zone room patrol.")
+
+-- 6. UNDERWORLD GATE
+--==================================================
+-- AUTO FARM DEMON - FULL SCRIPT
+-- Smooth Orbit + Auto Attack + Skill 1-4
+-- Visit ALL Zone in Generated_Demon map
+-- Skip Zone inside folders named Locked
+--==================================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+--==================================================
+-- SETTINGS
+--==================================================
+
+local ORBIT_RADIUS = 25
+local ORBIT_HEIGHT = 15
+local ORBIT_SPEED = 2
+
+local ZONE_WAIT = 4
+local ZONE_HEIGHT = 4
+local ATTACK_DELAY = 0.12
+local SKILL_DELAY = 0.25
+local RESCAN_DELAY = 0.5
+
+--==================================================
+-- GLOBAL STATE
+--==================================================
+
+_G.AutoFarmDemon = _G.AutoFarmDemon or false
+_G.AutoFarmDemonRunId = _G.AutoFarmDemonRunId or 0
+_G.AutoFarmDemonTarget = nil
+
+--==================================================
+-- REMOTES
+--==================================================
+
+local function getRemotes()
+    local playerFolder = ReplicatedStorage:FindFirstChild("Player")
+    if not playerFolder then
+        return nil, nil
+    end
+
+    local remotes = playerFolder:FindFirstChild("Remotes")
+    if not remotes then
+        return nil, nil
+    end
+
+    local inputs = remotes:FindFirstChild("Inputs")
+    if not inputs then
+        return nil, nil
+    end
+
+    local attack = inputs:FindFirstChild("Attack")
+    local skill = inputs:FindFirstChild("Skill")
+
+    return attack, skill
+end
+
+--==================================================
+-- CHARACTER HELPERS
+--==================================================
+
+local function getCharacter()
+    return LocalPlayer.Character
+end
+
+local function getRoot()
+    local character = getCharacter()
+    if not character then
+        return nil
+    end
+
+    return character:FindFirstChild("HumanoidRootPart")
+        or character:FindFirstChild("UpperTorso")
+        or character:FindFirstChild("Torso")
+end
+
+local function getHumanoid()
+    local character = getCharacter()
+    if not character then
+        return nil
+    end
+
+    return character:FindFirstChildOfClass("Humanoid")
+end
+
+local function getPart(obj)
+    if not obj then
+        return nil
+    end
+
+    if obj:IsA("BasePart") then
+        return obj
+    end
+
+    if obj:IsA("Model") then
+        if obj.PrimaryPart then
+            return obj.PrimaryPart
+        end
+
+        local root = obj:FindFirstChild("HumanoidRootPart")
+        if root and root:IsA("BasePart") then
+            return root
+        end
+
+        local head = obj:FindFirstChild("Head")
+        if head and head:IsA("BasePart") then
+            return head
+        end
+    end
+
+    return obj:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function isAlive(model)
+    if not model or not model.Parent then
+        return false
+    end
+
+    if not model:IsA("Model") then
+        return false
+    end
+
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+
+    if humanoid then
+        return humanoid.Health > 0
+    end
+
+    return true
+end
+
+--==================================================
+-- FIND ACTIVE DEMON MAP
+--==================================================
+
+local function getDemonMap()
+    for _, map in ipairs(Workspace:GetChildren()) do
+        if map.Name:match("^Generated_Demon_%x+$") then
+            local npcFolder = map:FindFirstChild("NPCs")
+
+            if npcFolder then
+                return map, npcFolder
+            end
+        end
+    end
+
+    return nil, nil
+end
+
+--==================================================
+-- FIND ALIVE NPC
+--==================================================
+
+local function getAliveTarget(folder)
+    if not folder or not folder.Parent then
+        return nil
+    end
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob:IsA("Model") and isAlive(mob) then
+            if getPart(mob) then
+                return mob
+            end
+        end
+    end
+
+    return nil
+end
+
+--==================================================
+-- CHECK RUN ID
+--==================================================
+
+local function running(runId)
+    return _G.AutoFarmDemon
+        and _G.AutoFarmDemonRunId == runId
+end
+
+--==================================================
+-- FIND ALL ZONES, EXCEPT LOCKED
+--==================================================
+
+local function getDemonZones(map)
+    local zones = {}
+    local seen = {}
+
+    if not map or not map.Parent then
+        return zones
+    end
+
+    for _, obj in ipairs(map:GetDescendants()) do
+        if obj.Name == "Zone" then
+            local current = obj.Parent
+            local isLocked = false
+
+            -- Skip jika ada ancestor bernama Locked,
+            -- Locked_01, Locked_02, dan sejenisnya.
+            while current and current ~= map do
+                if current.Name:match("^Locked") then
+                    isLocked = true
+                    break
+                end
+
+                current = current.Parent
+            end
+
+            if not isLocked then
+                local part = getPart(obj)
+
+                if part and not seen[part] then
+                    seen[part] = true
+
+                    table.insert(zones, {
+                        name = obj:GetFullName(),
+                        part = part
+                    })
+                end
+            end
+        end
+    end
+
+    table.sort(zones, function(a, b)
+        return a.name < b.name
+    end)
+
+    return zones
+end
+
+--==================================================
+-- VISIT ZONES WHEN NO ALIVE MOB
+--==================================================
+
+local function visitZones(map, folder, runId)
+    while running(runId) do
+        -- Update list agar Zone baru ikut terdeteksi.
+        local zones = getDemonZones(map)
+
+        if #zones == 0 then
+            warn("[Demon Farm] Tidak menemukan Zone yang bisa dikunjungi.")
+            task.wait(2)
+            return
+        end
+
+        print("[Demon Farm] Jumlah Zone:", #zones)
+
+        for _, zone in ipairs(zones) do
+            if not running(runId) then
+                return
+            end
+
+            -- Mob muncul? Hentikan patrol dan lanjut farming.
+            local mob = getAliveTarget(folder)
+
+            if mob then
+                _G.AutoFarmDemonTarget = mob
+                return
+            end
+
+            local root = getRoot()
+            local part = zone.part
+
+            if root
+                and part
+                and part.Parent
+                and part:IsDescendantOf(map) then
+
+                print("[Demon Farm] Visit:", zone.name)
+
+                root.CFrame = CFrame.new(
+                    part.Position + Vector3.new(0, ZONE_HEIGHT, 0)
+                )
+
+                local deadline = os.clock() + ZONE_WAIT
+
+                while running(runId) and os.clock() < deadline do
+                    -- Periksa NPC selama menunggu di Zone.
+                    mob = getAliveTarget(folder)
+
+                    if mob then
+                        _G.AutoFarmDemonTarget = mob
+                        return
+                    end
+
+                    task.wait(0.1)
+                end
+            end
+        end
+
+        -- Setelah semua Zone dilewati, scan ulang.
+        task.wait(RESCAN_DELAY)
+    end
+end
+
+--==================================================
+-- SMOOTH ORBIT TARGET
+--==================================================
+
+local function orbitTarget(mob, map, folder, runId)
+    local angle = 0
+    local lastTeleport = 0
+
+    while running(runId) do
+        if not mob or not mob.Parent or not mob:IsDescendantOf(folder) then
+            break
+        end
+
+        if not isAlive(mob) then
+            break
+        end
+
+        local root = getRoot()
+        local targetPart = getPart(mob)
+
+        if not root or not targetPart or not targetPart.Parent then
+            break
+        end
+
+        local dt = RunService.Heartbeat:Wait()
+        dt = math.clamp(dt, 0, 0.05)
+
+        angle += ORBIT_SPEED * dt
+
+        local center = targetPart.Position
+
+        local offset = Vector3.new(
+            math.cos(angle) * ORBIT_RADIUS,
+            ORBIT_HEIGHT,
+            math.sin(angle) * ORBIT_RADIUS
+        )
+
+        local destination = center + offset
+
+        -- Jika terlalu jauh, teleport kembali ke posisi orbit.
+        if (root.Position - destination).Magnitude > 60
+            and os.clock() - lastTeleport >= 2 then
+
+            root.CFrame = CFrame.lookAt(destination, center)
+            lastTeleport = os.clock()
+        else
+            root.CFrame = CFrame.lookAt(destination, center)
+        end
+    end
+
+    if _G.AutoFarmDemonTarget == mob then
+        _G.AutoFarmDemonTarget = nil
+    end
+end
+
+--==================================================
+-- AUTO ATTACK + SKILLS 1-4
+--==================================================
+
+local function attackLoop(runId)
+    while running(runId) do
+        local attackRemote, skillRemote = getRemotes()
+        local mob = _G.AutoFarmDemonTarget
+
+        if mob and mob.Parent and isAlive(mob) then
+            local root = getRoot()
+            local targetPart = getPart(mob)
+
+            if root and targetPart then
+                local direction = targetPart.Position - root.Position
+
+                if attackRemote and attackRemote:IsA("RemoteEvent") then
+                    pcall(function()
+                        attackRemote:FireServer(direction)
+                    end)
+                end
+
+                if skillRemote and skillRemote:IsA("RemoteEvent") then
+                    for i = 1, 4 do
+                        if not running(runId) then
+                            return
+                        end
+
+                        mob = _G.AutoFarmDemonTarget
+
+                        if not mob or not isAlive(mob) then
+                            break
+                        end
+
+                        pcall(function()
+                            skillRemote:FireServer(i, "tap")
+                        end)
+
+                        task.wait(SKILL_DELAY)
+                    end
+                end
+            end
+        end
+
+        task.wait(ATTACK_DELAY)
+    end
+end
+
+--==================================================
+-- MAIN FARM LOOP
+--==================================================
+
+local function farmLoop(runId)
+    while running(runId) do
+        local map, folder = getDemonMap()
+
+        if not map or not folder then
+            warn("[Demon Farm] Generated_Demon map / NPCs belum ditemukan.")
+            task.wait(2)
+            continue
+        end
+
+        local mob = getAliveTarget(folder)
+
+        if mob then
+            _G.AutoFarmDemonTarget = mob
+
+            print("[Demon Farm] Target:", mob.Name)
+
+            orbitTarget(mob, map, folder, runId)
+
+            task.wait(0.1)
+        else
+            _G.AutoFarmDemonTarget = nil
+
+            -- Tidak ada mob hidup: kunjungi semua Zone
+            -- selain Zone yang berada di dalam Locked.
+            visitZones(map, folder, runId)
+        end
+
+        task.wait(0.1)
+    end
+
+    _G.AutoFarmDemonTarget = nil
+end
+
+--==================================================
+-- TOGGLE
+-- Panggil di bagian GUI Ash-Libs kamu.
+--==================================================
+
+addToggle("Auto Farm Demon", false, function(state)
+    _G.AutoFarmDemon = state
+    _G.AutoFarmDemonRunId += 1
+
+    local runId = _G.AutoFarmDemonRunId
+
+    _G.AutoFarmDemonTarget = nil
+
+    if not state then
+        print("[Demon Farm] OFF")
+        return
+    end
+
+    print("[Demon Farm] ON")
+
+    task.spawn(function()
+        attackLoop(runId)
+    end)
+
+    task.spawn(function()
+        farmLoop(runId)
+    end)
+end)
+-- 7. CITY OF MAGE
+
+--==================================================
+-- AUTO FARM MAGE - ANTI STUCK
+-- Smooth Orbit + Attack + Skills 1-4
+-- Scan all Zone, skip Locked
+--==================================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- SETTINGS
+local ORBIT_RADIUS = 15
+local ORBIT_HEIGHT = 7
+local ORBIT_SPEED = 2
+
+local ZONE_WAIT = 4
+local ZONE_HEIGHT = 4
+local ATTACK_DELAY = 0.15
+local SKILL_DELAY = 0.25
+local RESCAN_DELAY = 0.5
+local TARGET_TIMEOUT = 20
+
+-- GLOBAL STATE
+_G.AutoFarmMage = _G.AutoFarmMage or false
+_G.AutoFarmMageRunId = _G.AutoFarmMageRunId or 0
+_G.AutoFarmMageTarget = nil
+
+-- REMOTES
+local function getRemotes()
+    local playerFolder = ReplicatedStorage:FindFirstChild("Player")
+    local remotes = playerFolder and playerFolder:FindFirstChild("Remotes")
+    local inputs = remotes and remotes:FindFirstChild("Inputs")
+
+    return inputs and inputs:FindFirstChild("Attack"),
+           inputs and inputs:FindFirstChild("Skill")
+end
+
+-- CHARACTER
+local function getRoot()
+    local character = LocalPlayer.Character
+    if not character then return nil end
+
+    return character:FindFirstChild("HumanoidRootPart")
+        or character:FindFirstChild("UpperTorso")
+        or character:FindFirstChild("Torso")
+end
+
+local function getPart(obj)
+    if not obj then return nil end
+
+    if obj:IsA("BasePart") then
+        return obj
+    end
+
+    if obj:IsA("Model") and obj.PrimaryPart then
+        return obj.PrimaryPart
+    end
+
+    local root = obj:FindFirstChild("HumanoidRootPart", true)
+    if root and root:IsA("BasePart") then
+        return root
+    end
+
+    local head = obj:FindFirstChild("Head", true)
+    if head and head:IsA("BasePart") then
+        return head
+    end
+
+    return obj:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function isAlive(mob)
+    if not mob or not mob.Parent or not mob:IsA("Model") then
+        return false
+    end
+
+    local humanoid = mob:FindFirstChildOfClass("Humanoid")
+    return humanoid == nil or humanoid.Health > 0
+end
+
+local function running(id)
+    return _G.AutoFarmMage
+        and _G.AutoFarmMageRunId == id
+end
+
+-- FIND CURRENT GENERATED MAGE MAP
+local function getMageMap()
+    for _, map in ipairs(Workspace:GetChildren()) do
+        if map.Name:match("^Generated_Mage_%x+$") then
+            local npcs = map:FindFirstChild("NPCs")
+            if npcs then
+                return map, npcs
+            end
+        end
+    end
+
+    return nil, nil
+end
+
+-- FIND ALIVE NPC
+local function getAliveTarget(folder)
+    if not folder or not folder.Parent then
+        return nil
+    end
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob:IsA("Model")
+            and isAlive(mob)
+            and getPart(mob) then
+            return mob
+        end
+    end
+
+    return nil
+end
+
+-- FIND ALL ZONE OBJECTS, SKIP LOCKED ANCESTORS
+local function getMageZones(map)
+    local zones = {}
+    local seen = {}
+
+    if not map or not map.Parent then
+        return zones
+    end
+
+    for _, obj in ipairs(map:GetDescendants()) do
+        if obj.Name == "Zone" then
+            local ancestor = obj.Parent
+            local locked = false
+
+            while ancestor and ancestor ~= map do
+                if ancestor.Name:match("^Locked") then
+                    locked = true
+                    break
+                end
+                ancestor = ancestor.Parent
+            end
+
+            if not locked then
+                local part = getPart(obj)
+
+                if part and not seen[part] then
+                    seen[part] = true
+
+                    table.insert(zones, {
+                        name = obj:GetFullName(),
+                        part = part
+                    })
+                end
+            end
+        end
+    end
+
+    table.sort(zones, function(a, b)
+        return a.name < b.name
+    end)
+
+    return zones
+end
+
+-- PATROL ZONES WHEN NPC FOLDER IS EMPTY
+local function visitZones(map, folder, id)
+    local zones = getMageZones(map)
+
+    if #zones == 0 then
+        warn("[Mage Farm] Tidak menemukan Zone yang bisa dikunjungi.")
+        task.wait(2)
+        return
+    end
+
+    print("[Mage Farm] Total Zone:", #zones)
+
+    for _, zone in ipairs(zones) do
+        if not running(id) then return end
+
+        -- NPC muncul ketika patrol? Kembali farming.
+        local mob = getAliveTarget(folder)
+        if mob then
+            _G.AutoFarmMageTarget = mob
+            return
+        end
+
+        local root = getRoot()
+        local part = zone.part
+
+        if root and part
+            and part.Parent
+            and part:IsDescendantOf(map) then
+
+            print("[Mage Farm] Visit:", zone.name)
+
+            root.CFrame = CFrame.new(
+                part.Position + Vector3.new(0, ZONE_HEIGHT, 0)
+            )
+
+            local deadline = os.clock() + ZONE_WAIT
+
+            while running(id) and os.clock() < deadline do
+                mob = getAliveTarget(folder)
+
+                if mob then
+                    _G.AutoFarmMageTarget = mob
+                    return
+                end
+
+                task.wait(0.1)
+            end
+        end
+    end
+
+    task.wait(RESCAN_DELAY)
+end
+
+-- ORBIT TARGET; FORCE RECHECK AFTER TIMEOUT
+local function orbitTarget(mob, map, folder, id)
+    local angle = 0
+    local started = os.clock()
+
+    while running(id) do
+        if not mob or not mob.Parent
+            or not mob:IsDescendantOf(folder)
+            or not isAlive(mob) then
+            break
+        end
+
+        if os.clock() - started >= TARGET_TIMEOUT then
+            break
+        end
+
+        local root = getRoot()
+        local targetPart = getPart(mob)
+
+        if not root or not targetPart or not targetPart.Parent then
+            break
+        end
+
+        local dt = RunService.Heartbeat:Wait()
+        dt = math.clamp(dt, 0, 0.05)
+        angle += ORBIT_SPEED * dt
+
+        local center = targetPart.Position
+        local destination = center + Vector3.new(
+            math.cos(angle) * ORBIT_RADIUS,
+            ORBIT_HEIGHT,
+            math.sin(angle) * ORBIT_RADIUS
+        )
+
+        root.CFrame = CFrame.lookAt(destination, center)
+    end
+
+    if _G.AutoFarmMageTarget == mob then
+        _G.AutoFarmMageTarget = nil
+    end
+end
+
+-- ATTACK + SKILLS
+local function attackLoop(id)
+    while running(id) do
+        local attackRemote, skillRemote = getRemotes()
+        local mob = _G.AutoFarmMageTarget
+
+        if mob and mob.Parent and isAlive(mob) then
+            local root = getRoot()
+            local targetPart = getPart(mob)
+
+            if root and targetPart then
+                if attackRemote and attackRemote:IsA("RemoteEvent") then
+                    pcall(function()
+                        attackRemote:FireServer(
+                            targetPart.Position - root.Position
+                        )
+                    end)
+                end
+
+                if skillRemote and skillRemote:IsA("RemoteEvent") then
+                    for skill = 1, 4 do
+                        if not running(id) then return end
+
+                        mob = _G.AutoFarmMageTarget
+                        if not mob or not isAlive(mob) then
+                            break
+                        end
+
+                        pcall(function()
+                            skillRemote:FireServer(skill, "tap")
+                        end)
+
+                        task.wait(SKILL_DELAY)
+                    end
+                end
+            end
+        end
+
+        task.wait(ATTACK_DELAY)
+    end
+end
+
+-- MAIN FARM LOOP
+local function farmLoop(id)
+    while running(id) do
+        local map, folder = getMageMap()
+
+        if not map or not folder then
+            warn("[Mage Farm] Generated_Mage / NPCs belum ditemukan.")
+            task.wait(2)
+            continue
+        end
+
+        local mob = getAliveTarget(folder)
+
+        if mob then
+            _G.AutoFarmMageTarget = mob
+            print("[Mage Farm] Target:", mob.Name)
+
+            orbitTarget(mob, map, folder, id)
+        else
+            _G.AutoFarmMageTarget = nil
+            visitZones(map, folder, id)
+        end
+
+        task.wait(0.1)
+    end
+
+    _G.AutoFarmMageTarget = nil
+end
+
+-- GUI TOGGLE
+addToggle("Auto Farm Mage", false, function(state)
+    _G.AutoFarmMage = state
+    _G.AutoFarmMageRunId += 1
+
+    local id = _G.AutoFarmMageRunId
+    _G.AutoFarmMageTarget = nil
+
+    if not state then
+        print("[Mage Farm] OFF")
+        return
+    end
+
+    print("[Mage Farm] ON")
+
+    task.spawn(function()
+        attackLoop(id)
+    end)
+
+    task.spawn(function()
+        farmLoop(id)
+    end)
+end)
+
+-- 8. HOLLOW REALM.
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+_G.AutoHollowOrbit = _G.AutoHollowOrbit or false
+_G.AutoHollowOrbitRunId = _G.AutoHollowOrbitRunId or 0
+_G.AutoHollowOrbitTarget = nil
+
+local ORBIT_RADIUS = 37
+local ORBIT_HEIGHT = 12
+local ORBIT_SPEED = 2
+local ATTACK_INTERVAL = 0.1
+local SKILL_INTERVAL = 0.05
+local TARGET_REFRESH = 0.8
+
+local function running(id)
+    return _G.AutoHollowOrbit
+        and _G.AutoHollowOrbitRunId == id
+        and player.Parent ~= nil
+end
+
+local function isTyping()
+    return UserInputService:GetFocusedTextBox() ~= nil
+end
+
+local function getNPCFolder()
+    local run = workspace:FindFirstChild("HollowRealmRun")
+    return run and run:FindFirstChild("NPCs")
+end
+
+local function getRoot()
+    local char = player.Character
+    local hum = char and char:FindFirstChildWhichIsA("Humanoid")
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+
+    if root and hum and hum.Health > 0 then
+        return root, hum
+    end
+
+    return nil, nil
+end
+
+local function getPart(mob)
+    if not mob or not mob:IsA("Model") then
+        return nil
+    end
+
+    local part = mob.PrimaryPart
+        or mob:FindFirstChild("HumanoidRootPart")
+        or mob:FindFirstChildWhichIsA("BasePart", true)
+
+    if part and part:IsA("BasePart") then
+        return part
+    end
+
+    return nil
+end
+
+local function isCoyote(mob)
+    return mob ~= nil and mob.Name == "Coyote"
+end
+
+local function isIgnored(mob)
+    if not mob or not mob:IsA("Model") then
+        return true
+    end
+
+    if isCoyote(mob) then
+        return false
+    end
+
+    if mob:GetAttribute("IsSpecialBoss")
+        or mob:GetAttribute("IsLootRoomGuard")
+        or mob:GetAttribute("MimicMob") then
+        return true
+    end
+
+    local summons = workspace:FindFirstChild("Summons")
+    if summons and mob:IsDescendantOf(summons) then
+        return true
+    end
+
+    if mob.Name:find("_Summon_", 1, true) then
+        return true
+    end
+
+    return false
+end
+
+local function getPosition(mob)
+    if not mob or not mob.Parent then
+        return nil
+    end
+
+    if isCoyote(mob) then
+        local ok, pivot = pcall(function()
+            return mob:GetPivot()
+        end)
+
+        if ok then
+            return pivot.Position
+        end
+
+        return nil
+    end
+
+    local part = getPart(mob)
+    return part and part.Position
+end
+
+local function isAlive(mob)
+    if not mob or not mob.Parent or isIgnored(mob) then
+        return false
+    end
+
+    if isCoyote(mob) then
+        return getPosition(mob) ~= nil
+    end
+
+    if not getPart(mob) then
+        return false
+    end
+
+    local hum = mob:FindFirstChildWhichIsA("Humanoid", true)
+    return not hum or hum.Health > 0
+end
+
+local function getTarget()
+    local folder = getNPCFolder()
+    if not folder then
+        return nil
+    end
+
+    local root = getRoot()
+    local playerPos = root and root.Position
+
+    local best
+    local bestRoom = math.huge
+    local bestDist = math.huge
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob.Name ~= "Coyote" and isAlive(mob) then
+            local pos = getPosition(mob)
+
+            if pos then
+                local room =
+                    tonumber(mob:GetAttribute("RoomIndex"))
+                    or math.huge
+
+                local dist = playerPos
+                    and (pos - playerPos).Magnitude
+                    or math.huge
+
+                if room < bestRoom
+                    or (room == bestRoom and dist < bestDist) then
+                    best = mob
+                    bestRoom = room
+                    bestDist = dist
+                end
+            end
+        end
+    end
+
+    if best then
+        return best
+    end
+
+    local coyote = folder:FindFirstChild("Coyote")
+    if coyote and isAlive(coyote) then
+        return coyote
+    end
+
+    return nil
+end
+
+local function getAttackDirection(mob)
+    local root = getRoot()
+    local pos = getPosition(mob)
+
+    if not root or not pos then
+        return Vector3.zero
+    end
+
+    local offset = Vector3.new(
+        pos.X - root.Position.X,
+        0,
+        pos.Z - root.Position.Z
+    )
+
+    if offset.Magnitude > 0.001 then
+        return offset.Unit
+    end
+
+    return Vector3.zero
+end
+
+local function getRemotes()
+    local inputs = ReplicatedStorage:FindFirstChild("Player")
+    inputs = inputs and inputs:FindFirstChild("Remotes")
+    inputs = inputs and inputs:FindFirstChild("Inputs")
+
+    return inputs and inputs:FindFirstChild("Attack"),
+        inputs and inputs:FindFirstChild("Skill")
+end
+
+local function attackLoop(id)
+    local attackRemote, skillRemote = getRemotes()
+    local lastSkill = 0
+
+    while running(id) do
+        if isTyping() then
+            task.wait(0.1)
+            continue
+        end
+
+        local mob = _G.AutoHollowOrbitTarget
+
+        if mob and isAlive(mob) then
+            -- Basic attack: hadapkan karakter ke mob.
+            if attackRemote then
+                local root = getRoot()
+                local direction = getAttackDirection(mob)
+
+                if root and direction.Magnitude > 0.001 then
+                    root.CFrame = CFrame.lookAt(
+                        root.Position,
+                        root.Position + direction
+                    )
+
+                    pcall(function()
+                        attackRemote:FireServer(direction)
+                    end)
+                end
+            end
+
+            -- Skill: tidak diberi rotasi tambahan di sini.
+            if skillRemote
+                and os.clock() - lastSkill >= SKILL_INTERVAL then
+
+                for i = 1, 4 do
+                    if not running(id) then
+                        break
+                    end
+
+                    if isTyping() or not isAlive(mob) then
+                        break
+                    end
+
+                    pcall(function()
+                        skillRemote:FireServer(i, "tap")
+                    end)
+
+                    task.wait(0.05)
+                end
+
+                lastSkill = os.clock()
+            end
+        end
+
+        task.wait(ATTACK_INTERVAL)
+    end
+end
+
+local function orbitTarget(mob, id)
+    if isCoyote(mob) then
+        while running(id)
+            and _G.AutoHollowOrbitTarget == mob
+            and isAlive(mob) do
+
+            if isTyping() then
+                task.wait(0.1)
+                continue
+            end
+
+            local root = getRoot()
+            local pos = getPosition(mob)
+
+            if not root or not pos then
+                break
+            end
+
+            root.CFrame = CFrame.lookAt(
+                pos + Vector3.new(0, 4, 0),
+                pos
+            )
+
+            task.wait(0.2)
+        end
+
+        return
+    end
+
+    local root = getRoot()
+    local pos = getPosition(mob)
+
+    if not root or not pos then
+        return
+    end
+
+    local angle = math.atan2(
+        root.Position.Z - pos.Z,
+        root.Position.X - pos.X
+    )
+
+    while running(id)
+        and _G.AutoHollowOrbitTarget == mob
+        and isAlive(mob) do
+
+        if isTyping() then
+            task.wait(0.1)
+            continue
+        end
+
+        root = getRoot()
+        pos = getPosition(mob)
+
+        if not root or not pos then
+            break
+        end
+
+        angle += ORBIT_SPEED * 0.05
+
+        local destination = Vector3.new(
+            pos.X + math.cos(angle) * ORBIT_RADIUS,
+            pos.Y + ORBIT_HEIGHT,
+            pos.Z + math.sin(angle) * ORBIT_RADIUS
+        )
+
+        root.CFrame = CFrame.lookAt(destination, pos)
+
+        task.wait(0.05)
+    end
+end
+
+local function farmLoop(id)
+    local lastRefresh = 0
+    local target = nil
+
+    while running(id) do
+        if os.clock() - lastRefresh >= TARGET_REFRESH
+            or not target
+            or not isAlive(target) then
+
+            target = getTarget()
+            _G.AutoHollowOrbitTarget = target
+            lastRefresh = os.clock()
+
+            if target then
+                print("[Hollow Orbit] Target:", target.Name)
+            end
+        end
+
+        if target and isAlive(target) then
+            orbitTarget(target, id)
+
+            if not running(id) then
+                break
+            end
+
+            _G.AutoHollowOrbitTarget = nil
+            target = nil
+        else
+            task.wait(0.3)
+        end
+    end
+
+    _G.AutoHollowOrbitTarget = nil
+end
+
+addToggle(
+    "Auto Hollow Realm Orbit + Attack + Skills", false,
+    function(state)
+        _G.AutoHollowOrbit = state
+        _G.AutoHollowOrbitRunId += 1
+
+        local id = _G.AutoHollowOrbitRunId
+        _G.AutoHollowOrbitTarget = nil
+
+        if not state then
+            print("[Hollow Orbit] Stopped")
+            return
+        end
+
+        print("[Hollow Orbit] Started")
+
+        task.spawn(function()
+            local ok, err = pcall(farmLoop, id)
+            if not ok then
+                warn("[Hollow Orbit Error]", err)
+            end
+        end)
+
+        task.spawn(function()
+            local ok, err = pcall(attackLoop, id)
+            if not ok then
+                warn("[Hollow Attack Error]", err)
+            end
+        end)
+    end
+)
+
+-- B. EVENT and Party Game
+setActiveCategory("B")
+
+-- 1. PAYLOAD STAGE
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+_G.AutoPayloadFarm = _G.AutoPayloadFarm or false
+_G.AutoPayloadFarmRunId = _G.AutoPayloadFarmRunId or 0
+_G.AutoPayloadTarget = nil
+
+local ORBIT_RADIUS = 12
+local ORBIT_HEIGHT = 9
+local ORBIT_SPEED = 0.8
+local ORBIT_TIME = 8
+
+local ATTACK_INTERVAL = 0.15
+local SKILL_INTERVAL = 1
+
+-- REMOTES
+local function getPayloadRemotes()
+    local ok, inputs = pcall(function()
+        return ReplicatedStorage
+            :WaitForChild("Player")
+            :WaitForChild("Remotes")
+            :WaitForChild("Inputs")
+    end)
+
+    if not ok or not inputs then
+        warn("[Payload] Inputs remote folder tidak ditemukan")
+        return nil, nil
+    end
+
+    return inputs:FindFirstChild("Attack"),
+        inputs:FindFirstChild("Skill")
+end
+
+local function running(id)
+    return _G.AutoPayloadFarm
+        and _G.AutoPayloadFarmRunId == id
+end
+
+local function getEnemyFolder()
+    for _, folder in ipairs(workspace:GetChildren()) do
+        if folder.Name:match("^PayloadCombat_") then
+            local suffix = folder.Name:gsub("^PayloadCombat_", "")
+
+            local enemies = folder:FindFirstChild(
+                "PayloadEnemies_" .. suffix
+            )
+
+            if enemies then
+                return enemies
+            end
+        end
+    end
+
+    return nil
+end
+
+local function getRoot()
+    local character = player.Character
+    return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function getPart(mob)
+    if not mob then return nil end
+
+    if mob:IsA("BasePart") then
+        return mob
+    end
+
+    if not mob:IsA("Model") then
+        return nil
+    end
+
+    local part = mob:FindFirstChild("HumanoidRootPart", true)
+        or mob.PrimaryPart
+        or mob:FindFirstChild("Head", true)
+
+    if part and part:IsA("BasePart") then
+        return part
+    end
+
+    return mob:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function getPosition(mob)
+    if not mob or not mob.Parent then
+        return nil
+    end
+
+    if mob:IsA("Model") then
+        local ok, pivot = pcall(function()
+            return mob:GetPivot()
+        end)
+
+        if ok then
+            return pivot.Position
+        end
+    end
+
+    local part = getPart(mob)
+    return part and part.Position
+end
+
+local function isAlive(mob)
+    if not mob or not mob.Parent then
+        return false
+    end
+
+    local hum = mob:FindFirstChildWhichIsA("Humanoid", true)
+
+    if hum then
+        return hum.Health > 0
+    end
+
+    return getPart(mob) ~= nil
+end
+
+local function getMobs()
+    local result = {}
+    local folder = getEnemyFolder()
+
+    if not folder then
+        return result
+    end
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob:IsA("Model") and isAlive(mob) then
+            table.insert(result, mob)
+        end
+    end
+
+    table.sort(result, function(a, b)
+        return a.Name < b.Name
+    end)
+
+    return result
+end
+
+-- REMOTE ATTACK
+local function sendPayloadAttack(attackRemote, mob)
+    if not attackRemote or not mob or not isAlive(mob) then
+        return
+    end
+
+    local root = getRoot()
+    local targetPart = getPart(mob)
+
+    if not root or not targetPart then
+        return
+    end
+
+    local offset = targetPart.Position - root.Position
+    local direction = Vector3.new(offset.X, 0, offset.Z)
+
+    if direction.Magnitude > 0.001 then
+        direction = direction.Unit
+    else
+        direction = Vector3.zero
+    end
+
+    pcall(function()
+        attackRemote:FireServer(direction)
+    end)
+end
+
+-- REMOTE SKILLS 1-4
+local function sendPayloadSkills(skillRemote, mob, id)
+    if not skillRemote then
+        return
+    end
+
+    for i = 1, 4 do
+        if not running(id) or not isAlive(mob) then
+            break
+        end
+
+        pcall(function()
+            skillRemote:FireServer(i, "tap")
+        end)
+
+        task.wait(0.1)
+    end
+end
+
+-- AUTO ATTACK + SKILL
+local function attackLoop(id, attackRemote, skillRemote)
+    local lastAttack = 0
+    local lastSkill = 0
+
+    while running(id) do
+        local mob = _G.AutoPayloadTarget
+
+        if not mob or not mob.Parent or not isAlive(mob) then
+            task.wait(0.1)
+            continue
+        end
+
+        if os.clock() - lastAttack >= ATTACK_INTERVAL then
+            lastAttack = os.clock()
+            sendPayloadAttack(attackRemote, mob)
+        end
+
+        if os.clock() - lastSkill >= SKILL_INTERVAL then
+            lastSkill = os.clock()
+            sendPayloadSkills(skillRemote, mob, id)
+        end
+
+        task.wait(0.03)
+    end
+
+    if _G.AutoPayloadFarmRunId == id then
+        _G.AutoPayloadTarget = nil
+    end
+end
+
+-- ORBIT TARGET
+local function orbitMob(mob, id)
+    local startTime = os.clock()
+
+    while running(id)
+        and mob.Parent
+        and isAlive(mob)
+        and os.clock() - startTime < ORBIT_TIME do
+
+        local root = getRoot()
+        local pos = getPosition(mob)
+
+        if not root or not pos then
+            task.wait(0.1)
+            continue
+        end
+
+        local angle = os.clock() * ORBIT_SPEED
+
+        local offset = Vector3.new(
+            math.cos(angle) * ORBIT_RADIUS,
+            ORBIT_HEIGHT,
+            math.sin(angle) * ORBIT_RADIUS
+        )
+
+        root.CFrame = CFrame.lookAt(pos + offset, pos)
+
+        task.wait(0.05)
+    end
+end
+
+-- FARM ALL PAYLOAD ENEMIES
+local function farmLoop(id)
+    while running(id) do
+        local folder = getEnemyFolder()
+        local mobs = getMobs()
+
+        if not folder then
+            warn("[Payload] Folder PayloadEnemies belum ditemukan")
+            task.wait(1)
+            continue
+        end
+
+        if #mobs == 0 then
+            _G.AutoPayloadTarget = nil
+            task.wait(0.5)
+            continue
+        end
+
+        for _, mob in ipairs(mobs) do
+            if not running(id) then
+                break
+            end
+
+            if mob.Parent and isAlive(mob) then
+                print("[Payload] Target:", mob.Name)
+                _G.AutoPayloadTarget = mob
+
+                local root = getRoot()
+                local pos = getPosition(mob)
+
+                if root and pos then
+                    root.CFrame = CFrame.lookAt(
+                        pos + Vector3.new(
+                            ORBIT_RADIUS,
+                            ORBIT_HEIGHT,
+                            0
+                        ),
+                        pos
+                    )
+
+                    task.wait(0.2)
+                end
+
+                if running(id) and isAlive(mob) then
+                    orbitMob(mob, id)
+                end
+
+                if _G.AutoPayloadTarget == mob then
+                    _G.AutoPayloadTarget = nil
+                end
+            end
+        end
+
+        task.wait(0.2)
+    end
+
+    if _G.AutoPayloadFarmRunId == id then
+        _G.AutoPayloadTarget = nil
+    end
+end
+
+-- TOGGLE
+addToggle("Auto Payload Orbit + Attack", false, function(state)
+    _G.AutoPayloadFarm = state
+    _G.AutoPayloadFarmRunId =
+        (_G.AutoPayloadFarmRunId or 0) + 1
+
+    local id = _G.AutoPayloadFarmRunId
+    _G.AutoPayloadTarget = nil
+
+    if not state then
+        print("[Payload] Farm stopped")
+        return
+    end
+
+    print("[Payload] Orbit + Remote Attack started")
+
+    task.spawn(function()
+        local ok, err = pcall(function()
+            local attackRemote, skillRemote = getPayloadRemotes()
+
+            if not running(id) then
+                return
+            end
+
+            if not attackRemote and not skillRemote then
+                warn("[Payload] Remote Attack dan Skill tidak ditemukan")
+                return
+            end
+
+            task.spawn(function()
+                local success, attackErr = pcall(
+                    attackLoop,
+                    id,
+                    attackRemote,
+                    skillRemote
+                )
+
+                if not success then
+                    warn("[Payload Attack Error]", attackErr)
+                end
+            end)
+
+            farmLoop(id)
+        end)
+
+        if not ok then
+            warn("[Payload Farm Error]", err)
+        end
+    end)
+end)
+
+-- 2. BOSS RUSH STAGE
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+_G.AutoBossRushAll = _G.AutoBossRushAll or false
+_G.AutoBossRushRunId = _G.AutoBossRushRunId or 0
+_G.BossRushCombatTarget = nil
+
+local ORBIT_RADIUS = 29
+local ORBIT_HEIGHT = 29
+local ORBIT_SPEED = 3
+local ORBIT_TIME = 10
+
+local ATTACK_INTERVAL = 0.15
+local SKILL_INTERVAL = 1
+
+-- Remote Attack dan Skill
+local function getBossRushRemotes()
+    local ok, inputs = pcall(function()
+        return ReplicatedStorage
+            :WaitForChild("Player")
+            :WaitForChild("Remotes")
+            :WaitForChild("Inputs")
+    end)
+
+    if not ok or not inputs then
+        warn("[BossRush] Inputs tidak ditemukan")
+        return nil, nil
+    end
+
+    return inputs:FindFirstChild("Attack"),
+        inputs:FindFirstChild("Skill")
+end
+
+local function isRunning(id)
+    return _G.AutoBossRushAll
+        and _G.AutoBossRushRunId == id
+end
+
+local function getRoot()
+    local character = player.Character
+    if not character then return nil end
+
+    return character:FindFirstChild("HumanoidRootPart")
+end
+
+local function getPart(mob)
+    if not mob then return nil end
+
+    if mob:IsA("BasePart") then
+        return mob
+    end
+
+    if mob:IsA("Model") then
+        local part = mob:FindFirstChild("HumanoidRootPart", true)
+            or mob.PrimaryPart
+            or mob:FindFirstChild("Head", true)
+
+        if part and part:IsA("BasePart") then
+            return part
+        end
+
+        return mob:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    return nil
+end
+
+local function getPosition(mob)
+    if not mob or not mob.Parent then return nil end
+
+    if mob:IsA("Model") then
+        local ok, pivot = pcall(function()
+            return mob:GetPivot()
+        end)
+
+        if ok then
+            return pivot.Position
+        end
+    end
+
+    local part = getPart(mob)
+    return part and part.Position
+end
+
+local function isAlive(mob)
+    if not mob or not mob.Parent then
+        return false
+    end
+
+    local hum = mob:FindFirstChildWhichIsA("Humanoid", true)
+
+    if hum then
+        return hum.Health > 0
+    end
+
+    return getPart(mob) ~= nil
+end
+
+local function getMobs()
+    local result = {}
+    local folder = workspace:FindFirstChild("BossRush_NPCs")
+
+    if not folder then
+        return result
+    end
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob:IsA("Model") and isAlive(mob) then
+            table.insert(result, mob)
+        end
+    end
+
+    table.sort(result, function(a, b)
+        return a.Name < b.Name
+    end)
+
+    return result
+end
+
+local function setTarget(mob)
+    _G.BossRushCombatTarget = mob
+end
+
+-- REMOTE ATTACK + SKILLS
+local function sendBossRushCombat(attackRemote, skillRemote, mob)
+    if not mob or not isAlive(mob) then
+        return
+    end
+
+    local root = getRoot()
+    local targetPart = getPart(mob)
+
+    if not root or not targetPart then
+        return
+    end
+
+    local offset = targetPart.Position - root.Position
+    local direction = Vector3.new(offset.X, 0, offset.Z)
+
+    if direction.Magnitude > 0.001 then
+        direction = direction.Unit
+    else
+        direction = Vector3.zero
+    end
+
+    if attackRemote then
+        pcall(function()
+            attackRemote:FireServer(direction)
+        end)
+    end
+
+    if skillRemote then
+        for i = 1, 4 do
+            if not isRunning(_G.AutoBossRushRunId)
+                or not isAlive(mob) then
+                break
+            end
+
+            pcall(function()
+                skillRemote:FireServer(i, "tap")
+            end)
+
+            task.wait(0.05)
+        end
+    end
+end
+
+-- ATTACK LOOP
+local function attackLoop(id, attackRemote, skillRemote)
+    local lastAttack = 0
+    local lastSkill = 0
+
+    while isRunning(id) do
+        local mob = _G.BossRushCombatTarget
+
+        if not mob or not mob.Parent or not isAlive(mob) then
+            task.wait(0.1)
+            continue
+        end
+
+        local now = os.clock()
+
+        -- Attack terus sesuai interval
+        if attackRemote and now - lastAttack >= ATTACK_INTERVAL then
+            lastAttack = now
+
+            local root = getRoot()
+            local targetPart = getPart(mob)
+
+            if root and targetPart then
+                local offset = targetPart.Position - root.Position
+                local direction = Vector3.new(offset.X, 0, offset.Z)
+
+                if direction.Magnitude > 0.001 then
+                    direction = direction.Unit
+                else
+                    direction = Vector3.zero
+                end
+
+                pcall(function()
+                    attackRemote:FireServer(direction)
+                end)
+            end
+        end
+
+        -- Skills 1-4 mengikuti interval awal
+        if skillRemote and os.clock() - lastSkill >= SKILL_INTERVAL then
+            lastSkill = os.clock()
+
+            for i = 1, 4 do
+                if not isRunning(id) or not isAlive(mob) then
+                    break
+                end
+
+                pcall(function()
+                    skillRemote:FireServer(i, "tap")
+                end)
+
+                task.wait(0.1)
+            end
+        end
+
+        task.wait(0.03)
+    end
+
+    if _G.AutoBossRushRunId == id then
+        setTarget(nil)
+    end
+end
+
+-- ORBIT SATU MOB
+local function orbitMob(mob, id)
+    local startTime = os.clock()
+
+    while isRunning(id)
+        and mob.Parent
+        and isAlive(mob)
+        and os.clock() - startTime < ORBIT_TIME do
+
+        local root = getRoot()
+        local pos = getPosition(mob)
+
+        if not root or not pos then
+            task.wait(0.1)
+            continue
+        end
+
+        local angle = os.clock() * ORBIT_SPEED
+
+        local offset = Vector3.new(
+            math.cos(angle) * ORBIT_RADIUS,
+            ORBIT_HEIGHT,
+            math.sin(angle) * ORBIT_RADIUS
+        )
+
+        root.CFrame = CFrame.lookAt(pos + offset, pos)
+
+        task.wait(0.05)
+    end
+end
+
+-- FARM SEMUA MOB
+local function farmLoop(id)
+    while isRunning(id) do
+        local mobs = getMobs()
+
+        if #mobs == 0 then
+            setTarget(nil)
+            task.wait(0.5)
+            continue
+        end
+
+        for _, mob in ipairs(mobs) do
+            if not isRunning(id) then
+                break
+            end
+
+            if not mob.Parent or not isAlive(mob) then
+                continue
+            end
+
+            print("[BossRush Orbit] Target:", mob.Name)
+            setTarget(mob)
+
+            -- Pindah ke posisi orbit awal
+            local root = getRoot()
+            local pos = getPosition(mob)
+
+            if root and pos then
+                root.CFrame = CFrame.lookAt(
+                    pos + Vector3.new(ORBIT_RADIUS, ORBIT_HEIGHT, 0),
+                    pos
+                )
+
+                task.wait(0.2)
+            end
+
+            if isRunning(id) and isAlive(mob) then
+                orbitMob(mob, id)
+            end
+
+            if _G.BossRushCombatTarget == mob then
+                setTarget(nil)
+            end
+        end
+
+        task.wait(0.2)
+    end
+
+    if _G.AutoBossRushRunId == id then
+        setTarget(nil)
+    end
+end
+
+-- TOGGLE
+addToggle("Auto BossRush Orbit All Mobs", false, function(state)
+    _G.AutoBossRushAll = state
+    _G.AutoBossRushRunId = (_G.AutoBossRushRunId or 0) + 1
+
+    local id = _G.AutoBossRushRunId
+    setTarget(nil)
+
+    if not state then
+        print("[BossRush Orbit] Stopped")
+        return
+    end
+
+    print("[BossRush Orbit] Started")
+
+    task.spawn(function()
+        local ok, err = pcall(function()
+            local attackRemote, skillRemote = getBossRushRemotes()
+
+            if not isRunning(id) then
+                return
+            end
+
+            if not attackRemote and not skillRemote then
+                warn("[BossRush] Remote Attack dan Skill tidak ditemukan")
+                return
+            end
+
+            task.spawn(function()
+                local success, attackErr = pcall(
+                    attackLoop,
+                    id,
+                    attackRemote,
+                    skillRemote
+                )
+
+                if not success then
+                    warn("[BossRush Attack Error]", attackErr)
+                end
+            end)
+
+            farmLoop(id)
+        end)
+
+        if not ok then
+            warn("[BossRush Farm Error]", err)
+        end
+    end)
+end)
+
+
+-- 3. RAID STAGE
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+_G.AutoRaidOrbit = _G.AutoRaidOrbit or false
+_G.AutoRaidOrbitRunId = _G.AutoRaidOrbitRunId or 0
+_G.AutoRaidTarget = nil
+
+local ORBIT_RADIUS = 23
+local ORBIT_HEIGHT = 17
+local ORBIT_SPEED = 2
+local ORBIT_TIME = 8
+local ATTACK_INTERVAL = 0.15
+local SKILL_INTERVAL = 0.15
+
+-- Remote Attack dan Skill
+local function getRaidRemotes()
+    local ok, inputs = pcall(function()
+        return ReplicatedStorage
+            :WaitForChild("Player")
+            :WaitForChild("Remotes")
+            :WaitForChild("Inputs")
+    end)
+
+    if not ok or not inputs then
+        warn("[Raid] Inputs remote folder tidak ditemukan")
+        return nil, nil
+    end
+
+    local attackRemote = inputs:FindFirstChild("Attack")
+    local skillRemote = inputs:FindFirstChild("Skill")
+
+    if not attackRemote then
+        warn("[Raid] Remote Attack tidak ditemukan")
+    end
+
+    if not skillRemote then
+        warn("[Raid] Remote Skill tidak ditemukan")
+    end
+
+    return attackRemote, skillRemote
+end
+
+local function running(id)
+    return _G.AutoRaidOrbit
+        and _G.AutoRaidOrbitRunId == id
+end
+
+local function getRoot()
+    local char = player.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function getPart(mob)
+    if not mob then return nil end
+    if mob:IsA("BasePart") then return mob end
+    if not mob:IsA("Model") then return nil end
+
+    local part = mob:FindFirstChild("HumanoidRootPart", true)
+        or mob.PrimaryPart
+        or mob:FindFirstChild("Head", true)
+
+    if part and part:IsA("BasePart") then
+        return part
+    end
+
+    return mob:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function getPosition(mob)
+    if not mob or not mob.Parent then return nil end
+
+    if mob:IsA("Model") then
+        local ok, pivot = pcall(function()
+            return mob:GetPivot()
+        end)
+
+        if ok then
+            return pivot.Position
+        end
+    end
+
+    local part = getPart(mob)
+    return part and part.Position
+end
+
+local function isAlive(mob)
+    if not mob or not mob.Parent then
+        return false
+    end
+
+    local hum = mob:FindFirstChildWhichIsA("Humanoid", true)
+
+    if hum then
+        return hum.Health > 0
+    end
+
+    return getPart(mob) ~= nil
+end
+
+local function getMobs()
+    local result = {}
+    local folder = workspace:FindFirstChild("Raid_NPCs")
+
+    if not folder then
+        return result
+    end
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob:IsA("Model") and isAlive(mob) then
+            table.insert(result, mob)
+        end
+    end
+
+    table.sort(result, function(a, b)
+        return a.Name < b.Name
+    end)
+
+    return result
+end
+
+-- Kirim remote Attack + Skill ke server
+local function sendRaidCombat(attackRemote, skillRemote, mob)
+    if not running(_G.AutoRaidOrbitRunId) then
+        return
+    end
+
+    if not mob or not isAlive(mob) then
+        return
+    end
+
+    local root = getRoot()
+    local targetPart = getPart(mob)
+
+    if not root or not targetPart then
+        return
+    end
+
+    -- Arah serangan horizontal menuju target
+    local offset = targetPart.Position - root.Position
+    local direction = Vector3.new(offset.X, 0, offset.Z)
+
+    if direction.Magnitude > 0.001 then
+        direction = direction.Unit
+    else
+        direction = Vector3.zero
+    end
+
+    if attackRemote then
+        pcall(function()
+            attackRemote:FireServer(direction)
+        end)
+    end
+
+    if skillRemote then
+        for i = 1, 4 do
+            if not running(_G.AutoRaidOrbitRunId)
+                or not isAlive(mob) then
+                break
+            end
+
+            pcall(function()
+                skillRemote:FireServer(i, "tap")
+            end)
+
+            task.wait(0.05)
+        end
+    end
+end
+
+-- Loop serangan remote
+local function attackLoop(id, attackRemote, skillRemote)
+    local lastAttack = 0
+    local lastSkill = 0
+
+    while running(id) do
+        local mob = _G.AutoRaidTarget
+
+        if not mob or not mob.Parent or not isAlive(mob) then
+            task.wait(0.1)
+            continue
+        end
+
+        local now = os.clock()
+
+        if now - lastAttack >= ATTACK_INTERVAL then
+            lastAttack = now
+
+            local root = getRoot()
+            local targetPart = getPart(mob)
+
+            if root and targetPart and attackRemote then
+                local offset = targetPart.Position - root.Position
+                local direction = Vector3.new(offset.X, 0, offset.Z)
+
+                if direction.Magnitude > 0.001 then
+                    direction = direction.Unit
+                else
+                    direction = Vector3.zero
+                end
+
+                pcall(function()
+                    attackRemote:FireServer(direction)
+                end)
+            end
+        end
+
+        if os.clock() - lastSkill >= SKILL_INTERVAL then
+            lastSkill = os.clock()
+
+            if skillRemote then
+                for i = 1, 4 do
+                    if not running(id) or not isAlive(mob) then
+                        break
+                    end
+
+                    pcall(function()
+                        skillRemote:FireServer(i, "tap")
+                    end)
+
+                    task.wait(0.05)
+                end
+            end
+        end
+
+        task.wait(0.03)
+    end
+
+    if _G.AutoRaidOrbitRunId == id then
+        _G.AutoRaidTarget = nil
+    end
+end
+
+-- Orbit mengelilingi target
+local function orbitMob(mob, id)
+    local start = os.clock()
+
+    while running(id)
+        and mob.Parent
+        and isAlive(mob)
+        and os.clock() - start < ORBIT_TIME do
+
+        local root = getRoot()
+        local pos = getPosition(mob)
+
+        if not root or not pos then
+            task.wait(0.1)
+            continue
+        end
+
+        local angle = os.clock() * ORBIT_SPEED
+
+        local offset = Vector3.new(
+            math.cos(angle) * ORBIT_RADIUS,
+            ORBIT_HEIGHT,
+            math.sin(angle) * ORBIT_RADIUS
+        )
+
+        root.CFrame = CFrame.lookAt(pos + offset, pos)
+
+        task.wait(0.05)
+    end
+end
+
+-- Farm semua mob Raid_NPCs
+local function farmLoop(id)
+    while running(id) do
+        local mobs = getMobs()
+
+        if #mobs == 0 then
+            _G.AutoRaidTarget = nil
+            task.wait(0.5)
+            continue
+        end
+
+        for _, mob in ipairs(mobs) do
+            if not running(id) then
+                break
+            end
+
+            if mob.Parent and isAlive(mob) then
+                print("[Raid] Target:", mob.Name)
+
+                _G.AutoRaidTarget = mob
+
+                local root = getRoot()
+                local pos = getPosition(mob)
+
+                if root and pos then
+                    root.CFrame = CFrame.lookAt(
+                        pos + Vector3.new(
+                            ORBIT_RADIUS,
+                            ORBIT_HEIGHT,
+                            0
+                        ),
+                        pos
+                    )
+
+                    task.wait(0.2)
+                end
+
+                if running(id) and isAlive(mob) then
+                    orbitMob(mob, id)
+                end
+
+                if _G.AutoRaidTarget == mob then
+                    _G.AutoRaidTarget = nil
+                end
+            end
+        end
+
+        task.wait(0.2)
+    end
+
+    if _G.AutoRaidOrbitRunId == id then
+        _G.AutoRaidTarget = nil
+    end
+end
+
+-- Toggle
+addToggle("Auto Raid All Mobs Orbit + Attack", false, function(state)
+    _G.AutoRaidOrbit = state
+    _G.AutoRaidOrbitRunId = (_G.AutoRaidOrbitRunId or 0) + 1
+
+    local id = _G.AutoRaidOrbitRunId
+    _G.AutoRaidTarget = nil
+
+    if not state then
+        print("[Raid] Auto farm stopped")
+        return
+    end
+
+    print("[Raid] Auto farm started")
+
+    task.spawn(function()
+        local ok, err = pcall(function()
+            local attackRemote, skillRemote = getRaidRemotes()
+
+            if not running(id) then
+                return
+            end
+
+            if not attackRemote and not skillRemote then
+                warn("[Raid] Attack dan Skill remote tidak tersedia")
+                return
+            end
+
+            task.spawn(function()
+                local success, attackErr = pcall(
+                    attackLoop,
+                    id,
+                    attackRemote,
+                    skillRemote
+                )
+
+                if not success then
+                    warn("[Raid Attack Error]", attackErr)
+                end
+            end)
+
+            farmLoop(id)
+        end)
+
+        if not ok then
+            warn("[Raid Farm Error]", err)
+        end
+    end)
+end)
+
+-- 4. CHALLENGE STAGE
+
+_G.AutoFarmChallenge = _G.AutoFarmChallenge or false
+_G.AutoFarmChallengeRunId = _G.AutoFarmChallengeRunId or 0
+
+addToggle("Auto Farm Challenge", false, function(state)
+    _G.AutoFarmChallengeRunId += 1
+    local runId = _G.AutoFarmChallengeRunId
+    _G.AutoFarmChallenge = state
+
+    if not state then
+        return
+    end
+
+    task.spawn(function()
+        local Players = game:GetService("Players")
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local Workspace = game:GetService("Workspace")
+        local RunService = game:GetService("RunService")
+
+        local player = Players.LocalPlayer
+
+        local ok, attackRemote, skillRemote = pcall(function()
+            local remotes = ReplicatedStorage.Player.Remotes.Inputs
+            return remotes.Attack, remotes.Skill
+        end)
+
+        if not ok or not attackRemote or not skillRemote then
+            warn("[Auto Farm Challenge] Remote tidak ditemukan")
+            return
+        end
+
+        -- Pengaturan orbit
+        local ORBIT_RADIUS = 12
+        local ORBIT_HEIGHT = 12
+        local ORBIT_SPEED = 2
+        local MOVE_SPEED = 35
+        local COMBAT_INTERVAL = 0.2
+        local TARGET_SWITCH_DELAY = 0.3
+
+        local function running()
+            return _G.AutoFarmChallenge
+                and _G.AutoFarmChallengeRunId == runId
+        end
+
+        local function getCharacter()
+            local character = player.Character
+            if not character then return nil end
+
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            local root = character:FindFirstChild("HumanoidRootPart")
+
+            if not humanoid or humanoid.Health <= 0 or not root then
+                return nil
+            end
+
+            return character, humanoid, root
+        end
+
+        local function getPart(model)
+            if not model or not model:IsA("Model") then
+                return nil
+            end
+
+            if model.PrimaryPart then
+                return model.PrimaryPart
+            end
+
+            for _, name in ipairs({
+                "HumanoidRootPart",
+                "Head",
+                "UpperTorso",
+                "Torso"
+            }) do
+                local part = model:FindFirstChild(name, true)
+                if part and part:IsA("BasePart") then
+                    return part
+                end
+            end
+
+            return model:FindFirstChildWhichIsA("BasePart", true)
+        end
+
+        local function isAlive(model)
+            if not model or not model:IsA("Model") then
+                return false
+            end
+
+            local humanoid = model:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health <= 0 then
+                return false
+            end
+
+            return getPart(model) ~= nil
+        end
+
+        local function getMobs()
+            local folder = Workspace:FindFirstChild("Challenge_NPCs")
+            local mobs = {}
+
+            if not folder then
+                return mobs
+            end
+
+            for _, mob in ipairs(folder:GetChildren()) do
+                if mob:IsA("Model") and isAlive(mob) then
+                    table.insert(mobs, mob)
+                end
+            end
+
+            return mobs
+        end
+
+        local function nearestMob(root, mobs)
+            local nearest = nil
+            local nearestDistance = math.huge
+
+            for _, mob in ipairs(mobs) do
+                local part = getPart(mob)
+                if part then
+                    local distance = (part.Position - root.Position).Magnitude
+                    if distance < nearestDistance then
+                        nearestDistance = distance
+                        nearest = mob
+                    end
+                end
+            end
+
+            return nearest
+        end
+
+        local target = nil
+        local angle = 0
+        local lastCombat = 0
+        local lastSwitch = 0
+        local lastSkill = 0
+        local skillIndex = 1
+
+        while running() do
+            local character, humanoid, root = getCharacter()
+            local folder = Workspace:FindFirstChild("Challenge_NPCs")
+
+            if not character or not folder then
+                target = nil
+                task.wait(0.25)
+                continue
+            end
+
+            if not target
+                or target.Parent ~= folder
+                or not isAlive(target) then
+
+                local mobs = getMobs()
+                target = nearestMob(root, mobs)
+                lastSwitch = os.clock()
+            end
+
+            if not target then
+                task.wait(0.2)
+                continue
+            end
+
+            local targetPart = getPart(target)
+            if not targetPart then
+                target = nil
+                task.wait(0.1)
+                continue
+            end
+
+            -- Gerakan bertahap menuju titik orbit.
+            -- Tidak menetapkan CFrame karakter secara langsung.
+            local dt = RunService.Heartbeat:Wait()
+
+            if not running() then break end
+
+            angle += ORBIT_SPEED * dt
+
+            targetPart = getPart(target)
+            if not targetPart then
+                target = nil
+                continue
+            end
+
+            local targetPosition = targetPart.Position
+            local destination = targetPosition + Vector3.new(
+                math.cos(angle) * ORBIT_RADIUS,
+                ORBIT_HEIGHT,
+                math.sin(angle) * ORBIT_RADIUS
+            )
+
+            local displacement = destination - root.Position
+            local distance = displacement.Magnitude
+
+            if distance > 0.1 then
+                local step = math.min(distance, MOVE_SPEED * dt)
+                local nextPosition = root.Position
+                    + displacement.Unit * step
+
+                root.AssemblyLinearVelocity = Vector3.zero
+                root.CFrame = CFrame.lookAt(nextPosition, targetPosition)
+            end
+
+            -- Serang dan gunakan satu skill per interval.
+            -- Ini menghindari jeda panjang untuk seluruh skill 1–4.
+            local now = os.clock()
+
+            if now - lastCombat >= COMBAT_INTERVAL then
+                local currentPart = getPart(target)
+
+                if currentPart and running() then
+                    local offset = currentPart.Position - root.Position
+                    local horizontal = Vector3.new(offset.X, 0, offset.Z)
+                    local direction = Vector3.zero
+
+                    if horizontal.Magnitude > 0.01 then
+                        direction = horizontal.Unit
+                    end
+
+                    pcall(function()
+                        attackRemote:FireServer(direction)
+                    end)
+
+                    if now - lastSkill >= 0.25 then
+                        local currentSkill = skillIndex
+
+                        pcall(function()
+                            skillRemote:FireServer(currentSkill, "tap")
+                        end)
+
+                        skillIndex = (skillIndex % 4) + 1
+                        lastSkill = now
+                    end
+                end
+
+                lastCombat = now
+            end
+
+            -- Ganti target hanya ketika target lama mati/hilang.
+            if not isAlive(target) then
+                target = nil
+                task.wait(TARGET_SWITCH_DELAY)
+            end
+        end
+    end)
+end)
+
+
+-- 5. CONQUEST STAGE
+addToggle("Orbit All Conquest Enemies", false, function(state)
+    _G.OrbitConquestAll = state
+    _G.OrbitConquestRunId = (_G.OrbitConquestRunId or 0) + 1
+
+    local id = _G.OrbitConquestRunId
+    if not state then return end
+
+    task.spawn(function()
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+        -- Remote Attack dan Skill
+        local attack, skill
+
+        pcall(function()
+            local inputs = ReplicatedStorage
+                :WaitForChild("Player")
+                :WaitForChild("Remotes")
+                :WaitForChild("Inputs")
+
+            attack = inputs:WaitForChild("Attack")
+            skill = inputs:WaitForChild("Skill")
+        end)
+
+        local angle = 0
+        local lastAttack = 0
+
+        local function isRunning()
+            return alive()
+                and _G.OrbitConquestAll
+                and _G.OrbitConquestRunId == id
+        end
+
+        local function getConquestFolder()
+            for _, f in ipairs(workspace:GetChildren()) do
+                if f.Name:match("^Conquest_")
+                    and f:FindFirstChild("Enemies") then
+                    return f
+                end
+            end
+            return nil
+        end
+
+        local function getTarget(folder, hrp)
+            if not folder or not hrp then
+                return nil, nil
+            end
+
+            local enemies = folder:FindFirstChild("Enemies")
+            local mobs = getChildrenMobs(enemies)
+
+            local nearestModel, nearestPart
+            local nearestDistance = math.huge
+
+            for _, e in ipairs(mobs) do
+                local model = e.model
+
+                if model and model.Parent and aliveMob(model)
+                    and not string.find(model.Name, "^Death Knight_Summon_")
+                    and not model:GetAttribute("IsSpecialBoss")
+                    and not model:GetAttribute("IsLootRoomGuard")
+                    and not model:GetAttribute("MimicMob") then
+
+                    local part = mobPart(model)
+
+                    if part then
+                        local distance = (part.Position - hrp.Position).Magnitude
+
+                        if distance < nearestDistance then
+                            nearestDistance = distance
+                            nearestModel = model
+                            nearestPart = part
+                        end
+                    end
+                end
+            end
+
+            return nearestModel, nearestPart
+        end
+
+        while isRunning() do
+            local folder = getConquestFolder()
+            local hrp = rootPart()
+            local _, targetPart = getTarget(folder, hrp)
+
+            if hrp and targetPart and targetPart.Parent then
+                -- Orbit target Conquest
+                angle = angle + 2 * 0.03
+
+                local targetPosition = targetPart.Position
+                local orbitPosition = targetPosition
+                    + Vector3.new(
+                        math.cos(angle) * 12,
+                        12,
+                        math.sin(angle) * 12
+                    )
+
+                hrp.CFrame = CFrame.lookAt(
+                    orbitPosition,
+                    targetPosition
+                )
+
+                -- Attack + Skill 1-4 setiap 0.2 detik
+                if os.clock() - lastAttack >= 0.2 then
+                    lastAttack = os.clock()
+
+                    local offset = targetPosition - hrp.Position
+                    local direction = Vector3.new(
+                        offset.X,
+                        0,
+                        offset.Z
+                    )
+
+                    if attack then
+                        pcall(function()
+                            attack:FireServer(
+                                direction.Magnitude > 0.001
+                                    and direction.Unit
+                                    or Vector3.zero
+                            )
+                        end)
+                    end
+
+                    if skill then
+                        for i = 1, 4 do
+                            if not isRunning() then
+                                break
+                            end
+
+                            pcall(function()
+                                skill:FireServer(i, "tap")
+                            end)
+
+                            task.wait(0.05)
+                        end
+                    end
+                end
+            end
+
+            task.wait(0.03)
+        end
+    end)
+end)
+
+
+
+-- C. Misc
+setActiveCategory("C")
+-- 3. AUTO PARRY
+addToggle("Auto Parry", false, function(state)
+    _G.AutoParry = state
+    _G.AutoParryRunId = (_G.AutoParryRunId or 0) + 1
+
+    local runId = _G.AutoParryRunId
+    if not state then return end
+
+    task.spawn(function()
+        local Event = game:GetService("ReplicatedStorage")
+            .Player.Remotes.Inputs.Parry
+
+        while _G.AutoParry and _G.AutoParryRunId == runId do
+            pcall(function()
+                Event:FireServer()
+            end)
+            task.wait(1.5)
+        end
+    end)
+end)
+-- 4. AUTO DODGE
+addToggle("Auto Dodge", false, function(state)
+    _G.AutoDodge = state
+    _G.AutoDodgeRunId = (_G.AutoDodgeRunId or 0) + 1
+
+    local runId = _G.AutoDodgeRunId
+    if not state then return end
+
+    task.spawn(function()
+        local Event = game:GetService("ReplicatedStorage")
+            .Player.Remotes.Inputs.Dash
+
+        while _G.AutoDodge and _G.AutoDodgeRunId == runId do
+            pcall(function()
+                Event:FireServer(Vector3.new(0, 0, -1))
+            end)
+            task.wait(2.5)
+        end
+    end)
+end)
+
+-- 5. HIDE MOBILE ACTIONS
+addToggle("Hide Mobile Actions", false, function(state)
+    _G.HideMobileActions = state
+    _G.HideMobileActionsRunId = (_G.HideMobileActionsRunId or 0) + 1
+
+    local runId = _G.HideMobileActionsRunId
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+
+    if not state then
+        local main = player.PlayerGui:FindFirstChild("Main")
+        local hud = main and main:FindFirstChild("HUD")
+        local mobileActions = hud and hud:FindFirstChild("MobileActions")
+
+        if mobileActions and mobileActions:IsA("GuiObject") then
+            mobileActions.Visible = true
+        end
+        return
+    end
+
+    task.spawn(function()
+        while _G.HideMobileActions
+            and _G.HideMobileActionsRunId == runId do
+
+            local playerGui = player:FindFirstChild("PlayerGui")
+            local main = playerGui and playerGui:FindFirstChild("Main")
+            local hud = main and main:FindFirstChild("HUD")
+            local mobileActions = hud and hud:FindFirstChild("MobileActions")
+
+            if mobileActions and mobileActions:IsA("GuiObject") then
+                mobileActions.Visible = false
+            end
+
+            task.wait(0.5)
+        end
+    end)
+end)
+-- 6. AUTO ULTIMATE
+_G.AutoUltimate = true
+_G.AutoUltimateRunId = (_G.AutoUltimateRunId or 0) + 1
+
+addToggle("Auto Ultimate (G)", false, function(state)
+    _G.AutoUltimate = state
+    _G.AutoUltimateRunId = (_G.AutoUltimateRunId or 0) + 1
+
+    if not state then
+        return
+    end
+
+    local runId = _G.AutoUltimateRunId
+
+    task.spawn(function()
+        local VIM = game:GetService("VirtualInputManager")
+
+        while _G.AutoUltimate
+            and _G.AutoUltimateRunId == runId do
+
+            pcall(function()
+                VIM:SendKeyEvent(true, Enum.KeyCode.G, false, game)
+                task.wait(0.15)
+                VIM:SendKeyEvent(false, Enum.KeyCode.G, false, game)
+            end)
+
+            task.wait(15)
+        end
+    end)
+end)
+-- 7. AUTO CONQUEST TP
+addToggle("Auto Conquest TP", false, function(state)
+    _G.AutoConquestTP=state
+    _G.AutoConquestTPRunId=(_G.AutoConquestTPRunId or 0)+1
+    local id=_G.AutoConquestTPRunId
+    if not state then return end
+    task.spawn(function()
+        local positions, visited={},{}
+        local function collect(v,out,depth)
+            if depth>5 then return end
+            if typeof(v)=="Vector3" then table.insert(out,v)
+            elseif type(v)=="table" then for _,x in pairs(v) do collect(x,out,depth+1) end end
+        end
+        local service
+        pcall(function()
+            local Knit=require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
+            service=Knit.GetService("ConquestRunService")
+        end)
+        if service and service.Changed then
+            pcall(function()
+                service.Changed:Connect(function(data)
+                    local out={}
+                    if type(data)=="table" then collect(data.Targets or data.targets or data,out,0) end
+                    if #out>0 then positions=out; visited={} end
+                end)
+            end)
+        end
+        while alive() and _G.AutoConquestTP and _G.AutoConquestTPRunId==id do
+            local hrp=rootPart()
+            if hrp and player:GetAttribute("InConquest")==true then
+                local best,bd
+                for _,pos in ipairs(positions) do
+                    local key=string.format("%d,%d,%d",math.round(pos.X),math.round(pos.Y),math.round(pos.Z))
+                    local d=(pos-hrp.Position).Magnitude
+                    if not visited[key] and (not bd or d<bd) then best,bd=pos,d end
+                end
+                if best then
+                    local key=string.format("%d,%d,%d",math.round(best.X),math.round(best.Y),math.round(best.Z))
+                    hrp.CFrame=CFrame.new(best+Vector3.new(0,3,0))
+                    visited[key]=true
+                    task.wait(0.4)
+                end
+            end
+            task.wait(0.5)
+        end
+    end)
+end)
+-- 8. ANTI AFK
+addToggle("Anti AFK", false, function(state)
+    _G.AntiAFK=state
+    _G.AntiAFKRunId=(_G.AntiAFKRunId or 0)+1
+    local id=_G.AntiAFKRunId
+    if not state then return end
+    task.spawn(function()
+        while alive() and _G.AntiAFK and _G.AntiAFKRunId==id do
+            pcall(function()
+                VirtualInputManager:SendMouseButtonEvent(0,0,0,true,game,0)
+                task.wait(0.1)
+                VirtualInputManager:SendMouseButtonEvent(0,0,0,false,game,0)
+            end)
+            task.wait(60)
+        end
+    end)
+end)
+
+-- 9. AUTO POTION HP 50%
+addToggle("Auto Potion HP 50%", false, function(state)
+    _G.AutoPotionHP=state
+    _G.AutoPotionRunId=(_G.AutoPotionRunId or 0)+1
+    local id=_G.AutoPotionRunId
+    if not state then return end
+    task.spawn(function()
+        local busy=false
+        while alive() and _G.AutoPotionHP and _G.AutoPotionRunId==id do
+            local char=player.Character
+            local hum=char and char:FindFirstChildWhichIsA("Humanoid")
+            if hum and hum.Health>0 and hum.Health<=hum.MaxHealth*0.5 and not busy then
+                busy=true
+                pcall(function()
+                    local Knit=require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
+                    Knit.GetService("PotionService"):UsePotion(1)
+                end)
+                task.wait(1)
+                busy=false
+            end
+            task.wait(0.2)
+        end
+    end)
+end)
+
+-- 10. AUTO NEXT DEPTH
+addToggle("Auto Next Depth", false, function(state)
+    _G.AutoNextDepth=state
+    _G.AutoNextDepthRunId=(_G.AutoNextDepthRunId or 0)+1
+    local id=_G.AutoNextDepthRunId
+    if not state then return end
+    task.spawn(function()
+        local Knit
+        pcall(function() Knit=require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")) end)
+        local busy=false
+        while alive() and _G.AutoNextDepth and _G.AutoNextDepthRunId==id do
+            local inTower=player:GetAttribute("InBossRush") and player:GetAttribute("BossRushRoute")
+            local depth=player:GetAttribute("TowerNextDepth")
+            if inTower and depth and not player:GetAttribute("IsSpectating") and not busy and Knit then
+                busy=true
+                pcall(function()
+                    local service=Knit.GetService("InfiniteTowerService")
+                    service:NextDepth(depth):catch(function(e) warn("Auto Next Depth:",e) end)
+                end)
+                task.wait(3)
+                busy=false
+            end
+            task.wait(0.5)
+        end
+    end)
+end)
+-- 11. AUTO MAGNET DROPS
+addToggle("Auto Magnet Drops", false, function(state)
+    _G.AutoMagnetDrops=state
+    task.spawn(function()
+        local module
+        pcall(function() module=require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("DropSpawner")) end)
+        if not module then return end
+        if state then
+            pcall(function() module.SetMagneticRange(100); module.SetMagneticSpeed(150) end)
+            while alive() and _G.AutoMagnetDrops do task.wait(0.5) end
+        end
+        pcall(function() module.SetMagneticRange(15); module.SetMagneticSpeed(21) end)
+    end)
+end)
+
+-- 12. FACE NEAREST MOB
+local function FaceMobForAttack()
+    local hrp = rootPart()
+    if not hrp then return end
+
+    local nearest, nearestDist
+
+    for _, npc in ipairs(CollectionService:GetTagged("NPC")) do
+        if aliveMob(npc)
+            and not string.find(npc.Name, "^Death Knight_Summon_")
+            and not npc:GetAttribute("IsSpecialBoss")
+            and not npc:GetAttribute("IsLootRoomGuard")
+            and not npc:GetAttribute("MimicMob") then
+
+            local part = mobPart(npc)
+
+            if part then
+                local dist = (part.Position - hrp.Position).Magnitude
+
+                if not nearestDist or dist < nearestDist then
+                    nearest = part
+                    nearestDist = dist
+                end
+            end
+        end
+    end
+
+    if nearest and nearest.Parent then
+        local target = Vector3.new(
+            nearest.Position.X,
+            hrp.Position.Y,
+            nearest.Position.Z
+        )
+
+        if (target - hrp.Position).Magnitude > 0.01 then
+            hrp.CFrame = CFrame.lookAt(hrp.Position, target)
+        end
+    end
+end
+
+-- 13. AUTO SELECT BOOST
+
+addToggle("Auto Select Boost", false, function(state)
+    _G.AutoSelectBoost = state
+    _G.AutoSelectBoostRunId = (_G.AutoSelectBoostRunId or 0) + 1
+
+    local runId = _G.AutoSelectBoostRunId
+
+    if not state then
+        return
+    end
+
+    task.spawn(function()
+        local Players = game:GetService("Players")
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+        local player = Players.LocalPlayer
+
+        local function running()
+            return _G.AutoSelectBoost
+                and _G.AutoSelectBoostRunId == runId
+                and player.Parent ~= nil
+        end
+
+        -- Ambil BoostSelectionController
+        local controller
+
+        local ok, err = pcall(function()
+            local Knit = require(
+                ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit")
+            )
+
+            controller = Knit.GetController("BoostSelectionController")
+        end)
+
+        if not ok or not controller then
+            warn("[Auto Boost] Controller gagal ditemukan:", err)
+            return
+        end
+
+        -- Prioritas blessing
+        local function getBoostPriority(candidate)
+            local title = string.lower(tostring(candidate.Title or ""))
+            local desc = string.lower(tostring(candidate.Description or ""))
+            local text = title .. " " .. desc
+
+            -- Prioritas 1: Overall Damage
+            if string.find(text, "overall damage", 1, true) then
+                return 1
+            end
+
+            -- Prioritas 2: Max HP / Health
+            if string.find(text, "max hp", 1, true)
+                or string.find(text, "maximum hp", 1, true)
+                or string.find(text, "max health", 1, true)
+                or string.find(text, "maximum health", 1, true) then
+                return 2
+            end
+
+            return 99
+        end
+
+        while running() do
+            if controller._active
+                and controller._ready
+                and not controller._selecting
+                and type(controller._candidates) == "table" then
+
+                local candidates = controller._candidates
+                local selectedIndex
+                local bestPriority = 99
+
+                -- Cari Overall Damage terlebih dahulu,
+                -- lalu Max HP.
+                for i, candidate in ipairs(candidates) do
+                    if candidate then
+                        local priority = getBoostPriority(candidate)
+
+                        if priority < bestPriority then
+                            bestPriority = priority
+                            selectedIndex = i
+                        end
+                    end
+                end
+
+                -- Jika tidak ada keduanya, pilih kartu pertama.
+                if not selectedIndex and candidates[1] then
+                    selectedIndex = 1
+                end
+
+                if selectedIndex and running() then
+                    local offerId = controller._offerId
+
+                    print(
+                        "[Auto Boost] Memilih:",
+                        tostring(candidates[selectedIndex].Title or selectedIndex)
+                    )
+
+                    local success, clickErr = pcall(function()
+                        controller:_OnCardClicked(selectedIndex)
+                    end)
+
+                    if not success then
+                        warn("[Auto Boost] Gagal memilih:", clickErr)
+                    end
+
+                    -- Tunggu offer ini diproses sebelum memeriksa offer berikutnya.
+                    local elapsed = 0
+
+                    while running()
+                        and controller._active
+                        and controller._offerId == offerId
+                        and elapsed < 10 do
+
+                        task.wait(0.2)
+                        elapsed += 0.2
+                    end
+                end
+            end
+
+            task.wait(0.15)
+        end
+    end)
+end)
+
+
+-- 14. AUTO SELECT 2 CHESTS
+addToggle("Auto Select 2 Chests", false, function(state)
+    _G.AutoSelectChest = state
+    _G.AutoSelectChestRunId = (_G.AutoSelectChestRunId or 0) + 1
+
+    local runId = _G.AutoSelectChestRunId
+    if not state then return end
+
+    task.spawn(function()
+        local Players = game:GetService("Players")
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local player = Players.LocalPlayer
+
+        local controller
+
+        local ok, err = pcall(function()
+            local Knit = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
+            controller = Knit.GetController("ChestSelectionController")
+        end)
+
+        if not ok or not controller then
+            warn("[Auto Chest] Controller gagal:", err)
+            return
+        end
+
+        local function running()
+            return _G.AutoSelectChest
+                and _G.AutoSelectChestRunId == runId
+                and player.Parent ~= nil
+        end
+
+        while running() do
+            if controller._active and controller._ready
+                and type(controller._candidates) == "table" then
+
+                local maxPicks = tonumber(controller._maxPicks) or 2
+                local candidates = controller._candidates
+
+                -- Pilih chest satu per satu menggunakan fungsi asli.
+                for index = 1, #candidates do
+                    if not running() then break end
+                    if not controller._active or not controller._ready then break end
+
+                    if controller._selectedCount >= maxPicks then
+                        break
+                    end
+
+                    if candidates[index]
+                        and not (controller._selected and controller._selected[index]) then
+
+                        pcall(function()
+                            controller:_OnChestClicked(index)
+                        end)
+
+                        task.wait(0.25)
+                    end
+                end
+
+                -- Finish hanya setelah jumlah pilihan mencukupi.
+                if running()
+                    and controller._active
+                    and controller._selectedCount >= (tonumber(controller._maxPicks) or 2) then
+
+                    task.wait(0.2)
+
+                    pcall(function()
+                        controller:_OnFinish()
+                    end)
+
+                    task.wait(0.6)
+                end
+            end
+
+            task.wait(0.15)
+        end
+    end)
+end)
+
+-- 15. AUTO CONTINUE ENDLESS DUNGEON
+addToggle("Auto Continue", false, function(state)
+    _G.AutoContinue=state
+    _G.AutoContinueRunId=(_G.AutoContinueRunId or 0)+1
+    local id=_G.AutoContinueRunId
+    if not state then return end
+    task.spawn(function()
+        local event
+        pcall(function()
+            event=ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_knit@1.7.0"):WaitForChild("knit"):WaitForChild("Services"):WaitForChild("DungeonRunService"):WaitForChild("RF"):WaitForChild("SubmitEndlessChoice")
+        end)
+        while alive() and _G.AutoContinue and _G.AutoContinueRunId==id do
+            if event then pcall(function() event:InvokeServer(true) end) end
+            task.wait(2)
+        end
+    end)
+end)
+
+-- 16. AUTO REPLAY DUNGEON
+addToggle("Auto Replay Dungeon", false, function(state)
+    _G.AutoReplayDungeon=state
+    _G.AutoReplayRunId=(_G.AutoReplayRunId or 0)+1
+    local id=_G.AutoReplayRunId
+    if not state then return end
+    task.spawn(function()
+        while alive() and _G.AutoReplayDungeon and _G.AutoReplayRunId==id do
+            pcall(function()
+                local button=player.PlayerGui.Main.HUD.Dungeon_Container.Completion_Info.Content.ActionButtons.ReplayButton
+                if button.Visible and button:IsA("GuiButton") then firesignal(button.Activated) end
+            end)
+            task.wait(0.2)
+        end
+    end)
+end)
+
+-- 17. FACE NEAREST ENEMY
+addToggle("Face Mob Terus", false, function(state)
+    _G.FaceMobEnabled=state
+    _G.FaceMobRunId=(_G.FaceMobRunId or 0)+1
+    local id=_G.FaceMobRunId
+    if not state then return end
+    task.spawn(function()
+        while alive() and _G.FaceMobEnabled and _G.FaceMobRunId==id do
+            local hrp=rootPart()
+            if hrp then
+                local nearest,dist
+                local folders={workspace:FindFirstChild("Raid_NPCs"),workspace:FindFirstChild("BossRush_NPCs"),workspace:FindFirstChild("Challenge_NPCs")}
+                local hollow=workspace:FindFirstChild("HollowRealmRun")
+                if hollow then table.insert(folders,hollow:FindFirstChild("NPCs")) end
+                for _,f in ipairs(workspace:GetChildren()) do
+                    if f.Name:match("^Generated_Mage_") then
+                        table.insert(folders,f:FindFirstChild("NPCs"))
+                        for i=1,25 do table.insert(folders,f:FindFirstChild("Room_"..i)) end
+                    end
+                end
+                for _,f in ipairs(folders) do
+                    if f then for _,m in ipairs(f:GetChildren()) do
+                        local p=mobPart(m)
+                        if p and aliveMob(m) then
+                            local d=(p.Position-hrp.Position).Magnitude
+                            if d>0.1 and (not dist or d<dist) then nearest,dist=p,d end
+                        end
+                    end end
+                end
+                if nearest then hrp.CFrame=CFrame.lookAt(hrp.Position,Vector3.new(nearest.Position.X,hrp.Position.Y,nearest.Position.Z)) end
+            end
+            task.wait(0.1)
+        end
+    end)
+end)
+
+
+
+-- Config persistence toggle (placed on the Misc tab).
+setActiveCategory("C")
+addToggle("Auto Save Config", false, function(state)
+    autoSaveConfig = state
+    writeConfig(true)
+    setStatus(state and "Config autosave enabled" or "Config autosave disabled")
+end)
+
+-- Tab D: one-click buttons to open existing game UI frames.
+-- These buttons do not create a separate GUI and do not run automatic loops.
+setActiveCategory("D")
+
+local function openGameFrame(frameName)
+    local gameMain = PlayerGui:FindFirstChild("Main")
+    if not gameMain then
+        warn("[Open UI] PlayerGui.Main tidak ditemukan")
+        setStatus("UI tidak ditemukan: Main")
+        return
+    end
+
+    local frames = gameMain:FindFirstChild("Frames")
+    if not frames then
+        warn("[Open UI] PlayerGui.Main.Frames tidak ditemukan")
+        setStatus("UI tidak ditemukan: Frames")
+        return
+    end
+
+    local target = frames:FindFirstChild(frameName)
+    if not target then
+        warn("[Open UI] Frame tidak ditemukan: " .. frameName)
+        setStatus("Frame tidak ditemukan: " .. frameName)
+        return
+    end
+
+    -- Enable parent ScreenGuis and show parent GuiObjects from outside-in.
+    local ancestors = {}
+    local ancestor = target.Parent
+    while ancestor and ancestor ~= PlayerGui do
+        table.insert(ancestors, ancestor)
+        ancestor = ancestor.Parent
+    end
+
+    for i = #ancestors, 1, -1 do
+        local obj = ancestors[i]
+        if obj:IsA("ScreenGui") then
+            obj.Enabled = true
+        elseif obj:IsA("GuiObject") then
+            obj.Visible = true
+        end
+    end
+
+    if target:IsA("ScreenGui") then
+        target.Enabled = true
+    elseif target:IsA("GuiObject") then
+        target.Visible = true
+    end
+
+    setStatus("UI dibuka: " .. frameName)
+    print("[Open UI] Dibuka: " .. frameName)
+end
+
+addButton("Open Inventory", function()
+    openGameFrame("Inventory")
+end)
+
+addButton("Open Forge", function()
+    openGameFrame("Forge")
+end)
+
+addButton("Open Payload Select", function()
+    openGameFrame("Payload_Select")
+end)
+
+addButton("Open Challenge Dungeon", function()
+    openGameFrame("ChallengeDungeon")
+end)
+
+addButton("Open BossRush", function()
+    openGameFrame("BossRush")
+end)
+
+addButton("Dungeon Select", function()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+    local ok, err = pcall(function()
+        local Knit = require(ReplicatedStorage.Packages.Knit)
+        local controller = Knit.GetController("DungeonSelectController")
+
+        assert(controller, "DungeonSelectController belum ditemukan")
+
+        if controller:IsOpen() then
+            controller:Close()
+            _G.AutoOpenDungeonSelect = false
+        else
+            controller:Open()
+            _G.AutoOpenDungeonSelect = true
+        end
+    end)
+
+    if not ok then
+        warn("[Dungeon Select] Gagal:", err)
+    end
+end)
+
+addButton("Open Raid", function()
+    openGameFrame("Raid")
+end)
+
+addButton("Open Last Shop", function()
+    local player = game:GetService("Players").LocalPlayer
+    local shop = player.PlayerGui.Main.Frames.ItemShop
+    local contents = shop.Contents
+    local right = contents.RightSection
+
+    -- Buka shop
+    shop.Visible = true
+
+    -- Mode Sell
+    shop.Sell.Visible = true
+    shop.Buy.Visible = false
+
+    -- Panel Sell
+    contents.LeftSection.Visible = true
+    right.ItemInfo.Visible = false
+    right.SellInfo.Visible = true
+
+    print("[Shop] Sell Shop ditampilkan")
+end)
+addButton("Close Shop", function()
+    local player = game:GetService("Players").LocalPlayer
+    local shop = player.PlayerGui.Main.Frames.ItemShop
+
+    shop.Visible = false
+
+    print("[Shop] Shop ditutup")
+end)
+
+
+addButton("Open Guilds", function()
+    local playerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    local guilds = playerGui
+        :WaitForChild("Main")
+        :WaitForChild("Frames")
+        :WaitForChild("Guilds")
+
+    guilds.Visible = true
+
+    print("[Guilds] Panel dibuka")
+end)
+
+addButton("Close Guilds", function()
+    local playerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    local guilds = playerGui
+        :WaitForChild("Main")
+        :WaitForChild("Frames")
+        :WaitForChild("Guilds")
+
+    guilds.Visible = false
+
+    print("[Guilds] Panel ditutup")
+end)
+
+
+addButton("Open Undead Conquest", function()
+    local playerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    local conquestUI = playerGui:WaitForChild("ConquestUI")
+    local undeadConquest = conquestUI:WaitForChild("UndeadConquest")
+
+    if conquestUI:IsA("ScreenGui") then
+        conquestUI.Enabled = true
+    end
+
+    if undeadConquest:IsA("GuiObject") then
+        undeadConquest.Visible = true
+    end
+
+    print("[Conquest] UndeadConquest dibuka")
+end)
+
+addButton("Close Undead Conquest", function()
+    local playerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    local undeadConquest = playerGui
+        :WaitForChild("ConquestUI")
+        :WaitForChild("UndeadConquest")
+
+    if undeadConquest:IsA("GuiObject") then
+        undeadConquest.Visible = false
+    end
+
+    print("[Conquest] UndeadConquest ditutup")
+end)
+
+-- Closing kills all loops started by this script and removes its UI.
+close.Activated:Connect(function()
+    _G.StandaloneAutomationAlive = false
+    _G.StandaloneAutomationRunId = (_G.StandaloneAutomationRunId or 0) + 1
+    for key in pairs(_G) do
+        if type(key)=="string" and key:match("^(Auto|Orbit|Fly|Face|TP|Anti)") then
+            -- Only turn off globals used by this bundle; unrelated globals are untouched below.
+        end
+    end
+    local globals = {
+        "AutoOrbitSnowMobs","OrbitHollowAll","OrbitDemonAll","OrbitMageNPCs",
+        "OrbitChallengeNPCs","OrbitConquestAll","FaceMobEnabled","TPAllDungeonChests",
+        "AutoContinue","AutoReplayDungeon","AutoSelectChest","AutoSelectBoost",
+        "AutoMagnetDrops","AutoAttackSkill","FlyDarkProfessor","AutoNextDepth",
+        "AutoRefillPotion","AutoOpenBossChests","AutoPotionHP","FlyBossRush",
+        "FlyAutoAttack","AntiAFK","AutoConquestTP","AutoRebirthButton"
+    }
+    for _,key in ipairs(globals) do _G[key]=false end
+    gui:Destroy()
+end)
+
+setStatus("Loaded • 4 tabs • " .. tostring(toggleCount) .. " controls")
+print("Standalone Multi-Automation GUI loaded. No Ash-Libs required.")
