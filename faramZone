@@ -1,0 +1,1511 @@
+--========================================================
+-- STANDALONE MULTI-FEATURE GUI
+-- Snow Farm + Dungeon Automation
+-- Floating Circle Toggle | Minimize | Drag
+--========================================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local GUI_NAME = "SnowFarmStandalone"
+local alive = function()
+    local gui = playerGui:FindFirstChild(GUI_NAME)
+    return player.Parent ~= nil and gui ~= nil and gui.Parent ~= nil
+end
+
+--========================================================
+-- GLOBAL DEFAULTS
+--========================================================
+
+_G.AutoFarmSnowZone = false
+_G.AutoReplayDungeon = _G.AutoReplayDungeon or false
+_G.AutoSelectChest = _G.AutoSelectChest or false
+_G.AutoContinue = _G.AutoContinue or false
+_G.AutoSelectBoost = _G.AutoSelectBoost or false
+_G.AutoMagnetDrops = _G.AutoMagnetDrops or false
+_G.AutoNextDepth = _G.AutoNextDepth or false
+_G.AntiAFK = _G.AntiAFK or false
+_G.AutoPotionHP = _G.AutoPotionHP or false
+_G.AutoParry = _G.AutoParry or false
+_G.AutoDodge = _G.AutoDodge or false
+_G.HideMobileActions = _G.HideMobileActions or false
+_G.AutoUltimate = _G.AutoUltimate or false
+
+for _, name in ipairs({
+    "AutoFarmSnowZone",
+    "AutoReplayDungeon",
+    "AutoSelectChest",
+    "AutoContinue",
+    "AutoSelectBoost",
+    "AutoMagnetDrops",
+    "AutoNextDepth",
+    "AntiAFK",
+    "AutoPotionHP",
+    "AutoParry",
+    "AutoDodge",
+    "HideMobileActions",
+    "AutoUltimate",
+}) do
+    local idName = name .. "RunId"
+    _G[idName] = _G[idName] or 0
+end
+
+--========================================================
+-- GUI CLEANUP
+--========================================================
+
+local oldGui = playerGui:FindFirstChild(GUI_NAME)
+if oldGui then
+    oldGui:Destroy()
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = GUI_NAME
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 999
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = playerGui
+
+--========================================================
+-- GUI HELPERS
+--========================================================
+
+local function corner(object, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or 8)
+    c.Parent = object
+    return c
+end
+
+local function stroke(object, color, thickness)
+    local s = Instance.new("UIStroke")
+    s.Color = color or Color3.fromRGB(125, 75, 220)
+    s.Thickness = thickness or 1.5
+    s.Parent = object
+    return s
+end
+
+local function makeButton(parent, name, text, size, position, color)
+    local b = Instance.new("TextButton")
+    b.Name = name
+    b.Text = text
+    b.Size = size
+    b.Position = position
+    b.BackgroundColor3 = color or Color3.fromRGB(42, 38, 54)
+    b.TextColor3 = Color3.fromRGB(245, 242, 255)
+    b.Font = Enum.Font.GothamSemibold
+    b.TextSize = 12
+    b.BorderSizePixel = 0
+    b.AutoButtonColor = true
+    b.Parent = parent
+    corner(b, 7)
+    return b
+end
+
+--========================================================
+-- MAIN WINDOW
+--========================================================
+
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.fromOffset(300, 410)
+main.Position = UDim2.new(1, -320, 0.5, -205)
+main.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+main.BorderSizePixel = 0
+main.Active = true
+main.Parent = gui
+corner(main, 12)
+stroke(main)
+
+local header = Instance.new("Frame")
+header.Name = "Header"
+header.Size = UDim2.new(1, 0, 0, 42)
+header.BackgroundColor3 = Color3.fromRGB(35, 29, 48)
+header.BorderSizePixel = 0
+header.Active = true
+header.Parent = main
+corner(header, 12)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -100, 1, 0)
+title.Position = UDim2.fromOffset(12, 0)
+title.BackgroundTransparency = 1
+title.Text = "AUTOMATION HUB"
+title.TextColor3 = Color3.fromRGB(230, 220, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 13
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = header
+
+local minimize = makeButton(
+    header, "Minimize", "—",
+    UDim2.fromOffset(28, 27),
+    UDim2.new(1, -64, 0, 7)
+)
+
+local close = makeButton(
+    header, "Close", "X",
+    UDim2.fromOffset(28, 27),
+    UDim2.new(1, -32, 0, 7),
+    Color3.fromRGB(135, 45, 55)
+)
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -24, 0, 24)
+status.Position = UDim2.fromOffset(12, 44)
+status.BackgroundTransparency = 1
+status.Text = "Status: READY"
+status.TextColor3 = Color3.fromRGB(185, 185, 200)
+status.Font = Enum.Font.Gotham
+status.TextSize = 11
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.Parent = main
+
+local scroll = Instance.new("ScrollingFrame")
+scroll.Name = "ToggleList"
+scroll.Position = UDim2.fromOffset(10, 72)
+scroll.Size = UDim2.new(1, -20, 1, -84)
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
+scroll.ScrollBarThickness = 4
+scroll.ScrollBarImageColor3 = Color3.fromRGB(125, 75, 220)
+scroll.CanvasSize = UDim2.new()
+scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+scroll.Parent = main
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 6)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Parent = scroll
+
+local listPadding = Instance.new("UIPadding")
+listPadding.PaddingBottom = UDim.new(0, 8)
+listPadding.PaddingRight = UDim.new(0, 3)
+listPadding.Parent = scroll
+
+--========================================================
+-- FLOATING CIRCLE ON THE RIGHT
+--========================================================
+
+local mini = Instance.new("TextButton")
+mini.Name = "FloatingCircle"
+mini.Size = UDim2.fromOffset(58, 58)
+mini.Position = UDim2.new(1, -72, 0.5, -29)
+mini.BackgroundColor3 = Color3.fromRGB(35, 27, 55)
+mini.Text = "SNOW"
+mini.TextColor3 = Color3.fromRGB(245, 240, 255)
+mini.Font = Enum.Font.GothamBold
+mini.TextSize = 11
+mini.BorderSizePixel = 0
+mini.Visible = false
+mini.Active = true
+mini.Parent = gui
+corner(mini, 100)
+stroke(mini, Color3.fromRGB(145, 95, 255), 2)
+
+local function setStatus(message, color)
+    if status and status.Parent then
+        status.Text = "Status: " .. message
+        status.TextColor3 = color or Color3.fromRGB(190, 190, 200)
+    end
+end
+
+minimize.Activated:Connect(function()
+    main.Visible = false
+    mini.Visible = true
+end)
+
+mini.Activated:Connect(function()
+    main.Visible = true
+    mini.Visible = false
+end)
+
+close.Activated:Connect(function()
+    -- Stop all features and invalidate their running loops.
+    for _, name in ipairs({
+        "AutoFarmSnowZone",
+        "AutoReplayDungeon",
+        "AutoSelectChest",
+        "AutoContinue",
+        "AutoSelectBoost",
+        "AutoMagnetDrops",
+        "AutoNextDepth",
+        "AntiAFK",
+        "AutoPotionHP",
+        "AutoParry",
+        "AutoDodge",
+        "HideMobileActions",
+        "AutoUltimate",
+    }) do
+        _G[name] = false
+        local idName = name .. "RunId"
+        _G[idName] = (_G[idName] or 0) + 1
+    end
+
+    pcall(function()
+        local module = require(
+            ReplicatedStorage:WaitForChild("Modules"):WaitForChild("DropSpawner")
+        )
+        module.SetMagneticRange(15)
+        module.SetMagneticSpeed(21)
+    end)
+
+    pcall(function()
+        local mainGui = playerGui:FindFirstChild("Main")
+        local hud = mainGui and mainGui:FindFirstChild("HUD")
+        local mobile = hud and hud:FindFirstChild("MobileActions")
+        if mobile then
+            mobile.Visible = true
+        end
+    end)
+
+    gui:Destroy()
+end)
+
+--========================================================
+-- DRAG SUPPORT
+--========================================================
+
+local function makeDraggable(handle, target)
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPosition
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+
+            dragging = true
+            dragStart = input.Position
+            startPosition = target.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (
+            input == dragInput
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+            local delta = input.Position - dragStart
+            target.Position = UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+makeDraggable(header, main)
+makeDraggable(mini, mini)
+
+--========================================================
+-- TOGGLE SYSTEM
+--========================================================
+
+local toggleOrder = 0
+
+local function addToggle(label, defaultState, callback)
+    toggleOrder += 1
+
+    local row = Instance.new("Frame")
+    row.Name = label:gsub("%W", "") .. "Row"
+    row.Size = UDim2.new(1, -3, 0, 38)
+    row.BackgroundColor3 = Color3.fromRGB(31, 29, 41)
+    row.BorderSizePixel = 0
+    row.LayoutOrder = toggleOrder
+    row.Parent = scroll
+    corner(row, 8)
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, -78, 1, 0)
+    textLabel.Position = UDim2.fromOffset(10, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = label
+    textLabel.TextColor3 = Color3.fromRGB(230, 228, 240)
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextSize = 11
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    textLabel.Parent = row
+
+    local switch = Instance.new("TextButton")
+    switch.Name = "Switch"
+    switch.Size = UDim2.fromOffset(48, 25)
+    switch.Position = UDim2.new(1, -58, 0.5, -12)
+    switch.BackgroundColor3 = Color3.fromRGB(70, 68, 80)
+    switch.Text = ""
+    switch.BorderSizePixel = 0
+    switch.Parent = row
+    corner(switch, 100)
+
+    local knob = Instance.new("Frame")
+    knob.Name = "Knob"
+    knob.Size = UDim2.fromOffset(19, 19)
+    knob.Position = UDim2.fromOffset(3, 3)
+    knob.BackgroundColor3 = Color3.fromRGB(240, 240, 245)
+    knob.BorderSizePixel = 0
+    knob.Parent = switch
+    corner(knob, 100)
+
+    local state = false
+
+    local function setState(value, callCallback)
+        state = value == true
+
+        if state then
+            switch.BackgroundColor3 = Color3.fromRGB(112, 70, 220)
+            knob.Position = UDim2.new(1, -22, 0, 3)
+        else
+            switch.BackgroundColor3 = Color3.fromRGB(70, 68, 80)
+            knob.Position = UDim2.fromOffset(3, 3)
+        end
+
+        if callCallback and callback then
+            local ok, err = pcall(callback, state)
+            if not ok then
+                warn("[Automation Hub] " .. label .. ": " .. tostring(err))
+            end
+        end
+    end
+
+    switch.Activated:Connect(function()
+        setState(not state, true)
+    end)
+
+    setState(defaultState == true, false)
+
+    if defaultState == true and callback then
+        task.defer(function()
+            if alive() then
+                local ok, err = pcall(callback, true)
+                if not ok then
+                    warn("[Automation Hub] " .. label .. ": " .. tostring(err))
+                end
+            end
+        end)
+    end
+
+    return function(value)
+        setState(value, true)
+    end
+end
+
+--========================================================
+-- SHARED HELPERS
+--========================================================
+
+local function nextRunId(name)
+    local key = name .. "RunId"
+    _G[key] = (_G[key] or 0) + 1
+    return _G[key]
+end
+
+local function featureRunning(name, id)
+    return alive()
+        and _G[name] == true
+        and _G[name .. "RunId"] == id
+end
+
+local function getKnit()
+    return require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Knit"))
+end
+
+--========================================================
+-- SNOW FARM
+--========================================================
+
+local ORBIT_RADIUS = 12
+local ORBIT_HEIGHT = 12
+local ORBIT_SPEED = 2
+local ATTACK_INTERVAL = 0.1
+local SKILL_INTERVAL = 0.05
+local EMPTY_CONFIRM_TIME = 1.5
+local ZONE_WAIT_TIME = 5
+
+local Inputs = ReplicatedStorage
+    :WaitForChild("Player")
+    :WaitForChild("Remotes")
+    :WaitForChild("Inputs")
+
+local AttackRemote = Inputs:WaitForChild("Attack")
+local SkillRemote = Inputs:WaitForChild("Skill")
+
+local function getRoot()
+    local character = player.Character
+    if not character then
+        return nil
+    end
+
+    return character:FindFirstChild("HumanoidRootPart")
+        or character.PrimaryPart
+end
+
+local function getMap()
+    for _, object in ipairs(Workspace:GetChildren()) do
+        if object.Name:match("^Generated_Snow_")
+            and object:FindFirstChild("NPCs") then
+            return object
+        end
+    end
+    return nil
+end
+
+
+local function getMobPart(model)
+    if not model or not model:IsA("Model") or not model.Parent then
+        return nil
+    end
+
+    local priorityNames = {
+        "HumanoidRootPart",
+        "Grand Imperator Head",
+        "UpperTorso",
+        "Torso",
+        "LowerTorso",
+        "Head",
+        "Kieru3",
+    }
+
+    -- Cari part yang namanya diketahui, termasuk di dalam submodel
+    for _, name in ipairs(priorityNames) do
+        local part = model:FindFirstChild(name, true)
+
+        if part and part:IsA("BasePart") and part:IsDescendantOf(model) then
+            return part
+        end
+    end
+
+    -- Fallback jika NPC menggunakan rig khusus
+    if model.PrimaryPart and model.PrimaryPart:IsA("BasePart") then
+        return model.PrimaryPart
+    end
+
+    for _, obj in ipairs(model:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            return obj
+        end
+    end
+
+    return nil
+end
+
+
+
+local function isDead(model)
+    if not model or not model.Parent then
+        return true
+    end
+
+    -- Health Humanoid menjadi sumber utama jika tersedia.
+    local humanoid = model:FindFirstChildWhichIsA("Humanoid", true)
+
+    if humanoid then
+        return humanoid.Health <= 0
+    end
+
+    -- Untuk NPC tanpa Humanoid, gunakan atribut jika memang tersedia.
+    return model:GetAttribute("State") == "Dead"
+end
+
+local function getNPCState(map)
+    local targets = {}
+    local folder = map and map:FindFirstChild("NPCs")
+
+    if not folder then
+        return targets, false
+    end
+
+    -- Scan sampai ke dalam subfolder, bukan hanya GetChildren().
+    for _, model in ipairs(folder:GetDescendants()) do
+        if model:IsA("Model") and not isDead(model) then
+            local humanoid = model:FindFirstChildWhichIsA("Humanoid", true)
+
+            -- Hindari model pembungkus yang tidak memiliki tubuh sendiri.
+            local hasDirectPart = false
+
+            for _, child in ipairs(model:GetChildren()) do
+                if child:IsA("BasePart") then
+                    hasDirectPart = true
+                    break
+                end
+            end
+
+            if humanoid or hasDirectPart or model.PrimaryPart then
+                local part = getMobPart(model)
+
+                if part and part.Parent then
+                    table.insert(targets, {
+                        model = model,
+                        part = part,
+                    })
+                end
+            end
+        end
+    end
+
+    return targets, #targets > 0
+end
+
+
+local function getNPCState(map)
+    local folder = map and map:FindFirstChild("NPCs")
+    local targets = {}
+    local hasNPC = false
+
+    if not folder then
+        return targets, false
+    end
+
+    for _, model in ipairs(folder:GetChildren()) do
+        if model:IsA("Model") and not isDead(model) then
+            local part = getMobPart(model)
+
+            if part then
+                hasNPC = true
+                table.insert(targets, {
+                    model = model,
+                    part = part,
+                })
+            end
+        end
+    end
+	print(
+    "[Snow Farm] NPC terdeteksi:",
+    #targets,
+    "| Folder:",
+    folder:GetFullName()
+)
+    return targets, hasNPC
+end
+
+local function getZones(map)
+    local zones = {}
+
+    for _, room in ipairs(map:GetChildren()) do
+        if room.Name:match("^Room_?%d+$") then
+            local zone = room:FindFirstChild("Zone")
+            if zone and zone:IsA("BasePart") then
+                table.insert(zones, zone)
+            end
+        end
+    end
+
+    return zones
+end
+
+local function snowFarmLoop(runId)
+    local currentTarget
+    local lockedY
+    local angle = 0
+    local lastAttack = 0
+    local lastSkill = 0
+    local skillNumber = 1
+    local emptySince
+    local visitedZones = {}
+
+    while featureRunning("AutoFarmSnowZone", runId) do
+        local map = getMap()
+
+        if not map then
+            currentTarget = nil
+            lockedY = nil
+            setStatus("WAITING FOR SNOW MAP")
+            task.wait(0.5)
+            continue
+        end
+
+        local root = getRoot()
+        if not root then
+            setStatus("WAITING FOR CHARACTER")
+            task.wait(0.25)
+            continue
+        end
+
+        local targets, hasNPC = getNPCState(map)
+
+        if hasNPC then
+            emptySince = nil
+
+            if not currentTarget
+                or not currentTarget.model.Parent
+                or isDead(currentTarget.model)
+                or not currentTarget.part.Parent then
+
+                currentTarget = nil
+                lockedY = nil
+
+                local nearestDistance = math.huge
+
+                for _, data in ipairs(targets) do
+                    if data.part and data.part.Parent then
+                        local distance = (data.part.Position - root.Position).Magnitude
+                        if distance < nearestDistance then
+                            nearestDistance = distance
+                            currentTarget = data
+                        end
+                    end
+                end
+
+                if currentTarget then
+                    local part = currentTarget.part
+                    angle = math.atan2(
+                        root.Position.Z - part.Position.Z,
+                        root.Position.X - part.Position.X
+                    )
+                    lockedY = part.Position.Y + ORBIT_HEIGHT
+                end
+            end
+
+            if not currentTarget then
+                setStatus("NPC PRESENT - WAITING FOR TARGET")
+                task.wait(0.15)
+                continue
+            end
+
+-- Refresh part target setiap loop, bukan memakai part lama terus
+local part = getMobPart(currentTarget.model)
+
+if not part or not part.Parent then
+    currentTarget = nil
+    lockedY = nil
+    task.wait(0.1)
+    continue
+end
+
+currentTarget.part = part
+
+            setStatus("FARMING: " .. currentTarget.model.Name,
+                Color3.fromRGB(125, 235, 155))
+
+            local dt = RunService.Heartbeat:Wait()
+            if not featureRunning("AutoFarmSnowZone", runId) then
+                break
+            end
+
+            root = getRoot()
+
+            if root and part.Parent and not isDead(currentTarget.model) then
+                angle += ORBIT_SPEED * dt
+                local targetPosition = part.Position
+
+                local destination = Vector3.new(
+                    targetPosition.X + math.cos(angle) * ORBIT_RADIUS,
+                    lockedY,
+                    targetPosition.Z + math.sin(angle) * ORBIT_RADIUS
+                )
+
+                root.CFrame = CFrame.lookAt(
+                    destination,
+                    Vector3.new(targetPosition.X, lockedY, targetPosition.Z)
+                )
+
+                local now = os.clock()
+
+                if now - lastAttack >= ATTACK_INTERVAL then
+                    pcall(function()
+                        AttackRemote:FireServer(targetPosition)
+                    end)
+                    lastAttack = now
+                end
+
+                if now - lastSkill >= SKILL_INTERVAL then
+                    pcall(function()
+                        SkillRemote:FireServer(skillNumber, "tap", targetPosition, nil)
+                    end)
+                    skillNumber = (skillNumber % 4) + 1
+                    lastSkill = now
+                end
+            end
+        else
+            currentTarget = nil
+            lockedY = nil
+
+            emptySince = emptySince or os.clock()
+            setStatus("CHECKING NPC CLEAR")
+
+            if os.clock() - emptySince < EMPTY_CONFIRM_TIME then
+                task.wait(0.15)
+                continue
+            end
+
+            local _, stillHasNPC = getNPCState(map)
+            if stillHasNPC then
+                emptySince = nil
+                continue
+            end
+			
+-- Pemeriksaan terakhir sebelum masuk ke pencarian Zone.
+local latestTargets, latestHasNPC = getNPCState(map)
+
+if latestHasNPC then
+    emptySince = nil
+
+    -- Loop utama akan memilih mob terdekat dan farm lagi.
+    task.wait(0.05)
+    continue
+end
+
+            local zones = getZones(map)
+            if #zones == 0 then
+                setStatus("NO VALID ROOM ZONE")
+                task.wait(0.75)
+                continue
+            end
+
+            local candidates = {}
+            for _, zone in ipairs(zones) do
+                if zone.Parent and not visitedZones[zone] then
+                    table.insert(candidates, zone)
+                end
+            end
+
+            if #candidates == 0 then
+                visitedZones = {}
+                candidates = zones
+            end
+
+            local zone = candidates[math.random(1, #candidates)]
+            local _, npcAppeared = getNPCState(map)
+
+            if npcAppeared then
+                emptySince = nil
+                continue
+            end
+
+            visitedZones[zone] = true
+            root = getRoot()
+
+            if root and zone.Parent then
+                root.CFrame = zone.CFrame + Vector3.new(0, 4, 0)
+            end
+
+            setStatus("MOVING TO ZONE")
+            local deadline = os.clock() + ZONE_WAIT_TIME
+
+            while featureRunning("AutoFarmSnowZone", runId)
+                and os.clock() < deadline do
+
+                task.wait(0.15)
+                local _, spawned = getNPCState(map)
+
+                if spawned then
+                    break
+                end
+            end
+
+            emptySince = nil
+        end
+    end
+end
+
+addToggle("Auto Farm Snow Zone", false, function(state)
+    _G.AutoFarmSnowZone = state
+    local id = nextRunId("AutoFarmSnowZone")
+
+    if not state then
+        setStatus("SNOW FARM STOPPED", Color3.fromRGB(255, 125, 125))
+        return
+    end
+
+    setStatus("STARTING SNOW FARM", Color3.fromRGB(125, 235, 155))
+
+    task.spawn(function()
+        local ok, err = pcall(snowFarmLoop, id)
+        if not ok then
+            warn("[Snow Farm] ERROR DETAIL:", tostring(err))
+if alive() then
+    setStatus("ERROR: " .. string.sub(tostring(err), 1, 100),
+        Color3.fromRGB(255, 100, 100))
+end
+            if alive() then
+                setStatus("SNOW FARM ERROR", Color3.fromRGB(255, 100, 100))
+            end
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO REPLAY DUNGEON
+--========================================================
+
+addToggle("Auto Replay Dungeon", false, function(state)
+    _G.AutoReplayDungeon = state
+    local id = nextRunId("AutoReplayDungeon")
+    if not state then return end
+
+    task.spawn(function()
+        while featureRunning("AutoReplayDungeon", id) do
+            pcall(function()
+                local button = player.PlayerGui.Main.HUD.Dungeon_Container
+                    .Completion_Info.Content.ActionButtons.ReplayButton
+
+                if button.Visible and button:IsA("GuiButton") then
+                    firesignal(button.Activated)
+                end
+            end)
+            task.wait(0.2)
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO SELECT 2 CHESTS
+--========================================================
+
+addToggle("Auto Select 2 Chests", false, function(state)
+    _G.AutoSelectChest = state
+    local id = nextRunId("AutoSelectChest")
+    if not state then return end
+
+    task.spawn(function()
+        local controller
+
+        local ok, err = pcall(function()
+            controller = getKnit().GetController("ChestSelectionController")
+        end)
+
+        if not ok or not controller then
+            warn("[Auto Chest] Controller gagal:", err)
+            return
+        end
+
+        while featureRunning("AutoSelectChest", id) do
+            if controller._active
+                and controller._ready
+                and type(controller._candidates) == "table" then
+
+                local candidates = controller._candidates
+                local maxPicks = tonumber(controller._maxPicks) or 2
+
+                for index = 1, #candidates do
+                    if not featureRunning("AutoSelectChest", id) then break end
+                    if not controller._active or not controller._ready then break end
+                    if (tonumber(controller._selectedCount) or 0) >= maxPicks then break end
+
+                    if candidates[index]
+                        and not (controller._selected and controller._selected[index]) then
+
+                        pcall(function()
+                            controller:_OnChestClicked(index)
+                        end)
+
+                        task.wait(0.25)
+                    end
+                end
+
+                if featureRunning("AutoSelectChest", id)
+                    and controller._active
+                    and (tonumber(controller._selectedCount) or 0) >= maxPicks then
+
+                    task.wait(0.2)
+                    pcall(function()
+                        controller:_OnFinish()
+                    end)
+                    task.wait(0.6)
+                end
+            end
+
+            task.wait(0.15)
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO CONTINUE
+--========================================================
+
+addToggle("Auto Continue", false, function(state)
+    _G.AutoContinue = state
+    local id = nextRunId("AutoContinue")
+    if not state then return end
+
+    task.spawn(function()
+        local event
+
+        pcall(function()
+            event = ReplicatedStorage:WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_knit@1.7.0")
+                :WaitForChild("knit")
+                :WaitForChild("Services")
+                :WaitForChild("DungeonRunService")
+                :WaitForChild("RF")
+                :WaitForChild("SubmitEndlessChoice")
+        end)
+
+        while featureRunning("AutoContinue", id) do
+            if event then
+                pcall(function()
+                    event:InvokeServer(true)
+                end)
+            end
+            task.wait(2)
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO SELECT BOOST
+--========================================================
+
+addToggle("Auto Select Boost", false, function(state)
+    _G.AutoSelectBoost = state
+    local id = nextRunId("AutoSelectBoost")
+    if not state then return end
+
+    task.spawn(function()
+        local controller
+
+        local ok, err = pcall(function()
+            controller = getKnit().GetController("BoostSelectionController")
+        end)
+
+        if not ok or not controller then
+            warn("[Auto Boost] Controller gagal:", err)
+            return
+        end
+
+        local function getPriority(candidate)
+            local title = string.lower(tostring(candidate.Title or ""))
+            local desc = string.lower(tostring(candidate.Description or ""))
+            local combined = title .. " " .. desc
+
+            if combined:find("overall damage", 1, true) then
+                return 1
+            end
+
+            if combined:find("max hp", 1, true)
+                or combined:find("maximum hp", 1, true)
+                or combined:find("max health", 1, true)
+                or combined:find("maximum health", 1, true) then
+                return 2
+            end
+
+            return 99
+        end
+
+        while featureRunning("AutoSelectBoost", id) do
+            if controller._active
+                and controller._ready
+                and not controller._selecting
+                and type(controller._candidates) == "table" then
+
+                local candidates = controller._candidates
+                local selectedIndex
+                local bestPriority = 99
+
+                for i, candidate in ipairs(candidates) do
+                    if candidate then
+                        local priority = getPriority(candidate)
+                        if priority < bestPriority then
+                            bestPriority = priority
+                            selectedIndex = i
+                        end
+                    end
+                end
+
+                if not selectedIndex and candidates[1] then
+                    selectedIndex = 1
+                end
+
+                if selectedIndex and featureRunning("AutoSelectBoost", id) then
+                    local offerId = controller._offerId
+
+                    pcall(function()
+                        controller:_OnCardClicked(selectedIndex)
+                    end)
+
+                    local elapsed = 0
+                    while featureRunning("AutoSelectBoost", id)
+                        and controller._active
+                        and controller._offerId == offerId
+                        and elapsed < 10 do
+
+                        task.wait(0.2)
+                        elapsed += 0.2
+                    end
+                end
+            end
+
+            task.wait(0.15)
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO MAGNET DROPS
+--========================================================
+
+addToggle("Auto Magnet Drops", false, function(state)
+    _G.AutoMagnetDrops = state
+    local id = nextRunId("AutoMagnetDrops")
+
+    task.spawn(function()
+        local module
+
+        pcall(function()
+            module = require(
+                ReplicatedStorage:WaitForChild("Modules"):WaitForChild("DropSpawner")
+            )
+        end)
+
+        if not module then
+            warn("[Auto Magnet] DropSpawner gagal ditemukan")
+            return
+        end
+
+        if state then
+            pcall(function()
+                module.SetMagneticRange(100)
+                module.SetMagneticSpeed(150)
+            end)
+
+            while featureRunning("AutoMagnetDrops", id) do
+                task.wait(0.5)
+            end
+        end
+
+        if not _G.AutoMagnetDrops then
+            pcall(function()
+                module.SetMagneticRange(15)
+                module.SetMagneticSpeed(21)
+            end)
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO NEXT DEPTH
+--========================================================
+
+addToggle("Auto Next Depth", false, function(state)
+    _G.AutoNextDepth = state
+    local id = nextRunId("AutoNextDepth")
+    if not state then return end
+
+    task.spawn(function()
+        local Knit
+        pcall(function()
+            Knit = getKnit()
+        end)
+
+        local busy = false
+
+        while featureRunning("AutoNextDepth", id) do
+            local inTower = player:GetAttribute("InBossRush")
+                and player:GetAttribute("BossRushRoute")
+
+            local depth = player:GetAttribute("TowerNextDepth")
+
+            if inTower
+                and depth
+                and not player:GetAttribute("IsSpectating")
+                and not busy
+                and Knit then
+
+                busy = true
+
+                pcall(function()
+                    local service = Knit.GetService("InfiniteTowerService")
+                    service:NextDepth(depth):catch(function(e)
+                        warn("[Auto Next Depth]", e)
+                    end)
+                end)
+
+                task.wait(3)
+                busy = false
+            end
+
+            task.wait(0.5)
+        end
+    end)
+end)
+
+--========================================================
+-- ANTI AFK
+--========================================================
+
+addToggle("Anti AFK", false, function(state)
+    _G.AntiAFK = state
+    local id = nextRunId("AntiAFK")
+    if not state then return end
+
+    task.spawn(function()
+        while featureRunning("AntiAFK", id) do
+            pcall(function()
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                task.wait(0.1)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+            end)
+            task.wait(60)
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO POTION HP 50%
+--========================================================
+
+addToggle("Auto Potion HP 50%", false, function(state)
+    _G.AutoPotionHP = state
+    local id = nextRunId("AutoPotionHP")
+    if not state then return end
+
+    task.spawn(function()
+        local busy = false
+
+        while featureRunning("AutoPotionHP", id) do
+            local character = player.Character
+            local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+
+            if humanoid
+                and humanoid.Health > 0
+                and humanoid.Health <= humanoid.MaxHealth * 0.5
+                and not busy then
+
+                busy = true
+
+                pcall(function()
+                    getKnit():GetService("PotionService"):UsePotion(1)
+                end)
+
+                task.wait(1)
+                busy = false
+            end
+
+            task.wait(0.2)
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO PARRY
+--========================================================
+
+addToggle("Auto Parry", false, function(state)
+    _G.AutoParry = state
+    local id = nextRunId("AutoParry")
+    if not state then return end
+
+    task.spawn(function()
+        local event = ReplicatedStorage
+            :WaitForChild("Player")
+            :WaitForChild("Remotes")
+            :WaitForChild("Inputs")
+            :WaitForChild("Parry")
+
+        while featureRunning("AutoParry", id) do
+            pcall(function()
+                event:FireServer()
+            end)
+            task.wait(1.5)
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO DODGE
+--========================================================
+
+addToggle("Auto Dodge", false, function(state)
+    _G.AutoDodge = state
+    local id = nextRunId("AutoDodge")
+    if not state then return end
+
+    task.spawn(function()
+        local event = ReplicatedStorage
+            :WaitForChild("Player")
+            :WaitForChild("Remotes")
+            :WaitForChild("Inputs")
+            :WaitForChild("Dash")
+
+        while featureRunning("AutoDodge", id) do
+            pcall(function()
+                event:FireServer(Vector3.new(0, 0, -1))
+            end)
+            task.wait(2.5)
+        end
+    end)
+end)
+
+--========================================================
+-- HIDE MOBILE ACTIONS
+--========================================================
+
+addToggle("Hide Mobile Actions", false, function(state)
+    _G.HideMobileActions = state
+    local id = nextRunId("HideMobileActions")
+
+    task.spawn(function()
+        while featureRunning("HideMobileActions", id) do
+            local mainGui = playerGui:FindFirstChild("Main")
+            local hud = mainGui and mainGui:FindFirstChild("HUD")
+            local mobileActions = hud and hud:FindFirstChild("MobileActions")
+
+            if mobileActions and mobileActions:IsA("GuiObject") then
+                mobileActions.Visible = false
+            end
+
+            task.wait(0.5)
+        end
+
+        if not _G.HideMobileActions then
+            pcall(function()
+                local mainGui = playerGui:FindFirstChild("Main")
+                local hud = mainGui and mainGui:FindFirstChild("HUD")
+                local mobileActions = hud and hud:FindFirstChild("MobileActions")
+
+                if mobileActions and mobileActions:IsA("GuiObject") then
+                    mobileActions.Visible = true
+                end
+            end)
+        end
+    end)
+end)
+
+--========================================================
+-- AUTO ULTIMATE (G)
+--========================================================
+
+addToggle("Auto Ultimate (G)", false, function(state)
+    _G.AutoUltimate = state
+    local id = nextRunId("AutoUltimate")
+    if not state then return end
+
+    task.spawn(function()
+        while featureRunning("AutoUltimate", id) do
+            pcall(function()
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.G, false, game)
+                task.wait(0.15)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.G, false, game)
+            end)
+
+            task.wait(15)
+        end
+    end)
+end)
+--========================================================
+-- AUTO SELL EQUIPMENT (KEEP EXOTIC) - LOOP
+--========================================================
+
+addToggle("Auto Sell Equipment (Keep Exotic)", false, function(state)
+    _G.AutoSellEquip = state
+    _G.AutoSellEquipRunId = (_G.AutoSellEquipRunId or 0) + 1
+
+    local runId = _G.AutoSellEquipRunId
+    if not state then return end
+
+    task.spawn(function()
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+        local sellRemote
+        local RarityColors
+        local grid
+
+        local ok, err = pcall(function()
+            grid = player.PlayerGui.Main.Frames.Inventory.Contents
+                .InventorySection.ItemPanel.ItemGrid
+
+            sellRemote = ReplicatedStorage
+                :WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_knit@1.7.0")
+                :WaitForChild("knit")
+                :WaitForChild("Services")
+                :WaitForChild("ShopService")
+                :WaitForChild("RF")
+                :WaitForChild("SellEquipment")
+
+            RarityColors = require(
+                ReplicatedStorage:WaitForChild("SharedDictionaries")
+                    :WaitForChild("RarityColors")
+            )
+        end)
+
+        if not ok then
+            warn("[Auto Sell] Gagal menyiapkan fitur:", err)
+            return
+        end
+
+        local function running()
+            return alive()
+                and _G.AutoSellEquip
+                and _G.AutoSellEquipRunId == runId
+        end
+
+        local function isUUID(s)
+            return s:match(
+                "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$"
+            ) ~= nil
+        end
+
+        local function colorMatches(a, b)
+            return math.abs(a.R - b.R) < 0.015
+                and math.abs(a.G - b.G) < 0.015
+                and math.abs(a.B - b.B) < 0.015
+        end
+
+        local function getRarity(item)
+            local label = item:FindFirstChild("Item_Name", true)
+            local gradient = label and label:FindFirstChild("RarityGradient", true)
+
+            if not gradient or not gradient:IsA("UIGradient") then
+                return nil
+            end
+
+            local keypoints = gradient.Color.Keypoints
+            if #keypoints == 0 then
+                return nil
+            end
+
+            local firstColor = keypoints[1].Value
+            local lastColor = keypoints[#keypoints].Value
+
+            for rarity, colors in pairs(RarityColors) do
+                if rarity ~= "Enemy"
+                    and colors.BackgroundColor3
+                    and colors.BorderColor3
+                    and colorMatches(firstColor, colors.BackgroundColor3)
+                    and colorMatches(lastColor, colors.BorderColor3) then
+                    return rarity
+                end
+            end
+
+            return nil
+        end
+
+        while running() do
+            local sold, kept, skipped = 0, 0, 0
+
+            -- Ambil ulang item setiap siklus agar equipment baru ikut diperiksa.
+            local items = grid:GetChildren()
+
+            for _, item in ipairs(items) do
+                if not running() then
+                    break
+                end
+
+                if item.Parent == grid and isUUID(item.Name) then
+                    local rarity = getRarity(item)
+
+                    if rarity == "Exotic" then
+                        kept += 1
+
+                    elseif rarity and rarity ~= "Enemy" then
+                        local success, sellErr = pcall(function()
+                            sellRemote:InvokeServer({item.Name})
+                        end)
+
+                        if success then
+                            sold += 1
+                            print("[Auto Sell] Terjual:", rarity, item.Name)
+                        else
+                            warn("[Auto Sell] Gagal:", item.Name, sellErr)
+                        end
+
+                        task.wait(0.4)
+                    else
+                        skipped += 1
+                    end
+                end
+            end
+
+            if not running() then
+                break
+            end
+
+            print(
+                "[Auto Sell] Siklus selesai | Terjual:", sold,
+                "| Exotic disimpan:", kept,
+                "| Dilewati:", skipped
+            )
+
+            -- Tunggu sebelum memeriksa inventory lagi.
+            task.wait(3)
+        end
+    end)
+end)
+
+--========================================================
+-- OPEN INVENTORY - ONE SHOT
+--========================================================
+
+addToggle("Open Inventory", false, function(state)
+    if not state then return end
+
+    -- Kembalikan switch ke OFF; aksi ini hanya sekali.
+    task.defer(function()
+        local mainFrame = gui:FindFirstChild("Main")
+        local toggleList = mainFrame and mainFrame:FindFirstChild("ToggleList")
+
+        if not toggleList then return end
+
+        for _, row in ipairs(toggleList:GetChildren()) do
+            if row:IsA("Frame") and row.Name == "OpenInventoryRow" then
+                local switch = row:FindFirstChild("Switch")
+                local knob = switch and switch:FindFirstChild("Knob")
+
+                if switch and knob then
+                    switch.BackgroundColor3 = Color3.fromRGB(70, 68, 80)
+                    knob.Position = UDim2.fromOffset(3, 3)
+                end
+                break
+            end
+        end
+    end)
+
+    task.spawn(function()
+        local ok, err = pcall(function()
+            local pg = player:WaitForChild("PlayerGui")
+            local mainGui = pg:WaitForChild("Main")
+            local frames = mainGui:WaitForChild("Frames")
+            local inventory = frames:FindFirstChild("Inventory")
+
+            if inventory then
+                inventory.Visible = true
+                if mainGui:IsA("ScreenGui") then
+                    mainGui.Enabled = true
+                end
+            else
+                warn("[Open Inventory] Inventory frame tidak ditemukan")
+            end
+        end)
+
+        if not ok then
+            warn("[Open Inventory] Gagal:", err)
+        end
+    end)
+end)
+--========================================================
+-- READY
+--========================================================
+
+setStatus("READY - " .. tostring(toggleOrder) .. " TOGGLES",
+    Color3.fromRGB(170, 140, 255))
+
+print("[Automation Hub] Loaded - Floating Circle + Minimize + All Toggles")
