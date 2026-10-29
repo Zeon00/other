@@ -825,7 +825,7 @@ currentTarget.part = part
     end
 end
 
-addToggle("Auto Farm Snow Zone", false, function(state)
+addToggle("Auto Farm Snow Zone", true, function(state)
     _G.AutoFarmSnowZone = state
     local id = nextRunId("AutoFarmSnowZone")
 
@@ -852,7 +852,7 @@ end)
 -- AUTO REPLAY DUNGEON
 --========================================================
 
-addToggle("Auto Replay Dungeon", false, function(state)
+addToggle("Auto Replay Dungeon", true, function(state)
     _G.AutoReplayDungeon = state
     local id = nextRunId("AutoReplayDungeon")
     if not state then return end
@@ -876,7 +876,7 @@ end)
 -- AUTO SELECT 2 CHESTS
 --========================================================
 
-addToggle("Auto Select 2 Chests", false, function(state)
+addToggle("Auto Select 2 Chests", true, function(state)
     _G.AutoSelectChest = state
     local id = nextRunId("AutoSelectChest")
     if not state then return end
@@ -938,7 +938,7 @@ end)
 -- AUTO CONTINUE
 --========================================================
 
-addToggle("Auto Continue", false, function(state)
+addToggle("Auto Continue", true, function(state)
     _G.AutoContinue = state
     local id = nextRunId("AutoContinue")
     if not state then return end
@@ -972,7 +972,7 @@ end)
 -- AUTO SELECT BOOST
 --========================================================
 
-addToggle("Auto Select Boost", false, function(state)
+addToggle("Auto Select Boost", true, function(state)
     _G.AutoSelectBoost = state
     local id = nextRunId("AutoSelectBoost")
     if not state then return end
@@ -1060,7 +1060,7 @@ end)
 -- AUTO MAGNET DROPS
 --========================================================
 
-addToggle("Auto Magnet Drops", false, function(state)
+addToggle("Auto Magnet Drops", true, function(state)
     _G.AutoMagnetDrops = state
     local id = nextRunId("AutoMagnetDrops")
 
@@ -1102,7 +1102,7 @@ end)
 -- AUTO NEXT DEPTH
 --========================================================
 
-addToggle("Auto Next Depth", false, function(state)
+addToggle("Auto Next Depth", true, function(state)
     _G.AutoNextDepth = state
     local id = nextRunId("AutoNextDepth")
     if not state then return end
@@ -1149,7 +1149,7 @@ end)
 -- ANTI AFK
 --========================================================
 
-addToggle("Anti AFK", false, function(state)
+addToggle("Anti AFK", true, function(state)
     _G.AntiAFK = state
     local id = nextRunId("AntiAFK")
     if not state then return end
@@ -1170,7 +1170,7 @@ end)
 -- AUTO POTION HP 50%
 --========================================================
 
-addToggle("Auto Potion HP 50%", false, function(state)
+addToggle("Auto Potion HP 50%", true, function(state)
     _G.AutoPotionHP = state
     local id = nextRunId("AutoPotionHP")
     if not state then return end
@@ -1256,7 +1256,7 @@ end)
 -- HIDE MOBILE ACTIONS
 --========================================================
 
-addToggle("Hide Mobile Actions", false, function(state)
+addToggle("Hide Mobile Actions", true, function(state)
     _G.HideMobileActions = state
     local id = nextRunId("HideMobileActions")
 
@@ -1312,7 +1312,7 @@ end)
 -- AUTO SELL EQUIPMENT (KEEP EXOTIC) - LOOP
 --========================================================
 
-addToggle("Auto Sell Equipment (Keep Exotic)", false, function(state)
+addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
     _G.AutoSellEquip = state
     _G.AutoSellEquipRunId = (_G.AutoSellEquipRunId or 0) + 1
 
@@ -1508,7 +1508,7 @@ end)
 _G.AutoTPNPC = false
 _G.AutoTPNPCRunId = _G.AutoTPNPCRunId or 0
 
-addToggle("Auto TP NPC", false, function(state)
+addToggle("Auto TP NPC", true, function(state)
     _G.AutoTPNPC = state
     _G.AutoTPNPCRunId += 1
 
