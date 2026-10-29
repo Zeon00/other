@@ -1502,7 +1502,7 @@ addToggle("Open Inventory", false, function(state)
 end)
 
 --========================================================
--- AUTO TP NPC - STANDALONE TOGGLE
+-- AUTO TP NPC - MODEL PIVOT
 --========================================================
 
 _G.AutoTPNPC = false
@@ -1524,47 +1524,64 @@ addToggle("Auto TP NPC", false, function(state)
             and _G.AutoTPNPC
             and _G.AutoTPNPCRunId == runId do
 
-            local root = getRoot()
             local map = getMap()
             local folder = map and map:FindFirstChild("NPCs")
+            local character = player.Character
+            local humanoid = character
+                and character:FindFirstChildOfClass("Humanoid")
 
-            local targetPart
-            local nearestDistance = math.huge
+            local target
+            local nearest = math.huge
 
-            if root and folder then
-                for _, obj in ipairs(folder:GetDescendants()) do
-                    if obj:IsA("Model")
-                        and obj.Parent
-                        and not isDead(obj) then
+            if folder and character and humanoid
+                and humanoid.Health > 0 then
 
-                        local part = getMobPart(obj)
+                local okRoot, characterPivot =
+                    pcall(function()
+                        return character:GetPivot()
+                    end)
 
-                        if part and part:IsDescendantOf(folder) then
-                            local distance =
-                                (part.Position - root.Position).Magnitude
+                if okRoot then
+                    for _, mob in ipairs(folder:GetChildren()) do
+                        if mob:IsA("Model") and mob.Parent then
+                            local ok, mobPivot = pcall(function()
+                                return mob:GetPivot()
+                            end)
 
-                            if distance < nearestDistance then
-                                nearestDistance = distance
-                                targetPart = part
+                            if ok and not isDead(mob) then
+                                local distance =
+                                    (mobPivot.Position
+                                    - characterPivot.Position).Magnitude
+
+                                if distance < nearest then
+                                    nearest = distance
+                                    target = mob
+                                end
                             end
                         end
                     end
                 end
             end
 
-            if root and targetPart and targetPart.Parent then
-                root.CFrame =
-                    CFrame.new(targetPart.Position + Vector3.new(0, 3, 0))
+            if target and target.Parent and character.Parent then
+                local ok, err = pcall(function()
+                    local destination = target:GetPivot().Position
+                        + Vector3.new(0, 4, 0)
 
-                setStatus(
-                    "TP NPC: " .. targetPart.Parent.Name,
-                    Color3.fromRGB(125, 235, 155)
-                )
+                    character:PivotTo(CFrame.new(destination))
+                end)
+
+                if ok then
+                    setStatus("TARGET: " .. target.Name,
+                        Color3.fromRGB(125, 235, 155))
+                else
+                    warn("[Auto TP NPC]", err)
+                end
             else
-                setStatus("WAITING FOR NPC")
+                setStatus("NPC NOT FOUND")
             end
 
-            task.wait(0.3)
+            task.wait(0.5)
         end
     end)
 end)
