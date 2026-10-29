@@ -515,23 +515,49 @@ local function getMobPart(model)
 end
 
 
-
+-- Status NPC yang tahan terhadap atribut State lama/stale.
 local function isDead(model)
-    if not model or not model.Parent then
+    if not model or not model:IsA("Model") or not model.Parent then
         return true
     end
 
-    -- Health Humanoid menjadi sumber utama jika tersedia.
-    local humanoid = model:FindFirstChildWhichIsA("Humanoid", true)
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+        or model:FindFirstChildWhichIsA("Humanoid", true)
 
+    -- Kalau ada Humanoid, Health adalah sumber utama.
     if humanoid then
         return humanoid.Health <= 0
     end
 
-    -- Untuk NPC tanpa Humanoid, gunakan atribut jika memang tersedia.
-    return model:GetAttribute("State") == "Dead"
+    -- NPC custom tanpa Humanoid: baca Attribute atau Value object.
+    local state = model:GetAttribute("State")
+    if state == nil then
+        local stateValue = model:FindFirstChild("State", true)
+        if stateValue and (stateValue:IsA("StringValue") or stateValue:IsA("BoolValue")) then
+            state = stateValue.Value
+        end
+    end
+
+    if type(state) == "string" then
+        local normalized = string.lower(state)
+        return normalized == "dead"
+            or normalized == "died"
+            or normalized == "destroyed"
+            or normalized == "despawned"
+    elseif type(state) == "boolean" then
+        return state == true
+    end
+
+    local health = model:GetAttribute("Health")
+    if type(health) == "number" then
+        return health <= 0
+    end
+
+    return false
 end
 
+-- Scan semua descendant, termasuk NPC yang disimpan di subfolder.
+-- Model yang berada di dalam model NPC tidak dihitung sebagai NPC terpisah.
 local function getNPCState(map)
     local targets = {}
     local folder = map and map:FindFirstChild("NPCs")
@@ -540,25 +566,22 @@ local function getNPCState(map)
         return targets, false
     end
 
-    -- Scan sampai ke dalam subfolder, bukan hanya GetChildren().
     for _, model in ipairs(folder:GetDescendants()) do
-        if model:IsA("Model") and not isDead(model) then
-            local humanoid = model:FindFirstChildWhichIsA("Humanoid", true)
+        if model:IsA("Model") and model.Parent and not isDead(model) then
+            local hasModelAncestor = false
+            local ancestor = model.Parent
 
-            -- Hindari model pembungkus yang tidak memiliki tubuh sendiri.
-            local hasDirectPart = false
-
-            for _, child in ipairs(model:GetChildren()) do
-                if child:IsA("BasePart") then
-                    hasDirectPart = true
+            while ancestor and ancestor ~= folder do
+                if ancestor:IsA("Model") then
+                    hasModelAncestor = true
                     break
                 end
+                ancestor = ancestor.Parent
             end
 
-            if humanoid or hasDirectPart or model.PrimaryPart then
+            if not hasModelAncestor then
                 local part = getMobPart(model)
-
-                if part and part.Parent then
+                if part and part.Parent and part:IsDescendantOf(folder) then
                     table.insert(targets, {
                         model = model,
                         part = part,
@@ -568,40 +591,18 @@ local function getNPCState(map)
         end
     end
 
+    -- Log hanya saat jumlah target berubah agar Output tidak spam.
+    if _G._SnowFarmLastNPCCount ~= #targets then
+        _G._SnowFarmLastNPCCount = #targets
+        print("[Snow Farm] NPC valid:", #targets, "|", folder:GetFullName())
+        for index, target in ipairs(targets) do
+            print("[Snow Farm] Target", index, target.model:GetFullName(), "->", target.part.Name)
+        end
+    end
+
     return targets, #targets > 0
 end
 
-
-local function getNPCState(map)
-    local folder = map and map:FindFirstChild("NPCs")
-    local targets = {}
-    local hasNPC = false
-
-    if not folder then
-        return targets, false
-    end
-
-    for _, model in ipairs(folder:GetChildren()) do
-        if model:IsA("Model") and not isDead(model) then
-            local part = getMobPart(model)
-
-            if part then
-                hasNPC = true
-                table.insert(targets, {
-                    model = model,
-                    part = part,
-                })
-            end
-        end
-    end
-	print(
-    "[Snow Farm] NPC terdeteksi:",
-    #targets,
-    "| Folder:",
-    folder:GetFullName()
-)
-    return targets, hasNPC
-end
 
 local function getZones(map)
     local zones = {}
@@ -758,17 +759,6 @@ currentTarget.part = part
                 emptySince = nil
                 continue
             end
-			
--- Pemeriksaan terakhir sebelum masuk ke pencarian Zone.
-local latestTargets, latestHasNPC = getNPCState(map)
-
-if latestHasNPC then
-    emptySince = nil
-
-    -- Loop utama akan memilih mob terdekat dan farm lagi.
-    task.wait(0.05)
-    continue
-end
 
             local zones = getZones(map)
             if #zones == 0 then
@@ -811,9 +801,16 @@ end
                 and os.clock() < deadline do
 
                 task.wait(0.15)
-                local _, spawned = getNPCState(map)
 
+                -- Map/folder bisa berganti saat room dibuat ulang.
+                local latestMap = getMap()
+                if latestMap then
+                    map = latestMap
+                end
+
+                local _, spawned = getNPCState(map)
                 if spawned then
+                    emptySince = nil
                     break
                 end
             end
@@ -828,6 +825,7 @@ addToggle("Auto Farm Snow Zone", false, function(state)
     local id = nextRunId("AutoFarmSnowZone")
 
     if not state then
+        _G._SnowFarmLastNPCCount = nil
         setStatus("SNOW FARM STOPPED", Color3.fromRGB(255, 125, 125))
         return
     end
@@ -837,11 +835,7 @@ addToggle("Auto Farm Snow Zone", false, function(state)
     task.spawn(function()
         local ok, err = pcall(snowFarmLoop, id)
         if not ok then
-            warn("[Snow Farm] ERROR DETAIL:", tostring(err))
-if alive() then
-    setStatus("ERROR: " .. string.sub(tostring(err), 1, 100),
-        Color3.fromRGB(255, 100, 100))
-end
+            warn("[Snow Farm]", err)
             if alive() then
                 setStatus("SNOW FARM ERROR", Color3.fromRGB(255, 100, 100))
             end
