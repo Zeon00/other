@@ -88,23 +88,28 @@ end
 
 local guiParent = getPersistentGuiParent()
 
--- Remove previous GUI from the persistent parent.
-pcall(function()
-    local old = guiParent:FindFirstChild("StandaloneAutomationGUI")
-    if old then
-        old:Destroy()
-    end
-end)
+-- Remove any old copy from common GUI containers.
+for _, container in ipairs({guiParent, CoreGui, PlayerGui}) do
+    pcall(function()
+        local old = container:FindFirstChild("StandaloneAutomationGUI")
+        if old then old:Destroy() end
+    end)
+end
 
--- Create the GUI outside PlayerGui so it can survive
--- PlayerGui being recreated during character respawn.
+-- Create GUI with fallbacks for executors that restrict CoreGui parenting.
 local gui = Instance.new("ScreenGui")
 gui.Name = "StandaloneAutomationGUI"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.DisplayOrder = 999999
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-gui.Parent = guiParent
+local parented = pcall(function() gui.Parent = guiParent end)
+if not parented or not gui.Parent then
+    parented = pcall(function() gui.Parent = CoreGui end)
+end
+if not parented or not gui.Parent then
+    gui.Parent = PlayerGui
+end
 
 
 local function new(class, props, parent)
