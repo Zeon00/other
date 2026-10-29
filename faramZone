@@ -609,19 +609,42 @@ local function getNPCState(map)
 end
 
 
-local function getZones(map)
-    local zones = {}
+local function getWallCaps(map)
+    local wallcaps = {}
+
+    if not map then
+        return wallcaps
+    end
 
     for _, room in ipairs(map:GetChildren()) do
-        if room.Name:match("^Room_?%d+$") then
-            local zone = room:FindFirstChild("Zone")
-            if zone and zone:IsA("BasePart") then
-                table.insert(zones, zone)
+        if room:IsA("Model")
+            and room.Name:match("^WallCap_Side_Room_%d+$") then
+            table.insert(wallcaps, room)
+        end
+    end
+
+    table.sort(wallcaps, function(a, b)
+        local numA = tonumber(a.Name:match("(%d+)$")) or 0
+        local numB = tonumber(b.Name:match("(%d+)$")) or 0
+        return numA < numB
+    end)
+
+    return wallcaps
+end
+
+local function getWallCapDestination(wallcap)
+    -- Gunakan titik spawn di dalam WallCap jika ada.
+    local spawns = wallcap:FindFirstChild("Spawns")
+    if spawns then
+        for _, obj in ipairs(spawns:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                return obj.Position + Vector3.new(0, 4, 0)
             end
         end
     end
 
-    return zones
+    -- Fallback jika folder Spawns tidak memiliki BasePart.
+    return wallcap:GetPivot().Position + Vector3.new(0, 4, 0)
 end
 
 local function snowFarmLoop(runId)
@@ -765,49 +788,68 @@ currentTarget.part = part
                 continue
             end
 
-            local zones = getZones(map)
-            if #zones == 0 then
-                setStatus("NO VALID ROOM ZONE")
+            -- NPC kosong: teleport ke WallCap satu per satu, bukan ke Zone.
+            local wallcaps = getWallCaps(map)
+            if #wallcaps == 0 then
+                setStatus("WAITING FOR WALLCAP")
                 task.wait(0.75)
                 continue
             end
 
             local candidates = {}
-            for _, zone in ipairs(zones) do
-                if zone.Parent and not visitedZones[zone] then
-                    table.insert(candidates, zone)
+            for _, wallcap in ipairs(wallcaps) do
+                if wallcap.Parent == map and not visitedZones[wallcap] then
+                    table.insert(candidates, wallcap)
+                end
+            end
+
+            -- Semua WallCap sudah dicoba; putar lagi dari awal.
+            if #candidates == 0 then
+                visitedZones = {}
+                for _, wallcap in ipairs(wallcaps) do
+                    if wallcap.Parent == map then
+                        table.insert(candidates, wallcap)
+                    end
                 end
             end
 
             if #candidates == 0 then
-                visitedZones = {}
-                candidates = zones
+                task.wait(0.25)
+                continue
             end
 
-            local zone = candidates[math.random(1, #candidates)]
+            -- Cek sekali lagi sebelum berpindah agar tidak mengganggu mob baru.
             local _, npcAppeared = getNPCState(map)
-
             if npcAppeared then
                 emptySince = nil
                 continue
             end
 
-            visitedZones[zone] = true
+            -- Urutan WallCap berdasarkan nomor nama.
+            local wallcap = candidates[1]
+            visitedZones[wallcap] = true
             root = getRoot()
 
-            if root and zone.Parent then
-                root.CFrame = zone.CFrame + Vector3.new(0, 4, 0)
+            if root and wallcap.Parent == map then
+                local ok, err = pcall(function()
+                    root.CFrame = CFrame.new(getWallCapDestination(wallcap))
+                end)
+                if not ok then
+                    warn("[WallCap TP]", err)
+                end
             end
 
-            setStatus("MOVING TO ZONE")
-            local deadline = os.clock() + ZONE_WAIT_TIME
+            setStatus("TP WALLCAP: " .. wallcap.Name,
+                Color3.fromRGB(125, 235, 155))
 
+            -- Tunggu spawn NPC. Jika belum muncul, lanjut ke WallCap berikutnya.
+            local deadline = os.clock() + ZONE_WAIT_TIME
             while featureRunning("AutoFarmSnowZone", runId)
                 and os.clock() < deadline do
 
                 task.wait(0.15)
 
-                -- Map/folder bisa berganti saat room dibuat ulang.
+                -- Map/folder dapat berubah saat room dibuat ulang.
                 local latestMap = getMap()
                 if latestMap then
                     map = latestMap
