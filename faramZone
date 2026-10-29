@@ -609,42 +609,33 @@ local function getNPCState(map)
 end
 
 
-local function getWallCaps(map)
-    local wallcaps = {}
+--========================================================
+-- DUNGEON CHEST SCANNER - PENGGANTI WALLCAP
+--========================================================
+
+local function getDungeonChests(map)
+    local chests = {}
 
     if not map then
-        return wallcaps
+        return chests
     end
 
-    for _, room in ipairs(map:GetChildren()) do
-        if room:IsA("Model")
-            and room.Name:match("^WallCap_Side_Room_%d+$") then
-            table.insert(wallcaps, room)
+    for _, obj in ipairs(map:GetDescendants()) do
+        if obj:IsA("Model")
+            and obj.Name:match("^DungeonChest_.+") then
+            table.insert(chests, obj)
         end
     end
 
-    table.sort(wallcaps, function(a, b)
-        local numA = tonumber(a.Name:match("(%d+)$")) or 0
-        local numB = tonumber(b.Name:match("(%d+)$")) or 0
-        return numA < numB
+    table.sort(chests, function(a, b)
+        return a.Name < b.Name
     end)
 
-    return wallcaps
+    return chests
 end
 
-local function getWallCapDestination(wallcap)
-    -- Gunakan titik spawn di dalam WallCap jika ada.
-    local spawns = wallcap:FindFirstChild("Spawns")
-    if spawns then
-        for _, obj in ipairs(spawns:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                return obj.Position + Vector3.new(0, 4, 0)
-            end
-        end
-    end
-
-    -- Fallback jika folder Spawns tidak memiliki BasePart.
-    return wallcap:GetPivot().Position + Vector3.new(0, 4, 0)
+local function getChestDestination(chest)
+    return chest:GetPivot().Position + Vector3.new(0, 4, 0)
 end
 
 local function snowFarmLoop(runId)
@@ -788,27 +779,30 @@ currentTarget.part = part
                 continue
             end
 
-            -- NPC kosong: teleport ke WallCap satu per satu, bukan ke Zone.
-            local wallcaps = getWallCaps(map)
-            if #wallcaps == 0 then
-                setStatus("WAITING FOR WALLCAP")
+                        -- NPC kosong: teleport ke semua DungeonChest.
+            local chests = getDungeonChests(map)
+
+            if #chests == 0 then
+                setStatus("WAITING FOR DUNGEON CHESTS")
                 task.wait(0.75)
                 continue
             end
 
             local candidates = {}
-            for _, wallcap in ipairs(wallcaps) do
-                if wallcap.Parent == map and not visitedZones[wallcap] then
-                    table.insert(candidates, wallcap)
+
+            for _, chest in ipairs(chests) do
+                if chest:IsDescendantOf(map)
+                    and not visitedZones[chest] then
+                    table.insert(candidates, chest)
                 end
             end
 
-            -- Semua WallCap sudah dicoba; putar lagi dari awal.
             if #candidates == 0 then
                 visitedZones = {}
-                for _, wallcap in ipairs(wallcaps) do
-                    if wallcap.Parent == map then
-                        table.insert(candidates, wallcap)
+
+                for _, chest in ipairs(chests) do
+                    if chest:IsDescendantOf(map) then
+                        table.insert(candidates, chest)
                     end
                 end
             end
@@ -818,38 +812,38 @@ currentTarget.part = part
                 continue
             end
 
-            -- Cek sekali lagi sebelum berpindah agar tidak mengganggu mob baru.
             local _, npcAppeared = getNPCState(map)
             if npcAppeared then
                 emptySince = nil
                 continue
             end
 
-            -- Urutan WallCap berdasarkan nomor nama.
-            local wallcap = candidates[1]
-            visitedZones[wallcap] = true
+            local chest = candidates[1]
+            visitedZones[chest] = true
             root = getRoot()
 
-            if root and wallcap.Parent == map then
+            if root and chest.Parent then
                 local ok, err = pcall(function()
-                    root.CFrame = CFrame.new(getWallCapDestination(wallcap))
+                    root.CFrame = CFrame.new(
+                        getChestDestination(chest)
+                    )
                 end)
+
                 if not ok then
-                    warn("[WallCap TP]", err)
+                    warn("[DungeonChest TP]", err)
                 end
             end
 
-            setStatus("TP WALLCAP: " .. wallcap.Name,
+            setStatus("TP CHEST: " .. chest.Name,
                 Color3.fromRGB(125, 235, 155))
 
-            -- Tunggu spawn NPC. Jika belum muncul, lanjut ke WallCap berikutnya.
             local deadline = os.clock() + ZONE_WAIT_TIME
+
             while featureRunning("AutoFarmSnowZone", runId)
                 and os.clock() < deadline do
 
                 task.wait(0.15)
 
-                -- Map/folder dapat berubah saat room dibuat ulang.
                 local latestMap = getMap()
                 if latestMap then
                     map = latestMap
