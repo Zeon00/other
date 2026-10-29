@@ -1500,6 +1500,75 @@ addToggle("Open Inventory", false, function(state)
         end
     end)
 end)
+
+--========================================================
+-- AUTO TP NPC - STANDALONE TOGGLE
+--========================================================
+
+_G.AutoTPNPC = false
+_G.AutoTPNPCRunId = _G.AutoTPNPCRunId or 0
+
+addToggle("Auto TP NPC", false, function(state)
+    _G.AutoTPNPC = state
+    _G.AutoTPNPCRunId += 1
+
+    local runId = _G.AutoTPNPCRunId
+
+    if not state then
+        setStatus("AUTO TP NPC OFF")
+        return
+    end
+
+    task.spawn(function()
+        while alive()
+            and _G.AutoTPNPC
+            and _G.AutoTPNPCRunId == runId do
+
+            local root = getRoot()
+            local map = getMap()
+            local folder = map and map:FindFirstChild("NPCs")
+
+            local targetPart
+            local nearestDistance = math.huge
+
+            if root and folder then
+                for _, obj in ipairs(folder:GetDescendants()) do
+                    if obj:IsA("Model")
+                        and obj.Parent
+                        and not isDead(obj) then
+
+                        local part = getMobPart(obj)
+
+                        if part and part:IsDescendantOf(folder) then
+                            local distance =
+                                (part.Position - root.Position).Magnitude
+
+                            if distance < nearestDistance then
+                                nearestDistance = distance
+                                targetPart = part
+                            end
+                        end
+                    end
+                end
+            end
+
+            if root and targetPart and targetPart.Parent then
+                root.CFrame =
+                    CFrame.new(targetPart.Position + Vector3.new(0, 3, 0))
+
+                setStatus(
+                    "TP NPC: " .. targetPart.Parent.Name,
+                    Color3.fromRGB(125, 235, 155)
+                )
+            else
+                setStatus("WAITING FOR NPC")
+            end
+
+            task.wait(0.3)
+        end
+    end)
+end)
+
 --========================================================
 -- READY
 --========================================================
