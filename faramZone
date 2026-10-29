@@ -609,33 +609,101 @@ local function getNPCState(map)
 end
 
 
---========================================================
--- DUNGEON CHEST SCANNER - PENGGANTI WALLCAP
+
 --========================================================
 
-local function getDungeonChests(map)
-    local chests = {}
+--========================================================
+-- SNOW WALLCAP ROOM SCANNER + ROOM NPC FILTER
+-- WallCap_Side_Room_xx -> Room_xx.Zone (BasePart)
+--========================================================
+
+local function getOrderedWallCapRooms(map)
+    local rooms = {}
 
     if not map then
-        return chests
+        return rooms
     end
 
-    for _, obj in ipairs(map:GetDescendants()) do
-        if obj:IsA("Model")
-            and obj.Name:match("^DungeonChest_.+") then
-            table.insert(chests, obj)
+    for _, wallcap in ipairs(map:GetChildren()) do
+        local number = wallcap.Name:match("^WallCap_Side_Room_(%d+)$")
+
+        if number then
+            number = tonumber(number)
+
+            local room = map:FindFirstChild("Room_" .. number)
+            local zone = room and room:FindFirstChild("Zone")
+
+            if zone and zone:IsA("BasePart") then
+                table.insert(rooms, {
+                    number = number,
+                    wallcap = wallcap,
+                    room = room,
+                    zone = zone,
+                })
+            end
         end
     end
 
-    table.sort(chests, function(a, b)
-        return a.Name < b.Name
+    table.sort(rooms, function(a, b)
+        return a.number < b.number
     end)
 
-    return chests
+    return rooms
 end
 
-local function getChestDestination(chest)
-    return chest:GetPivot().Position + Vector3.new(0, 4, 0)
+-- Cek apakah posisi berada di dalam Zone, termasuk jika Zone diputar.
+local function isInsideZone(zone, position)
+    if not zone or not zone:IsA("BasePart") then
+        return false
+    end
+
+    local localPosition = zone.CFrame:PointToObjectSpace(position)
+    local halfSize = zone.Size * 0.5
+
+    return math.abs(localPosition.X) <= halfSize.X
+        and math.abs(localPosition.Y) <= halfSize.Y
+        and math.abs(localPosition.Z) <= halfSize.Z
+end
+
+-- Ambil NPC hidup yang berada dalam Zone room aktif.
+local function getRoomNPCState(map, zone)
+    local targets = {}
+    local folder = map and map:FindFirstChild("NPCs")
+
+    if not folder or not zone or not zone.Parent then
+        return targets, false
+    end
+
+    for _, model in ipairs(folder:GetDescendants()) do
+        if model:IsA("Model") and model.Parent and not isDead(model) then
+            -- Jangan hitung Model anak sebagai NPC terpisah.
+            local hasModelAncestor = false
+            local ancestor = model.Parent
+
+            while ancestor and ancestor ~= folder do
+                if ancestor:IsA("Model") then
+                    hasModelAncestor = true
+                    break
+                end
+                ancestor = ancestor.Parent
+            end
+
+            if not hasModelAncestor then
+                local part = getMobPart(model)
+
+                if part and part.Parent
+                    and isInsideZone(zone, part.Position) then
+
+                    table.insert(targets, {
+                        model = model,
+                        part = part,
+                    })
+                end
+            end
+        end
+    end
+
+    return targets, #targets > 0
 end
 
 local function snowFarmLoop(runId)
@@ -645,36 +713,75 @@ local function snowFarmLoop(runId)
     local lastAttack = 0
     local lastSkill = 0
     local skillNumber = 1
+    local activeRoom
+    local roomIndex = 1
+    local visitedMap
     local emptySince
-    local visitedZones = {}
 
     while featureRunning("AutoFarmSnowZone", runId) do
         local map = getMap()
 
         if not map then
-            currentTarget = nil
-            lockedY = nil
             setStatus("WAITING FOR SNOW MAP")
             task.wait(0.5)
             continue
         end
 
+        if visitedMap ~= map then
+            visitedMap = map
+            activeRoom = nil
+            roomIndex = 1
+            currentTarget = nil
+            emptySince = nil
+        end
+
         local root = getRoot()
+
         if not root then
             setStatus("WAITING FOR CHARACTER")
             task.wait(0.25)
             continue
         end
 
-        local targets, hasNPC = getNPCState(map)
+        local rooms = getOrderedWallCapRooms(map)
+
+        if #rooms == 0 then
+            setStatus("WAITING FOR WALLCAP ROOMS")
+            task.wait(0.75)
+            continue
+        end
+
+        -- Pilih room pertama berdasarkan urutan suffix.
+        if not activeRoom then
+            roomIndex = math.clamp(roomIndex, 1, #rooms)
+            activeRoom = rooms[roomIndex]
+
+            setStatus("TP ROOM " .. activeRoom.number)
+            root.CFrame = CFrame.new(
+                activeRoom.zone.Position + Vector3.new(0, 4, 0)
+            )
+
+            task.wait(0.4)
+        end
+
+        -- Pastikan room masih tersedia setelah map berubah.
+        if not activeRoom.zone.Parent
+            or not activeRoom.wallcap.Parent then
+
+            activeRoom = nil
+            currentTarget = nil
+            task.wait(0.2)
+            continue
+        end
+
+        local targets, hasNPC = getRoomNPCState(map, activeRoom.zone)
 
         if hasNPC then
             emptySince = nil
 
             if not currentTarget
                 or not currentTarget.model.Parent
-                or isDead(currentTarget.model)
-                or not currentTarget.part.Parent then
+                or isDead(currentTarget.model) then
 
                 currentTarget = nil
                 lockedY = nil
@@ -683,7 +790,9 @@ local function snowFarmLoop(runId)
 
                 for _, data in ipairs(targets) do
                     if data.part and data.part.Parent then
-                        local distance = (data.part.Position - root.Position).Magnitude
+                        local distance =
+                            (data.part.Position - root.Position).Magnitude
+
                         if distance < nearestDistance then
                             nearestDistance = distance
                             currentTarget = data
@@ -693,44 +802,53 @@ local function snowFarmLoop(runId)
 
                 if currentTarget then
                     local part = currentTarget.part
+
                     angle = math.atan2(
                         root.Position.Z - part.Position.Z,
                         root.Position.X - part.Position.X
                     )
+
                     lockedY = part.Position.Y + ORBIT_HEIGHT
                 end
             end
 
             if not currentTarget then
-                setStatus("NPC PRESENT - WAITING FOR TARGET")
-                task.wait(0.15)
+                task.wait(0.1)
                 continue
             end
 
--- Refresh part target setiap loop, bukan memakai part lama terus
-local part = getMobPart(currentTarget.model)
+            local part = getMobPart(currentTarget.model)
 
-if not part or not part.Parent then
-    currentTarget = nil
-    lockedY = nil
-    task.wait(0.1)
-    continue
-end
+            if not part or not part.Parent
+                or not isInsideZone(activeRoom.zone, part.Position) then
 
-currentTarget.part = part
+                currentTarget = nil
+                lockedY = nil
+                task.wait(0.1)
+                continue
+            end
 
-            setStatus("FARMING: " .. currentTarget.model.Name,
-                Color3.fromRGB(125, 235, 155))
+            currentTarget.part = part
+
+            setStatus(
+                "ROOM " .. activeRoom.number .. " | " .. currentTarget.model.Name,
+                Color3.fromRGB(125, 235, 155)
+            )
 
             local dt = RunService.Heartbeat:Wait()
+
             if not featureRunning("AutoFarmSnowZone", runId) then
                 break
             end
 
             root = getRoot()
 
-            if root and part.Parent and not isDead(currentTarget.model) then
+            if root and part.Parent
+                and not isDead(currentTarget.model)
+                and isInsideZone(activeRoom.zone, part.Position) then
+
                 angle += ORBIT_SPEED * dt
+
                 local targetPosition = part.Position
 
                 local destination = Vector3.new(
@@ -750,13 +868,20 @@ currentTarget.part = part
                     pcall(function()
                         AttackRemote:FireServer(targetPosition)
                     end)
+
                     lastAttack = now
                 end
 
                 if now - lastSkill >= SKILL_INTERVAL then
                     pcall(function()
-                        SkillRemote:FireServer(skillNumber, "tap", targetPosition, nil)
+                        SkillRemote:FireServer(
+                            skillNumber,
+                            "tap",
+                            targetPosition,
+                            nil
+                        )
                     end)
+
                     skillNumber = (skillNumber % 4) + 1
                     lastSkill = now
                 end
@@ -766,97 +891,37 @@ currentTarget.part = part
             lockedY = nil
 
             emptySince = emptySince or os.clock()
-            setStatus("CHECKING NPC CLEAR")
+            setStatus("CHECKING ROOM " .. activeRoom.number)
 
             if os.clock() - emptySince < EMPTY_CONFIRM_TIME then
                 task.wait(0.15)
                 continue
             end
 
-            local _, stillHasNPC = getNPCState(map)
+            -- Konfirmasi ulang bahwa room ini memang kosong.
+            local _, stillHasNPC =
+                getRoomNPCState(map, activeRoom.zone)
+
             if stillHasNPC then
                 emptySince = nil
                 continue
             end
 
-                        -- NPC kosong: teleport ke semua DungeonChest.
-            local chests = getDungeonChests(map)
+            -- Lanjut ke suffix WallCap berikutnya.
+            setStatus(
+                "ROOM " .. activeRoom.number .. " CLEAR",
+                Color3.fromRGB(125, 235, 155)
+            )
 
-            if #chests == 0 then
-                setStatus("WAITING FOR DUNGEON CHESTS")
-                task.wait(0.75)
-                continue
-            end
-
-            local candidates = {}
-
-            for _, chest in ipairs(chests) do
-                if chest:IsDescendantOf(map)
-                    and not visitedZones[chest] then
-                    table.insert(candidates, chest)
-                end
-            end
-
-            if #candidates == 0 then
-                visitedZones = {}
-
-                for _, chest in ipairs(chests) do
-                    if chest:IsDescendantOf(map) then
-                        table.insert(candidates, chest)
-                    end
-                end
-            end
-
-            if #candidates == 0 then
-                task.wait(0.25)
-                continue
-            end
-
-            local _, npcAppeared = getNPCState(map)
-            if npcAppeared then
-                emptySince = nil
-                continue
-            end
-
-            local chest = candidates[1]
-            visitedZones[chest] = true
-            root = getRoot()
-
-            if root and chest.Parent then
-                local ok, err = pcall(function()
-                    root.CFrame = CFrame.new(
-                        getChestDestination(chest)
-                    )
-                end)
-
-                if not ok then
-                    warn("[DungeonChest TP]", err)
-                end
-            end
-
-            setStatus("TP CHEST: " .. chest.Name,
-                Color3.fromRGB(125, 235, 155))
-
-            local deadline = os.clock() + ZONE_WAIT_TIME
-
-            while featureRunning("AutoFarmSnowZone", runId)
-                and os.clock() < deadline do
-
-                task.wait(0.15)
-
-                local latestMap = getMap()
-                if latestMap then
-                    map = latestMap
-                end
-
-                local _, spawned = getNPCState(map)
-                if spawned then
-                    emptySince = nil
-                    break
-                end
-            end
-
+            roomIndex += 1
+            activeRoom = nil
             emptySince = nil
+
+            if roomIndex > #rooms then
+                roomIndex = 1
+                setStatus("ALL AVAILABLE ROOMS CHECKED")
+                task.wait(0.5)
+            end
         end
     end
 end
