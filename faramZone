@@ -661,9 +661,9 @@ local function isInsideZone(zone, position)
     local halfSize = zone.Size * 0.5
 
     return math.abs(localPosition.X) <= halfSize.X
-        and math.abs(localPosition.Y) <= halfSize.Y
         and math.abs(localPosition.Z) <= halfSize.Z
 end
+
 
 -- Ambil NPC hidup yang berada dalam Zone room aktif.
 local function getRoomNPCState(map, zone)
@@ -908,20 +908,23 @@ local function snowFarmLoop(runId)
             end
 
             -- Lanjut ke suffix WallCap berikutnya.
-            setStatus(
-                "ROOM " .. activeRoom.number .. " CLEAR",
-                Color3.fromRGB(125, 235, 155)
-            )
+-- Lanjut ke Room berikutnya, lalu ulangi dari awal.
+setStatus(
+    "ROOM " .. activeRoom.number .. " CLEAR",
+    Color3.fromRGB(125, 235, 155)
+)
 
-            roomIndex += 1
-            activeRoom = nil
-            emptySince = nil
+roomIndex += 1
+activeRoom = nil
+currentTarget = nil
+lockedY = nil
+emptySince = nil
 
-            if roomIndex > #rooms then
-                roomIndex = 1
-                setStatus("ALL AVAILABLE ROOMS CHECKED")
-                task.wait(0.5)
-            end
+if roomIndex > #rooms then
+    roomIndex = 1
+    setStatus("RESTARTING ROOM CYCLE")
+    task.wait(0.5)
+end
         end
     end
 end
