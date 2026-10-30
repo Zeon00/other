@@ -719,35 +719,76 @@ local function getDungeonNPCState(map, config)
     return targets, #targets > 0
 end
 
--- Room_N -> Zone patrol. Supports Room folders nested anywhere in the
--- generated map; each dungeon is scanned only inside its own generated map.
+-- Shared dungeon layout:
+-- WallCap_Side_Room_N -> Connectors -> Entry
+-- Room_N -> Zone
+local function getObjectPivot(obj)
+    if not obj then return nil end
+
+    if obj:IsA("Model") or obj:IsA("BasePart") then
+        local ok, cf = pcall(function()
+            return obj:GetPivot()
+        end)
+        if ok then return cf end
+    end
+
+    local part = obj:FindFirstChildWhichIsA("BasePart", true)
+    return part and part.CFrame or nil
+end
+
+local function getDungeonWallcapEntries(map)
+    local entries = {}
+    if not map then return entries end
+
+    for _, wallcap in ipairs(map:GetDescendants()) do
+        local number = wallcap.Name:match("^WallCap_Side_Room_(%d+)$")
+        if number then
+            local connectors = wallcap:FindFirstChild("Connectors")
+            local entry = connectors and connectors:FindFirstChild("Entry")
+            local pivot = getObjectPivot(entry)
+
+            if entry and pivot then
+                table.insert(entries, {
+                    number = tonumber(number),
+                    wallcap = wallcap,
+                    entry = entry,
+                    pivotCFrame = pivot,
+                })
+            end
+        end
+    end
+
+    table.sort(entries, function(a, b)
+        return a.number < b.number
+    end)
+
+    local unique, seen = {}, {}
+    for _, item in ipairs(entries) do
+        if not seen[item.number] then
+            seen[item.number] = true
+            table.insert(unique, item)
+        end
+    end
+    return unique
+end
+
 local function getDungeonRoomZones(map)
     local rooms = {}
     if not map then return rooms end
-
-    local function getPivot(obj)
-        if obj:IsA("Model") or obj:IsA("BasePart") then
-            local ok, cf = pcall(function() return obj:GetPivot() end)
-            if ok then return cf end
-        end
-        local part = obj:FindFirstChildWhichIsA("BasePart", true)
-        return part and part.CFrame or nil
-    end
 
     for _, room in ipairs(map:GetDescendants()) do
         local number = room.Name:match("^Room_(%d+)$")
         if number then
             local zone = room:FindFirstChild("Zone")
-            if zone then
-                local pivot = getPivot(zone)
-                if pivot then
-                    table.insert(rooms, {
-                        number = tonumber(number),
-                        room = room,
-                        zone = zone,
-                        pivotCFrame = pivot,
-                    })
-                end
+            local pivot = getObjectPivot(zone)
+
+            if zone and pivot then
+                table.insert(rooms, {
+                    number = tonumber(number),
+                    room = room,
+                    zone = zone,
+                    pivotCFrame = pivot,
+                })
             end
         end
     end
@@ -757,13 +798,39 @@ local function getDungeonRoomZones(map)
     end)
 
     local unique, seen = {}, {}
-    for _, entry in ipairs(rooms) do
-        if not seen[entry.number] then
-            seen[entry.number] = true
-            table.insert(unique, entry)
+    for _, item in ipairs(rooms) do
+        if not seen[item.number] then
+            seen[item.number] = true
+            table.insert(unique, item)
         end
     end
     return unique
+end
+
+local function isDungeonBoss(model)
+    if not model then return false end
+    local name = string.lower(model.Name)
+    return name:find("boss", 1, true) ~= nil
+        or name:find("valksar", 1, true) ~= nil
+        or name:find("jefe", 1, true) ~= nil
+end
+
+local function teleportDungeonTo(character, root, pivot)
+    if not pivot then return false end
+
+    local destination = CFrame.new(pivot.Position + Vector3.new(0, 4, 0))
+    if character then
+        local ok = pcall(function()
+            character:PivotTo(destination)
+        end)
+        return ok
+    end
+
+    if root then
+        root.CFrame = destination
+        return true
+    end
+    return false
 end
 
 local function startDungeonSnowStyleFarm(config, enabled)
@@ -785,20 +852,21 @@ local function startDungeonSnowStyleFarm(config, enabled)
 
     task.spawn(function()
         local currentTarget
-local lastTargetModel
-local lockedY
-local angle = 0
+        local lockedY
+        local angle = 0
         local lastAttack = 0
         local lastSkill = 0
         local skillNumber = 1
-        local activeRoom
+
+        -- Patrol: WallCap Entry -> Room_N.Zone ascending -> next WallCap Entry.
+        local wallcapIndex = 1
         local roomIndex = 1
+        local patrolPhase = "Entry"
         local visitedMap
         local emptySince
 
         while running() do
-            local map, npcFolder = getDungeonMap(config)
-
+            local map = getDungeonMap(config)
             if not map then
                 task.wait(0.5)
                 continue
@@ -806,10 +874,11 @@ local angle = 0
 
             if visitedMap ~= map then
                 visitedMap = map
-                activeRoom = nil
-                roomIndex = 1
                 currentTarget = nil
                 lockedY = nil
+                wallcapIndex = 1
+                roomIndex = 1
+                patrolPhase = "Entry"
                 emptySince = nil
             end
 
@@ -819,65 +888,94 @@ local angle = 0
                 continue
             end
 
+            local wallcaps = getDungeonWallcapEntries(map)
             local rooms = getDungeonRoomZones(map)
-            local targets, hasNPC = getDungeonNPCState(map, config)
+            local targets = getDungeonNPCState(map, config)
 
-            if hasNPC then
-                emptySince = nil
-
-               -- Pilih target bergantian dari SEMUA mob di folder NPC.
-if not currentTarget
-    or not currentTarget.model.Parent
-    or farmMobIsDead(currentTarget.model) then
-
-    currentTarget = nil
-    lockedY = nil
-
-    -- Cari posisi target berikutnya berdasarkan urutan folder NPC.
-    local nextIndex = 1
-
-    if lastTargetModel then
-        for i, data in ipairs(targets) do
-            if data.model == lastTargetModel then
-                nextIndex = (i % #targets) + 1
-                break
+            -- Keep a valid target, but drop ordinary mobs that move beyond 250 studs.
+            local targetValid = false
+            if currentTarget and currentTarget.model
+                and currentTarget.model.Parent
+                and not farmMobIsDead(currentTarget.model) then
+                local part = getFarmMobPart(currentTarget.model)
+                if part and part.Parent then
+                    local distance = (part.Position - root.Position).Magnitude
+                    targetValid = isDungeonBoss(currentTarget.model) or distance <= 250
+                    currentTarget.part = part
+                end
             end
-        end
-    end
 
-    -- Ambil mob berikutnya, bukan mob terdekat.
-    for offset = 0, #targets - 1 do
-        local index = ((nextIndex + offset - 1) % #targets) + 1
-        local data = targets[index]
+            -- A newly spawned boss immediately replaces a normal-mob target.
+            local priorityBoss
+            for _, data in ipairs(targets) do
+                if data.part and data.part.Parent
+                    and not farmMobIsDead(data.model)
+                    and isDungeonBoss(data.model) then
+                    priorityBoss = data
+                    break
+                end
+            end
 
-        if data.part and data.part.Parent
-            and not farmMobIsDead(data.model) then
+            if priorityBoss and (not currentTarget
+                or currentTarget.model ~= priorityBoss.model) then
+                currentTarget = priorityBoss
+                local bossPart = getFarmMobPart(priorityBoss.model)
+                if bossPart then
+                    angle = math.atan2(
+                        root.Position.Z - bossPart.Position.Z,
+                        root.Position.X - bossPart.Position.X
+                    )
+                    lockedY = bossPart.Position.Y + ORBIT_HEIGHT
+                end
+                targetValid = true
+            end
 
-            currentTarget = data
-            lastTargetModel = data.model
-            break
-        end
-    end
+            if not targetValid then
+                currentTarget = nil
+                lockedY = nil
 
-    if currentTarget then
-        local part = currentTarget.part
-        angle = math.atan2(
-            root.Position.Z - part.Position.Z,
-            root.Position.X - part.Position.X
-        )
-        lockedY = part.Position.Y + ORBIT_HEIGHT
-    end
-end
+                local nearestNormalDistance = 250
+                local selectedBoss
 
-                if not currentTarget then
-                    task.wait(0.1)
-                    continue
+                for _, data in ipairs(targets) do
+                    if data.part and data.part.Parent
+                        and not farmMobIsDead(data.model) then
+
+                        if isDungeonBoss(data.model) then
+                            if not selectedBoss then
+                                selectedBoss = data
+                            end
+                        else
+                            local distance = (data.part.Position - root.Position).Magnitude
+                            if distance <= nearestNormalDistance then
+                                nearestNormalDistance = distance
+                                currentTarget = data
+                            end
+                        end
+                    end
                 end
 
+                if selectedBoss then
+                    currentTarget = selectedBoss
+                end
+
+                if currentTarget then
+                    local part = getFarmMobPart(currentTarget.model)
+                    currentTarget.part = part
+                    angle = math.atan2(
+                        root.Position.Z - part.Position.Z,
+                        root.Position.X - part.Position.X
+                    )
+                    lockedY = part.Position.Y + ORBIT_HEIGHT
+                end
+            end
+
+            if currentTarget then
+                emptySince = nil
                 local part = getFarmMobPart(currentTarget.model)
+
                 if not part or not part.Parent
                     or farmMobIsDead(currentTarget.model) then
-
                     currentTarget = nil
                     lockedY = nil
                     task.wait(0.05)
@@ -886,10 +984,7 @@ end
 
                 currentTarget.part = part
                 local dt = RunService.Heartbeat:Wait()
-
-                if not running() then
-                    break
-                end
+                if not running() then break end
 
                 root = getFarmRoot()
                 if root and part.Parent and currentTarget.model.Parent
@@ -919,102 +1014,132 @@ end
 
                     if now - lastSkill >= SKILL_INTERVAL then
                         pcall(function()
-                            SkillRemote:FireServer(
-                                skillNumber,
-                                "tap",
-                                targetPosition,
-                                nil
-                            )
+                            SkillRemote:FireServer(skillNumber, "tap", targetPosition, nil)
                         end)
                         skillNumber = (skillNumber % 4) + 1
                         lastSkill = now
                     end
                 end
+
             else
+                -- No boss and no ordinary NPC within 250 studs: patrol this map.
                 currentTarget = nil
                 lockedY = nil
                 emptySince = emptySince or os.clock()
 
                 if os.clock() - emptySince < EMPTY_CONFIRM_TIME then
-                    task.wait(0.15)
+                    task.wait(0.1)
                     continue
                 end
 
-                local _, stillHasNPC = getDungeonNPCState(map, config)
-                if stillHasNPC then
+                -- Re-scan before moving; NPCs may have spawned since the first scan.
+                local refreshedTargets = getDungeonNPCState(map, config)
+                local hasNearbyOrBoss = false
+                for _, data in ipairs(refreshedTargets) do
+                    if data.part and data.part.Parent and not farmMobIsDead(data.model) then
+                        local distance = (data.part.Position - root.Position).Magnitude
+                        if isDungeonBoss(data.model) or distance <= 250 then
+                            hasNearbyOrBoss = true
+                            break
+                        end
+                    end
+                end
+                if hasNearbyOrBoss then
                     emptySince = nil
                     continue
                 end
 
-                if #rooms == 0 then
+                if #wallcaps == 0 and #rooms == 0 then
                     task.wait(0.5)
                     continue
                 end
 
-                if not activeRoom then
-                    roomIndex = math.clamp(roomIndex, 1, #rooms)
-                    activeRoom = rooms[roomIndex]
-                end
-
-                if not activeRoom
-                    or not activeRoom.zone
-                    or not activeRoom.zone.Parent
-                    or not activeRoom.room
-                    or not activeRoom.room.Parent then
-
-                    activeRoom = nil
-                    roomIndex += 1
-                    if roomIndex > #rooms then
-                        roomIndex = 1
-                    end
-                    task.wait(0.1)
-                    continue
-                end
-
-                -- Teleport the whole character to this room's Zone pivot.
-                -- Each dungeon uses its own Generated_* map and NPC folders.
                 local character = player.Character
-                local pivot = activeRoom.pivotCFrame
-                local targetPosition = pivot.Position
-                local targetCFrame = CFrame.new(
-                    targetPosition + Vector3.new(0, 4, 0)
-                )
+                local moved = false
 
-                if character then
-                    pcall(function()
-                        character:PivotTo(targetCFrame)
-                    end)
-                else
-                    root.CFrame = targetCFrame
+                if patrolPhase == "Entry" then
+                    if #wallcaps > 0 then
+                        wallcapIndex = math.clamp(wallcapIndex, 1, #wallcaps)
+                        local activeWallcap = wallcaps[wallcapIndex]
+
+                        if activeWallcap and activeWallcap.wallcap.Parent
+                            and activeWallcap.entry and activeWallcap.entry.Parent then
+                            moved = teleportDungeonTo(
+                                character, root, getObjectPivot(activeWallcap.entry)
+                            )
+                        end
+                    elseif #rooms > 0 then
+                        patrolPhase = "Zone"
+                    end
+
+                    if moved then
+                        patrolPhase = "Zone"
+                    elseif #wallcaps > 0 then
+                        task.wait(0.15)
+                        continue
+                    end
                 end
 
-                -- Give this room a brief chance to spawn NPCs, but never
-                -- block the patrol for long; re-scan after each Zone.
-                local checkUntil = os.clock() + 1.0
-                local spawnedNPC = false
+                elseif patrolPhase == "Zone" then
+                    if #rooms > 0 then
+                        roomIndex = math.clamp(roomIndex, 1, #rooms)
+                        local activeRoom = rooms[roomIndex]
 
+                        if activeRoom and activeRoom.room.Parent
+                            and activeRoom.zone and activeRoom.zone.Parent then
+                            moved = teleportDungeonTo(
+                                character, root, getObjectPivot(activeRoom.zone)
+                            )
+                        end
+
+                        -- Advance after every Zone, even if its pivot streamed late.
+                        roomIndex += 1
+                        if roomIndex > #rooms then
+                            roomIndex = 1
+                            patrolPhase = "NextEntry"
+                        end
+                    else
+                        patrolPhase = "NextEntry"
+                    end
+                end
+
+                if patrolPhase == "NextEntry" then
+                    if #wallcaps > 0 then
+                        wallcapIndex += 1
+                        if wallcapIndex > #wallcaps then
+                            wallcapIndex = 1
+                        end
+                        patrolPhase = "Entry"
+                    else
+                        patrolPhase = "Zone"
+                    end
+                end
+
+                -- Give the visited waypoint one second to spawn NPCs.
+                -- Scan every 0.1s so the farm interrupts the patrol quickly.
+                local checkUntil = os.clock() + 1.0
                 while running() and os.clock() < checkUntil do
                     task.wait(0.1)
-                    local _, foundNPC = getDungeonNPCState(map, config)
-                    if foundNPC then
-                        spawnedNPC = true
+                    local spawnedTargets = getDungeonNPCState(map, config)
+                    local foundTarget = false
+
+                    for _, data in ipairs(spawnedTargets) do
+                        if data.part and data.part.Parent
+                            and not farmMobIsDead(data.model) then
+                            local distance = (data.part.Position - root.Position).Magnitude
+                            if isDungeonBoss(data.model) or distance <= 250 then
+                                foundTarget = true
+                                break
+                            end
+                        end
+                    end
+
+                    if foundTarget then
+                        emptySince = nil
                         break
                     end
                 end
-
-                if spawnedNPC then
-                    emptySince = nil
-                    activeRoom = nil
-                    continue
-                end
-
-                roomIndex += 1
-                activeRoom = nil
                 emptySince = nil
-
-                if roomIndex > #rooms then
-                    roomIndex = 1
-                end
             end
         end
     end)
@@ -1032,6 +1157,7 @@ for _, config in ipairs(DungeonFarmConfigs) do
 end
 
 print("[Dungeon Farm] Snow-style global NPC orbit + WallCap rotation loaded.")
+
 
 -- 8. HOLLOW REALM.
 
