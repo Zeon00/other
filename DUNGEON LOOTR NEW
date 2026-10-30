@@ -658,15 +658,15 @@ end
 local function getDungeonMap(config)
     for _, object in ipairs(Workspace:GetChildren()) do
         if object.Name:match(config.pattern) then
+            -- The map is valid even while its NPC folders are still streaming in.
             for _, folderName in ipairs(config.folders) do
-                local folder = object:FindFirstChild(folderName)
-                if folder then
-                    return object, folder
+                if object:FindFirstChild(folderName) then
+                    return object, object:FindFirstChild(folderName)
                 end
             end
+            return object, nil
         end
     end
-
     return nil, nil
 end
 
@@ -719,51 +719,35 @@ local function getDungeonNPCState(map, config)
     return targets, #targets > 0
 end
 
--- WallCap_Side_Room_N -> Room_N -> Zone, sorted by room number.
-local function getDungeonWallCapRooms(map)
+-- Room_N -> Zone patrol. Supports Room folders nested anywhere in the
+-- generated map; each dungeon is scanned only inside its own generated map.
+local function getDungeonRoomZones(map)
     local rooms = {}
-    if not map then
-        return rooms
+    if not map then return rooms end
+
+    local function getPivot(obj)
+        if obj:IsA("Model") or obj:IsA("BasePart") then
+            local ok, cf = pcall(function() return obj:GetPivot() end)
+            if ok then return cf end
+        end
+        local part = obj:FindFirstChildWhichIsA("BasePart", true)
+        return part and part.CFrame or nil
     end
 
-    -- Scan all descendants, not only direct children. Some maps nest WallCaps.
-    for _, wallcap in ipairs(map:GetDescendants()) do
-        local number = wallcap.Name:match("^WallCap_Side_Room_(%d+)$")
+    for _, room in ipairs(map:GetDescendants()) do
+        local number = room.Name:match("^Room_(%d+)$")
         if number then
-            number = tonumber(number)
-            local point
-            local pivotCFrame
-
-            -- Prefer the WallCap object's own pivot (Model or BasePart),
-            -- similar to selecting the model and using PivotTo in an explorer.
-            if wallcap:IsA("Model") or wallcap:IsA("BasePart") then
-                local ok, cf = pcall(function()
-                    return wallcap:GetPivot()
-                end)
-                if ok then
-                    pivotCFrame = cf
+            local zone = room:FindFirstChild("Zone")
+            if zone then
+                local pivot = getPivot(zone)
+                if pivot then
+                    table.insert(rooms, {
+                        number = tonumber(number),
+                        room = room,
+                        zone = zone,
+                        pivotCFrame = pivot,
+                    })
                 end
-                if wallcap:IsA("BasePart") then
-                    point = wallcap
-                else
-                    point = wallcap.PrimaryPart
-                        or wallcap:FindFirstChildWhichIsA("BasePart", true)
-                end
-            else
-                point = wallcap:FindFirstChildWhichIsA("BasePart", true)
-                if point then
-                    pivotCFrame = point.CFrame
-                end
-            end
-
-            if point and point:IsA("BasePart") then
-                pivotCFrame = pivotCFrame or point.CFrame
-                table.insert(rooms, {
-                    number = number,
-                    wallcap = wallcap,
-                    point = point,
-                    pivotCFrame = pivotCFrame,
-                })
             end
         end
     end
@@ -772,7 +756,6 @@ local function getDungeonWallCapRooms(map)
         return a.number < b.number
     end)
 
-    -- Remove duplicate room numbers if multiple nested objects share a name.
     local unique, seen = {}, {}
     for _, entry in ipairs(rooms) do
         if not seen[entry.number] then
@@ -780,7 +763,6 @@ local function getDungeonWallCapRooms(map)
             table.insert(unique, entry)
         end
     end
-
     return unique
 end
 
@@ -816,7 +798,7 @@ local function startDungeonSnowStyleFarm(config, enabled)
         while running() do
             local map, npcFolder = getDungeonMap(config)
 
-            if not map or not npcFolder then
+            if not map then
                 task.wait(0.5)
                 continue
             end
@@ -836,7 +818,7 @@ local function startDungeonSnowStyleFarm(config, enabled)
                 continue
             end
 
-            local rooms = getDungeonWallCapRooms(map)
+            local rooms = getDungeonRoomZones(map)
             local targets, hasNPC = getDungeonNPCState(map, config)
 
             if hasNPC then
@@ -962,10 +944,10 @@ local function startDungeonSnowStyleFarm(config, enabled)
                 end
 
                 if not activeRoom
-                    or not activeRoom.point
-                    or not activeRoom.point.Parent
-                    or not activeRoom.wallcap
-                    or not activeRoom.wallcap.Parent then
+                    or not activeRoom.zone
+                    or not activeRoom.zone.Parent
+                    or not activeRoom.room
+                    or not activeRoom.room.Parent then
 
                     activeRoom = nil
                     roomIndex += 1
@@ -976,13 +958,11 @@ local function startDungeonSnowStyleFarm(config, enabled)
                     continue
                 end
 
-                -- Teleport the whole character using PivotTo, directly to
-                -- this WallCap's pivot position. Then cycle through every
-                -- WallCap again until NPCs appear.
+                -- Teleport the whole character to this room's Zone pivot.
+                -- Each dungeon uses its own Generated_* map and NPC folders.
                 local character = player.Character
                 local pivot = activeRoom.pivotCFrame
-                local targetPosition = pivot and pivot.Position
-                    or activeRoom.point.Position
+                local targetPosition = pivot.Position
                 local targetCFrame = CFrame.new(
                     targetPosition + Vector3.new(0, 4, 0)
                 )
@@ -996,8 +976,8 @@ local function startDungeonSnowStyleFarm(config, enabled)
                 end
 
                 -- Give this room a brief chance to spawn NPCs, but never
-                -- block the patrol for long; re-scan after each WallCap.
-                local checkUntil = os.clock() + 0.65
+                -- block the patrol for long; re-scan after each Zone.
+                local checkUntil = os.clock() + 1.0
                 local spawnedNPC = false
 
                 while running() and os.clock() < checkUntil do
@@ -3576,6 +3556,137 @@ local function openGameFrame(frameName)
     setStatus("UI dibuka: " .. frameName)
     print("[Open UI] Dibuka: " .. frameName)
 end
+
+--========================================================
+-- AUTO SELL EQUIPMENT (KEEP EXOTIC) - CONTINUOUS
+--========================================================
+
+addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
+    _G.AutoSellEquip = state
+    _G.AutoSellEquipRunId = (_G.AutoSellEquipRunId or 0) + 1
+
+    local runId = _G.AutoSellEquipRunId
+    if not state then return end
+
+    task.spawn(function()
+        local sellRemote
+        local RarityColors
+
+        local ok, err = pcall(function()
+            sellRemote = ReplicatedStorage
+                :WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_knit@1.7.0")
+                :WaitForChild("knit")
+                :WaitForChild("Services")
+                :WaitForChild("ShopService")
+                :WaitForChild("RF")
+                :WaitForChild("SellEquipment")
+
+            RarityColors = require(
+                ReplicatedStorage:WaitForChild("SharedDictionaries")
+                    :WaitForChild("RarityColors")
+            )
+        end)
+
+        if not ok then
+            warn("[Auto Sell] Setup gagal:", err)
+            return
+        end
+
+        local function running()
+            return alive()
+                and _G.AutoSellEquip
+                and _G.AutoSellEquipRunId == runId
+        end
+
+        local function getItemGrid()
+            local pg = player:FindFirstChild("PlayerGui")
+            local mainGui = pg and pg:FindFirstChild("Main")
+            local frames = mainGui and mainGui:FindFirstChild("Frames")
+            local inventory = frames and frames:FindFirstChild("Inventory")
+            local contents = inventory and inventory:FindFirstChild("Contents")
+            local section = contents and contents:FindFirstChild("InventorySection")
+            local panel = section and section:FindFirstChild("ItemPanel")
+            local grid = panel and panel:FindFirstChild("ItemGrid")
+            if grid and grid.Parent then return grid end
+            return nil
+        end
+
+        local function isUUID(value)
+            return type(value) == "string" and value:match(
+                "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$"
+            ) ~= nil
+        end
+
+        local function colorMatches(a, b)
+            return math.abs(a.R - b.R) < 0.015
+                and math.abs(a.G - b.G) < 0.015
+                and math.abs(a.B - b.B) < 0.015
+        end
+
+        local function getRarity(item)
+            local label = item:FindFirstChild("Item_Name", true)
+            local gradient = label and label:FindFirstChild("RarityGradient", true)
+            if not gradient or not gradient:IsA("UIGradient") then return nil end
+
+            local keypoints = gradient.Color.Keypoints
+            if #keypoints == 0 then return nil end
+            local firstColor = keypoints[1].Value
+            local lastColor = keypoints[#keypoints].Value
+
+            for rarity, colors in pairs(RarityColors) do
+                if rarity ~= "Enemy"
+                    and colors.BackgroundColor3
+                    and colors.BorderColor3
+                    and colorMatches(firstColor, colors.BackgroundColor3)
+                    and colorMatches(lastColor, colors.BorderColor3) then
+                    return rarity
+                end
+            end
+            return nil
+        end
+
+        while running() do
+            local grid = getItemGrid()
+            if not grid then
+                task.wait(1)
+                continue
+            end
+
+            local sold, kept, skipped = 0, 0, 0
+            for _, item in ipairs(grid:GetChildren()) do
+                if not running() then break end
+                if item.Parent == grid and isUUID(item.Name) then
+                    local rarity = getRarity(item)
+                    if rarity == "Exotic" then
+                        kept += 1
+                    elseif rarity and rarity ~= "Enemy" then
+                        local success, sellErr = pcall(function()
+                            sellRemote:InvokeServer({item.Name})
+                        end)
+                        if success then
+                            sold += 1
+                        else
+                            warn("[Auto Sell] Gagal:", item.Name, sellErr)
+                        end
+                        task.wait(0.4)
+                    else
+                        skipped += 1
+                    end
+                end
+            end
+
+            if not running() then break end
+            if sold > 0 or kept > 0 then
+                print("[Auto Sell] Terjual:", sold,
+                    "| Exotic disimpan:", kept,
+                    "| Dilewati:", skipped)
+            end
+            task.wait(1)
+        end
+    end)
+end)
 
 addButton("Open Inventory", function()
     openGameFrame("Inventory")
