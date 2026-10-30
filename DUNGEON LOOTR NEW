@@ -491,7 +491,7 @@ local ORBIT_HEIGHT = 12
 local ORBIT_SPEED = 2
 local ATTACK_INTERVAL = 0.1
 local SKILL_INTERVAL = 0.05
-local EMPTY_CONFIRM_TIME = 1.5
+local EMPTY_CONFIRM_TIME = 0.1
 
 local Inputs = ReplicatedStorage
     :WaitForChild("Player")
@@ -785,8 +785,9 @@ local function startDungeonSnowStyleFarm(config, enabled)
 
     task.spawn(function()
         local currentTarget
-        local lockedY
-        local angle = 0
+local lastTargetModel
+local lockedY
+local angle = 0
         local lastAttack = 0
         local lastSkill = 0
         local skillNumber = 1
@@ -824,37 +825,49 @@ local function startDungeonSnowStyleFarm(config, enabled)
             if hasNPC then
                 emptySince = nil
 
-                if not currentTarget
-                    or not currentTarget.model.Parent
-                    or farmMobIsDead(currentTarget.model) then
+               -- Pilih target bergantian dari SEMUA mob di folder NPC.
+if not currentTarget
+    or not currentTarget.model.Parent
+    or farmMobIsDead(currentTarget.model) then
 
-                    currentTarget = nil
-                    lockedY = nil
-                    local nearestDistance = math.huge
+    currentTarget = nil
+    lockedY = nil
 
-                    for _, data in ipairs(targets) do
-                        if data.part and data.part.Parent
-                            and not farmMobIsDead(data.model) then
+    -- Cari posisi target berikutnya berdasarkan urutan folder NPC.
+    local nextIndex = 1
 
-                            local distance =
-                                (data.part.Position - root.Position).Magnitude
+    if lastTargetModel then
+        for i, data in ipairs(targets) do
+            if data.model == lastTargetModel then
+                nextIndex = (i % #targets) + 1
+                break
+            end
+        end
+    end
 
-                            if distance < nearestDistance then
-                                nearestDistance = distance
-                                currentTarget = data
-                            end
-                        end
-                    end
+    -- Ambil mob berikutnya, bukan mob terdekat.
+    for offset = 0, #targets - 1 do
+        local index = ((nextIndex + offset - 1) % #targets) + 1
+        local data = targets[index]
 
-                    if currentTarget then
-                        local part = currentTarget.part
-                        angle = math.atan2(
-                            root.Position.Z - part.Position.Z,
-                            root.Position.X - part.Position.X
-                        )
-                        lockedY = part.Position.Y + ORBIT_HEIGHT
-                    end
-                end
+        if data.part and data.part.Parent
+            and not farmMobIsDead(data.model) then
+
+            currentTarget = data
+            lastTargetModel = data.model
+            break
+        end
+    end
+
+    if currentTarget then
+        local part = currentTarget.part
+        angle = math.atan2(
+            root.Position.Z - part.Position.Z,
+            root.Position.X - part.Position.X
+        )
+        lockedY = part.Position.Y + ORBIT_HEIGHT
+    end
+end
 
                 if not currentTarget then
                     task.wait(0.1)
