@@ -605,7 +605,9 @@ end
 local function getActiveZoneTargets(map, zone)
     local targets = {}
     local folder = map and map:FindFirstChild("NPCs")
-    if not folder or not zone then return targets end
+    -- Saat stage baru mulai, player mungkin belum berada di dalam bounds WallCap.
+    -- Dalam kondisi itu scan seluruh NPCs agar mob yang sudah mengepung tetap diserang.
+    if not folder then return targets end
 
     for _, model in ipairs(folder:GetDescendants()) do
         if model:IsA("Model") and model.Parent and not isDead(model) then
@@ -618,7 +620,7 @@ local function getActiveZoneTargets(map, zone)
             if not nested then
                 local part = getMobPart(model)
                 if part and part:IsDescendantOf(folder)
-                    and isInsideZone(part.Position, zone) then
+                    and (not zone or isInsideZone(part.Position, zone)) then
                     table.insert(targets, {model = model, part = part})
                 end
             end
@@ -658,154 +660,149 @@ local function teleportTo(cframe)
 end
 
 local function snowFarmLoop(runId)
-    local currentTarget, lockedY
+    local currentModel
+    local lockedY
     local angle = 0
     local lastAttack, lastSkill = 0, 0
     local skillNumber = 1
-    local emptySince
-    local lastChestTarget
+    -- Patrol Entry berurutan berdasarkan nomor WallCap (Room_1, Room_2, ...).
+    local entryMap
+    local entryIndex = 1
 
     while featureRunning("AutoFarmSnowZone", runId) do
         local map = getMap()
         local root = getRoot()
+
         if not map then
             setStatus("WAITING FOR SNOW MAP")
-            task.wait(0.5)
+            task.wait(0.3)
             continue
         end
         if not root then
             setStatus("WAITING FOR CHARACTER")
-            task.wait(0.25)
+            task.wait(0.2)
             continue
         end
 
-        -- PRIORITAS 1: Valkskar di mana pun dalam NPCs, tanpa cek zona.
-        local bossTarget = getBoss(map)
-        local activeZone = getPlayerActiveZone(map)
+        -- Scan SEMUA NPC dalam map.NPCs, tanpa filter WallCap / room.
+        -- Hanya target yang berjarak maksimal 100 studs dari player.
+        local targets = getActiveZoneTargets(map, nil)
         local target
+        local nearestDistance = MOB_RANGE
 
-        if bossTarget then
-            target = bossTarget
-            setStatus("BOSS PRIORITY: VALKSKAR", Color3.fromRGB(255, 190, 90))
-        else
-            -- PRIORITAS 2: chest di zona aktif, jarak <= 50 studs.
-            local chest = getNearbyDungeonChest(map, activeZone)
-            if chest then
-                local chestPart = getChestPart(chest)
-                if chestPart then
-                    setStatus("CHEST: " .. chest.Name, Color3.fromRGB(125, 235, 155))
-                    teleportTo(CFrame.new(chestPart.Position + Vector3.new(0, 4, 0)))
-                    lastChestTarget = chest
-                    task.wait(0.35)
-                    continue
-                end
-            end
-
-            -- PRIORITAS 3: farm NPC di zona aktif saja, maksimal 100 studs.
-            local targets = activeZone and getActiveZoneTargets(map, activeZone) or {}
-            local nearestDistance = MOB_RANGE
-            for _, data in ipairs(targets) do
-                if data.part and data.part.Parent then
-                    local distance = (data.part.Position - root.Position).Magnitude
-                    if distance <= nearestDistance then
-                        nearestDistance = distance
-                        target = data
-                    end
+        for _, data in ipairs(targets) do
+            local part = data.part
+            if part and part.Parent and not isDead(data.model) then
+                local distance = (part.Position - root.Position).Magnitude
+                if distance <= nearestDistance then
+                    nearestDistance = distance
+                    target = data
                 end
             end
         end
 
-        if target then
-            emptySince = nil
-            currentTarget = target
-            local part = getMobPart(target.model)
-            if not part or not part.Parent then
-                currentTarget = nil
-                task.wait(0.1)
-                continue
-            end
-            currentTarget.part = part
-            if not lockedY or target.isBoss then
-                lockedY = part.Position.Y + ORBIT_HEIGHT
-            end
-            setStatus(target.isBoss and "BOSS: VALKSKAR" or "FARMING: " .. target.model.Name,
-                target.isBoss and Color3.fromRGB(255, 190, 90) or Color3.fromRGB(125, 235, 155))
-
-            local dt = RunService.Heartbeat:Wait()
-            if not featureRunning("AutoFarmSnowZone", runId) then break end
-            root = getRoot()
-            part = getMobPart(target.model)
-            if root and part and part.Parent and not isDead(target.model) then
-                angle += ORBIT_SPEED * dt
-                local pos = part.Position
-                local destination = Vector3.new(
-                    pos.X + math.cos(angle) * ORBIT_RADIUS,
-                    lockedY,
-                    pos.Z + math.sin(angle) * ORBIT_RADIUS
-                )
-                root.CFrame = CFrame.lookAt(destination, Vector3.new(pos.X, lockedY, pos.Z))
-
-                local now = os.clock()
-                if now - lastAttack >= ATTACK_INTERVAL then
-                    pcall(function() AttackRemote:FireServer(pos) end)
-                    lastAttack = now
-                end
-                if now - lastSkill >= SKILL_INTERVAL then
-                    pcall(function() SkillRemote:FireServer(skillNumber, "tap", pos, nil) end)
-                    skillNumber = (skillNumber % 4) + 1
-                    lastSkill = now
-                end
-            end
-        else
-            currentTarget = nil
+        if not target then
+            currentModel = nil
             lockedY = nil
-            emptySince = emptySince or os.clock()
-            setStatus(activeZone and "ZONE CLEAR CHECK: " .. activeZone.Name or "FINDING ACTIVE ZONE")
 
-            if not activeZone then
-                task.wait(0.25)
-                continue
-            end
-            if os.clock() - emptySince < EMPTY_CONFIRM_TIME then
-                task.wait(0.15)
-                continue
+            -- Jika tidak ada mob dalam radius 100 studs, patrol Entry
+            -- berdasarkan nomor WallCap dari kecil ke besar, BUKAN jarak.
+            if entryMap ~= map then
+                entryMap = map
+                entryIndex = 1
             end
 
-            -- Pastikan boss/mob/chest belum muncul sebelum berpindah.
-            if getBoss(map) then
-                emptySince = nil
-                continue
-            end
-            local refreshedTargets = getActiveZoneTargets(map, activeZone)
-            if #refreshedTargets > 0 then
-                emptySince = nil
-                continue
-            end
-            local chest = getNearbyDungeonChest(map, activeZone)
-            if chest then
-                emptySince = nil
-                continue
-            end
+            local rooms = getWallCaps(map) -- sudah diurutkan Room_1, Room_2, ...
+            local entryDestination
+            local selectedRoom
+            local checked = 0
 
-            -- Zona bersih: pindah ke Entry WallCap berikutnya berdasarkan nomor.
-            local nextZone = getNextZone(map, activeZone)
-            if nextZone then
-                setStatus("NEXT ZONE: " .. nextZone.Name, Color3.fromRGB(125, 235, 155))
-                teleportTo(getEntryDestination(nextZone))
-                local deadline = os.clock() + ZONE_WAIT_TIME
-                while featureRunning("AutoFarmSnowZone", runId) and os.clock() < deadline do
-                    task.wait(0.2)
-                    local latestMap = getMap()
-                    if latestMap then map = latestMap end
-                    local latestZone = getPlayerActiveZone(map)
-                    if latestZone == nextZone then break end
+            while #rooms > 0 and checked < #rooms do
+                if entryIndex > #rooms then entryIndex = 1 end
+                local zone = rooms[entryIndex]
+                -- Geser pointer supaya kunjungan berikutnya selalu room berikutnya.
+                entryIndex = entryIndex + 1
+                checked = checked + 1
+
+                local connectors = zone:FindFirstChild("Connectors")
+                local entry = connectors and connectors:FindFirstChild("Entry", true)
+                if entry then
+                    local entryPart = getMobPart(entry)
+                    if entryPart then
+                        entryDestination = entryPart.CFrame + Vector3.new(0, 4, 0)
+                    elseif entry:IsA("Model") then
+                        entryDestination = entry:GetPivot() + Vector3.new(0, 4, 0)
+                    end
+                    if entryDestination then
+                        selectedRoom = zone
+                        break
+                    end
                 end
+            end
+
+            if entryDestination then
+                setStatus("NO MOB IN 100 STUDS - ENTRY " .. selectedRoom.Name)
+                teleportTo(entryDestination)
+                task.wait(0.45) -- beri waktu NPC muncul, lalu scan radius lagi
             else
-                setStatus("WAITING FOR WALLCAP")
+                setStatus("NO MOB IN 100 STUDS - ENTRY NOT FOUND")
                 task.wait(0.5)
             end
-            emptySince = nil
-            lastChestTarget = nil
+            continue
+        end
+
+        local part = getMobPart(target.model)
+        if not part or not part.Parent then
+            task.wait(0.05)
+            continue
+        end
+
+        -- Reset ketinggian orbit setiap ganti target.
+        if currentModel ~= target.model then
+            currentModel = target.model
+            lockedY = part.Position.Y + ORBIT_HEIGHT
+            angle = 0
+        end
+
+        setStatus("ATTACKING: " .. target.model.Name .. " | " .. math.floor(nearestDistance) .. " STUDS",
+            Color3.fromRGB(125, 235, 155))
+
+        local dt = RunService.Heartbeat:Wait()
+        if not featureRunning("AutoFarmSnowZone", runId) then break end
+
+        root = getRoot()
+        part = getMobPart(target.model)
+        if root and part and part.Parent and not isDead(target.model) then
+            local pos = part.Position
+            angle += ORBIT_SPEED * dt
+            local destination = Vector3.new(
+                pos.X + math.cos(angle) * ORBIT_RADIUS,
+                lockedY or (pos.Y + ORBIT_HEIGHT),
+                pos.Z + math.sin(angle) * ORBIT_RADIUS
+            )
+
+            -- Dekati target lalu terus serang sampai mati / keluar radius.
+            root.CFrame = CFrame.lookAt(destination, Vector3.new(pos.X, destination.Y, pos.Z))
+
+            local now = os.clock()
+            if now - lastAttack >= ATTACK_INTERVAL then
+                pcall(function()
+                    AttackRemote:FireServer(pos)
+                end)
+                lastAttack = now
+            end
+
+            if now - lastSkill >= SKILL_INTERVAL then
+                pcall(function()
+                    SkillRemote:FireServer(skillNumber, "tap", pos, nil)
+                end)
+                skillNumber = (skillNumber % 4) + 1
+                lastSkill = now
+            end
+        else
+            currentModel = nil
+            lockedY = nil
+            task.wait(0.05)
         end
     end
 end
