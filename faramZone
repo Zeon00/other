@@ -593,11 +593,32 @@ local function getNearbyDungeonChest(map, activeZone)
 end
 
 local function getBoss(map)
-    local folder = map and map:FindFirstChild("NPCs")
-    local boss = folder and folder:FindFirstChild("Valkskar", true)
-    if boss and (boss:IsA("Model") or boss:IsA("BasePart")) and not isDead(boss) then
-        local part = getMobPart(boss)
-        if part then return {model = boss, part = part, isBoss = true} end
+    if not map then return nil end
+
+    -- Boss dapat memakai variasi ejaan nama dan bisa berada di NPCs atau Snow_NPC.
+    local aliases = {"valksar", "valskar", "valkskar", "valkzar"}
+    for _, folderName in ipairs({"NPCs", "Snow_NPC"}) do
+        local folder = map:FindFirstChild(folderName)
+        if folder then
+            for _, obj in ipairs(folder:GetDescendants()) do
+                if (obj:IsA("Model") or obj:IsA("BasePart")) and not isDead(obj) then
+                    local normalized = string.lower(obj.Name):gsub("[^%w]", "")
+                    local matches = false
+                    for _, alias in ipairs(aliases) do
+                        if normalized == alias or normalized:find(alias, 1, true) then
+                            matches = true
+                            break
+                        end
+                    end
+                    if matches then
+                        local part = getMobPart(obj)
+                        if part then
+                            return {model = obj, part = part, isBoss = true}
+                        end
+                    end
+                end
+            end
+        end
     end
     return nil
 end
@@ -633,22 +654,67 @@ local function getActiveZoneTargets(map, zone)
     return targets
 end
 
--- Hanya WallCap yang benar-benar memiliki Entry valid yang masuk urutan patrol.
+-- Ambil nomor room dari nama WallCap atau ancestor bernama Room_N.
+local function getRoomNumber(instance, map)
+    local current = instance
+    while current and current ~= map do
+        local number = current.Name:match("[Rr]oom[_ ]?(%d+)")
+        if number then return tonumber(number) end
+        current = current.Parent
+    end
+    return nil
+end
+
+local function getZoneForRoom(map, roomNumber)
+    if not map or not roomNumber then return nil end
+    for _, obj in ipairs(map:GetDescendants()) do
+        if obj.Name == "Zone" and getRoomNumber(obj, map) == roomNumber then
+            local current = obj
+            local locked = false
+            while current and current ~= map do
+                if string.lower(current.Name) == "locked" then locked = true break end
+                current = current.Parent
+            end
+            if not locked then return obj end
+        end
+    end
+    return nil
+end
+
+local function getZoneCFrame(zone)
+    if not zone then return nil end
+    if zone:IsA("BasePart") then
+        return zone.CFrame + Vector3.new(0, 4, 0)
+    elseif zone:IsA("Model") then
+        local ok, cf = pcall(function() return zone:GetBoundingBox() end)
+        if ok and cf then return cf + Vector3.new(0, 4, 0) end
+    end
+    local part = getMobPart(zone)
+    if part then return part.CFrame + Vector3.new(0, 4, 0) end
+    return nil
+end
+
+-- Entry tetap diambil dari WallCap; Zone dicari terpisah di Room_N.
 local function getRoomsWithEntry(map)
     local result = {}
-    for _, zone in ipairs(getWallCaps(map)) do
-        local connectors = zone:FindFirstChild("Connectors")
+    for _, wallCap in ipairs(getWallCaps(map)) do
+        local wallNumber = tonumber(wallCap.Name:match("(%d+)$"))
+        local connectors = wallCap:FindFirstChild("Connectors")
         local entry = connectors and connectors:FindFirstChild("Entry", true)
         if entry then
             local part = getMobPart(entry)
-            local destination
+            local entryCFrame
             if part then
-                destination = part.CFrame + Vector3.new(0, 4, 0)
+                entryCFrame = part.CFrame + Vector3.new(0, 4, 0)
             elseif entry:IsA("Model") then
-                destination = entry:GetPivot() + Vector3.new(0, 4, 0)
+                entryCFrame = entry:GetPivot() + Vector3.new(0, 4, 0)
             end
-            if destination then
-                table.insert(result, {zone = zone, entryCFrame = destination})
+            if entryCFrame and wallNumber then
+                table.insert(result, {
+                    wallCap = wallCap,
+                    roomNumber = wallNumber,
+                    entryCFrame = entryCFrame,
+                })
             end
         end
     end
@@ -693,19 +759,23 @@ local function snowFarmLoop(runId)
             continue
         end
 
-        -- Scan SEMUA NPC dalam map.NPCs, tanpa filter WallCap / room.
-        -- Hanya target yang berjarak maksimal 100 studs dari player.
-        local targets = getActiveZoneTargets(map, nil)
-        local target
-        local nearestDistance = MOB_RANGE
+        -- Valkskar adalah boss yang bisa spawn jauh dari player.
+        -- Prioritaskan boss di seluruh map tanpa batas MOB_RANGE.
+        local target = getBoss(map)
 
-        for _, data in ipairs(targets) do
-            local part = data.part
-            if part and part.Parent and not isDead(data.model) then
-                local distance = (part.Position - root.Position).Magnitude
-                if distance <= nearestDistance then
-                    nearestDistance = distance
-                    target = data
+        -- Mob biasa tetap dicari di seluruh folder NPC, tetapi dibatasi 100 studs.
+        if not target then
+            local targets = getActiveZoneTargets(map, nil)
+            local nearestDistance = MOB_RANGE
+
+            for _, data in ipairs(targets) do
+                local part = data.part
+                if part and part.Parent and not isDead(data.model) then
+                    local distance = (part.Position - root.Position).Magnitude
+                    if distance <= nearestDistance then
+                        nearestDistance = distance
+                        target = data
+                    end
                 end
             end
         end
@@ -715,7 +785,7 @@ local function snowFarmLoop(runId)
             lockedY = nil
 
             -- Setelah TP, selalu scan ulang berdasarkan posisi root terbaru.
-            -- Jika kosong: ENTRY room N -> ZONE room valid berikutnya -> ENTRY room itu.
+            -- Jika kosong: ENTRY WallCap N -> ZONE di Room N berikutnya -> ENTRY WallCap berikutnya.
             if entryMap ~= map then
                 entryMap = map
                 patrolRooms = getRoomsWithEntry(map)
@@ -737,18 +807,19 @@ local function snowFarmLoop(runId)
 
                 if patrolPhase == "ENTRY" then
                     destination = selected.entryCFrame
-                    label = "ENTRY " .. selected.zone.Name
+                    label = "ENTRY WALLCAP " .. selected.wallCap.Name
                     patrolPhase = "ZONE"
                 else
-                    -- Bergerak ke zone room valid berikutnya (bukan nomor +1 wajib).
+                    -- Pilih nomor WallCap berikutnya yang punya Entry, lalu cari Zone di Room_N yang sama.
                     patrolIndex = (patrolIndex % #patrolRooms) + 1
                     selected = patrolRooms[patrolIndex]
-                    destination = selected.zone:GetPivot() + Vector3.new(0, 4, 0)
-                    label = "ZONE " .. selected.zone.Name
+                    local roomZone = getZoneForRoom(map, selected.roomNumber)
+                    destination = getZoneCFrame(roomZone)
+                    label = "ZONE ROOM " .. tostring(selected.roomNumber)
                     patrolPhase = "ENTRY"
                 end
 
-                setStatus("NO MOB IN 100 STUDS - TP " .. label)
+                setStatus("NO BOSS / MOB IN RANGE - TP " .. label)
                 if destination then
                     teleportTo(destination)
                     task.wait(0.65)
@@ -758,7 +829,7 @@ local function snowFarmLoop(runId)
                     task.wait(0.25)
                 end
             else
-                setStatus("NO MOB IN 100 STUDS - ENTRY NOT FOUND")
+                setStatus("NO BOSS / MOB IN RANGE - ENTRY NOT FOUND")
                 task.wait(0.5)
             end
             continue
@@ -770,6 +841,10 @@ local function snowFarmLoop(runId)
             continue
         end
 
+        -- Jarak dihitung untuk semua target, termasuk boss global yang jauh.
+        -- Sebelumnya nearestDistance nil saat target boss ditemukan dan membuat loop error.
+        local targetDistance = (part.Position - root.Position).Magnitude
+
         -- Reset ketinggian orbit setiap ganti target.
         if currentModel ~= target.model then
             currentModel = target.model
@@ -777,7 +852,7 @@ local function snowFarmLoop(runId)
             angle = 0
         end
 
-        setStatus("ATTACKING: " .. target.model.Name .. " | " .. math.floor(nearestDistance) .. " STUDS",
+        setStatus("ATTACKING: " .. target.model.Name .. " | " .. math.floor(targetDistance) .. " STUDS",
             Color3.fromRGB(125, 235, 155))
 
         local dt = RunService.Heartbeat:Wait()
