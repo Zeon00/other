@@ -603,25 +603,29 @@ local function getBoss(map)
 end
 
 local function getActiveZoneTargets(map, zone)
-    local targets = {}
-    local folder = map and map:FindFirstChild("NPCs")
-    -- Saat stage baru mulai, player mungkin belum berada di dalam bounds WallCap.
-    -- Dalam kondisi itu scan seluruh NPCs agar mob yang sudah mengepung tetap diserang.
-    if not folder then return targets end
+    local targets, seen = {}, {}
+    if not map then return targets end
 
-    for _, model in ipairs(folder:GetDescendants()) do
-        if model:IsA("Model") and model.Parent and not isDead(model) then
-            local nested = false
-            local ancestor = model.Parent
-            while ancestor and ancestor ~= folder do
-                if ancestor:IsA("Model") then nested = true break end
-                ancestor = ancestor.Parent
-            end
-            if not nested then
-                local part = getMobPart(model)
-                if part and part:IsDescendantOf(folder)
-                    and (not zone or isInsideZone(part.Position, zone)) then
-                    table.insert(targets, {model = model, part = part})
+    -- Snow dungeon NPC bisa muncul di dua folder berbeda.
+    for _, folderName in ipairs({"NPCs", "Snow_NPC"}) do
+        local folder = map:FindFirstChild(folderName)
+        if folder then
+            for _, model in ipairs(folder:GetDescendants()) do
+                if model:IsA("Model") and model.Parent and not seen[model] and not isDead(model) then
+                    local nested = false
+                    local ancestor = model.Parent
+                    while ancestor and ancestor ~= folder do
+                        if ancestor:IsA("Model") then nested = true break end
+                        ancestor = ancestor.Parent
+                    end
+                    if not nested then
+                        local part = getMobPart(model)
+                        if part and part:IsDescendantOf(folder)
+                            and (not zone or isInsideZone(part.Position, zone)) then
+                            seen[model] = true
+                            table.insert(targets, {model = model, part = part})
+                        end
+                    end
                 end
             end
         end
@@ -629,24 +633,26 @@ local function getActiveZoneTargets(map, zone)
     return targets
 end
 
-local function getEntryDestination(zone)
-    local connectors = zone and zone:FindFirstChild("Connectors")
-    local entry = connectors and connectors:FindFirstChild("Entry", true)
-    if entry then
-        local part = getMobPart(entry)
-        if part then return part.CFrame + Vector3.new(0, 4, 0) end
-        if entry:IsA("Model") then return entry:GetPivot() + Vector3.new(0, 4, 0) end
+-- Hanya WallCap yang benar-benar memiliki Entry valid yang masuk urutan patrol.
+local function getRoomsWithEntry(map)
+    local result = {}
+    for _, zone in ipairs(getWallCaps(map)) do
+        local connectors = zone:FindFirstChild("Connectors")
+        local entry = connectors and connectors:FindFirstChild("Entry", true)
+        if entry then
+            local part = getMobPart(entry)
+            local destination
+            if part then
+                destination = part.CFrame + Vector3.new(0, 4, 0)
+            elseif entry:IsA("Model") then
+                destination = entry:GetPivot() + Vector3.new(0, 4, 0)
+            end
+            if destination then
+                table.insert(result, {zone = zone, entryCFrame = destination})
+            end
+        end
     end
-    return zone:GetPivot() + Vector3.new(0, 4, 0)
-end
-
-local function getNextZone(map, currentZone)
-    local rooms = getWallCaps(map)
-    if #rooms == 0 then return nil end
-    if not currentZone then return rooms[1] end
-    local currentIndex = table.find(rooms, currentZone)
-    if not currentIndex then return rooms[1] end
-    return rooms[(currentIndex % #rooms) + 1]
+    return result
 end
 
 local function teleportTo(cframe)
@@ -665,9 +671,12 @@ local function snowFarmLoop(runId)
     local angle = 0
     local lastAttack, lastSkill = 0, 0
     local skillNumber = 1
-    -- Patrol Entry berurutan berdasarkan nomor WallCap (Room_1, Room_2, ...).
+    -- Patrol dua tahap: Entry room saat ini, lalu Zone room valid berikutnya.
+    -- Contoh: Entry 2 -> Zone 4 -> Entry 4 -> Zone berikutnya.
     local entryMap
-    local entryIndex = 1
+    local patrolRooms = {}
+    local patrolIndex = 1
+    local patrolPhase = "ENTRY"
 
     while featureRunning("AutoFarmSnowZone", runId) do
         local map = getMap()
@@ -705,45 +714,49 @@ local function snowFarmLoop(runId)
             currentModel = nil
             lockedY = nil
 
-            -- Jika tidak ada mob dalam radius 100 studs, patrol Entry
-            -- berdasarkan nomor WallCap dari kecil ke besar, BUKAN jarak.
+            -- Setelah TP, selalu scan ulang berdasarkan posisi root terbaru.
+            -- Jika kosong: ENTRY room N -> ZONE room valid berikutnya -> ENTRY room itu.
             if entryMap ~= map then
                 entryMap = map
-                entryIndex = 1
-            end
-
-            local rooms = getWallCaps(map) -- sudah diurutkan Room_1, Room_2, ...
-            local entryDestination
-            local selectedRoom
-            local checked = 0
-
-            while #rooms > 0 and checked < #rooms do
-                if entryIndex > #rooms then entryIndex = 1 end
-                local zone = rooms[entryIndex]
-                -- Geser pointer supaya kunjungan berikutnya selalu room berikutnya.
-                entryIndex = entryIndex + 1
-                checked = checked + 1
-
-                local connectors = zone:FindFirstChild("Connectors")
-                local entry = connectors and connectors:FindFirstChild("Entry", true)
-                if entry then
-                    local entryPart = getMobPart(entry)
-                    if entryPart then
-                        entryDestination = entryPart.CFrame + Vector3.new(0, 4, 0)
-                    elseif entry:IsA("Model") then
-                        entryDestination = entry:GetPivot() + Vector3.new(0, 4, 0)
-                    end
-                    if entryDestination then
-                        selectedRoom = zone
-                        break
-                    end
+                patrolRooms = getRoomsWithEntry(map)
+                patrolIndex = 1
+                patrolPhase = "ENTRY"
+            else
+                -- Refresh daftar untuk mengakomodasi WallCap/Entry yang baru spawn.
+                patrolRooms = getRoomsWithEntry(map)
+                if #patrolRooms > 0 then
+                    patrolIndex = math.clamp(patrolIndex, 1, #patrolRooms)
                 end
             end
 
-            if entryDestination then
-                setStatus("NO MOB IN 100 STUDS - ENTRY " .. selectedRoom.Name)
-                teleportTo(entryDestination)
-                task.wait(0.45) -- beri waktu NPC muncul, lalu scan radius lagi
+            if #patrolRooms > 0 then
+                if patrolIndex > #patrolRooms then patrolIndex = 1 end
+                local selected = patrolRooms[patrolIndex]
+                local destination
+                local label
+
+                if patrolPhase == "ENTRY" then
+                    destination = selected.entryCFrame
+                    label = "ENTRY " .. selected.zone.Name
+                    patrolPhase = "ZONE"
+                else
+                    -- Bergerak ke zone room valid berikutnya (bukan nomor +1 wajib).
+                    patrolIndex = (patrolIndex % #patrolRooms) + 1
+                    selected = patrolRooms[patrolIndex]
+                    destination = selected.zone:GetPivot() + Vector3.new(0, 4, 0)
+                    label = "ZONE " .. selected.zone.Name
+                    patrolPhase = "ENTRY"
+                end
+
+                setStatus("NO MOB IN 100 STUDS - TP " .. label)
+                if destination then
+                    teleportTo(destination)
+                    task.wait(0.65)
+                    -- Refresh root setelah PivotTo agar scan berikutnya memakai posisi baru.
+                    root = getRoot()
+                else
+                    task.wait(0.25)
+                end
             else
                 setStatus("NO MOB IN 100 STUDS - ENTRY NOT FOUND")
                 task.wait(0.5)
