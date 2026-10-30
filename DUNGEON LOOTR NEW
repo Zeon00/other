@@ -72,43 +72,55 @@ end
 -- PERSISTENT GUI PARENT
 --========================================================
 
-local CoreGui = game:GetService("CoreGui")
+local CoreGui
+pcall(function()
+    CoreGui = game:GetService("CoreGui")
+end)
 
 local function getPersistentGuiParent()
     if type(gethui) == "function" then
         local ok, result = pcall(gethui)
-
         if ok and result then
             return result
         end
     end
-
-    return CoreGui
+    return CoreGui or PlayerGui
 end
 
 local guiParent = getPersistentGuiParent()
 
--- Remove any old copy from common GUI containers.
-for _, container in ipairs({guiParent, CoreGui, PlayerGui}) do
+-- Remove any old copy from every available GUI container.
+local guiContainers = {}
+if guiParent then table.insert(guiContainers, guiParent) end
+if CoreGui and CoreGui ~= guiParent then table.insert(guiContainers, CoreGui) end
+if PlayerGui and PlayerGui ~= guiParent and PlayerGui ~= CoreGui then
+    table.insert(guiContainers, PlayerGui)
+end
+for _, container in ipairs(guiContainers) do
     pcall(function()
         local old = container:FindFirstChild("StandaloneAutomationGUI")
         if old then old:Destroy() end
     end)
 end
 
--- Create GUI with fallbacks for executors that restrict CoreGui parenting.
+-- Create GUI; prefer executor UI, then CoreGui, then PlayerGui.
 local gui = Instance.new("ScreenGui")
 gui.Name = "StandaloneAutomationGUI"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.DisplayOrder = 999999
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-local parented = pcall(function() gui.Parent = guiParent end)
-if not parented or not gui.Parent then
-    parented = pcall(function() gui.Parent = CoreGui end)
+
+local parented = false
+for _, container in ipairs(guiContainers) do
+    local ok = pcall(function() gui.Parent = container end)
+    if ok and gui.Parent then
+        parented = true
+        break
+    end
 end
-if not parented or not gui.Parent then
-    gui.Parent = PlayerGui
+if not parented then
+    error("[Standalone GUI] Tidak bisa memasang ScreenGui ke gethui/CoreGui/PlayerGui.")
 end
 
 
@@ -491,7 +503,7 @@ local ORBIT_HEIGHT = 12
 local ORBIT_SPEED = 2
 local ATTACK_INTERVAL = 0.1
 local SKILL_INTERVAL = 0.05
-local EMPTY_CONFIRM_TIME = 0.1
+local EMPTY_CONFIRM_TIME = 1.5
 
 local Inputs = ReplicatedStorage
     :WaitForChild("Player")
@@ -1078,7 +1090,6 @@ local function startDungeonSnowStyleFarm(config, enabled)
                         task.wait(0.15)
                         continue
                     end
-                end
 
                 elseif patrolPhase == "Zone" then
                     if #rooms > 0 then
