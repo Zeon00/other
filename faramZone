@@ -446,7 +446,7 @@ local ORBIT_SPEED = 2
 local ATTACK_INTERVAL = 0.1
 local SKILL_INTERVAL = 0.05
 local ZONE_WAIT_TIME = 1
-local MOB_RANGE = 100
+local MOB_RANGE = 250
 
 local Inputs = ReplicatedStorage
     :WaitForChild("Player")
