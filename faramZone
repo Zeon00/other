@@ -436,7 +436,8 @@ local function getKnit()
 end
 
 --========================================================
--- SNOW FARM - ACTIVE ZONE + BOSS PRIORITY + CHEST + ENTRY
+-- SNOW FARM - ALL ROOM ZONES + 1 SECOND SCAN + LOOP
+-- Boss Priority | Mob Farm | Entry Patrol
 --========================================================
 
 local ORBIT_RADIUS = 12
@@ -444,9 +445,7 @@ local ORBIT_HEIGHT = 12
 local ORBIT_SPEED = 2
 local ATTACK_INTERVAL = 0.1
 local SKILL_INTERVAL = 0.05
-local EMPTY_CONFIRM_TIME = 1.5
-local ZONE_WAIT_TIME = 5
-local CHEST_RANGE = 50
+local ZONE_WAIT_TIME = 1
 local MOB_RANGE = 100
 
 local Inputs = ReplicatedStorage
@@ -460,12 +459,14 @@ local SkillRemote = Inputs:WaitForChild("Skill")
 local function getRoot()
     local character = player.Character
     if not character then return nil end
-    return character:FindFirstChild("HumanoidRootPart") or character.PrimaryPart
+    return character:FindFirstChild("HumanoidRootPart")
+        or character.PrimaryPart
 end
 
 local function getMap()
     for _, object in ipairs(Workspace:GetChildren()) do
-        if object.Name:match("^Generated_Snow_") and object:FindFirstChild("NPCs") then
+        if object.Name:match("^Generated_Snow_%x+$")
+            and object:FindFirstChild("NPCs") then
             return object
         end
     end
@@ -477,274 +478,342 @@ local function getMobPart(model)
     if model:IsA("BasePart") then return model end
     if not model:IsA("Model") then return nil end
 
-    for _, name in ipairs({"HumanoidRootPart", "UpperTorso", "Torso", "LowerTorso", "Head"}) do
+    for _, name in ipairs({
+        "HumanoidRootPart", "UpperTorso", "Torso",
+        "LowerTorso", "Head"
+    }) do
         local part = model:FindFirstChild(name, true)
-        if part and part:IsA("BasePart") then return part end
+        if part and part:IsA("BasePart") then
+            return part
+        end
     end
+
     for _, obj in ipairs(model:GetDescendants()) do
-        if obj:IsA("BasePart") then return obj end
+        if obj:IsA("BasePart") then
+            return obj
+        end
     end
+
     return nil
 end
 
 local function isDead(model)
     if not model or not model.Parent then return true end
-    local humanoid = model:IsA("Model") and (model:FindFirstChildOfClass("Humanoid")
+
+    local humanoid = model:IsA("Model")
+        and (model:FindFirstChildOfClass("Humanoid")
         or model:FindFirstChildWhichIsA("Humanoid", true))
-    if humanoid then return humanoid.Health <= 0 end
+
+    if humanoid then
+        return humanoid.Health <= 0
+    end
 
     local state = model:GetAttribute("State")
+
     if state == nil and model:IsA("Model") then
         local value = model:FindFirstChild("State", true)
-        if value and (value:IsA("StringValue") or value:IsA("BoolValue")) then
+        if value and (
+            value:IsA("StringValue")
+            or value:IsA("BoolValue")
+        ) then
             state = value.Value
         end
     end
+
     if type(state) == "string" then
-        local v = string.lower(state)
-        if v == "dead" or v == "died" or v == "destroyed" or v == "despawned" then
+        local value = string.lower(state)
+        if value == "dead" or value == "died"
+            or value == "destroyed"
+            or value == "despawned" then
             return true
         end
     elseif type(state) == "boolean" and state then
         return true
     end
+
     local health = model:GetAttribute("Health")
     return type(health) == "number" and health <= 0
 end
 
-local function getWallCaps(map)
-    local rooms = {}
-    for _, obj in ipairs(map:GetChildren()) do
-        if obj:IsA("Model") and obj.Name:match("^WallCap_Side_Room_%d+$") then
-            table.insert(rooms, obj)
-        end
-    end
-    table.sort(rooms, function(a, b)
-        return (tonumber(a.Name:match("(%d+)$")) or 0)
-            < (tonumber(b.Name:match("(%d+)$")) or 0)
-    end)
-    return rooms
-end
-
--- Bounds use the actual WallCap model bounding box. Rotated rooms are supported.
-local function getZoneBounds(zone)
-    if not zone or not zone.Parent then return nil end
-    local ok, cf, size = pcall(function()
-        return zone:GetBoundingBox()
-    end)
-    if ok and cf and size then return cf, size end
-    return nil
-end
-
-local function isInsideZone(position, zone)
-    local cf, size = getZoneBounds(zone)
-    if not cf then return false end
-    local localPos = cf:PointToObjectSpace(position)
-    return math.abs(localPos.X) <= size.X / 2
-        and math.abs(localPos.Y) <= size.Y / 2
-        and math.abs(localPos.Z) <= size.Z / 2
-end
-
--- Current zone is the WallCap volume containing the player's current position.
--- If bounds overlap, use the smallest volume as the most specific room.
-local function getPlayerActiveZone(map)
-    local root = getRoot()
-    if not root then return nil end
-    local selected, selectedVolume
-    for _, zone in ipairs(getWallCaps(map)) do
-        if isInsideZone(root.Position, zone) then
-            local _, size = getZoneBounds(zone)
-            local volume = size and size.X * size.Y * size.Z or math.huge
-            if not selected or volume < selectedVolume then
-                selected, selectedVolume = zone, volume
-            end
-        end
-    end
-    return selected
-end
-
-local function getChestPart(chest)
-    if chest:IsA("BasePart") then return chest end
-    if chest:IsA("Model") then return getMobPart(chest) end
-    for _, obj in ipairs(chest:GetDescendants()) do
-        if obj:IsA("BasePart") then return obj end
-    end
-    return nil
-end
-
--- Chests are direct children of Generated_Snow_xxx; only accept chests
--- physically inside the player's active WallCap and within 50 studs.
-local function getNearbyDungeonChest(map, activeZone)
-    local root = getRoot()
-    if not root or not activeZone then return nil end
-    local nearest, nearestDistance = nil, CHEST_RANGE
-    for _, chest in ipairs(map:GetChildren()) do
-        if chest.Name:match("^DungeonChest_") then
-            local part = getChestPart(chest)
-            if part and isInsideZone(part.Position, activeZone) then
-                local distance = (part.Position - root.Position).Magnitude
-                if distance <= nearestDistance then
-                    nearest, nearestDistance = chest, distance
-                end
-            end
-        end
-    end
-    return nearest
-end
+--========================================================
+-- BOSS DETECTION
+--========================================================
 
 local function getBoss(map)
-    if not map then return nil end
+    local aliases = {
+        "valksar", "valskar", "valkskar", "valkzar"
+    }
 
-    -- Boss dapat memakai variasi ejaan nama dan bisa berada di NPCs atau Snow_NPC.
-    local aliases = {"valksar", "valskar", "valkskar", "valkzar"}
     for _, folderName in ipairs({"NPCs", "Snow_NPC"}) do
         local folder = map:FindFirstChild(folderName)
+
         if folder then
             for _, obj in ipairs(folder:GetDescendants()) do
-                if (obj:IsA("Model") or obj:IsA("BasePart")) and not isDead(obj) then
-                    local normalized = string.lower(obj.Name):gsub("[^%w]", "")
-                    local matches = false
+                if (obj:IsA("Model") or obj:IsA("BasePart"))
+                    and not isDead(obj) then
+
+                    local normalized =
+                        string.lower(obj.Name):gsub("[^%w]", "")
+
                     for _, alias in ipairs(aliases) do
-                        if normalized == alias or normalized:find(alias, 1, true) then
-                            matches = true
-                            break
-                        end
-                    end
-                    if matches then
-                        local part = getMobPart(obj)
-                        if part then
-                            return {model = obj, part = part, isBoss = true}
+                        if normalized:find(alias, 1, true) then
+                            local part = getMobPart(obj)
+                            if part then
+                                return {
+                                    model = obj,
+                                    part = part,
+                                    isBoss = true
+                                }
+                            end
                         end
                     end
                 end
             end
         end
     end
+
     return nil
 end
 
-local function getActiveZoneTargets(map, zone)
-    local targets, seen = {}, {}
-    if not map then return targets end
+--========================================================
+-- NORMAL MOB DETECTION
+--========================================================
 
-    -- Snow dungeon NPC bisa muncul di dua folder berbeda.
+local function getAllTargets(map)
+    local targets = {}
+    local seen = {}
+
     for _, folderName in ipairs({"NPCs", "Snow_NPC"}) do
         local folder = map:FindFirstChild(folderName)
+
         if folder then
             for _, model in ipairs(folder:GetDescendants()) do
-                if model:IsA("Model") and model.Parent and not seen[model] and not isDead(model) then
+                if model:IsA("Model")
+                    and model.Parent
+                    and not seen[model]
+                    and not isDead(model) then
+
                     local nested = false
                     local ancestor = model.Parent
+
                     while ancestor and ancestor ~= folder do
-                        if ancestor:IsA("Model") then nested = true break end
+                        if ancestor:IsA("Model") then
+                            nested = true
+                            break
+                        end
                         ancestor = ancestor.Parent
                     end
+
                     if not nested then
                         local part = getMobPart(model)
-                        if part and part:IsDescendantOf(folder)
-                            and (not zone or isInsideZone(part.Position, zone)) then
+
+                        if part then
                             seen[model] = true
-                            table.insert(targets, {model = model, part = part})
+                            table.insert(targets, {
+                                model = model,
+                                part = part
+                            })
                         end
                     end
                 end
             end
         end
     end
+
     return targets
 end
 
--- Ambil nomor room dari nama WallCap atau ancestor bernama Room_N.
-local function getRoomNumber(instance, map)
-    local current = instance
-    while current and current ~= map do
-        local number = current.Name:match("[Rr]oom[_ ]?(%d+)")
-        if number then return tonumber(number) end
-        current = current.Parent
-    end
-    return nil
-end
+local function getNearestMob(map, root)
+    local nearest
+    local nearestDistance = MOB_RANGE
 
-local function getZoneForRoom(map, roomNumber)
-    if not map or not roomNumber then return nil end
-    for _, obj in ipairs(map:GetDescendants()) do
-        if obj.Name == "Zone" and getRoomNumber(obj, map) == roomNumber then
-            local current = obj
-            local locked = false
-            while current and current ~= map do
-                if string.lower(current.Name) == "locked" then locked = true break end
-                current = current.Parent
+    for _, data in ipairs(getAllTargets(map)) do
+        local part = getMobPart(data.model)
+
+        if part and part.Parent and not isDead(data.model) then
+            local distance =
+                (part.Position - root.Position).Magnitude
+
+            if distance <= nearestDistance then
+                nearestDistance = distance
+                nearest = {
+                    model = data.model,
+                    part = part
+                }
             end
-            if not locked then return obj end
         end
     end
-    return nil
+
+    return nearest
+end
+
+--========================================================
+-- ROOM ZONE DISCOVERY
+-- Structure: Generated_Snow_xxx.Room_1.Zone
+--========================================================
+
+local function getAllRoomZones(map)
+    local rooms = {}
+
+    for _, room in ipairs(map:GetChildren()) do
+        local roomNumber =
+            tonumber(room.Name:match("^Room_(%d+)$"))
+
+        if roomNumber then
+            local zone = room:FindFirstChild("Zone")
+
+            if zone then
+                local locked = false
+                local current = zone
+
+                while current and current ~= map do
+                    if string.lower(current.Name) == "locked" then
+                        locked = true
+                        break
+                    end
+                    current = current.Parent
+                end
+
+                if not locked then
+                    table.insert(rooms, {
+                        number = roomNumber,
+                        room = room,
+                        zone = zone
+                    })
+                end
+            end
+        end
+    end
+
+    table.sort(rooms, function(a, b)
+        return a.number < b.number
+    end)
+
+    return rooms
 end
 
 local function getZoneCFrame(zone)
     if not zone then return nil end
+
     if zone:IsA("BasePart") then
         return zone.CFrame + Vector3.new(0, 4, 0)
-    elseif zone:IsA("Model") then
-        local ok, cf = pcall(function() return zone:GetBoundingBox() end)
-        if ok and cf then return cf + Vector3.new(0, 4, 0) end
     end
+
+    if zone:IsA("Model") then
+        local ok, cf = pcall(function()
+            return zone:GetBoundingBox()
+        end)
+
+        if ok and cf then
+            return cf + Vector3.new(0, 4, 0)
+        end
+    end
+
     local part = getMobPart(zone)
-    if part then return part.CFrame + Vector3.new(0, 4, 0) end
+    if part then
+        return part.CFrame + Vector3.new(0, 4, 0)
+    end
+
     return nil
 end
 
--- Entry tetap diambil dari WallCap; Zone dicari terpisah di Room_N.
+--========================================================
+-- ENTRY WALLCAP DISCOVERY
+--========================================================
+
+local function getWallCaps(map)
+    local rooms = {}
+
+    for _, obj in ipairs(map:GetChildren()) do
+        if obj:IsA("Model")
+            and obj.Name:match("^WallCap_Side_Room_%d+$") then
+            table.insert(rooms, obj)
+        end
+    end
+
+    table.sort(rooms, function(a, b)
+        return (tonumber(a.Name:match("(%d+)$")) or 0)
+            < (tonumber(b.Name:match("(%d+)$")) or 0)
+    end)
+
+    return rooms
+end
+
 local function getRoomsWithEntry(map)
     local result = {}
+
     for _, wallCap in ipairs(getWallCaps(map)) do
-        local wallNumber = tonumber(wallCap.Name:match("(%d+)$"))
+        local number =
+            tonumber(wallCap.Name:match("(%d+)$"))
+
         local connectors = wallCap:FindFirstChild("Connectors")
-        local entry = connectors and connectors:FindFirstChild("Entry", true)
-        if entry then
+        local entry = connectors
+            and connectors:FindFirstChild("Entry", true)
+
+        if entry and number then
             local part = getMobPart(entry)
-            local entryCFrame
+            local cf
+
             if part then
-                entryCFrame = part.CFrame + Vector3.new(0, 4, 0)
+                cf = part.CFrame + Vector3.new(0, 4, 0)
             elseif entry:IsA("Model") then
-                entryCFrame = entry:GetPivot() + Vector3.new(0, 4, 0)
+                cf = entry:GetPivot() + Vector3.new(0, 4, 0)
             end
-            if entryCFrame and wallNumber then
+
+            if cf then
                 table.insert(result, {
+                    number = number,
                     wallCap = wallCap,
-                    roomNumber = wallNumber,
-                    entryCFrame = entryCFrame,
+                    entryCFrame = cf
                 })
             end
         end
     end
+
     return result
 end
 
 local function teleportTo(cframe)
     local character = player.Character
     if not character then return false end
+
     local ok, err = pcall(function()
         character:PivotTo(cframe)
     end)
-    if not ok then warn("[Snow Farm TP]", err) end
+
+    if not ok then
+        warn("[Snow Farm TP]", err)
+    end
+
     return ok
 end
+
+--========================================================
+-- MAIN FARM LOOP
+--========================================================
 
 local function snowFarmLoop(runId)
     local currentModel
     local lockedY
     local angle = 0
-    local lastAttack, lastSkill = 0, 0
+
+    local lastAttack = 0
+    local lastSkill = 0
     local skillNumber = 1
-    -- Patrol dua tahap: Entry room saat ini, lalu Zone room valid berikutnya.
-    -- Contoh: Entry 2 -> Zone 4 -> Entry 4 -> Zone berikutnya.
+
     local entryMap
-    local patrolRooms = {}
-    local patrolIndex = 1
+    local patrolEntries = {}
+    local patrolZones = {}
+
+    local entryIndex = 1
+    local zoneIndex = 1
     local patrolPhase = "ENTRY"
 
-    while featureRunning("AutoFarmSnowZone", runId) do
+    local function running()
+        return featureRunning("AutoFarmSnowZone", runId)
+    end
+
+    while running() do
         local map = getMap()
         local root = getRoot()
 
@@ -753,126 +822,188 @@ local function snowFarmLoop(runId)
             task.wait(0.3)
             continue
         end
+
         if not root then
             setStatus("WAITING FOR CHARACTER")
             task.wait(0.2)
             continue
         end
 
-        -- Valkskar adalah boss yang bisa spawn jauh dari player.
-        -- Prioritaskan boss di seluruh map tanpa batas MOB_RANGE.
+        -- Refresh route when map changes.
+        if entryMap ~= map then
+            entryMap = map
+            patrolEntries = getRoomsWithEntry(map)
+            patrolZones = getAllRoomZones(map)
+            entryIndex = 1
+            zoneIndex = 1
+            patrolPhase = "ENTRY"
+        end
+
+        -- Boss has priority anywhere in the map.
         local target = getBoss(map)
 
-        -- Mob biasa tetap dicari di seluruh folder NPC, tetapi dibatasi 100 studs.
+        -- Normal mobs: nearby targets only.
         if not target then
-            local targets = getActiveZoneTargets(map, nil)
-            local nearestDistance = MOB_RANGE
-
-            for _, data in ipairs(targets) do
-                local part = data.part
-                if part and part.Parent and not isDead(data.model) then
-                    local distance = (part.Position - root.Position).Magnitude
-                    if distance <= nearestDistance then
-                        nearestDistance = distance
-                        target = data
-                    end
-                end
-            end
+            target = getNearestMob(map, root)
         end
+
+        --================================================
+        -- NO TARGET: PATROL
+        --================================================
 
         if not target then
             currentModel = nil
             lockedY = nil
 
-            -- Setelah TP, selalu scan ulang berdasarkan posisi root terbaru.
-            -- Jika kosong: ENTRY WallCap N -> ZONE di Room N berikutnya -> ENTRY WallCap berikutnya.
-            if entryMap ~= map then
-                entryMap = map
-                patrolRooms = getRoomsWithEntry(map)
-                patrolIndex = 1
-                patrolPhase = "ENTRY"
-            else
-                -- Refresh daftar untuk mengakomodasi WallCap/Entry yang baru spawn.
-                patrolRooms = getRoomsWithEntry(map)
-                if #patrolRooms > 0 then
-                    patrolIndex = math.clamp(patrolIndex, 1, #patrolRooms)
+            -- Refresh room data so newly spawned zones are included.
+            patrolEntries = getRoomsWithEntry(map)
+            patrolZones = getAllRoomZones(map)
+
+            if patrolPhase == "ENTRY" and #patrolEntries > 0 then
+                if entryIndex > #patrolEntries then
+                    entryIndex = 1
                 end
-            end
 
-            if #patrolRooms > 0 then
-                if patrolIndex > #patrolRooms then patrolIndex = 1 end
-                local selected = patrolRooms[patrolIndex]
-                local destination
-                local label
+                local selected = patrolEntries[entryIndex]
 
-                if patrolPhase == "ENTRY" then
-                    destination = selected.entryCFrame
-                    label = "ENTRY WALLCAP " .. selected.wallCap.Name
-                    patrolPhase = "ZONE"
-                else
-                    -- Pilih nomor WallCap berikutnya yang punya Entry, lalu cari Zone di Room_N yang sama.
-                    patrolIndex = (patrolIndex % #patrolRooms) + 1
-                    selected = patrolRooms[patrolIndex]
-                    local roomZone = getZoneForRoom(map, selected.roomNumber)
-                    destination = getZoneCFrame(roomZone)
-                    label = "ZONE ROOM " .. tostring(selected.roomNumber)
+                setStatus(
+                    "TP ENTRY WALLCAP " .. tostring(selected.number)
+                )
+
+                teleportTo(selected.entryCFrame)
+                task.wait(0.65)
+
+                -- Entry -> all zones.
+                zoneIndex = 1
+                patrolPhase = "ZONE"
+
+            elseif patrolPhase == "ZONE" and #patrolZones > 0 then
+                if zoneIndex > #patrolZones then
+                    -- All zones checked. Move to next entry.
                     patrolPhase = "ENTRY"
+                    entryIndex += 1
+
+                    if entryIndex > #patrolEntries then
+                        entryIndex = 1
+                    end
+
+                    zoneIndex = 1
+                    task.wait(0.1)
+                else
+                    local selected = patrolZones[zoneIndex]
+                    local destination = getZoneCFrame(selected.zone)
+
+                    if destination then
+                        setStatus(
+                            "CHECK ZONE ROOM " .. tostring(selected.number)
+                            .. " (" .. tostring(zoneIndex)
+                            .. "/" .. tostring(#patrolZones) .. ")"
+                        )
+
+                        teleportTo(destination)
+
+                        -- Wait 1 second, checking for enemies during the wait.
+                        local started = os.clock()
+
+                        while running()
+                            and os.clock() - started < ZONE_WAIT_TIME do
+
+                            local currentRoot = getRoot()
+                            local found
+
+                            if currentRoot then
+                                found = getBoss(map)
+                                if not found then
+                                    found = getNearestMob(map, currentRoot)
+                                end
+                            end
+
+                            if found then
+                                break
+                            end
+
+                            task.wait(0.1)
+                        end
+
+                        -- Check again before skipping this zone.
+                        local currentRoot = getRoot()
+                        local found
+
+                        if currentRoot then
+                            found = getBoss(map)
+                            if not found then
+                                found = getNearestMob(map, currentRoot)
+                            end
+                        end
+
+                        if not found then
+                            zoneIndex += 1
+                        end
+                    else
+                        zoneIndex += 1
+                    end
                 end
 
-                setStatus("NO BOSS / MOB IN RANGE - TP " .. label)
-                if destination then
-                    teleportTo(destination)
-                    task.wait(0.65)
-                    -- Refresh root setelah PivotTo agar scan berikutnya memakai posisi baru.
-                    root = getRoot()
-                else
-                    task.wait(0.25)
-                end
             else
-                setStatus("NO BOSS / MOB IN RANGE - ENTRY NOT FOUND")
+                setStatus("WAITING FOR ROOM ZONES / ENTRY")
                 task.wait(0.5)
             end
+
             continue
         end
 
+        --================================================
+        -- ATTACK TARGET
+        --================================================
+
         local part = getMobPart(target.model)
-        if not part or not part.Parent then
+
+        if not part or not part.Parent or isDead(target.model) then
+            currentModel = nil
+            lockedY = nil
             task.wait(0.05)
             continue
         end
 
-        -- Jarak dihitung untuk semua target, termasuk boss global yang jauh.
-        -- Sebelumnya nearestDistance nil saat target boss ditemukan dan membuat loop error.
-        local targetDistance = (part.Position - root.Position).Magnitude
+        local targetDistance =
+            (part.Position - root.Position).Magnitude
 
-        -- Reset ketinggian orbit setiap ganti target.
         if currentModel ~= target.model then
             currentModel = target.model
             lockedY = part.Position.Y + ORBIT_HEIGHT
             angle = 0
         end
 
-        setStatus("ATTACKING: " .. target.model.Name .. " | " .. math.floor(targetDistance) .. " STUDS",
-            Color3.fromRGB(125, 235, 155))
+        setStatus(
+            "ATTACKING: " .. target.model.Name
+            .. " | " .. math.floor(targetDistance) .. " STUDS",
+            Color3.fromRGB(125, 235, 155)
+        )
 
         local dt = RunService.Heartbeat:Wait()
-        if not featureRunning("AutoFarmSnowZone", runId) then break end
+        if not running() then break end
 
         root = getRoot()
         part = getMobPart(target.model)
+
         if root and part and part.Parent and not isDead(target.model) then
             local pos = part.Position
+
             angle += ORBIT_SPEED * dt
+
             local destination = Vector3.new(
                 pos.X + math.cos(angle) * ORBIT_RADIUS,
                 lockedY or (pos.Y + ORBIT_HEIGHT),
                 pos.Z + math.sin(angle) * ORBIT_RADIUS
             )
 
-            -- Dekati target lalu terus serang sampai mati / keluar radius.
-            root.CFrame = CFrame.lookAt(destination, Vector3.new(pos.X, destination.Y, pos.Z))
+            root.CFrame = CFrame.lookAt(
+                destination,
+                Vector3.new(pos.X, destination.Y, pos.Z)
+            )
 
             local now = os.clock()
+
             if now - lastAttack >= ATTACK_INTERVAL then
                 pcall(function()
                     AttackRemote:FireServer(pos)
@@ -882,8 +1013,11 @@ local function snowFarmLoop(runId)
 
             if now - lastSkill >= SKILL_INTERVAL then
                 pcall(function()
-                    SkillRemote:FireServer(skillNumber, "tap", pos, nil)
+                    SkillRemote:FireServer(
+                        skillNumber, "tap", pos, nil
+                    )
                 end)
+
                 skillNumber = (skillNumber % 4) + 1
                 lastSkill = now
             end
@@ -898,17 +1032,32 @@ end
 addToggle("Auto Farm Snow Zone", true, function(state)
     _G.AutoFarmSnowZone = state
     local id = nextRunId("AutoFarmSnowZone")
+
     if not state then
-        _G._SnowFarmLastNPCCount = nil
-        setStatus("SNOW FARM STOPPED", Color3.fromRGB(255, 125, 125))
+        setStatus(
+            "SNOW FARM STOPPED",
+            Color3.fromRGB(255, 125, 125)
+        )
         return
     end
-    setStatus("STARTING SNOW FARM", Color3.fromRGB(125, 235, 155))
+
+    setStatus(
+        "STARTING SNOW FARM",
+        Color3.fromRGB(125, 235, 155)
+    )
+
     task.spawn(function()
         local ok, err = pcall(snowFarmLoop, id)
+
         if not ok then
             warn("[Snow Farm]", err)
-            if alive() then setStatus("SNOW FARM ERROR", Color3.fromRGB(255, 100, 100)) end
+
+            if alive() then
+                setStatus(
+                    "SNOW FARM ERROR",
+                    Color3.fromRGB(255, 100, 100)
+                )
+            end
         end
     end)
 end)
@@ -1373,8 +1522,10 @@ addToggle("Auto Ultimate (G)", false, function(state)
         end
     end)
 end)
+
 --========================================================
--- AUTO SELL EQUIPMENT (KEEP EXOTIC) - LOOP
+-- AUTO SELL EQUIPMENT (KEEP EXOTIC) - CONTINUOUS
+-- Refresh ItemGrid every cycle; no manual inventory opening
 --========================================================
 
 addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
@@ -1386,15 +1537,10 @@ addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
 
     task.spawn(function()
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
         local sellRemote
         local RarityColors
-        local grid
 
         local ok, err = pcall(function()
-            grid = player.PlayerGui.Main.Frames.Inventory.Contents
-                .InventorySection.ItemPanel.ItemGrid
-
             sellRemote = ReplicatedStorage
                 :WaitForChild("Packages")
                 :WaitForChild("_Index")
@@ -1412,7 +1558,7 @@ addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
         end)
 
         if not ok then
-            warn("[Auto Sell] Gagal menyiapkan fitur:", err)
+            warn("[Auto Sell] Setup gagal:", err)
             return
         end
 
@@ -1420,6 +1566,23 @@ addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
             return alive()
                 and _G.AutoSellEquip
                 and _G.AutoSellEquipRunId == runId
+        end
+
+        local function getItemGrid()
+            local pg = player:FindFirstChild("PlayerGui")
+            local mainGui = pg and pg:FindFirstChild("Main")
+            local frames = mainGui and mainGui:FindFirstChild("Frames")
+            local inventory = frames and frames:FindFirstChild("Inventory")
+            local contents = inventory and inventory:FindFirstChild("Contents")
+            local section = contents and contents:FindFirstChild("InventorySection")
+            local panel = section and section:FindFirstChild("ItemPanel")
+            local grid = panel and panel:FindFirstChild("ItemGrid")
+
+            if grid and grid.Parent then
+                return grid
+            end
+
+            return nil
         end
 
         local function isUUID(s)
@@ -1436,16 +1599,15 @@ addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
 
         local function getRarity(item)
             local label = item:FindFirstChild("Item_Name", true)
-            local gradient = label and label:FindFirstChild("RarityGradient", true)
+            local gradient = label
+                and label:FindFirstChild("RarityGradient", true)
 
             if not gradient or not gradient:IsA("UIGradient") then
                 return nil
             end
 
             local keypoints = gradient.Color.Keypoints
-            if #keypoints == 0 then
-                return nil
-            end
+            if #keypoints == 0 then return nil end
 
             local firstColor = keypoints[1].Value
             local lastColor = keypoints[#keypoints].Value
@@ -1464,15 +1626,18 @@ addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
         end
 
         while running() do
+            local grid = getItemGrid()
+
+            if not grid then
+                task.wait(1)
+                continue
+            end
+
+            local items = grid:GetChildren()
             local sold, kept, skipped = 0, 0, 0
 
-            -- Ambil ulang item setiap siklus agar equipment baru ikut diperiksa.
-            local items = grid:GetChildren()
-
             for _, item in ipairs(items) do
-                if not running() then
-                    break
-                end
+                if not running() then break end
 
                 if item.Parent == grid and isUUID(item.Name) then
                     local rarity = getRarity(item)
@@ -1487,7 +1652,6 @@ addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
 
                         if success then
                             sold += 1
-                            print("[Auto Sell] Terjual:", rarity, item.Name)
                         else
                             warn("[Auto Sell] Gagal:", item.Name, sellErr)
                         end
@@ -1499,21 +1663,21 @@ addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
                 end
             end
 
-            if not running() then
-                break
+            if not running() then break end
+
+            if sold > 0 or kept > 0 then
+                print(
+                    "[Auto Sell] Terjual:", sold,
+                    "| Exotic disimpan:", kept,
+                    "| Dilewati:", skipped
+                )
             end
 
-            print(
-                "[Auto Sell] Siklus selesai | Terjual:", sold,
-                "| Exotic disimpan:", kept,
-                "| Dilewati:", skipped
-            )
-
-            -- Tunggu sebelum memeriksa inventory lagi.
             task.wait(3)
         end
     end)
 end)
+
 
 --========================================================
 -- OPEN INVENTORY - ONE SHOT
