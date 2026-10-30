@@ -1158,7 +1158,6 @@ end
 
 print("[Dungeon Farm] Snow-style global NPC orbit + WallCap rotation loaded.")
 
-
 -- 8. HOLLOW REALM.
 
 local Players = game:GetService("Players")
