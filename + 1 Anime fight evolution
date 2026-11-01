@@ -59,7 +59,8 @@ local PRIORITY = {
     "c05", "f24", "r16", "r25", "l38",
     "c02", "r15", "c01", "c10", "m39",
     "r22", "e31", "e6", "l31", "l35", 
-    "r17", "r25", "l34", "c09", "e30", "r15"
+    "r17", "r25", "l34", "c09", "e30", 
+    "r15", "c06"
 }
 
 local HwEvent = ReplicatedStorage
