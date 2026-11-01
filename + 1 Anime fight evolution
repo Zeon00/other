@@ -1,0 +1,808 @@
+
+-- STANDALONE AUTOMATION GUI
+-- AUTO ATTACK + AUTO REBIRTH + HALLOWEEN ORBIT
+-- FREEZE ENEMY + AUTO TP/PAD SIZE + HALLOWEEN AUTO PICK
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local GUI_NAME = "StandaloneAutomationGUI"
+
+_G.StandaloneAutomationRunId = (_G.StandaloneAutomationRunId or 0) + 1
+local runId = _G.StandaloneAutomationRunId
+
+_G.AutoInHandAttack = false
+_G.AutoRebirth = false
+_G.HalloweenOrbitEnabled = false
+_G.HwFreezeEnemy = false
+
+local autoTP = false
+local autoPick = false
+
+-- CLEANUP OLD GUI
+local oldGui = playerGui:FindFirstChild(GUI_NAME)
+if oldGui then oldGui:Destroy() end
+
+local oldTP = game:GetService("CoreGui"):FindFirstChild("AutoPadTeleportGUI")
+if oldTP then oldTP:Destroy() end
+
+local oldPick = playerGui:FindFirstChild("HalloweenAutoPick")
+if oldPick then oldPick:Destroy() end
+
+-- ORBIT SETTINGS
+local ROTATION_SPEED = 2
+local NORMAL_RADIUS = 16
+local NORMAL_HEIGHT = 7
+
+local BOOST_RADIUS = 50
+local BOOST_HEIGHT = 50
+local BOOST_DURATION = 3
+
+local RADIUS = NORMAL_RADIUS
+local HEIGHT = NORMAL_HEIGHT
+local jumpBoostActive = false
+local jumpBoostId = 0
+local hpBoostActive = false
+
+-- AUTO TP SETTINGS
+local POS1 = Vector3.new(12003.830078125, 5.149999618530273, -12001.181640625)
+local POS2 = Vector3.new(11961, 4.649999618530273, -12078)
+local TOLERANCE = 30
+local tpRunId = 0
+
+-- AUTO PICK SETTINGS
+local PRIORITY = {
+    "c05", "f24", "r16", "r25", "l38",
+    "c02", "r15", "c01", "c10", "m39",
+    "r22", "e31", "e6", "l31", "l35", 
+    "r17", "r25", "l34", "c09", "e30", "r15"
+}
+
+local HwEvent = ReplicatedStorage
+    :WaitForChild("Halloween")
+    :WaitForChild("Remotes")
+    :WaitForChild("HwAct")
+
+local pickBusy = false
+local lastPicked = nil
+
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = GUI_NAME
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.DisplayOrder = 999
+screenGui.Parent = playerGui
+
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.fromOffset(300, 390)
+main.Position = UDim2.new(0.5, -150, 0.5, -195)
+main.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+main.BorderSizePixel = 0
+main.Active = true
+main.Parent = screenGui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(125, 75, 220)
+stroke.Thickness = 1.5
+stroke.Parent = main
+
+local function makeButton(parent, name, text, size, position)
+    local b = Instance.new("TextButton")
+    b.Name = name
+    b.Size = size
+    b.Position = position
+    b.BackgroundColor3 = Color3.fromRGB(55, 45, 68)
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.Font = Enum.Font.GothamSemibold
+    b.TextSize = 12
+    b.Text = text
+    b.BorderSizePixel = 0
+    b.AutoButtonColor = true
+    b.Parent = parent
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    return b
+end
+
+-- HEADER
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 38)
+header.BackgroundColor3 = Color3.fromRGB(35, 29, 48)
+header.BorderSizePixel = 0
+header.Active = true
+header.Parent = main
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -75, 1, 0)
+title.Position = UDim2.fromOffset(12, 0)
+title.BackgroundTransparency = 1
+title.Text = "HALLOWEEN AUTOMATION"
+title.TextColor3 = Color3.fromRGB(230, 220, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 12
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = header
+
+local minimize = makeButton(
+    header, "Minimize", "-", UDim2.fromOffset(26, 25),
+    UDim2.new(1, -59, 0, 6)
+)
+
+local close = makeButton(
+    header, "Close", "X", UDim2.fromOffset(26, 25),
+    UDim2.new(1, -29, 0, 6)
+)
+close.BackgroundColor3 = Color3.fromRGB(130, 45, 55)
+
+-- STATUS
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -24, 0, 25)
+status.Position = UDim2.fromOffset(12, 43)
+status.BackgroundTransparency = 1
+status.Text = "Ready"
+status.TextColor3 = Color3.fromRGB(190, 190, 200)
+status.Font = Enum.Font.Gotham
+status.TextSize = 11
+status.TextXAlignment = Enum.TextXAlignment.Left
+status.TextTruncate = Enum.TextTruncate.AtEnd
+status.Parent = main
+
+-- SIX TOGGLES
+local attackToggle = makeButton(
+    main, "AttackToggle", "AUTO ATTACK: OFF",
+    UDim2.new(1, -24, 0, 34), UDim2.fromOffset(12, 75)
+)
+
+local rebirthToggle = makeButton(
+    main, "RebirthToggle", "AUTO REBIRTH: OFF",
+    UDim2.new(1, -24, 0, 34), UDim2.fromOffset(12, 115)
+)
+
+local orbitToggle = makeButton(
+    main, "OrbitToggle", "HALLOWEEN ORBIT: OFF",
+    UDim2.new(1, -24, 0, 34), UDim2.fromOffset(12, 155)
+)
+
+local freezeToggle = makeButton(
+    main, "FreezeToggle", "FREEZE ENEMY: OFF",
+    UDim2.new(1, -24, 0, 34), UDim2.fromOffset(12, 195)
+)
+
+local tpToggle = makeButton(
+    main, "TPToggle", "AUTO TP + PAD SIZE: OFF",
+    UDim2.new(1, -24, 0, 34), UDim2.fromOffset(12, 235)
+)
+
+local pickToggle = makeButton(
+    main, "PickToggle", "HALLOWEEN AUTO PICK: ON",
+    UDim2.new(1, -24, 0, 34), UDim2.fromOffset(12, 275)
+)
+pickToggle.BackgroundColor3 = Color3.fromRGB(45, 125, 75)
+
+local info = Instance.new("TextLabel")
+info.Size = UDim2.new(1, -24, 0, 32)
+info.Position = UDim2.fromOffset(12, 318)
+info.BackgroundTransparency = 1
+info.Text = "Orbit 16/7 | Speed 2 | TP range 30"
+info.TextColor3 = Color3.fromRGB(155, 155, 170)
+info.Font = Enum.Font.Gotham
+info.TextSize = 10
+info.TextWrapped = true
+info.Parent = main
+
+local function setToggle(button, enabled, label)
+    button.Text = label .. ": " .. (enabled and "ON" or "OFF")
+    button.BackgroundColor3 = enabled
+        and Color3.fromRGB(45, 125, 75)
+        or Color3.fromRGB(55, 45, 68)
+end
+
+-- AUTO ATTACK TOGGLE
+attackToggle.Activated:Connect(function()
+    _G.AutoInHandAttack = not _G.AutoInHandAttack
+    setToggle(attackToggle, _G.AutoInHandAttack, "AUTO ATTACK")
+end)
+
+-- AUTO REBIRTH TOGGLE
+rebirthToggle.Activated:Connect(function()
+    _G.AutoRebirth = not _G.AutoRebirth
+    setToggle(rebirthToggle, _G.AutoRebirth, "AUTO REBIRTH")
+end)
+
+-- ORBIT TOGGLE
+orbitToggle.Activated:Connect(function()
+    _G.HalloweenOrbitEnabled = not _G.HalloweenOrbitEnabled
+    setToggle(orbitToggle, _G.HalloweenOrbitEnabled, "HALLOWEEN ORBIT")
+end)
+
+-- FREEZE TOGGLE
+freezeToggle.Activated:Connect(function()
+    _G.HwFreezeEnemy = not _G.HwFreezeEnemy
+    setToggle(freezeToggle, _G.HwFreezeEnemy, "FREEZE ENEMY")
+    status.Text = _G.HwFreezeEnemy and "Freeze enemy ON" or "Freeze enemy OFF"
+end)
+
+-- AUTO TP TOGGLE
+local function setTPEnabled(value)
+    autoTP = value
+    tpRunId += 1
+
+    if autoTP then
+        setToggle(tpToggle, true, "AUTO TP + PAD SIZE")
+        status.Text = "Mencari POS1 (30 studs)"
+    else
+        setToggle(tpToggle, false, "AUTO TP + PAD SIZE")
+        status.Text = "Auto TP berhenti"
+    end
+end
+
+local function getRoot()
+    local char = player.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function nearPosition(root, pos, radius)
+    return root ~= nil and (root.Position - pos).Magnitude <= radius
+end
+
+local function startTPLoop(id)
+    task.spawn(function()
+        while autoTP and tpRunId == id and screenGui.Parent
+            and _G.StandaloneAutomationRunId == runId do
+
+            local root = getRoot()
+
+            if root and nearPosition(root, POS1, TOLERANCE) then
+                status.Text = "POS1 terdeteksi..."
+
+                task.wait(math.random(3, 5))
+
+                if not autoTP or tpRunId ~= id then
+                    break
+                end
+
+                root = getRoot()
+                if root and nearPosition(root, POS1, TOLERANCE) then
+                    root.CFrame = CFrame.new(POS2)
+                    status.Text = "Teleport ke POS2..."
+                    task.wait(2)
+
+                    if not autoTP or tpRunId ~= id then
+                        break
+                    end
+
+                    HwEvent:FireServer("padSize", 1)
+                    status.Text = "Pad Size dikirim; menunggu POS1"
+
+                    repeat
+                        task.wait(0.25)
+                        root = getRoot()
+                    until not autoTP
+                        or tpRunId ~= id
+                        or (root and nearPosition(root, POS1, TOLERANCE))
+                end
+            else
+                status.Text = "Mencari POS1 (30 studs)"
+                task.wait(0.25)
+            end
+        end
+    end)
+end
+
+tpToggle.Activated:Connect(function()
+    setTPEnabled(not autoTP)
+    if autoTP then
+        startTPLoop(tpRunId)
+    end
+end)
+
+-- AUTO PICK TOGGLE
+pickToggle.Activated:Connect(function()
+    autoPick = not autoPick
+    pickBusy = false
+
+    setToggle(pickToggle, autoPick, "HALLOWEEN AUTO PICK")
+    status.Text = autoPick and "Auto Pick menunggu kartu..." or "Auto Pick OFF"
+end)
+
+-- MINIMIZE / RESTORE
+local minimized = false
+
+minimize.Activated:Connect(function()
+    minimized = not minimized
+
+    for _, obj in ipairs(main:GetChildren()) do
+        if obj ~= header and obj:IsA("GuiObject") then
+            obj.Visible = not minimized
+        end
+    end
+
+    main.Size = minimized
+        and UDim2.fromOffset(300, 38)
+        or UDim2.fromOffset(300, 390)
+
+    minimize.Text = minimized and "+" or "-"
+end)
+
+-- CLOSE
+close.Activated:Connect(function()
+    _G.AutoInHandAttack = false
+    _G.AutoRebirth = false
+    _G.HalloweenOrbitEnabled = false
+    _G.HwFreezeEnemy = false
+
+    autoTP = false
+    autoPick = false
+    tpRunId += 1
+    _G.StandaloneAutomationRunId += 1
+
+    screenGui:Destroy()
+end)
+
+-- DRAG GUI
+local dragging = false
+local dragStart
+local startPosition
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPosition = main.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- AUTO IN-HAND ATTACK
+task.spawn(function()
+    local remote = ReplicatedStorage:WaitForChild("InHandAttackRequest")
+
+    while screenGui.Parent
+        and _G.StandaloneAutomationRunId == runId do
+
+        if _G.AutoInHandAttack then
+            local ok, err = pcall(function()
+                remote:FireServer()
+            end)
+            if not ok then warn("[Auto Attack]", err) end
+        end
+
+        task.wait()
+    end
+end)
+
+-- AUTO REBIRTH
+task.spawn(function()
+    local remotes = ReplicatedStorage:WaitForChild("RebirthRemotes")
+    local doRebirth = remotes:WaitForChild("DoRebirth")
+
+    while screenGui.Parent
+        and _G.StandaloneAutomationRunId == runId do
+
+        if _G.AutoRebirth then
+            local ok, result = pcall(function()
+                return doRebirth:InvokeServer()
+            end)
+
+            if ok then
+                status.Text = "Rebirth request sent"
+            else
+                status.Text = "Rebirth error - check console"
+                warn("[Auto Rebirth]", result)
+            end
+        end
+
+        task.wait(1.5)
+    end
+end)
+
+-- HALLOWEEN TARGET HELPERS
+local function getMobPart(mob)
+    if not mob or not mob.Parent then
+        return nil
+    end
+
+    if mob:IsA("BasePart") then
+        return mob
+    end
+
+    if not mob:IsA("Model") then
+        return nil
+    end
+
+    return mob.PrimaryPart
+        or mob:FindFirstChild("HumanoidRootPart")
+        or mob:FindFirstChild("Head")
+        or mob:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function isAliveMob(mob)
+    if not mob or not mob.Parent then
+        return false
+    end
+
+    local part = getMobPart(mob)
+    if not part or not part.Parent then
+        return false
+    end
+
+    if mob:IsA("Model") then
+        local hum = mob:FindFirstChildWhichIsA("Humanoid", true)
+        if hum and hum.Health <= 0 then
+            return false
+        end
+    end
+
+    return true
+end
+
+local function getTarget()
+    local folder = workspace:FindFirstChild("HwMobs")
+    if not folder then
+        return nil
+    end
+
+    for i = 1, 10 do
+        local arena = folder:FindFirstChild("A" .. i)
+
+        if arena then
+            for _, mob in ipairs(arena:GetChildren()) do
+                if (mob:IsA("Model") or mob:IsA("BasePart"))
+                    and isAliveMob(mob) then
+                    return mob
+                end
+            end
+        end
+    end
+
+    return nil
+end
+-- HP AUTO ORBIT BOOST
+task.spawn(function()
+    local lastBoostState = false
+
+    while screenGui.Parent
+        and _G.StandaloneAutomationRunId == runId do
+
+        task.wait(0.2)
+
+        local topbar = playerGui:FindFirstChild("HalloweenTopbar")
+        local hpBar = topbar and topbar:FindFirstChild("HpBar")
+        local hpText = hpBar and hpBar:FindFirstChild("Text")
+
+        if hpText and hpText:IsA("TextLabel") then
+            local currentHP, maxHP =
+                hpText.Text:match("(%d+)%s*/%s*(%d+)")
+
+            currentHP = tonumber(currentHP)
+            maxHP = tonumber(maxHP)
+
+            if currentHP and maxHP and maxHP > 0 then
+                local ratio = currentHP / maxHP
+
+                if ratio < 0.5 then
+                    hpBoostActive = true
+                elseif ratio >= 1 then
+                    hpBoostActive = false
+                end
+
+                if hpBoostActive ~= lastBoostState then
+                    lastBoostState = hpBoostActive
+
+                    if hpBoostActive then
+                        status.Text = "HP rendah: Orbit Boost 50/50"
+                    else
+                        status.Text = "HP penuh: Orbit normal"
+                    end
+                end
+            end
+        end
+    end
+
+    hpBoostActive = false
+end)
+-- JUMP HINT: TEMPORARY ORBIT BOOST
+task.spawn(function()
+    local function activateBoost()
+        if not _G.HalloweenOrbitEnabled then
+            return
+        end
+
+        jumpBoostId += 1
+        local thisBoost = jumpBoostId
+
+        jumpBoostActive = true
+        RADIUS = BOOST_RADIUS
+        HEIGHT = BOOST_HEIGHT
+        status.Text = "BOOST: Radius 50 / Height 50"
+
+        task.delay(BOOST_DURATION, function()
+            if thisBoost ~= jumpBoostId then
+                return
+            end
+
+            jumpBoostActive = false
+            RADIUS = NORMAL_RADIUS
+            HEIGHT = NORMAL_HEIGHT
+
+            if screenGui.Parent then
+                status.Text = "Orbit restored: Radius 16 / Height 7"
+            end
+        end)
+    end
+
+    local hint = playerGui:WaitForChild("HalloweenBossHint")
+    local jump = hint:WaitForChild("Jump")
+
+    if jump:IsA("GuiButton") then
+        jump.Activated:Connect(activateBoost)
+    end
+
+    if jump:IsA("GuiObject") then
+        local wasVisible = jump.Visible
+
+        if wasVisible then
+            activateBoost()
+        end
+
+        jump:GetPropertyChangedSignal("Visible"):Connect(function()
+            local nowVisible = jump.Visible
+
+            if nowVisible and not wasVisible then
+                activateBoost()
+            end
+
+            wasVisible = nowVisible
+        end)
+    end
+end)
+
+-- FREEZE ENEMY: LOCAL TEST
+task.spawn(function()
+    local frozen = {}
+
+    local function restore()
+        for part, oldAnchored in pairs(frozen) do
+            if part and part.Parent then
+                pcall(function()
+                    part.Anchored = oldAnchored
+                end)
+            end
+        end
+        table.clear(frozen)
+    end
+
+    while screenGui.Parent
+        and _G.StandaloneAutomationRunId == runId do
+
+        if _G.HwFreezeEnemy then
+            local folder = workspace:FindFirstChild("HwMobs")
+
+            if folder then
+                for i = 1, 10 do
+                    local arena = folder:FindFirstChild("A" .. i)
+
+                    if arena then
+                        for _, mob in ipairs(arena:GetChildren()) do
+                            if mob:IsA("Model") then
+                                for _, obj in ipairs(mob:GetDescendants()) do
+                                    if obj:IsA("BasePart")
+                                        and frozen[obj] == nil then
+                                        frozen[obj] = obj.Anchored
+                                        pcall(function()
+                                            obj.Anchored = true
+                                        end)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            restore()
+        end
+
+        task.wait(0.25)
+    end
+
+    restore()
+end)
+
+-- HALLOWEEN ORBIT: DELTA TIME
+task.spawn(function()
+    local currentTarget = nil
+    local angle = 0
+
+    while screenGui.Parent
+        and _G.StandaloneAutomationRunId == runId do
+
+        if not _G.HalloweenOrbitEnabled then
+            currentTarget = nil
+            task.wait(0.1)
+            continue
+        end
+
+        local character = player.Character
+        local root = character
+            and character:FindFirstChild("HumanoidRootPart")
+        local humanoid = character
+            and character:FindFirstChildWhichIsA("Humanoid")
+
+        if not root or not humanoid or humanoid.Health <= 0 then
+            currentTarget = nil
+            status.Text = "Waiting for character"
+            task.wait(0.2)
+            continue
+        end
+
+        if not isAliveMob(currentTarget) then
+            currentTarget = getTarget()
+
+            if not currentTarget then
+                status.Text = "Waiting for mobs in HwMobs"
+                task.wait(0.2)
+                continue
+            end
+
+            local part = getMobPart(currentTarget)
+            if part then
+                local offset = root.Position - part.Position
+                angle = math.atan2(offset.Z, offset.X)
+            end
+        end
+
+        local mob = currentTarget
+        local part = getMobPart(mob)
+
+        if not part or not isAliveMob(mob) then
+            currentTarget = nil
+            task.wait(0.05)
+            continue
+        end
+
+        local dt = RunService.Heartbeat:Wait()
+
+        if not _G.HalloweenOrbitEnabled
+            or not root.Parent
+            or not part.Parent then
+            continue
+        end
+
+angle += ROTATION_SPEED * dt
+
+local orbitRadius = hpBoostActive and BOOST_RADIUS or RADIUS
+local orbitHeight = hpBoostActive and BOOST_HEIGHT or HEIGHT
+
+local pos = part.Position
+local destination = Vector3.new(
+    pos.X + math.cos(angle) * orbitRadius,
+    pos.Y + orbitHeight,
+    pos.Z + math.sin(angle) * orbitRadius
+)
+
+        root.CFrame = CFrame.lookAt(destination, pos)
+        status.Text = "Orbit target: " .. mob.Name
+    end
+end)
+
+-- HALLOWEEN AUTO PICK
+task.spawn(function()
+    while screenGui.Parent
+        and _G.StandaloneAutomationRunId == runId do
+
+        task.wait(0.2)
+
+        if not autoPick or pickBusy then
+            continue
+        end
+
+        local cardsGui = playerGui:FindFirstChild("HalloweenCards")
+        local cards = cardsGui and cardsGui:FindFirstChild("Cards")
+        local row = cards and cards:FindFirstChild("Row")
+
+        if not cardsGui or not cardsGui.Enabled or not row then
+            lastPicked = nil
+            continue
+        end
+
+        local chosenKey = nil
+local lmCards = {}
+
+-- Cari semua card berawalan L atau M terlebih dahulu
+for _, card in ipairs(row:GetChildren()) do
+    local key = card.Name:match("^Card_(.+)$")
+    local click = card:FindFirstChild("Click")
+
+    if key and click and click:IsA("GuiButton")
+        and card.Visible and click.Visible and click.Active then
+
+        key = string.lower(key)
+
+        if key:match("^l") or key:match("^m") then
+            table.insert(lmCards, key)
+        end
+    end
+end
+
+table.sort(lmCards)
+
+if #lmCards > 0 then
+    chosenKey = lmCards[1]
+else
+    -- Kalau tidak ada L/M, pakai urutan PRIORITY lama
+    for _, key in ipairs(PRIORITY) do
+        local card = row:FindFirstChild("Card_" .. key)
+
+        if card and card.Visible then
+            local click = card:FindFirstChild("Click")
+
+            if click and click:IsA("GuiButton")
+                and click.Visible and click.Active then
+                chosenKey = key
+                break
+            end
+        end
+    end
+end
+
+        if not chosenKey then
+            status.Text = "Auto Pick: no priority card"
+            lastPicked = nil
+            continue
+        end
+
+        if lastPicked == chosenKey then
+            continue
+        end
+
+        pickBusy = true
+        status.Text = "Memilih kartu: " .. chosenKey
+
+        local success = pcall(function()
+            HwEvent:FireServer("pick", chosenKey)
+        end)
+
+        if success and autoPick then
+            lastPicked = chosenKey
+            status.Text = "Pilihan dikirim: " .. chosenKey
+        else
+            status.Text = "Gagal mengirim pilihan"
+        end
+
+        task.wait(0.8)
+        pickBusy = false
+    end
+end)
+
+print("[Standalone Automation GUI] Loaded")
