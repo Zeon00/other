@@ -488,7 +488,7 @@ setActiveCategory("A")
 --========================================================
 -- DUNGEON FARM: SNOW-STYLE GLOBAL NPC ORBIT + WALLCAP ROTATION
 -- Applies the same behavior to Bandits Den, Goblins, Knights,
--- Catacombs, Snow, Demon (Underworld Gate), and Mage.
+-- Catacombs, Snow, Demon (Underworld Gate), Mage, and Arsenal.
 --========================================================
 
 local Players = game:GetService("Players")
@@ -575,6 +575,17 @@ local DungeonFarmConfigs = {
         stateKey = "AutoFarmMage",
         runKey = "AutoFarmMageRunId",
         pattern = "^Generated_Mage_%x+$",
+        folders = {"NPCs"},
+        default = false,
+    },
+    {
+        -- Dungeon 9: workspace child named Arsenal_<suffix>, all mobs
+        -- are collected from its NPCs folder (including nested models).
+        name = "Arsenal",
+        toggle = "Auto Farm Arsenal",
+        stateKey = "AutoFarmArsenal",
+        runKey = "AutoFarmArsenalRunId",
+        pattern = "^Arsenal_.+$",
         folders = {"NPCs"},
         default = false,
     },
@@ -1156,7 +1167,7 @@ local function startDungeonSnowStyleFarm(config, enabled)
     end)
 end
 
--- Keep the original seven toggle names and defaults.
+-- Keep the existing dungeon toggles and add Arsenal as dungeon 9.
 for _, config in ipairs(DungeonFarmConfigs) do
     local cfg = config
     _G[cfg.stateKey] = _G[cfg.stateKey] or false
