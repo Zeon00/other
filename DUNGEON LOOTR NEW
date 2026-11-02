@@ -498,7 +498,7 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 
-local ORBIT_RADIUS = 10
+local ORBIT_RADIUS = 8
 local ORBIT_HEIGHT = 5
 local ORBIT_SPEED = 2
 local ATTACK_INTERVAL = 0.1
