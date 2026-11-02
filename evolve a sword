@@ -1056,26 +1056,33 @@ local function hallowWaitMobs(id)
     return false
 end
 
+
 local function hallowWaitClear(id, label)
     while hallowAlive(id) do
         if getEnemyCount() == 0 then
-            HallowStatus = "HALLOW | " .. label .. " kosong, scan 2 detik..."
+            local delayTime = math.random(5, 8)
+
+            HallowStatus = "HALLOW | " .. label ..
+                " kosong, tunggu " .. delayTime .. " detik..."
 
             local start = os.clock()
             local empty = true
 
             while hallowAlive(id)
-                and os.clock() - start < HALLOW_EMPTY_DELAY do
+                and os.clock() - start < delayTime do
 
                 if getEnemyCount() > 0 then
                     empty = false
+                    HallowStatus = "HALLOW | Mob muncul lagi..."
                     break
                 end
 
                 task.wait(0.1)
             end
 
-            if not hallowAlive(id) then return false end
+            if not hallowAlive(id) then
+                return false
+            end
 
             if empty and getEnemyCount() == 0 then
                 return true
@@ -1089,6 +1096,7 @@ local function hallowWaitClear(id, label)
 
     return false
 end
+
 
 local function hallowWaitBoss(id)
     HallowStatus = "HALLOW | Menunggu boss..."
