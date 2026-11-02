@@ -1149,16 +1149,31 @@ local function startHallow()
     continue
 end
 
-            -- 4. ENTER HALLOW
-            HallowStatus = "HALLOW | EnterDungeon..."
+-- 4. TUNGGU 2 DETIK SETELAH SAMPAI POSISI 2
+HallowStatus = "HALLOW | Posisi 2 tercapai, tunggu 2 detik..."
 
-            local ok, result = pcall(function()
-                return RequestRemote:InvokeServer(
-                    "EnterDungeon",
-                    "HALLOW",
-                    2
-                )
-            end)
+task.wait(2)
+
+if not hallowAlive(id) then break end
+
+-- CEK ULANG JARAK POSISI 2
+updateCharacter()
+
+if not Root or (Root.Position - HALLOW_POS2).Magnitude > HALLOW_POS2_TOLERANCE then
+    HallowStatus = "HALLOW | Posisi 2 belum tepat, ulangi..."
+    continue
+end
+
+-- 4.5. ENTER HALLOW
+HallowStatus = "HALLOW | EnterDungeon..."
+
+local ok, result = pcall(function()
+    return RequestRemote:InvokeServer(
+        "EnterDungeon",
+        "HALLOW",
+        2
+    )
+end)
 
             if not ok then
                 HallowStatus = "HALLOW | Remote error: " .. tostring(result)
