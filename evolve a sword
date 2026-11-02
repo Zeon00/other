@@ -1,0 +1,1728 @@
+
+--============================================================
+-- ANIME FORGING | ULTIMATE AUTOMATION HUB
+-- 7 TOGGLE | STANDALONE GUI
+--
+-- 1. AUTO SWING + HIT
+-- 2. AUTO SKILL
+-- 3. ORBIT + HOVER
+-- 4. TP BEHIND MOB
+-- 5. AUTO DUNGEON
+-- 6. AUTO HALLOW
+-- 7. AUTO CLAIM ALL REWARDS (300 SECONDS)
+--
+-- DRAG | MINIMIZE | DESTROY
+-- SINGLE INSTANCE | CENTRAL CLEANUP
+--============================================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+
+local Player = Players.LocalPlayer
+
+--============================================================
+-- CLEAN OLD INSTANCE
+--============================================================
+
+_G.AF_SwingSkillOrbitController =
+    _G.AF_SwingSkillOrbitController or {}
+
+local Old = _G.AF_SwingSkillOrbitController
+
+if Old.Cleanup then
+    pcall(Old.Cleanup)
+end
+
+pcall(function()
+    local g = CoreGui:FindFirstChild("AF_SwingSkillOrbit")
+    if g then g:Destroy() end
+end)
+
+pcall(function()
+    local g = Player:WaitForChild("PlayerGui"):FindFirstChild("AF_SwingSkillOrbit")
+    if g then g:Destroy() end
+end)
+
+--============================================================
+-- REMOTES
+--============================================================
+
+local Remotes = ReplicatedStorage
+    :WaitForChild("SwordShared")
+    :WaitForChild("Remotes")
+
+local SwingRemote = Remotes:WaitForChild("Swing")
+local HitRemote = Remotes:WaitForChild("Hit")
+local RequestRemote = Remotes:WaitForChild("Request")
+
+--============================================================
+-- SETTINGS
+--============================================================
+
+local SCAN_RANGE = 200
+local MAX_HEIGHT = 30
+local FRONT_DOT = 0.10
+
+local SWING_DELAY = 0.08
+local HIT_DELAY = 0.08
+
+local SKILLS = {"E", "R", "F", "Q"}
+local SKILL_DELAY = 0.5
+local SKILL_HOLD = 0.08
+
+local ORBIT_RADIUS = 15
+local ORBIT_HEIGHT = 7
+local ORBIT_SPEED = 2
+local ORBIT_SMOOTHNESS = 8
+local ORBIT_SCAN_DELAY = 0.25
+
+local TP_BEHIND_DISTANCE = 3
+local TP_UPDATE_DELAY = 0.15
+
+local HOVER_FORCE = 100000
+
+-- Normal dungeon
+local DUNGEON_START = Vector3.new(
+    6.320988177321851e-09,
+    3.298025369644165,
+    -52
+)
+
+local DUNGEON_ENTRY = Vector3.new(
+    -0.3912782669067383,
+    5.53802490234375,
+    -68.19702911376953
+)
+
+local DUNGEON_TOLERANCE = 30
+local ENTRY_TOLERANCE = 2
+local DUNGEON_WAIT_DELAY = 0.25
+local MOB_CLEAR_INITIAL_DELAY = 2
+local MOB_EMPTY_CONFIRM_TIME = 2
+
+-- Hallow
+local HALLOW_POS1 = Vector3.new(
+    185,
+    3.2580254077911377,
+    31.60000228881836
+)
+
+local HALLOW_POS2 = Vector3.new(
+    192.8492431640625,
+    3.3980250358581543,
+    31.472537994384766
+)
+
+local HALLOW_POS1_TOLERANCE = 20
+local HALLOW_POS2_TOLERANCE = 2
+local HALLOW_EMPTY_DELAY = 2
+
+-- Claim
+local CLAIM_INTERVAL = 300
+
+--============================================================
+-- STATE
+--============================================================
+
+local Running = true
+
+local AutoCombat = false
+local AutoSkill = false
+local AutoOrbit = false
+local AutoTP = false
+local AutoDungeon = false
+local AutoHallow = false
+local AutoClaim = false
+
+local SwingIndex = 0
+local SkillIndex = 0
+
+local OrbitRunId = 0
+local TPRunId = 0
+local DungeonRunId = 0
+local HallowRunId = 0
+local ClaimRunId = 0
+
+local DungeonStatus = "Dungeon: OFF"
+local HallowStatus = "Hallow: OFF"
+local ClaimStatus = "Claim: OFF"
+
+local SelectedDungeon = "S1"
+local DungeonNameInput
+
+local Character
+local Root
+local Humanoid
+
+local HoverVelocity
+local HoverAttachment
+local HoverConnection
+
+local HeldKeys = {}
+local Connections = {}
+
+local Gui
+local Controller = {}
+
+_G.AF_SwingSkillOrbitController = Controller
+
+--============================================================
+-- CHARACTER
+--============================================================
+
+local function updateCharacter()
+    Character = Player.Character
+    Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+end
+
+updateCharacter()
+
+local function track(c)
+    table.insert(Connections, c)
+    return c
+end
+
+--============================================================
+-- KEY MANAGEMENT
+--============================================================
+
+local function sendKey(key, pressed)
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(pressed, key, false, game)
+    end)
+end
+
+local function releaseKey(key)
+    if HeldKeys[key] then
+        HeldKeys[key] = nil
+        sendKey(key, false)
+    end
+end
+
+local function pressKey(key)
+    if not Running or not AutoSkill then return end
+
+    if not HeldKeys[key] then
+        HeldKeys[key] = true
+        sendKey(key, true)
+    end
+end
+
+local function releaseSkills()
+    for _, key in ipairs(SKILLS) do
+        releaseKey(key)
+    end
+end
+
+local function releaseAllKeys()
+    for key in pairs(HeldKeys) do
+        releaseKey(key)
+    end
+
+    for _, key in ipairs(SKILLS) do
+        sendKey(key, false)
+    end
+end
+
+--============================================================
+-- HOVER
+--============================================================
+
+local function cleanupHover()
+    if HoverConnection then
+        pcall(function() HoverConnection:Disconnect() end)
+        HoverConnection = nil
+    end
+
+    if HoverVelocity then
+        pcall(function() HoverVelocity:Destroy() end)
+        HoverVelocity = nil
+    end
+
+    if HoverAttachment then
+        pcall(function() HoverAttachment:Destroy() end)
+        HoverAttachment = nil
+    end
+end
+
+local function startHover()
+    updateCharacter()
+
+    if not Root or not Humanoid or HoverVelocity then return end
+
+    HoverAttachment = Instance.new("Attachment")
+    HoverAttachment.Name = "AF_HoverAttachment"
+    HoverAttachment.Parent = Root
+
+    HoverVelocity = Instance.new("LinearVelocity")
+    HoverVelocity.Name = "AF_HoverVelocity"
+    HoverVelocity.Attachment0 = HoverAttachment
+    HoverVelocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    HoverVelocity.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
+    HoverVelocity.ForceLimitsEnabled = true
+    HoverVelocity.ForceLimitMode = Enum.ForceLimitMode.PerAxis
+    HoverVelocity.MaxAxesForce = Vector3.new(0, HOVER_FORCE, 0)
+    HoverVelocity.VectorVelocity = Vector3.zero
+    HoverVelocity.Parent = Root
+
+    HoverConnection = RunService.Heartbeat:Connect(function()
+        if not Running or not AutoOrbit then return end
+
+        if Root and Root.Parent and HoverVelocity and HoverVelocity.Parent then
+            HoverVelocity.VectorVelocity = Vector3.zero
+        end
+    end)
+end
+
+local function stopHover()
+    cleanupHover()
+end
+
+track(Player.CharacterAdded:Connect(function()
+    cleanupHover()
+    task.wait(0.5)
+
+    if not Running then return end
+
+    updateCharacter()
+
+    if AutoOrbit then
+        startHover()
+    end
+end))
+
+--============================================================
+-- MOB HELPERS
+--============================================================
+
+local function getMobRoot(mob)
+    if not mob or not mob:IsA("Model") then return nil end
+
+    return mob:FindFirstChild("HumanoidRootPart")
+        or mob.PrimaryPart
+        or mob:FindFirstChild("RootPart")
+end
+
+local function getHealth(mob)
+    local hum = mob:FindFirstChildOfClass("Humanoid")
+    if hum then return hum.Health end
+
+    local health = mob:FindFirstChild("Health")
+
+    if health and health:IsA("NumberValue") then
+        return health.Value
+    end
+
+    local attr = mob:GetAttribute("Health")
+
+    if typeof(attr) == "number" then
+        return attr
+    end
+
+    return nil
+end
+
+local function isDead(mob)
+    if not mob or not mob.Parent then return true end
+    if mob:GetAttribute("Dead") == true then return true end
+
+    local dead = mob:FindFirstChild("Dead")
+
+    if dead and dead:IsA("BoolValue") and dead.Value then
+        return true
+    end
+
+    local hp = getHealth(mob)
+
+    return hp ~= nil and hp <= 0
+end
+
+local function validOwner(mob)
+    local owner = mob:GetAttribute("Owner")
+
+    if owner == nil then
+        local obj = mob:FindFirstChild("Owner")
+        if obj and obj:IsA("ValueBase") then
+            owner = obj.Value
+        end
+    end
+
+    if owner == nil or owner == "" or owner == 0 then
+        return true
+    end
+
+    return owner == Player.UserId or owner == Player.Name
+end
+
+local function getAllMobs()
+    local folder = Workspace:FindFirstChild("Enemies")
+    local result = {}
+
+    if not folder then return result end
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob:IsA("Model")
+            and not isDead(mob)
+            and validOwner(mob)
+            and getMobRoot(mob) then
+
+            table.insert(result, mob)
+        end
+    end
+
+    return result
+end
+
+local function getEnemyCount()
+    local folder = Workspace:FindFirstChild("Enemies")
+    if not folder then return 0 end
+
+    local count = 0
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob:IsA("Model") and not isDead(mob) then
+            count += 1
+        end
+    end
+
+    return count
+end
+
+--============================================================
+-- AUTO TARGET
+--============================================================
+
+local function getTarget()
+    updateCharacter()
+
+    if not Root then return nil end
+
+    local folder = Workspace:FindFirstChild("Enemies")
+    if not folder then return nil end
+
+    local bestMob
+    local bestDistance = math.huge
+    local look = Root.CFrame.LookVector
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob:IsA("Model") and not isDead(mob) and validOwner(mob) then
+            local mobRoot = getMobRoot(mob)
+
+            if mobRoot then
+                local offset = mobRoot.Position - Root.Position
+                local distance = offset.Magnitude
+                local height = math.abs(offset.Y)
+
+                if distance > 0
+                    and distance <= SCAN_RANGE
+                    and height <= MAX_HEIGHT then
+
+                    local dot = look:Dot(offset.Unit)
+
+                    if dot >= FRONT_DOT and distance < bestDistance then
+                        bestDistance = distance
+                        bestMob = mob
+                    end
+                end
+            end
+        end
+    end
+
+    return bestMob
+end
+
+--============================================================
+-- AUTO SWING + HIT
+--============================================================
+
+local function stopCombat()
+    AutoCombat = false
+end
+
+local function startCombat()
+    if not Running or AutoCombat then return end
+
+    AutoCombat = true
+
+    task.spawn(function()
+        while Running and AutoCombat do
+            local mob = getTarget()
+
+            if not Running or not AutoCombat then break end
+
+            if mob and mob.Parent then
+                SwingIndex = (SwingIndex % 3) + 1
+
+                pcall(function()
+                    SwingRemote:FireServer(SwingIndex)
+                end)
+
+                task.wait(SWING_DELAY)
+
+                if not Running or not AutoCombat then break end
+
+                if mob.Parent and not isDead(mob) then
+                    pcall(function()
+                        HitRemote:FireServer(SwingIndex, 1, {mob})
+                    end)
+                end
+
+                task.wait(HIT_DELAY)
+            else
+                task.wait(0.1)
+            end
+        end
+    end)
+end
+
+--============================================================
+-- AUTO SKILL
+--============================================================
+
+local function stopSkill()
+    AutoSkill = false
+    releaseSkills()
+end
+
+local function startSkill()
+    if not Running or AutoSkill then return end
+
+    AutoSkill = true
+
+    task.spawn(function()
+        while Running and AutoSkill do
+            SkillIndex = (SkillIndex % #SKILLS) + 1
+
+            local key = SKILLS[SkillIndex]
+
+            pressKey(key)
+            task.wait(SKILL_HOLD)
+            releaseKey(key)
+
+            if not Running or not AutoSkill then break end
+
+            task.wait(SKILL_DELAY)
+        end
+
+        releaseSkills()
+    end)
+end
+
+--============================================================
+-- ORBIT
+--============================================================
+
+local function orbitMob(mob, runId)
+    updateCharacter()
+
+    if not Root or not Humanoid or not mob or isDead(mob) then
+        return
+    end
+
+    local mobRoot = getMobRoot(mob)
+    if not mobRoot then return end
+
+    local angle = 0
+    local lastTime = os.clock()
+
+    while Running
+        and AutoOrbit
+        and OrbitRunId == runId
+        and mob.Parent
+        and not isDead(mob) do
+
+        updateCharacter()
+
+        if not Root or not Humanoid or Humanoid.Health <= 0 then
+            break
+        end
+
+        mobRoot = getMobRoot(mob)
+        if not mobRoot then break end
+
+        local now = os.clock()
+        local dt = math.clamp(now - lastTime, 0, 0.1)
+        lastTime = now
+
+        angle += ORBIT_SPEED * dt
+
+        local center = mobRoot.Position
+
+        local offset = Vector3.new(
+            math.cos(angle) * ORBIT_RADIUS,
+            ORBIT_HEIGHT,
+            math.sin(angle) * ORBIT_RADIUS
+        )
+
+        local destination = center + offset
+        local targetCF = CFrame.lookAt(destination, center)
+        local alpha = 1 - math.exp(-ORBIT_SMOOTHNESS * dt)
+
+        pcall(function()
+            Root.CFrame = Root.CFrame:Lerp(targetCF, alpha)
+        end)
+
+        RunService.Heartbeat:Wait()
+    end
+end
+
+local function startOrbit()
+    if not Running or AutoOrbit then return end
+
+    AutoOrbit = true
+    OrbitRunId += 1
+
+    local id = OrbitRunId
+
+    startHover()
+
+    task.spawn(function()
+        while Running and AutoOrbit and OrbitRunId == id do
+            local mobs = getAllMobs()
+
+            if #mobs == 0 then
+                task.wait(ORBIT_SCAN_DELAY)
+            else
+                for _, mob in ipairs(mobs) do
+                    if not Running or not AutoOrbit or OrbitRunId ~= id then
+                        break
+                    end
+
+                    if mob.Parent and not isDead(mob) then
+                        orbitMob(mob, id)
+                    end
+
+                    task.wait(0.05)
+                end
+            end
+        end
+    end)
+end
+
+local function stopOrbit()
+    AutoOrbit = false
+    OrbitRunId += 1
+    stopHover()
+end
+
+--============================================================
+-- TP BEHIND
+--============================================================
+
+local function getTPTarget()
+    updateCharacter()
+
+    if not Root then return nil end
+
+    local folder = Workspace:FindFirstChild("Enemies")
+    if not folder then return nil end
+
+    local bestMob
+    local bestDistance = math.huge
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        if mob:IsA("Model") and not isDead(mob) and validOwner(mob) then
+            local mobRoot = getMobRoot(mob)
+
+            if mobRoot then
+                local offset = mobRoot.Position - Root.Position
+                local distance = offset.Magnitude
+
+                if distance > 0
+                    and distance <= SCAN_RANGE
+                    and math.abs(offset.Y) <= MAX_HEIGHT
+                    and distance < bestDistance then
+
+                    bestDistance = distance
+                    bestMob = mob
+                end
+            end
+        end
+    end
+
+    return bestMob
+end
+
+local function stopTP()
+    AutoTP = false
+    TPRunId += 1
+end
+
+local function startTP()
+    if not Running or AutoTP then return end
+
+    AutoTP = true
+    TPRunId += 1
+
+    local id = TPRunId
+
+    task.spawn(function()
+        while Running and AutoTP and TPRunId == id do
+            updateCharacter()
+
+            if not Root or not Humanoid or Humanoid.Health <= 0 then
+                task.wait(0.2)
+                continue
+            end
+
+            local mob = getTPTarget()
+
+            if mob and mob.Parent and not isDead(mob) then
+                local mobRoot = getMobRoot(mob)
+
+                if mobRoot then
+                    local behind = mobRoot.CFrame:PointToWorldSpace(
+                        Vector3.new(0, 0, TP_BEHIND_DISTANCE)
+                    )
+
+                    local targetCF = CFrame.lookAt(behind, mobRoot.Position)
+
+                    if Running and AutoTP and TPRunId == id then
+                        pcall(function()
+                            Root.CFrame = targetCF
+                        end)
+                    end
+                end
+            end
+
+            task.wait(TP_UPDATE_DELAY)
+        end
+    end)
+end
+
+--============================================================
+-- DUNGEON OBJECT HELPERS
+--============================================================
+
+local function getObjectCFrame(object)
+    if not object then return nil end
+
+    if object:IsA("BasePart") then
+        return object.CFrame
+    end
+
+    if object:IsA("Model") then
+        return object:GetPivot()
+    end
+
+    local part = object:FindFirstChildWhichIsA("BasePart", true)
+
+    return part and part.CFrame or nil
+end
+
+local function teleportObject(object)
+    local cf = getObjectCFrame(object)
+    if not cf then return false end
+
+    updateCharacter()
+    if not Root then return false end
+
+    return pcall(function()
+        Root.CFrame = cf + Vector3.new(0, 3, 0)
+    end)
+end
+
+--============================================================
+-- NORMAL DUNGEON
+--============================================================
+
+local function dungeonAlive(id)
+    return Running and AutoDungeon and DungeonRunId == id
+end
+
+local function waitDungeonStart(id)
+    DungeonStatus = "Menunggu posisi 1..."
+
+    while dungeonAlive(id) do
+        updateCharacter()
+
+        if Root and (Root.Position - DUNGEON_START).Magnitude <= DUNGEON_TOLERANCE then
+            return true
+        end
+
+        task.wait(DUNGEON_WAIT_DELAY)
+    end
+
+    return false
+end
+
+local function walkDungeonEntry(id)
+    DungeonStatus = SelectedDungeon .. " | Jalan posisi 2..."
+
+    local lastOrder = 0
+
+    while dungeonAlive(id) do
+        updateCharacter()
+
+        if not Root or not Humanoid or Humanoid.Health <= 0 then
+            return false
+        end
+
+        if (Root.Position - DUNGEON_ENTRY).Magnitude <= ENTRY_TOLERANCE then
+            Humanoid:MoveTo(Root.Position)
+            return true
+        end
+
+        if os.clock() - lastOrder >= 5 then
+            Humanoid:MoveTo(DUNGEON_ENTRY)
+            lastOrder = os.clock()
+        end
+
+        task.wait(0.1)
+    end
+
+    return false
+end
+
+local function waitDungeonAppear(id)
+    DungeonStatus = "Menunggu mob muncul..."
+
+    while dungeonAlive(id) do
+        if getEnemyCount() > 0 then return true end
+        task.wait(0.2)
+    end
+
+    return false
+end
+
+local function waitDungeonClear(id)
+    if not waitDungeonAppear(id) then return false end
+
+    DungeonStatus = "Melawan mob..."
+
+    while dungeonAlive(id) do
+        if getEnemyCount() == 0 then return true end
+        task.wait(0.2)
+    end
+
+    return false
+end
+
+local function waitStableDungeonClear(id)
+    DungeonStatus = SelectedDungeon .. " | Scan mob 2 detik..."
+
+    local first = os.clock() + MOB_CLEAR_INITIAL_DELAY
+
+    while dungeonAlive(id) and os.clock() < first do
+        if getEnemyCount() > 0 then return false end
+        task.wait(0.1)
+    end
+
+    while dungeonAlive(id) do
+        if getEnemyCount() > 0 then return false end
+
+        local start = os.clock()
+        local empty = true
+
+        while dungeonAlive(id)
+            and os.clock() - start < MOB_EMPTY_CONFIRM_TIME do
+
+            if getEnemyCount() > 0 then
+                empty = false
+                break
+            end
+
+            task.wait(0.1)
+        end
+
+        if not dungeonAlive(id) then return false end
+
+        if empty and getEnemyCount() == 0 then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function stopDungeon()
+    AutoDungeon = false
+    DungeonRunId += 1
+    DungeonStatus = "Dungeon: OFF"
+end
+
+local function startDungeon()
+    if not Running or AutoDungeon then return end
+
+    if AutoHallow then
+        DungeonStatus = "Matikan Auto Hallow dahulu!"
+        return
+    end
+
+    local name = DungeonNameInput and DungeonNameInput.Text or "S1"
+
+    name = string.upper(string.match(name, "^%s*(.-)%s*$") or "")
+
+    if name == "" then
+        DungeonStatus = "Isi nama dungeon!"
+        return
+    end
+
+    SelectedDungeon = name
+    AutoDungeon = true
+    DungeonRunId += 1
+
+    local id = DungeonRunId
+
+    task.spawn(function()
+        while dungeonAlive(id) do
+            if not waitDungeonStart(id) then break end
+
+            if AutoOrbit then stopOrbit() end
+            task.wait(0.2)
+
+            if not dungeonAlive(id) then break end
+
+            if not walkDungeonEntry(id) then
+                if not dungeonAlive(id) then break end
+                task.wait(0.5)
+                continue
+            end
+
+            updateCharacter()
+
+            if not Root or (Root.Position - DUNGEON_ENTRY).Magnitude > ENTRY_TOLERANCE then
+                task.wait(0.5)
+                continue
+            end
+
+            DungeonStatus = name .. " | EnterDungeon..."
+
+            local ok, err = pcall(function()
+                return RequestRemote:InvokeServer("EnterDungeon", name, 2)
+            end)
+
+            if not ok then
+                DungeonStatus = "Remote error: " .. tostring(err)
+                task.wait(2)
+                continue
+            end
+
+            if not dungeonAlive(id) then break end
+
+            if not AutoOrbit then startOrbit() end
+
+            if not waitDungeonClear(id) then
+                if not dungeonAlive(id) then break end
+                continue
+            end
+
+            if not waitStableDungeonClear(id) then
+                if not dungeonAlive(id) then break end
+                continue
+            end
+
+            local folder = Workspace:FindFirstChild("Dungeons")
+            local selected = folder and folder:FindFirstChild(name)
+            local door = selected and selected:FindFirstChild("BossDoor")
+            local glow = door and door:FindFirstChild("FloorGlow", true)
+
+            if not glow then
+                DungeonStatus = name .. " | FloorGlow tidak ditemukan"
+                break
+            end
+
+            DungeonStatus = name .. " | TP FloorGlow..."
+
+            if not teleportObject(glow) then
+                DungeonStatus = name .. " | TP FloorGlow gagal"
+                break
+            end
+
+            DungeonStatus = name .. " | Menunggu boss..."
+
+            local deadline = os.clock() + 15
+            local found = false
+
+            while dungeonAlive(id) and os.clock() < deadline do
+                if getEnemyCount() > 0 then
+                    found = true
+                    break
+                end
+                task.wait(0.2)
+            end
+
+            if not dungeonAlive(id) then break end
+
+            if not found then
+                DungeonStatus = name .. " | Boss tidak muncul"
+                break
+            end
+
+            DungeonStatus = name .. " | Melawan boss..."
+
+            if not waitStableDungeonClear(id) then
+                if not dungeonAlive(id) then break end
+                continue
+            end
+
+            local markers = selected and selected:FindFirstChild("Markers")
+            local exit = markers and markers:FindFirstChild("BossExit")
+
+            if exit then
+                teleportObject(exit)
+                DungeonStatus = name .. " | BossExit"
+            else
+                DungeonStatus = name .. " | BossExit tidak ditemukan"
+            end
+
+            task.wait(0.3)
+
+            if AutoOrbit then stopOrbit() end
+
+            task.wait(1)
+        end
+
+        if DungeonRunId == id then
+            AutoDungeon = false
+
+            if AutoOrbit then stopOrbit() end
+
+            DungeonStatus = "Dungeon: OFF"
+        end
+    end)
+end
+
+--============================================================
+-- AUTO HALLOW
+--============================================================
+
+local function hallowAlive(id)
+    return Running and AutoHallow and HallowRunId == id
+end
+
+local function hallowWalkPosition2(id)
+    HallowStatus = "HALLOW | Walk posisi 2..."
+
+    local lastOrder = 0
+
+    while hallowAlive(id) do
+        updateCharacter()
+
+        if not Root or not Humanoid or Humanoid.Health <= 0 then
+            return false
+        end
+
+        if (Root.Position - HALLOW_POS2).Magnitude <= HALLOW_POS2_TOLERANCE then
+    Humanoid:MoveTo(Root.Position)
+    return true
+end
+
+        if os.clock() - lastOrder >= 2 then
+            Humanoid:MoveTo(HALLOW_POS2)
+            lastOrder = os.clock()
+        end
+
+        task.wait(0.1)
+    end
+
+    return false
+end
+
+local function hallowWaitPosition1(id)
+    HallowStatus = "HALLOW | Menunggu posisi 1..."
+
+    while hallowAlive(id) do
+        updateCharacter()
+
+        if Root and (Root.Position - HALLOW_POS1).Magnitude <= HALLOW_POS1_TOLERANCE then
+    return true
+end
+
+        task.wait(0.2)
+    end
+
+    return false
+end
+
+local function hallowWaitMobs(id)
+    HallowStatus = "HALLOW | Menunggu mob..."
+
+    while hallowAlive(id) do
+        if getEnemyCount() > 0 then
+            HallowStatus = "HALLOW | Melawan mob..."
+            return true
+        end
+
+        task.wait(0.2)
+    end
+
+    return false
+end
+
+local function hallowWaitClear(id, label)
+    while hallowAlive(id) do
+        if getEnemyCount() == 0 then
+            HallowStatus = "HALLOW | " .. label .. " kosong, scan 2 detik..."
+
+            local start = os.clock()
+            local empty = true
+
+            while hallowAlive(id)
+                and os.clock() - start < HALLOW_EMPTY_DELAY do
+
+                if getEnemyCount() > 0 then
+                    empty = false
+                    break
+                end
+
+                task.wait(0.1)
+            end
+
+            if not hallowAlive(id) then return false end
+
+            if empty and getEnemyCount() == 0 then
+                return true
+            end
+        else
+            HallowStatus = "HALLOW | " .. label .. " masih hidup..."
+        end
+
+        task.wait(0.1)
+    end
+
+    return false
+end
+
+local function hallowWaitBoss(id)
+    HallowStatus = "HALLOW | Menunggu boss..."
+
+    local deadline = os.clock() + 20
+
+    while hallowAlive(id) and os.clock() < deadline do
+        if getEnemyCount() > 0 then return true end
+        task.wait(0.2)
+    end
+
+    return hallowAlive(id) and getEnemyCount() > 0
+end
+
+local function stopHallow()
+    AutoHallow = false
+    HallowRunId += 1
+
+    if AutoOrbit then stopOrbit() end
+
+    HallowStatus = "Hallow: OFF"
+end
+
+local function startHallow()
+    if not Running or AutoHallow then return end
+
+    if AutoDungeon then
+        HallowStatus = "Matikan Auto Dungeon dahulu!"
+        return
+    end
+
+    AutoHallow = true
+    HallowRunId += 1
+
+    local id = HallowRunId
+
+    task.spawn(function()
+        while hallowAlive(id) do
+            -- 1. POSISI 1
+            if not hallowWaitPosition1(id) then break end
+
+            if not hallowAlive(id) then break end
+
+            -- 2. ORBIT OFF
+            if AutoOrbit then stopOrbit() end
+            task.wait(0.2)
+
+            -- 3. WALK POSISI 2
+            if not hallowWalkPosition2(id) then break end
+
+            if not hallowAlive(id) then break end
+
+            updateCharacter()
+
+            if not Root or (Root.Position - HALLOW_POS2).Magnitude > HALLOW_POS2_TOLERANCE then
+    HallowStatus = "HALLOW | Posisi 2 belum tercapai"
+    task.wait(0.5)
+    continue
+end
+
+            -- 4. ENTER HALLOW
+            HallowStatus = "HALLOW | EnterDungeon..."
+
+            local ok, result = pcall(function()
+                return RequestRemote:InvokeServer(
+                    "EnterDungeon",
+                    "HALLOW",
+                    2
+                )
+            end)
+
+            if not ok then
+                HallowStatus = "HALLOW | Remote error: " .. tostring(result)
+                task.wait(2)
+                continue
+            end
+
+            if not hallowAlive(id) then break end
+
+            -- 5. ORBIT ON
+            if not AutoOrbit then startOrbit() end
+
+            -- 6. WAIT MOB
+            if not hallowWaitMobs(id) then break end
+
+            -- 7. MOB CLEAR 2s
+            if not hallowWaitClear(id, "MOB") then break end
+
+            if not hallowAlive(id) then break end
+
+            -- 8. TP SPILL
+            local dungeons = Workspace:FindFirstChild("Dungeons")
+            local hallow = dungeons and dungeons:FindFirstChild("HALLOW")
+            local door = hallow and hallow:FindFirstChild("BossDoor")
+            local spill = door and door:FindFirstChild("Spill", true)
+
+            if not spill then
+                HallowStatus = "HALLOW | Spill tidak ditemukan"
+                break
+            end
+
+            HallowStatus = "HALLOW | TP Spill..."
+
+            if not teleportObject(spill) then
+                HallowStatus = "HALLOW | TP Spill gagal"
+                break
+            end
+
+            if not hallowAlive(id) then break end
+
+            -- 9. WAIT BOSS
+            if not hallowWaitBoss(id) then
+                HallowStatus = "HALLOW | Boss tidak muncul"
+                break
+            end
+
+            if not hallowAlive(id) then break end
+
+            -- 10. BOSS FIGHT
+            HallowStatus = "HALLOW | MELAWAN BOSS..."
+
+            if not AutoOrbit then startOrbit() end
+
+            -- 11. BOSS CLEAR 2s
+            if not hallowWaitClear(id, "BOSS") then break end
+
+            if not hallowAlive(id) then break end
+
+            -- 12. TP BOSS EXIT
+            local markers = hallow and hallow:FindFirstChild("Markers")
+            local bossExit = markers and markers:FindFirstChild("BossExit")
+
+            if not bossExit then
+                HallowStatus = "HALLOW | BossExit tidak ditemukan"
+                break
+            end
+
+            HallowStatus = "HALLOW | TP BossExit..."
+
+            if not teleportObject(bossExit) then
+                HallowStatus = "HALLOW | TP BossExit gagal"
+                break
+            end
+
+            if not hallowAlive(id) then break end
+
+            -- 13. ORBIT OFF
+            task.wait(0.3)
+
+            if AutoOrbit then stopOrbit() end
+
+            HallowStatus = "HALLOW | BossExit | Orbit OFF"
+            task.wait(0.5)
+
+            if not hallowAlive(id) then break end
+
+            -- 14. RETURN POSISI 1
+            HallowStatus = "HALLOW | Kembali posisi 1..."
+
+            updateCharacter()
+
+            if not Root then
+                task.wait(0.5)
+                continue
+            end
+
+            local returned = pcall(function()
+                Root.CFrame = CFrame.new(HALLOW_POS1 + Vector3.new(0, 3, 0))
+            end)
+
+            if not returned then
+                HallowStatus = "HALLOW | Gagal kembali posisi 1"
+                break
+            end
+
+            task.wait(1)
+            HallowStatus = "HALLOW | Siklus selesai, mengulang..."
+            task.wait(0.5)
+        end
+
+        if HallowRunId == id then
+            AutoHallow = false
+
+            if AutoOrbit then stopOrbit() end
+
+            HallowStatus = "Hallow: OFF"
+        end
+    end)
+end
+
+--============================================================
+-- AUTO CLAIM ALL REWARDS
+--============================================================
+
+local function stopClaim()
+    AutoClaim = false
+    ClaimRunId += 1
+    ClaimStatus = "Claim: OFF"
+end
+
+local function startClaim()
+    if not Running or AutoClaim then return end
+
+    AutoClaim = true
+    ClaimRunId += 1
+
+    local id = ClaimRunId
+
+    task.spawn(function()
+        while Running and AutoClaim and ClaimRunId == id do
+            ClaimStatus = "Claiming rewards..."
+
+            local ok, result = pcall(function()
+                return RequestRemote:InvokeServer("ClaimAllRewards")
+            end)
+
+            if ok then
+                ClaimStatus = "Claim berhasil | Berikutnya 5 menit"
+            else
+                ClaimStatus = "Claim error: " .. tostring(result)
+            end
+
+            -- 300 detik, tetapi tetap bisa OFF kapan saja.
+            local remaining = CLAIM_INTERVAL
+
+            while Running
+                and AutoClaim
+                and ClaimRunId == id
+                and remaining > 0 do
+
+                task.wait(1)
+                remaining -= 1
+            end
+
+            if AutoClaim and ClaimRunId == id then
+                ClaimStatus = "Claim berikutnya..."
+            end
+        end
+    end)
+end
+
+--============================================================
+-- GUI
+--============================================================
+
+Gui = Instance.new("ScreenGui")
+Gui.Name = "AF_SwingSkillOrbit"
+Gui.ResetOnSpawn = false
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local guiOK = pcall(function()
+    Gui.Parent = CoreGui
+end)
+
+if not guiOK or not Gui.Parent then
+    Gui.Parent = Player:WaitForChild("PlayerGui")
+end
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(290, 446)
+Main.Position = UDim2.new(0.5, -145, 0.5, -223)
+Main.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
+Main.BorderSizePixel = 0
+Main.Parent = Gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = Main
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(110, 75, 190)
+stroke.Thickness = 1.5
+stroke.Parent = Main
+
+--============================================================
+-- HEADER
+--============================================================
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 36)
+Header.BackgroundColor3 = Color3.fromRGB(38, 34, 54)
+Header.BorderSizePixel = 0
+Header.Parent = Main
+
+local hc = Instance.new("UICorner")
+hc.CornerRadius = UDim.new(0, 10)
+hc.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -90, 1, 0)
+Title.Position = UDim2.fromOffset(12, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "ANIME FORGING"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 13
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Min = Instance.new("TextButton")
+Min.Size = UDim2.fromOffset(28, 26)
+Min.Position = UDim2.new(1, -62, 0, 5)
+Min.Text = "-"
+Min.TextSize = 18
+Min.Font = Enum.Font.GothamBold
+Min.TextColor3 = Color3.new(1, 1, 1)
+Min.BackgroundColor3 = Color3.fromRGB(65, 65, 85)
+Min.Parent = Header
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(28, 26)
+Close.Position = UDim2.new(1, -31, 0, 5)
+Close.Text = "X"
+Close.TextSize = 13
+Close.Font = Enum.Font.GothamBold
+Close.TextColor3 = Color3.new(1, 1, 1)
+Close.BackgroundColor3 = Color3.fromRGB(150, 45, 55)
+Close.Parent = Header
+
+--============================================================
+-- GUI BUTTON CREATOR
+--============================================================
+
+local function makeButton(label, y)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, -24, 0, 40)
+    b.Position = UDim2.fromOffset(12, y)
+    b.BackgroundColor3 = Color3.fromRGB(48, 48, 62)
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    b.Text = label
+    b.Parent = Main
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 7)
+    c.Parent = b
+
+    return b
+end
+
+--============================================================
+-- 7 TOGGLES
+--============================================================
+
+local CombatButton = makeButton("AUTO SWING + HIT : OFF", 48)
+local SkillButton = makeButton("AUTO SKILL : OFF", 94)
+local OrbitButton = makeButton("ORBIT + HOVER : OFF", 140)
+local TPButton = makeButton("TP BEHIND MOB : OFF", 186)
+
+--============================================================
+-- DUNGEON INPUT
+--============================================================
+
+DungeonNameInput = Instance.new("TextBox")
+DungeonNameInput.Size = UDim2.new(1, -24, 0, 30)
+DungeonNameInput.Position = UDim2.fromOffset(12, 232)
+DungeonNameInput.BackgroundColor3 = Color3.fromRGB(38, 38, 52)
+DungeonNameInput.TextColor3 = Color3.new(1, 1, 1)
+DungeonNameInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 165)
+DungeonNameInput.PlaceholderText = "Nama dungeon: S1 / S2 / S3 / E1"
+DungeonNameInput.Text = "S1"
+DungeonNameInput.ClearTextOnFocus = false
+DungeonNameInput.Font = Enum.Font.GothamBold
+DungeonNameInput.TextSize = 12
+DungeonNameInput.Parent = Main
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 7)
+inputCorner.Parent = DungeonNameInput
+
+local inputStroke = Instance.new("UIStroke")
+inputStroke.Color = Color3.fromRGB(85, 75, 115)
+inputStroke.Thickness = 1
+inputStroke.Parent = DungeonNameInput
+
+local DungeonButton = makeButton("AUTO DUNGEON : OFF", 270)
+local HallowButton = makeButton("AUTO HALLOW : OFF", 316)
+local ClaimButton = makeButton("AUTO CLAIM REWARDS : OFF", 362)
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1, -24, 0, 24)
+Status.Position = UDim2.fromOffset(12, 408)
+Status.BackgroundTransparency = 1
+Status.Text = "Mobs: waiting..."
+Status.TextColor3 = Color3.fromRGB(180, 180, 190)
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 10
+Status.TextXAlignment = Enum.TextXAlignment.Left
+Status.TextTruncate = Enum.TextTruncate.AtEnd
+Status.Parent = Main
+
+--============================================================
+-- BUTTON COLORS
+--============================================================
+
+local function setButton(button, label, state)
+    button.Text = label .. " : " .. (state and "ON" or "OFF")
+
+    button.BackgroundColor3 = state
+        and Color3.fromRGB(45, 125, 75)
+        or Color3.fromRGB(48, 48, 62)
+end
+
+--============================================================
+-- BUTTON EVENTS
+--============================================================
+
+CombatButton.MouseButton1Click:Connect(function()
+    if not Running then return end
+
+    if AutoCombat then stopCombat() else startCombat() end
+
+    setButton(CombatButton, "AUTO SWING + HIT", AutoCombat)
+end)
+
+SkillButton.MouseButton1Click:Connect(function()
+    if not Running then return end
+
+    if AutoSkill then stopSkill() else startSkill() end
+
+    setButton(SkillButton, "AUTO SKILL", AutoSkill)
+end)
+
+OrbitButton.MouseButton1Click:Connect(function()
+    if not Running then return end
+
+    if AutoOrbit then stopOrbit() else startOrbit() end
+
+    setButton(OrbitButton, "ORBIT + HOVER", AutoOrbit)
+end)
+
+TPButton.MouseButton1Click:Connect(function()
+    if not Running then return end
+
+    if AutoTP then stopTP() else startTP() end
+
+    setButton(TPButton, "TP BEHIND MOB", AutoTP)
+end)
+
+DungeonButton.MouseButton1Click:Connect(function()
+    if not Running then return end
+
+    if AutoDungeon then stopDungeon() else startDungeon() end
+
+    setButton(DungeonButton, "AUTO DUNGEON", AutoDungeon)
+end)
+
+HallowButton.MouseButton1Click:Connect(function()
+    if not Running then return end
+
+    if AutoHallow then stopHallow() else startHallow() end
+
+    setButton(HallowButton, "AUTO HALLOW", AutoHallow)
+end)
+
+ClaimButton.MouseButton1Click:Connect(function()
+    if not Running then return end
+
+    if AutoClaim then stopClaim() else startClaim() end
+
+    setButton(ClaimButton, "AUTO CLAIM REWARDS", AutoClaim)
+end)
+
+--============================================================
+-- STATUS UPDATE
+--============================================================
+
+task.spawn(function()
+    while Running and Gui and Gui.Parent do
+        local mob = getTarget()
+        local count = #getAllMobs()
+
+        setButton(CombatButton, "AUTO SWING + HIT", AutoCombat)
+        setButton(SkillButton, "AUTO SKILL", AutoSkill)
+        setButton(OrbitButton, "ORBIT + HOVER", AutoOrbit)
+        setButton(TPButton, "TP BEHIND MOB", AutoTP)
+        setButton(DungeonButton, "AUTO DUNGEON", AutoDungeon)
+        setButton(HallowButton, "AUTO HALLOW", AutoHallow)
+        setButton(ClaimButton, "AUTO CLAIM REWARDS", AutoClaim)
+
+        if AutoHallow then
+            Status.Text = HallowStatus .. " | Mobs: " .. count
+
+        elseif AutoDungeon then
+            Status.Text = DungeonStatus .. " | Mobs: " .. count
+
+        elseif AutoClaim then
+            Status.Text = ClaimStatus
+
+        elseif mob then
+            Status.Text = "Target: " .. mob.Name .. " | Mobs: " .. count
+
+        elseif AutoOrbit then
+            Status.Text = "Orbit aktif | Mobs: " .. count
+
+        elseif AutoTP then
+            Status.Text = "TP aktif | Mobs: " .. count
+
+        else
+            Status.Text = "Mobs in folder: " .. count
+        end
+
+        task.wait(0.3)
+    end
+end)
+
+--============================================================
+-- MINIMIZE
+--============================================================
+
+local minimized = false
+
+Min.MouseButton1Click:Connect(function()
+    if not Running then return end
+
+    minimized = not minimized
+
+    CombatButton.Visible = not minimized
+    SkillButton.Visible = not minimized
+    OrbitButton.Visible = not minimized
+    TPButton.Visible = not minimized
+
+    DungeonNameInput.Visible = not minimized
+    DungeonButton.Visible = not minimized
+    HallowButton.Visible = not minimized
+    ClaimButton.Visible = not minimized
+    Status.Visible = not minimized
+
+    Main.Size = minimized
+        and UDim2.fromOffset(290, 36)
+        or UDim2.fromOffset(290, 446)
+
+    Min.Text = minimized and "+" or "-"
+end)
+
+--============================================================
+-- DRAG
+--============================================================
+
+local dragging = false
+local dragStart
+local startPosition
+
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPosition = Main.Position
+    end
+end)
+
+track(UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+
+        Main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end))
+
+track(UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end))
+
+--============================================================
+-- CENTRAL CLEANUP
+--============================================================
+
+function Controller.Cleanup()
+    if not Running then return end
+
+    Running = false
+
+    AutoCombat = false
+    AutoSkill = false
+    AutoOrbit = false
+    AutoTP = false
+    AutoDungeon = false
+    AutoHallow = false
+    AutoClaim = false
+
+    OrbitRunId += 1
+    TPRunId += 1
+    DungeonRunId += 1
+    HallowRunId += 1
+    ClaimRunId += 1
+
+    releaseAllKeys()
+    cleanupHover()
+
+    for _, connection in ipairs(Connections) do
+        pcall(function()
+            connection:Disconnect()
+        end)
+    end
+
+    table.clear(Connections)
+
+    if Gui then
+        pcall(function()
+            Gui:Destroy()
+        end)
+
+        Gui = nil
+    end
+
+    if _G.AF_SwingSkillOrbitController == Controller then
+        _G.AF_SwingSkillOrbitController = nil
+    end
+end
+
+Close.MouseButton1Click:Connect(function()
+    Controller.Cleanup()
+end)
+
+--============================================================
+-- LOADED
+--============================================================
+
+print("==============================================")
+print("[ANIME FORGING] ULTIMATE HUB LOADED")
+print("1. AUTO SWING + HIT")
+print("2. AUTO SKILL")
+print("3. ORBIT + HOVER")
+print("4. TP BEHIND MOB")
+print("5. AUTO DUNGEON")
+print("6. AUTO HALLOW")
+print("7. AUTO CLAIM ALL REWARDS")
+print("CLAIM INTERVAL: 300 SECONDS")
+print("==============================================")
