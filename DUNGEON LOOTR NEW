@@ -486,7 +486,7 @@ end
 setActiveCategory("A")
 
 --========================================================
--- DUNGEON FARM: SNOW-STYLE GLOBAL NPC ORBIT + WALLCAP ROTATION
+-- DUNGEON FARM: SNOW-STYLE NPC FARM + WALLCAP ROTATION + ARSENAL HOLD SUPPORT
 -- Applies the same behavior to Bandits Den, Goblins, Knights,
 -- Catacombs, Snow, Demon (Underworld Gate), Mage, and Arsenal.
 --========================================================
@@ -498,8 +498,8 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 
-local ORBIT_RADIUS = 8
-local ORBIT_HEIGHT = 5
+local ORBIT_RADIUS = 12
+local ORBIT_HEIGHT = 12
 local ORBIT_SPEED = 2
 local ATTACK_INTERVAL = 0.1
 local SKILL_INTERVAL = 0.05
@@ -691,6 +691,21 @@ local function getDungeonMap(config)
         end
     end
     return nil, nil
+end
+
+-- Arsenal's Hold objective exposes a BasePart directly under its map.
+-- The objective data defines a 14-stud hold radius; keep the player near
+-- the part's center instead of orbiting mobs and leaving the marked area.
+local function getArsenalHoldArea(map, config)
+    if not map or config.stateKey ~= "AutoFarmArsenal" then
+        return nil
+    end
+
+    local area = map:FindFirstChild("HoldArea")
+    if area and area:IsA("BasePart") then
+        return area
+    end
+    return nil
 end
 
 -- Scan the entire configured NPC folder. There is deliberately no Zone/Room
@@ -914,6 +929,8 @@ local function startDungeonSnowStyleFarm(config, enabled)
             local wallcaps = getDungeonWallcapEntries(map)
             local rooms = getDungeonRoomZones(map)
             local targets = getDungeonNPCState(map, config)
+            local holdArea = getArsenalHoldArea(map, config)
+            local holdPosition = holdArea and (holdArea.Position + Vector3.new(0, 3, 0)) or nil
 
             -- Keep a valid target, but drop ordinary mobs that move beyond 250 studs.
             local targetValid = false
@@ -1013,19 +1030,27 @@ local function startDungeonSnowStyleFarm(config, enabled)
                 if root and part.Parent and currentTarget.model.Parent
                     and not farmMobIsDead(currentTarget.model) then
 
-                    angle += ORBIT_SPEED * math.clamp(dt, 0, 0.05)
                     local targetPosition = part.Position
-                    local orbitY = lockedY or (targetPosition.Y + ORBIT_HEIGHT)
-                    local destination = Vector3.new(
-                        targetPosition.X + math.cos(angle) * ORBIT_RADIUS,
-                        orbitY,
-                        targetPosition.Z + math.sin(angle) * ORBIT_RADIUS
-                    )
+                    if holdArea and holdArea.Parent and holdPosition then
+                        -- HOLD OBJECTIVE: stay at the marked area's center. Do not
+                        -- orbit the enemy, because that can pull the player outside
+                        -- the 14-stud objective radius.
+                        local lookAt = Vector3.new(targetPosition.X, holdPosition.Y, targetPosition.Z)
+                        root.CFrame = CFrame.lookAt(holdPosition, lookAt)
+                    else
+                        angle += ORBIT_SPEED * math.clamp(dt, 0, 0.05)
+                        local orbitY = lockedY or (targetPosition.Y + ORBIT_HEIGHT)
+                        local destination = Vector3.new(
+                            targetPosition.X + math.cos(angle) * ORBIT_RADIUS,
+                            orbitY,
+                            targetPosition.Z + math.sin(angle) * ORBIT_RADIUS
+                        )
 
-                    root.CFrame = CFrame.lookAt(
-                        destination,
-                        Vector3.new(targetPosition.X, orbitY, targetPosition.Z)
-                    )
+                        root.CFrame = CFrame.lookAt(
+                            destination,
+                            Vector3.new(targetPosition.X, orbitY, targetPosition.Z)
+                        )
+                    end
 
                     local now = os.clock()
                     if now - lastAttack >= ATTACK_INTERVAL then
@@ -1045,6 +1070,17 @@ local function startDungeonSnowStyleFarm(config, enabled)
                 end
 
             else
+                -- During Arsenal Hold, stay inside HoldArea even when no NPC is alive.
+                -- Do not run WallCap/Room patrol while the hold marker is present.
+                if holdArea and holdArea.Parent and holdPosition then
+                    root.CFrame = CFrame.new(holdPosition)
+                    currentTarget = nil
+                    lockedY = nil
+                    emptySince = nil
+                    task.wait(0.1)
+                    continue
+                end
+
                 -- No boss and no ordinary NPC within 250 studs: patrol this map.
                 currentTarget = nil
                 lockedY = nil
@@ -1178,7 +1214,7 @@ for _, config in ipairs(DungeonFarmConfigs) do
     end)
 end
 
-print("[Dungeon Farm] Snow-style global NPC orbit + WallCap rotation loaded.")
+print("[Dungeon Farm] NPC farm + WallCap patrol + Arsenal HoldArea defense loaded.")
 
 -- 8. HOLLOW REALM.
 
