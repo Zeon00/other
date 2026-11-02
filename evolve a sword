@@ -64,7 +64,7 @@ local RequestRemote = Remotes:WaitForChild("Request")
 -- SETTINGS
 --============================================================
 
-local SCAN_RANGE = 200
+local SCAN_RANGE = 350
 local MAX_HEIGHT = 30
 local FRONT_DOT = 0.10
 
