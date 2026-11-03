@@ -1,6 +1,6 @@
 --============================================================
 -- ANIME FORGING | ULTIMATE AUTOMATION HUB
--- 9 TOGGLE | STANDALONE GUI
+-- 10 TOGGLE | STANDALONE GUI
 --
 -- 1. AUTO SWING + HIT
 -- 2. AUTO SKILL
@@ -11,6 +11,7 @@
 -- 7. AUTO HALLOW
 -- 8. AUTO CLAIM ALL REWARDS
 -- 9. AUTO TOWER
+-- 10. AUTO ENCHANT
 --
 -- DRAG | MINIMIZE | DESTROY
 -- SINGLE INSTANCE | CENTRAL CLEANUP
@@ -158,7 +159,7 @@ local TOWER_POS2 = Vector3.new(
 local TOWER_TOLERANCE = 10
 local TOWER_WAIT = 2
 
-local CLAIM_INTERVAL = 300
+local CLAIM_INTERVAL = 30
 
 --============================================================
 -- STATE
@@ -175,6 +176,7 @@ local AutoEclipse = false
 local AutoHallow = false
 local AutoClaim = false
 local AutoTower = false
+local AutoEnchant = false
 local EclipseTarget = nil
 -- ECLIPSE PRIORITY
 local EclipsePriority = false
@@ -191,6 +193,7 @@ local EclipseRunId = 0
 local HallowRunId = 0
 local ClaimRunId = 0
 local TowerRunId = 0
+local EnchantRunId = 0
 
 local DungeonStatus = "Dungeon: OFF"
 local EclipseStatus = "Eclipse: OFF"
@@ -198,7 +201,7 @@ local HallowStatus = "Hallow: OFF"
 local ClaimStatus = "Claim: OFF"
 local TowerStatus = "Tower: OFF"
 
-local SelectedDungeon = "S1"
+local SelectedDungeon = "Z3"
 local DungeonNameInput
 local DungeonCountInput
 
@@ -951,15 +954,54 @@ local function getDungeonProgress()
     return tonumber(current), tonumber(total), caption
 end
 
+
 local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
     local emptyStart = nil
     local lastTPTime = 0
-    local lastBeaconPosition = nil
+    local encounterIndex = 1
+
+    local encounterTarget = nil
+    local waitingEncounterSpawn = false
+
+    local function status(msg)
+        if statusCallback then
+            statusCallback(msg)
+        end
+    end
+
+    local function findMonsterBeacon()
+        for _, fx in ipairs(Workspace:GetChildren()) do
+            if fx.Name == "ClientFX" then
+                local candidate = fx:FindFirstChild("MonsterBeacon")
+
+                if candidate and candidate:IsA("BasePart") then
+                    local billboard = candidate:FindFirstChild("BillboardGui")
+                    local hasDistanceText = false
+
+                    if billboard then
+                        for _, label in ipairs(billboard:GetDescendants()) do
+                            if (label:IsA("TextLabel") or label:IsA("TextButton"))
+                                and label.Text:match("%d+%s*m") then
+                                hasDistanceText = true
+                                break
+                            end
+                        end
+                    end
+
+                    if hasDistanceText then
+                        return candidate
+                    end
+                end
+            end
+        end
+
+        return nil
+    end
 
     while isAlive() do
+        -- CEK BOSS OPEN
         local playerGui = Player:FindFirstChild("PlayerGui")
         local gameUI = playerGui and playerGui:FindFirstChild("GameUI")
-
         local dungeonBar = gameUI and gameUI:FindFirstChild("DungeonBar")
         local progress = dungeonBar and dungeonBar:FindFirstChild("Progress")
         local textFolder = progress and progress:FindFirstChild("Text")
@@ -971,10 +1013,7 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
             )
 
             if captionText == "open!" or captionText == "open" then
-                if statusCallback then
-                    statusCallback("BOSS OPEN! Teleport FloorGlow...")
-                end
-
+                status("BOSS OPEN! Teleport FloorGlow...")
                 return true
             end
         end
@@ -984,82 +1023,76 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
 
             if enemyCount > 0 then
                 emptyStart = nil
-                lastTPTime = 0
-                lastBeaconPosition = nil
+                status("Enemies ditemukan! Melawan...")
             else
-                if not emptyStart then
-                    emptyStart = os.clock()
-                end
+                emptyStart = emptyStart or os.clock()
 
                 if os.clock() - emptyStart >= MOB_EMPTY_CONFIRM_TIME then
-                    local beacon
-
-                    for _, fx in ipairs(Workspace:GetChildren()) do
-                        if fx.Name == "ClientFX" then
-                            local candidate = fx:FindFirstChild("MonsterBeacon")
-
-                            if candidate and candidate:IsA("BasePart") then
-                                local billboard = candidate:FindFirstChild("BillboardGui")
-                                local hasDistanceText = false
-
-                                if billboard then
-                                    for _, label in ipairs(billboard:GetDescendants()) do
-                                        if (label:IsA("TextLabel") or label:IsA("TextButton"))
-                                            and label.Text:match("%d+%s*m") then
-
-                                            hasDistanceText = true
-                                            break
-                                        end
-                                    end
-                                end
-
-                                if hasDistanceText then
-                                    beacon = candidate
-                                    break
-                                end
-                            end
-                        end
-                    end
+                    -- PRIORITAS 1: MONSTER BEACON
+                    local beacon = findMonsterBeacon()
 
                     if beacon then
+                        encounterTarget = nil
+                        waitingEncounterSpawn = false
+
                         updateCharacter()
 
                         if Root then
-                            local beaconPos = beacon.Position
-                            local distance = (Root.Position - beaconPos).Magnitude
+                            local distance = (Root.Position - beacon.Position).Magnitude
 
-                            local beaconMoved = not lastBeaconPosition
-                                or (beaconPos - lastBeaconPosition).Magnitude > 5
-
-                            local cooldownReady = os.clock() - lastTPTime >= 3
-
-                            if distance > 12
-                                and cooldownReady
-                                and (beaconMoved or lastTPTime > 0) then
-
-                                if statusCallback then
-                                    statusCallback("Enemies kosong! TP MonsterBeacon...")
-                                end
-
-                                if isAlive() then
-                                    teleportObject(beacon)
-                                    lastTPTime = os.clock()
-                                    lastBeaconPosition = beaconPos
-                                end
-
-                            elseif distance <= 12 then
-                                if statusCallback then
-                                    statusCallback("Sudah di MonsterBeacon! Menunggu enemies...")
-                                end
+                            if distance > 12 and os.clock() - lastTPTime >= 3 then
+                                status("MonsterBeacon ditemukan! TP marker...")
+                                teleportObject(beacon)
+                                lastTPTime = os.clock()
+                            else
+                                status("MonsterBeacon aktif! Menunggu mob...")
                             end
                         end
+
+                        emptyStart = nil
+
                     else
-                        if statusCallback then
-                            statusCallback("Enemies kosong! MonsterBeacon tidak ditemukan...")
+                        -- PRIORITAS 2: ENCOUNTER
+                        local encounterName = "Encounter" .. encounterIndex
+
+                        local encounter = getDungeonObject(
+                            SelectedDungeon,
+                            {"Markers", encounterName}
+                        )
+
+                        if encounter then
+                            if encounterTarget ~= encounter then
+                                status("MonsterBeacon tidak ada! TP " .. encounterName .. "...")
+
+                                if teleportObject(encounter) then
+                                    encounterTarget = encounter
+                                    waitingEncounterSpawn = true
+                                    lastTPTime = os.clock()
+                                    emptyStart = nil
+                                else
+                                    status("TP " .. encounterName .. " gagal!")
+                                end
+                            elseif waitingEncounterSpawn then
+                                status("Menunggu mob muncul di " .. encounterName .. "...")
+
+                                -- Jangan naik Encounter sebelum mob muncul.
+                                emptyStart = nil
+                            else
+                                status("Menunggu Encounter berikutnya...")
+                            end
+                        else
+                            status(encounterName .. " tidak ditemukan!")
                         end
                     end
                 end
             end
+        end
+
+        -- Mob muncul di Encounter: mulai hitung sampai habis.
+        if useBeacon and getEnemyCount() > 0 and waitingEncounterSpawn then
+            waitingEncounterSpawn = false
+            encounterIndex += 1
+            emptyStart = nil
         end
 
         task.wait(0.15)
@@ -1067,6 +1100,7 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
 
     return false
 end
+
 
 --============================================================
 -- NORMAL DUNGEON
@@ -1135,7 +1169,7 @@ if AutoHallow or EclipsePriority or AutoTower then
     return
 end
 
-    local name = DungeonNameInput and DungeonNameInput.Text or "S1"
+    local name = DungeonNameInput and DungeonNameInput.Text or "Z3"
     name = string.upper(string.match(name, "^%s*(.-)%s*$") or "")
 
     if name == "" then
@@ -2054,9 +2088,18 @@ local function startHallow()
                 break
             end
 
-            task.wait(1)
-            status("Siklus selesai, mengulang...")
-            task.wait(0.5)
+local delayTime = math.random(5, 8)
+
+status("Di posisi 1! Menunggu " .. delayTime .. " detik...")
+
+for i = 1, delayTime do
+    if not alive() then break end
+    task.wait(1)
+end
+
+if not alive() then break end
+
+status("Jeda selesai, memulai Hallow berikutnya...")
         end
 
         if HallowRunId == id then
@@ -2242,6 +2285,32 @@ end
 --============================================================
 
 --============================================================
+-- AUTO ENCHANT
+--============================================================
+
+local function stopEnchant()
+    AutoEnchant = false
+    EnchantRunId += 1
+end
+
+local function startEnchant()
+    if not Running or AutoEnchant then return end
+
+    AutoEnchant = true
+    EnchantRunId += 1
+    local id = EnchantRunId
+
+    task.spawn(function()
+        while Running and AutoEnchant and EnchantRunId == id do
+            pcall(function()
+                RequestRemote:InvokeServer("Enchant")
+            end)
+            task.wait(0.05)
+        end
+    end)
+end
+
+--============================================================
 -- RESPONSIVE GUI | PC + MOBILE
 -- DRAG TOUCH + MOUSE | SCROLL | MINIMIZE | DESTROY
 --============================================================
@@ -2284,7 +2353,7 @@ stroke.Parent = Main
 
 local minimized = false
 local PANEL_WIDTH = 300
-local PANEL_HEIGHT = 520
+local PANEL_HEIGHT = 560
 
 local function getViewport()
     Camera = Workspace.CurrentCamera
@@ -2300,7 +2369,7 @@ local function updatePanelSize()
     local viewport = getViewport()
 
     PANEL_WIDTH = math.max(220, math.min(310, viewport.X - 16))
-    PANEL_HEIGHT = math.max(220, math.min(520, viewport.Y - 20))
+    PANEL_HEIGHT = math.max(220, math.min(560, viewport.Y - 20))
 
     Main.Size = UDim2.fromOffset(
         PANEL_WIDTH,
@@ -2415,26 +2484,8 @@ ListPadding.PaddingRight = UDim.new(0, 5)
 ListPadding.Parent = Scroll
 
 --============================================================
--- BUTTON CREATOR
+-- INPUT CREATOR
 --============================================================
-
-local function makeButton(label)
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1, -4, 0, 39)
-    b.BackgroundColor3 = Color3.fromRGB(48, 48, 62)
-    b.TextColor3 = Color3.new(1, 1, 1)
-    b.Font = Enum.Font.GothamBold
-    b.TextSize = 11
-    b.Text = label
-    b.AutoButtonColor = true
-    b.Parent = Scroll
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 7)
-    c.Parent = b
-
-    return b
-end
 
 local function makeInput(placeholder, value)
     local box = Instance.new("TextBox")
@@ -2453,177 +2504,118 @@ local function makeInput(placeholder, value)
     c.CornerRadius = UDim.new(0, 7)
     c.Parent = box
 
-    local s = Instance.new("UIStroke")
-    s.Color = Color3.fromRGB(85, 75, 115)
-    s.Thickness = 1
-    s.Parent = box
-
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(85, 75, 115)
+    stroke.Thickness = 1
+    stroke.Parent = box
     return box
 end
 
 --============================================================
--- TOGGLES
+-- UNIVERSAL TOGGLE SYSTEM
+-- Tambah fitur baru cukup: addToggle("NAMA", false, function(state) ... end)
 --============================================================
 
-local CombatButton = makeButton("AUTO SWING + HIT : OFF")
-local SkillButton = makeButton("AUTO SKILL : OFF")
-local OrbitButton = makeButton("ORBIT + HOVER : OFF")
-local TPButton = makeButton("TP BEHIND MOB : OFF")
+local ToggleRegistry = {}
 
-DungeonNameInput = makeInput(
-    "Nama dungeon: S1 / S2 / S3 / E1",
-    "S1"
-)
-
-DungeonCountInput = makeInput(
-    "Jumlah Dungeon",
-    "3"
-)
-
-local DungeonButton = makeButton("AUTO DUNGEON : OFF")
-local EclipseButton = makeButton("AUTO ECLIPSE : OFF")
-local HallowButton = makeButton("AUTO HALLOW : OFF")
-local ClaimButton = makeButton("AUTO CLAIM ALL REWARDS : OFF")
-local TowerButton = makeButton("AUTO TOWER : OFF")
-
---============================================================
--- STATUS
---============================================================
-
-local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, -24, 0, 22)
-Status.Position = UDim2.new(0, 12, 1, -27)
-Status.BackgroundTransparency = 1
-Status.Text = "Mobs: waiting..."
-Status.TextColor3 = Color3.fromRGB(180, 180, 190)
-Status.Font = Enum.Font.Gotham
-Status.TextSize = 10
-Status.TextXAlignment = Enum.TextXAlignment.Left
-Status.TextTruncate = Enum.TextTruncate.AtEnd
-Status.Parent = Main
-
---============================================================
--- BUTTON COLORS
---============================================================
-
-local function setButton(button, label, state)
-    button.Text = label .. " : " .. (state and "ON" or "OFF")
-
-    button.BackgroundColor3 = state
+local function setToggleVisual(toggle)
+    toggle.button.Text = toggle.name .. " : " .. (toggle.state and "ON" or "OFF")
+    toggle.button.BackgroundColor3 = toggle.state
         and Color3.fromRGB(45, 125, 75)
         or Color3.fromRGB(48, 48, 62)
 end
 
+local function addToggle(name, defaultState, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -4, 0, 39)
+    button.BackgroundColor3 = Color3.fromRGB(48, 48, 62)
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 11
+    button.AutoButtonColor = true
+    button.Parent = Scroll
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 7)
+    corner.Parent = button
+
+    local toggle = {name = name, state = defaultState == true, button = button}
+    table.insert(ToggleRegistry, toggle)
+    setToggleVisual(toggle)
+
+    button.MouseButton1Click:Connect(function()
+        if not Running then return end
+        toggle.state = not toggle.state
+        setToggleVisual(toggle)
+        local ok, err = pcall(callback, toggle.state)
+        if not ok then warn("[Toggle " .. name .. "] " .. tostring(err)) end
+    end)
+
+    if toggle.state then
+        task.spawn(function()
+            local ok, err = pcall(callback, true)
+            if not ok then warn("[Toggle " .. name .. "] " .. tostring(err)) end
+        end)
+    end
+
+    return toggle
+end
+
+local function refreshToggles()
+    for _, toggle in ipairs(ToggleRegistry) do
+        setToggleVisual(toggle)
+    end
+end
+
 --============================================================
--- BUTTON EVENTS
+-- DUNGEON INPUTS
 --============================================================
 
-CombatButton.MouseButton1Click:Connect(function()
-    if not Running then return end
+DungeonNameInput = makeInput("Nama dungeon: S1 / S2 / S3 / E1", "Z3")
+DungeonCountInput = makeInput("Jumlah Dungeon", "30")
 
-    if AutoCombat then
-        stopCombat()
-    else
-        startCombat()
-    end
+--============================================================
+-- ALL AUTOMATION TOGGLES
+--============================================================
 
-    setButton(CombatButton, "AUTO SWING + HIT", AutoCombat)
+addToggle("AUTO SWING + HIT", false, function(state)
+    if state then startCombat() else stopCombat() end
 end)
 
-SkillButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoSkill then
-        stopSkill()
-    else
-        startSkill()
-    end
-
-    setButton(SkillButton, "AUTO SKILL", AutoSkill)
+addToggle("AUTO SKILL", false, function(state)
+    if state then startSkill() else stopSkill() end
 end)
 
-OrbitButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoOrbit then
-        stopOrbit()
-    else
-        startOrbit()
-    end
-
-    setButton(OrbitButton, "ORBIT + HOVER", AutoOrbit)
+addToggle("ORBIT + HOVER", false, function(state)
+    if state then startOrbit() else stopOrbit() end
 end)
 
-TPButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoTP then
-        stopTP()
-    else
-        startTP()
-    end
-
-    setButton(TPButton, "TP BEHIND MOB", AutoTP)
+addToggle("TP BEHIND MOB", false, function(state)
+    if state then startTP() else stopTP() end
 end)
 
-DungeonButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoDungeon then
-        stopDungeon()
-    else
-        startDungeon()
-    end
-
-    setButton(DungeonButton, "AUTO DUNGEON", AutoDungeon)
+addToggle("AUTO DUNGEON", false, function(state)
+    if state then startDungeon() else stopDungeon() end
 end)
 
-EclipseButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoEclipse then
-        stopEclipse()
-    else
-        startEclipse()
-    end
-
-    setButton(EclipseButton, "AUTO ECLIPSE", AutoEclipse)
+addToggle("AUTO ECLIPSE", false, function(state)
+    if state then startEclipse() else stopEclipse() end
 end)
 
-HallowButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoHallow then
-        stopHallow()
-    else
-        startHallow()
-    end
-
-    setButton(HallowButton, "AUTO HALLOW", AutoHallow)
+addToggle("AUTO HALLOW", false, function(state)
+    if state then startHallow() else stopHallow() end
 end)
 
-ClaimButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoClaim then
-        stopClaim()
-    else
-        startClaim()
-    end
-
-    setButton(ClaimButton, "AUTO CLAIM ALL REWARDS", AutoClaim)
+addToggle("AUTO CLAIM ALL REWARDS", false, function(state)
+    if state then startClaim() else stopClaim() end
 end)
 
-TowerButton.MouseButton1Click:Connect(function()
-    if not Running then return end
+addToggle("AUTO TOWER", false, function(state)
+    if state then startTower() else stopTower() end
+end)
 
-    if AutoTower then
-        stopTower()
-    else
-        startTower()
-    end
-
-    setButton(TowerButton, "AUTO TOWER", AutoTower)
+addToggle("AUTO ENCHANT", false, function(state)
+    if state then startEnchant() else stopEnchant() end
 end)
 
 --============================================================
@@ -2635,15 +2627,7 @@ task.spawn(function()
         local mob = getTarget()
         local count = #getAllMobs()
 
-        setButton(CombatButton, "AUTO SWING + HIT", AutoCombat)
-        setButton(SkillButton, "AUTO SKILL", AutoSkill)
-        setButton(OrbitButton, "ORBIT + HOVER", AutoOrbit)
-        setButton(TPButton, "TP BEHIND MOB", AutoTP)
-        setButton(DungeonButton, "AUTO DUNGEON", AutoDungeon)
-        setButton(EclipseButton, "AUTO ECLIPSE", AutoEclipse)
-        setButton(HallowButton, "AUTO HALLOW", AutoHallow)
-        setButton(ClaimButton, "AUTO CLAIM ALL REWARDS", AutoClaim)
-        setButton(TowerButton, "AUTO TOWER", AutoTower)
+        refreshToggles()
 
         if AutoEclipse then
             Status.Text = EclipseStatus .. " | Mobs: " .. count
@@ -2670,33 +2654,88 @@ task.spawn(function()
 end)
 
 --============================================================
--- MINIMIZE / RESTORE
+-- MINIMIZE / RESTORE | FLOATING ICON
 --============================================================
 
-Min.MouseButton1Click:Connect(function()
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Name = "AF_MiniIcon"
+MiniIcon.Size = UDim2.fromOffset(48, 48)
+MiniIcon.Position = Main.Position
+MiniIcon.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+MiniIcon.Text = "AF"
+MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniIcon.TextSize = 15
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.Visible = false
+MiniIcon.Active = true
+MiniIcon.AutoButtonColor = true
+MiniIcon.ZIndex = 100
+MiniIcon.Parent = Gui
+
+local MiniCorner = Instance.new("UICorner")
+MiniCorner.CornerRadius = UDim.new(1, 0)
+MiniCorner.Parent = MiniIcon
+
+local MiniStroke = Instance.new("UIStroke")
+MiniStroke.Color = Color3.fromRGB(125, 75, 220)
+MiniStroke.Thickness = 2
+MiniStroke.Parent = MiniIcon
+
+Min.Activated:Connect(function()
     if not Running then return end
 
-    minimized = not minimized
-
-    Scroll.Visible = not minimized
-    Status.Visible = not minimized
-
-    Main.Size = UDim2.fromOffset(
-        PANEL_WIDTH,
-        minimized and 38 or PANEL_HEIGHT
-    )
-
-    Min.Text = minimized and "+" or "-"
-
-    local viewport = getViewport()
-    local maxX = math.max(0, viewport.X - Main.AbsoluteSize.X)
-    local maxY = math.max(0, viewport.Y - Main.AbsoluteSize.Y)
-
-    Main.Position = UDim2.fromOffset(
-        math.clamp(Main.Position.X.Offset, 0, maxX),
-        math.clamp(Main.Position.Y.Offset, 0, maxY)
-    )
+    Main.Visible = false
+    MiniIcon.Visible = true
+    MiniIcon.Position = Main.Position
 end)
+
+MiniIcon.Activated:Connect(function()
+    if not Running then return end
+
+    MiniIcon.Visible = false
+    Main.Visible = true
+end)
+
+-- Drag floating icon (PC + mobile)
+local miniDragging = false
+local miniDragStart
+local miniStartPosition
+
+MiniIcon.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+        miniDragging = true
+        miniDragStart = input.Position
+        miniStartPosition = MiniIcon.Position
+    end
+end)
+
+track(UserInputService.InputChanged:Connect(function(input)
+    if not miniDragging or not MiniIcon.Visible then return end
+
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+        local delta = input.Position - miniDragStart
+        local viewport = getViewport()
+
+        local maxX = math.max(0, viewport.X - MiniIcon.AbsoluteSize.X)
+        local maxY = math.max(0, viewport.Y - MiniIcon.AbsoluteSize.Y)
+
+        MiniIcon.Position = UDim2.fromOffset(
+            math.clamp(miniStartPosition.X.Offset + delta.X, 0, maxX),
+            math.clamp(miniStartPosition.Y.Offset + delta.Y, 0, maxY)
+        )
+    end
+end))
+
+track(UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        miniDragging = false
+    end
+end))
 
 --============================================================
 -- DRAG | MOUSE + MOBILE TOUCH
@@ -2785,6 +2824,7 @@ function Controller.Cleanup()
     AutoHallow = false
     AutoClaim = false
     AutoTower = false
+    AutoEnchant = false
 
     OrbitRunId += 1
     TPRunId += 1
@@ -2793,6 +2833,7 @@ function Controller.Cleanup()
     HallowRunId += 1
     ClaimRunId += 1
     TowerRunId += 1
+    EnchantRunId += 1
 
     releaseAllKeys()
     cleanupHover()
@@ -2809,7 +2850,9 @@ function Controller.Cleanup()
         pcall(function()
             Gui:Destroy()
         end)
-
+    if MiniIcon then
+    MiniIcon:Destroy()
+end
         Gui = nil
     end
 
@@ -2837,5 +2880,6 @@ print("6. AUTO ECLIPSE")
 print("7. AUTO HALLOW")
 print("8. AUTO CLAIM ALL REWARDS")
 print("9. AUTO TOWER")
+print("10. AUTO ENCHANT")
 print("CLAIM INTERVAL: 300 SECONDS")
 print("==============================================")
