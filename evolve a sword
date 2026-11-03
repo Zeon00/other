@@ -73,8 +73,8 @@ local DungeonConfig = require(
 -- SETTINGS
 --============================================================
 
-local SCAN_RANGE = 100
-local MAX_HEIGHT = 15
+local SCAN_RANGE = 500
+local MAX_HEIGHT = 250
 
 local SWING_DELAY = 0.08
 local HIT_DELAY = 0.08
