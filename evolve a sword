@@ -2240,7 +2240,10 @@ local function startClaim()
 end
 
 --============================================================
--- GUI
+
+--============================================================
+-- RESPONSIVE GUI | PC + MOBILE
+-- DRAG TOUCH + MOUSE | SCROLL | MINIMIZE | DESTROY
 --============================================================
 
 Gui = Instance.new("ScreenGui")
@@ -2258,9 +2261,10 @@ if not guiOK or not Gui.Parent then
     Gui.Parent = Player:WaitForChild("PlayerGui")
 end
 
+local Camera = Workspace.CurrentCamera
 local Main = Instance.new("Frame")
-Main.Size = UDim2.fromOffset(290, 572)
-Main.Position = UDim2.new(0.5, -145, 0.5, -286)
+Main.Name = "Main"
+Main.AnchorPoint = Vector2.new(0, 0)
 Main.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
 Main.BorderSizePixel = 0
 Main.Parent = Gui
@@ -2275,11 +2279,67 @@ stroke.Thickness = 1.5
 stroke.Parent = Main
 
 --============================================================
+-- RESPONSIVE SIZE
+--============================================================
+
+local minimized = false
+local PANEL_WIDTH = 300
+local PANEL_HEIGHT = 520
+
+local function getViewport()
+    Camera = Workspace.CurrentCamera
+
+    if Camera then
+        return Camera.ViewportSize
+    end
+
+    return Vector2.new(800, 600)
+end
+
+local function updatePanelSize()
+    local viewport = getViewport()
+
+    PANEL_WIDTH = math.max(220, math.min(310, viewport.X - 16))
+    PANEL_HEIGHT = math.max(220, math.min(520, viewport.Y - 20))
+
+    Main.Size = UDim2.fromOffset(
+        PANEL_WIDTH,
+        minimized and 38 or PANEL_HEIGHT
+    )
+
+    local maxX = math.max(0, viewport.X - PANEL_WIDTH)
+    local maxY = math.max(0, viewport.Y - Main.AbsoluteSize.Y)
+
+    local pos = Main.Position
+
+    Main.Position = UDim2.fromOffset(
+        math.clamp(pos.X.Offset, 0, maxX),
+        math.clamp(pos.Y.Offset, 0, maxY)
+    )
+
+    if Scroll then
+        Scroll.Size = UDim2.new(
+            1, -12,
+            1, -80
+        )
+    end
+
+    if Status then
+        Status.Position = UDim2.new(0, 12, 1, -27)
+    end
+end
+
+Main.Position = UDim2.fromOffset(
+    math.max(0, (getViewport().X - PANEL_WIDTH) / 2),
+    math.max(0, (getViewport().Y - PANEL_HEIGHT) / 2)
+)
+
+--============================================================
 -- HEADER
 --============================================================
 
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 36)
+Header.Size = UDim2.new(1, 0, 0, 38)
 Header.BackgroundColor3 = Color3.fromRGB(38, 34, 54)
 Header.BorderSizePixel = 0
 Header.Parent = Main
@@ -2289,7 +2349,7 @@ hc.CornerRadius = UDim.new(0, 10)
 hc.Parent = Header
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -90, 1, 0)
+Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Position = UDim2.fromOffset(12, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "ANIME FORGING"
@@ -2300,8 +2360,8 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
 local Min = Instance.new("TextButton")
-Min.Size = UDim2.fromOffset(28, 26)
-Min.Position = UDim2.new(1, -62, 0, 5)
+Min.Size = UDim2.fromOffset(30, 28)
+Min.Position = UDim2.new(1, -66, 0, 5)
 Min.Text = "-"
 Min.TextSize = 18
 Min.Font = Enum.Font.GothamBold
@@ -2310,8 +2370,8 @@ Min.BackgroundColor3 = Color3.fromRGB(65, 65, 85)
 Min.Parent = Header
 
 local Close = Instance.new("TextButton")
-Close.Size = UDim2.fromOffset(28, 26)
-Close.Position = UDim2.new(1, -31, 0, 5)
+Close.Size = UDim2.fromOffset(30, 28)
+Close.Position = UDim2.new(1, -33, 0, 5)
 Close.Text = "X"
 Close.TextSize = 13
 Close.Font = Enum.Font.GothamBold
@@ -2319,20 +2379,55 @@ Close.TextColor3 = Color3.new(1, 1, 1)
 Close.BackgroundColor3 = Color3.fromRGB(150, 45, 55)
 Close.Parent = Header
 
+for _, button in ipairs({Min, Close}) do
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 6)
+    c.Parent = button
+end
+
 --============================================================
--- GUI BUTTON CREATOR
+-- SCROLLING CONTENT
 --============================================================
 
-local function makeButton(label, y)
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Name = "ToggleList"
+Scroll.Position = UDim2.fromOffset(6, 44)
+Scroll.Size = UDim2.new(1, -12, 1, -80)
+Scroll.BackgroundTransparency = 1
+Scroll.BorderSizePixel = 0
+Scroll.ScrollBarThickness = 4
+Scroll.ScrollBarImageColor3 = Color3.fromRGB(125, 85, 205)
+Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+Scroll.Parent = Main
+
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 7)
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ListLayout.Parent = Scroll
+
+local ListPadding = Instance.new("UIPadding")
+ListPadding.PaddingTop = UDim.new(0, 2)
+ListPadding.PaddingBottom = UDim.new(0, 8)
+ListPadding.PaddingLeft = UDim.new(0, 5)
+ListPadding.PaddingRight = UDim.new(0, 5)
+ListPadding.Parent = Scroll
+
+--============================================================
+-- BUTTON CREATOR
+--============================================================
+
+local function makeButton(label)
     local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1, -24, 0, 40)
-    b.Position = UDim2.fromOffset(12, y)
+    b.Size = UDim2.new(1, -4, 0, 39)
     b.BackgroundColor3 = Color3.fromRGB(48, 48, 62)
     b.TextColor3 = Color3.new(1, 1, 1)
     b.Font = Enum.Font.GothamBold
-    b.TextSize = 12
+    b.TextSize = 11
     b.Text = label
-    b.Parent = Main
+    b.AutoButtonColor = true
+    b.Parent = Scroll
 
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, 7)
@@ -2341,10 +2436,9 @@ local function makeButton(label, y)
     return b
 end
 
-local function makeInput(placeholder, value, y)
+local function makeInput(placeholder, value)
     local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, -24, 0, 30)
-    box.Position = UDim2.fromOffset(12, y)
+    box.Size = UDim2.new(1, -4, 0, 34)
     box.BackgroundColor3 = Color3.fromRGB(38, 38, 52)
     box.TextColor3 = Color3.new(1, 1, 1)
     box.PlaceholderColor3 = Color3.fromRGB(150, 150, 165)
@@ -2352,8 +2446,8 @@ local function makeInput(placeholder, value, y)
     box.Text = value
     box.ClearTextOnFocus = false
     box.Font = Enum.Font.GothamBold
-    box.TextSize = 12
-    box.Parent = Main
+    box.TextSize = 11
+    box.Parent = Scroll
 
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, 7)
@@ -2371,28 +2465,34 @@ end
 -- TOGGLES
 --============================================================
 
-local CombatButton = makeButton("AUTO SWING + HIT : OFF", 48)
-local SkillButton = makeButton("AUTO SKILL : OFF", 94)
-local OrbitButton = makeButton("ORBIT + HOVER : OFF", 140)
-local TPButton = makeButton("TP BEHIND MOB : OFF", 186)
+local CombatButton = makeButton("AUTO SWING + HIT : OFF")
+local SkillButton = makeButton("AUTO SKILL : OFF")
+local OrbitButton = makeButton("ORBIT + HOVER : OFF")
+local TPButton = makeButton("TP BEHIND MOB : OFF")
 
 DungeonNameInput = makeInput(
     "Nama dungeon: S1 / S2 / S3 / E1",
-    "S1",
-    232
+    "S1"
 )
 
-DungeonCountInput = makeInput("Jumlah Dungeon", "3", 265)
+DungeonCountInput = makeInput(
+    "Jumlah Dungeon",
+    "3"
+)
 
-local DungeonButton = makeButton("AUTO DUNGEON : OFF", 308)
-local EclipseButton = makeButton("AUTO ECLIPSE : OFF", 354)
-local HallowButton = makeButton("AUTO HALLOW : OFF", 400)
-local ClaimButton = makeButton("AUTO CLAIM ALL REWARDS : OFF", 446)
-local TowerButton = makeButton("AUTO TOWER : OFF", 492)
+local DungeonButton = makeButton("AUTO DUNGEON : OFF")
+local EclipseButton = makeButton("AUTO ECLIPSE : OFF")
+local HallowButton = makeButton("AUTO HALLOW : OFF")
+local ClaimButton = makeButton("AUTO CLAIM ALL REWARDS : OFF")
+local TowerButton = makeButton("AUTO TOWER : OFF")
+
+--============================================================
+-- STATUS
+--============================================================
 
 local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, -24, 0, 24)
-Status.Position = UDim2.fromOffset(12, 538)
+Status.Size = UDim2.new(1, -24, 0, 22)
+Status.Position = UDim2.new(0, 12, 1, -27)
 Status.BackgroundTransparency = 1
 Status.Text = "Mobs: waiting..."
 Status.TextColor3 = Color3.fromRGB(180, 180, 190)
@@ -2547,28 +2647,20 @@ task.spawn(function()
 
         if AutoEclipse then
             Status.Text = EclipseStatus .. " | Mobs: " .. count
-
         elseif AutoHallow then
             Status.Text = HallowStatus .. " | Mobs: " .. count
-
         elseif AutoDungeon then
             Status.Text = DungeonStatus .. " | Mobs: " .. count
-
         elseif AutoTower then
             Status.Text = TowerStatus .. " | Mobs: " .. count
-
         elseif AutoClaim then
             Status.Text = ClaimStatus
-
         elseif mob then
             Status.Text = "Target: " .. mob.Name .. " | Mobs: " .. count
-
         elseif AutoOrbit then
             Status.Text = "Orbit aktif | Mobs: " .. count
-
         elseif AutoTP then
             Status.Text = "TP aktif | Mobs: " .. count
-
         else
             Status.Text = "Mobs in folder: " .. count
         end
@@ -2578,71 +2670,73 @@ task.spawn(function()
 end)
 
 --============================================================
--- MINIMIZE
+-- MINIMIZE / RESTORE
 --============================================================
-
-local minimized = false
 
 Min.MouseButton1Click:Connect(function()
     if not Running then return end
 
     minimized = not minimized
 
-    CombatButton.Visible = not minimized
-    SkillButton.Visible = not minimized
-    OrbitButton.Visible = not minimized
-    TPButton.Visible = not minimized
-
-    DungeonNameInput.Visible = not minimized
-    DungeonCountInput.Visible = not minimized
-
-    DungeonButton.Visible = not minimized
-    EclipseButton.Visible = not minimized
-    HallowButton.Visible = not minimized
-    ClaimButton.Visible = not minimized
-    TowerButton.Visible = not minimized
-
+    Scroll.Visible = not minimized
     Status.Visible = not minimized
 
-    Main.Size = minimized
-        and UDim2.fromOffset(290, 36)
-        or UDim2.fromOffset(290, 572)
+    Main.Size = UDim2.fromOffset(
+        PANEL_WIDTH,
+        minimized and 38 or PANEL_HEIGHT
+    )
 
     Min.Text = minimized and "+" or "-"
+
+    local viewport = getViewport()
+    local maxX = math.max(0, viewport.X - Main.AbsoluteSize.X)
+    local maxY = math.max(0, viewport.Y - Main.AbsoluteSize.Y)
+
+    Main.Position = UDim2.fromOffset(
+        math.clamp(Main.Position.X.Offset, 0, maxX),
+        math.clamp(Main.Position.Y.Offset, 0, maxY)
+    )
 end)
 
 --============================================================
--- DRAG
+-- DRAG | MOUSE + MOBILE TOUCH
 --============================================================
 
 local dragging = false
-local dragStart
-local startPosition
+local dragInput = nil
+local dragStart = nil
+local startPosition = nil
 
 Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
 
         dragging = true
+        dragInput = input
         dragStart = input.Position
         startPosition = Main.Position
     end
 end)
 
 track(UserInputService.InputChanged:Connect(function(input)
-    if dragging
-        and (
-            input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch
-        ) then
+    if not dragging then return end
 
+    local isMouse = input.UserInputType == Enum.UserInputType.MouseMovement
+    local isTouch = input.UserInputType == Enum.UserInputType.Touch
+
+    if isMouse or isTouch then
         local delta = input.Position - dragStart
+        local viewport = getViewport()
 
-        Main.Position = UDim2.new(
-            startPosition.X.Scale,
-            startPosition.X.Offset + delta.X,
-            startPosition.Y.Scale,
-            startPosition.Y.Offset + delta.Y
+        local newX = startPosition.X.Offset + delta.X
+        local newY = startPosition.Y.Offset + delta.Y
+
+        local maxX = math.max(0, viewport.X - Main.AbsoluteSize.X)
+        local maxY = math.max(0, viewport.Y - Main.AbsoluteSize.Y)
+
+        Main.Position = UDim2.fromOffset(
+            math.clamp(newX, 0, maxX),
+            math.clamp(newY, 0, maxY)
         )
     end
 end))
@@ -2652,8 +2746,26 @@ track(UserInputService.InputEnded:Connect(function(input)
         or input.UserInputType == Enum.UserInputType.Touch then
 
         dragging = false
+        dragInput = nil
     end
 end))
+
+--============================================================
+-- VIEWPORT RESIZE
+--============================================================
+
+local function onViewportChanged()
+    updatePanelSize()
+end
+
+if Camera then
+    track(Camera:GetPropertyChangedSignal("ViewportSize"):Connect(
+        onViewportChanged
+    ))
+end
+
+updatePanelSize()
+
 
 --============================================================
 -- CENTRAL CLEANUP
