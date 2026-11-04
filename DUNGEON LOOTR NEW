@@ -1217,18 +1217,21 @@ end
 print("[Dungeon Farm] NPC farm + WallCap patrol + Arsenal HoldArea defense loaded.")
 
 --============================================================
--- 8. HOLLOW REALM | RANDOM ENEMY SPAWN PATROL
+-- --============================================================
+-- 8. HOLLOW REALM | TOTEM PRIORITY + AUTO FARM
 --============================================================
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local player = Players.LocalPlayer
 
 _G.AutoHollowOrbit = _G.AutoHollowOrbit or false
 _G.AutoHollowOrbitRunId = _G.AutoHollowOrbitRunId or 0
 _G.AutoHollowOrbitTarget = nil
+_G.AutoHollowTotemBusy = false
 
 local ORBIT_RADIUS = 37
 local ORBIT_HEIGHT = 12
@@ -1236,13 +1239,10 @@ local ORBIT_SPEED = 2
 
 local ATTACK_INTERVAL = 0.1
 local SKILL_INTERVAL = 0.05
+local TARGET_REFRESH = 0.8
 
-local SPAWN_WAIT_TIME = 2.5
-local PATROL_CHECK_INTERVAL = 0.15
-
---============================================================
--- RUNNING
---============================================================
+local TOTEM_DISTANCE = 5
+local TOTEM_TIMEOUT = 15
 
 local function running(id)
     return _G.AutoHollowOrbit
@@ -1254,18 +1254,14 @@ local function isTyping()
     return UserInputService:GetFocusedTextBox() ~= nil
 end
 
-local function getHollowRun()
+local function getRun()
     return workspace:FindFirstChild("HollowRealmRun")
 end
 
 local function getNPCFolder()
-    local run = getHollowRun()
+    local run = getRun()
     return run and run:FindFirstChild("NPCs")
 end
-
---============================================================
--- PLAYER
---============================================================
 
 local function getRoot()
     local char = player.Character
@@ -1278,10 +1274,6 @@ local function getRoot()
 
     return nil, nil
 end
-
---============================================================
--- MOB DETECTION
---============================================================
 
 local function getPart(mob)
     if not mob or not mob:IsA("Model") then
@@ -1308,6 +1300,16 @@ local function isIgnored(mob)
         return true
     end
 
+    if isCoyote(mob) then
+        return false
+    end
+
+    if mob:GetAttribute("IsSpecialBoss")
+        or mob:GetAttribute("IsLootRoomGuard")
+        or mob:GetAttribute("MimicMob") then
+        return true
+    end
+
     local summons = workspace:FindFirstChild("Summons")
 
     if summons and mob:IsDescendantOf(summons) then
@@ -1326,12 +1328,16 @@ local function getPosition(mob)
         return nil
     end
 
-    local ok, pivot = pcall(function()
-        return mob:GetPivot()
-    end)
+    if isCoyote(mob) then
+        local ok, pivot = pcall(function()
+            return mob:GetPivot()
+        end)
 
-    if ok and pivot then
-        return pivot.Position
+        if ok then
+            return pivot.Position
+        end
+
+        return nil
     end
 
     local part = getPart(mob)
@@ -1343,6 +1349,10 @@ local function isAlive(mob)
         return false
     end
 
+    if isCoyote(mob) then
+        return getPosition(mob) ~= nil
+    end
+
     if not getPart(mob) then
         return false
     end
@@ -1351,6 +1361,266 @@ local function isAlive(mob)
 
     return not hum or hum.Health > 0
 end
+
+--============================================================
+-- SKULL TOTEM DETECTION
+--============================================================
+
+local function getTotem()
+    local run = getRun()
+    if not run then
+        return nil
+    end
+
+    return run:FindFirstChild("Skull_totem", true)
+end
+
+local function getTotemAttachment(totem)
+    if not totem then
+        return nil
+    end
+
+    for _, obj in ipairs(totem:GetDescendants()) do
+        if obj:IsA("Attachment") then
+            return obj
+        end
+    end
+
+    return nil
+end
+
+local function getTotemPrompt(totem)
+    if not totem then
+        return nil
+    end
+
+    for _, obj in ipairs(totem:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") then
+            return obj
+        end
+    end
+
+    return nil
+end
+
+local function getSummonRemote()
+    local packages = ReplicatedStorage:FindFirstChild("Packages")
+    local index = packages and packages:FindFirstChild("_Index")
+    local knit = index and index:FindFirstChild("sleitnick_knit@1.7.0")
+    local knitFolder = knit and knit:FindFirstChild("knit")
+    local services = knitFolder and knitFolder:FindFirstChild("Services")
+    local dungeon = services and services:FindFirstChild("DungeonRunService")
+    local rf = dungeon and dungeon:FindFirstChild("RF")
+
+    return rf and rf:FindFirstChild("ConfirmSpecialBossSummon")
+end
+
+--============================================================
+-- MOVE TO TOTEM + HOLD E
+--============================================================
+
+local function moveToTotem(totem, id)
+    local root = getRoot()
+    local attachment = getTotemAttachment(totem)
+
+    if not root or not attachment then
+        warn("[Hollow Totem] Attachment atau HumanoidRootPart tidak ditemukan")
+        return false
+    end
+
+    local position = attachment.WorldPosition
+
+    -- Berdiri dekat Totem, menghadap ke Attachment.
+    local destination = position + Vector3.new(0, 0, TOTEM_DISTANCE)
+
+    root.CFrame = CFrame.lookAt(destination, position)
+
+    local start = os.clock()
+
+    while running(id)
+        and totem
+        and totem.Parent
+        and os.clock() - start < 5 do
+
+        root = getRoot()
+        attachment = getTotemAttachment(totem)
+
+        if not root or not attachment then
+            break
+        end
+
+        local targetPosition = attachment.WorldPosition
+        local distance = (root.Position - targetPosition).Magnitude
+
+        if distance <= 9 then
+            break
+        end
+
+        root.CFrame = CFrame.lookAt(
+            targetPosition + Vector3.new(0, 0, TOTEM_DISTANCE),
+            targetPosition
+        )
+
+        task.wait(0.1)
+    end
+
+    return running(id) and totem.Parent ~= nil
+end
+
+local function holdTotemE(totem, id)
+    local prompt = getTotemPrompt(totem)
+
+    local holdDuration = 1
+
+    if prompt then
+        holdDuration = math.max(prompt.HoldDuration, 0.5)
+
+        -- Cara executor jika fireproximityprompt tersedia.
+        if typeof(fireproximityprompt) == "function" then
+            local ok = pcall(function()
+                fireproximityprompt(prompt, holdDuration)
+            end)
+
+            if ok then
+                task.wait(0.25)
+                return true
+            end
+        end
+    end
+
+    -- Fallback: tahan tombol E secara manual.
+    if not running(id) then
+        return false
+    end
+
+    local ok = pcall(function()
+        VirtualInputManager:SendKeyEvent(
+            true,
+            Enum.KeyCode.E,
+            false,
+            game
+        )
+
+        task.wait(holdDuration)
+
+        VirtualInputManager:SendKeyEvent(
+            false,
+            Enum.KeyCode.E,
+            false,
+            game
+        )
+    end)
+
+    return ok
+end
+
+--============================================================
+-- TOTEM PROCESSOR
+--============================================================
+
+local handledTotems = {}
+
+local function processTotem(totem, id)
+    if not running(id) or not totem or not totem.Parent then
+        return
+    end
+
+    if handledTotems[totem] then
+        return
+    end
+
+    -- Totem langsung mengambil prioritas dari farming.
+    _G.AutoHollowTotemBusy = true
+    _G.AutoHollowOrbitTarget = nil
+
+    print("[Hollow Totem] Totem ditemukan! Menghampiri...")
+
+    local moved = moveToTotem(totem, id)
+
+    if not moved or not running(id) then
+        _G.AutoHollowTotemBusy = false
+        return
+    end
+
+    task.wait(0.2)
+
+    if not totem.Parent then
+        handledTotems[totem] = true
+        _G.AutoHollowTotemBusy = false
+        return
+    end
+
+    print("[Hollow Totem] Menekan E...")
+
+    holdTotemE(totem, id)
+
+    if not running(id) then
+        _G.AutoHollowTotemBusy = false
+        return
+    end
+
+    task.wait(0.2)
+
+    -- Tandai sebelum memanggil remote agar tidak terpanggil berulang.
+    handledTotems[totem] = true
+
+    local remote = getSummonRemote()
+
+    if remote then
+        print("[Hollow Totem] Memanggil Special Boss...")
+
+        local ok, result = pcall(function()
+            return remote:InvokeServer(true)
+        end)
+
+        if not ok then
+            warn("[Hollow Totem] Remote error:", result)
+        else
+            print("[Hollow Totem] Remote dipanggil")
+        end
+    else
+        warn("[Hollow Totem] ConfirmSpecialBossSummon tidak ditemukan")
+    end
+
+    -- Tunggu Totem hilang, tetapi jangan memanggil remote lagi
+    -- untuk instance Totem yang sama.
+    local start = os.clock()
+
+    while running(id)
+        and totem.Parent
+        and os.clock() - start < TOTEM_TIMEOUT do
+
+        task.wait(0.2)
+    end
+
+    print("[Hollow Totem] Selesai, kembali farming")
+
+    _G.AutoHollowTotemBusy = false
+end
+
+-- Worker Totem berjalan terus meskipun mob masih hidup.
+local function totemLoop(id)
+    while running(id) do
+        local totem = getTotem()
+
+        if totem and not handledTotems[totem] then
+            local ok, err = pcall(processTotem, totem, id)
+
+            if not ok then
+                warn("[Hollow Totem Error]", err)
+                _G.AutoHollowTotemBusy = false
+            end
+        end
+
+        task.wait(0.15)
+    end
+
+    _G.AutoHollowTotemBusy = false
+end
+
+--============================================================
+-- TARGET MOB
+--============================================================
 
 local function getTarget()
     local folder = getNPCFolder()
@@ -1367,12 +1637,11 @@ local function getTarget()
     local bestDist = math.huge
 
     for _, mob in ipairs(folder:GetChildren()) do
-        if isAlive(mob) then
+        if mob.Name ~= "Coyote" and isAlive(mob) then
             local pos = getPosition(mob)
 
             if pos then
-                local room =
-                    tonumber(mob:GetAttribute("RoomIndex"))
+                local room = tonumber(mob:GetAttribute("RoomIndex"))
                     or math.huge
 
                 local dist = playerPos
@@ -1390,96 +1659,18 @@ local function getTarget()
         end
     end
 
-    return best
-end
-
---============================================================
--- HOLLOW ROOM SPAWN POINTS
---
--- Room 1-8  : GetChildren()[4]
--- Room 9-10 : Boss_Spawn
---============================================================
-
-local function getSpawnCFrame(spawnObject)
-    if not spawnObject then
-        return nil
+    if best then
+        return best
     end
 
-    if spawnObject:IsA("BasePart") then
-        return spawnObject.CFrame
-    end
+    local coyote = folder:FindFirstChild("Coyote")
 
-    if spawnObject:IsA("Model") then
-        return spawnObject:GetPivot()
+    if coyote and isAlive(coyote) then
+        return coyote
     end
 
     return nil
 end
-
-local function getHollowSpawnPoints()
-    local run = getHollowRun()
-
-    if not run then
-        return {}
-    end
-
-    local points = {}
-
-    for roomIndex = 1, 10 do
-        local room = run:FindFirstChild("Room_" .. roomIndex)
-
-        if room then
-            local spawnObject
-
-            if roomIndex <= 8 then
-                -- Enemy spawn adalah Part urutan ke-4
-                spawnObject = room:GetChildren()[4]
-            else
-                -- Room 9 dan 10 menggunakan Boss_Spawn
-                spawnObject = room:FindFirstChild(
-                    "Boss_Spawn",
-                    true
-                )
-            end
-
-            local spawnCFrame = getSpawnCFrame(spawnObject)
-
-            if spawnCFrame then
-                table.insert(points, {
-                    Room = roomIndex,
-                    CFrame = spawnCFrame
-                })
-            end
-        end
-    end
-
-    return points
-end
-
---============================================================
--- RANDOMIZE PATROL
---============================================================
-
-local function shufflePoints(points)
-    local shuffled = {}
-
-    for i, point in ipairs(points) do
-        shuffled[i] = point
-    end
-
-    for i = #shuffled, 2, -1 do
-        local j = math.random(1, i)
-
-        shuffled[i], shuffled[j] =
-            shuffled[j], shuffled[i]
-    end
-
-    return shuffled
-end
-
---============================================================
--- ATTACK REMOTES
---============================================================
 
 local function getAttackDirection(mob)
     local root = getRoot()
@@ -1512,7 +1703,7 @@ local function getRemotes()
 end
 
 --============================================================
--- AUTO ATTACK + SKILL
+-- ATTACK + SKILL
 --============================================================
 
 local function attackLoop(id)
@@ -1520,8 +1711,8 @@ local function attackLoop(id)
     local lastSkill = 0
 
     while running(id) do
-        if isTyping() then
-            task.wait(0.2)
+        if isTyping() or _G.AutoHollowTotemBusy then
+            task.wait(0.1)
             continue
         end
 
@@ -1548,11 +1739,10 @@ local function attackLoop(id)
                 and os.clock() - lastSkill >= SKILL_INTERVAL then
 
                 for i = 1, 4 do
-                    if not running(id) then
-                        break
-                    end
-
-                    if isTyping() or not isAlive(mob) then
+                    if not running(id)
+                        or _G.AutoHollowTotemBusy
+                        or isTyping()
+                        or not isAlive(mob) then
                         break
                     end
 
@@ -1572,7 +1762,7 @@ local function attackLoop(id)
 end
 
 --============================================================
--- ORBIT TARGET
+-- ORBIT MOB
 --============================================================
 
 local function orbitTarget(mob, id)
@@ -1619,11 +1809,12 @@ local function orbitTarget(mob, id)
     end
 
     while running(id)
+        and not _G.AutoHollowTotemBusy
         and _G.AutoHollowOrbitTarget == mob
         and isAlive(mob) do
 
         if isTyping() then
-            task.wait(0.2)
+            task.wait(0.1)
             continue
         end
 
@@ -1637,13 +1828,8 @@ local function orbitTarget(mob, id)
 
         angle += ORBIT_SPEED * 0.05
 
-        local radius = ORBIT_RADIUS
-        local height = ORBIT_HEIGHT
-
-        if isCoyote(mob) then
-            radius = 35
-            height = 12
-        end
+        local radius = isCoyote(mob) and 35 or ORBIT_RADIUS
+        local height = isCoyote(mob) and 12 or ORBIT_HEIGHT
 
         local destination = Vector3.new(
             pos.X + math.cos(angle) * radius,
@@ -1658,105 +1844,62 @@ local function orbitTarget(mob, id)
 end
 
 --============================================================
--- PATROL SPAWNS WHEN NPC EMPTY
---============================================================
-
-local function patrolUntilMob(id)
-    local points = getHollowSpawnPoints()
-
-    if #points == 0 then
-        task.wait(1)
-        return nil
-    end
-
-    -- Acak urutan setiap satu putaran patrol
-    points = shufflePoints(points)
-
-    for _, point in ipairs(points) do
-        if not running(id) then
-            return nil
-        end
-
-        -- Jangan TP kalau mob sudah muncul
-        local mob = getTarget()
-
-        if mob then
-            return mob
-        end
-
-        local root = getRoot()
-
-        if root then
-            -- TP ke titik spawn
-            root.CFrame = point.CFrame * CFrame.new(0, 4, 0)
-
-            print(
-                "[Hollow Patrol] Room:",
-                point.Room
-            )
-        end
-
-        -- Tunggu mob spawn sambil terus scan NPC
-        local waitUntil = os.clock() + SPAWN_WAIT_TIME
-
-        while running(id) and os.clock() < waitUntil do
-            mob = getTarget()
-
-            if mob then
-                print(
-                    "[Hollow Patrol] Mob muncul:",
-                    mob.Name
-                )
-
-                return mob
-            end
-
-            task.wait(PATROL_CHECK_INTERVAL)
-        end
-    end
-
-    return nil
-end
-
---============================================================
--- MAIN FARM LOOP
+-- FARM LOOP
 --============================================================
 
 local function farmLoop(id)
+    local lastRefresh = 0
     local target = nil
 
     while running(id) do
-        if not target or not isAlive(target) then
-            target = getTarget()
 
+        -- Totem sedang diproses: jangan pilih target atau orbit.
+        if _G.AutoHollowTotemBusy then
+            _G.AutoHollowOrbitTarget = nil
+            target = nil
+            task.wait(0.1)
+            continue
+        end
+
+        -- Cek Totem juga di farm loop sebagai pengaman.
+        local totem = getTotem()
+
+        if totem and not handledTotems[totem] then
+            _G.AutoHollowOrbitTarget = nil
+            target = nil
+            task.wait(0.1)
+            continue
+        end
+
+        if os.clock() - lastRefresh >= TARGET_REFRESH
+            or not target
+            or not isAlive(target) then
+
+            target = getTarget()
             _G.AutoHollowOrbitTarget = target
+            lastRefresh = os.clock()
+
+            if target then
+                print("[Hollow Orbit] Target:", target.Name)
+            end
         end
 
         if target and isAlive(target) then
-            print("[Hollow Farm] Target:", target.Name)
-
-            _G.AutoHollowOrbitTarget = target
-
-            -- Farm target sampai mati/hilang
             orbitTarget(target, id)
 
             if not running(id) then
                 break
             end
 
-            _G.AutoHollowOrbitTarget = nil
-            target = nil
-
-            task.wait(0.1)
-        else
-            _G.AutoHollowOrbitTarget = nil
-
-            -- NPC kosong: patrol semua titik spawn
-            target = patrolUntilMob(id)
-
-            if target then
-                _G.AutoHollowOrbitTarget = target
+            if _G.AutoHollowTotemBusy then
+                target = nil
+                _G.AutoHollowOrbitTarget = nil
+            else
+                _G.AutoHollowOrbitTarget = nil
+                target = nil
             end
+        else
+            task.wait(0.15)
         end
     end
 
@@ -1764,7 +1907,7 @@ local function farmLoop(id)
 end
 
 --============================================================
--- GUI TOGGLE
+-- TOGGLE
 --============================================================
 
 addToggle("Auto Farm Hollow Realm", false, function(state)
@@ -1774,13 +1917,25 @@ addToggle("Auto Farm Hollow Realm", false, function(state)
     local id = _G.AutoHollowOrbitRunId
 
     _G.AutoHollowOrbitTarget = nil
+    _G.AutoHollowTotemBusy = false
 
     if not state then
         print("[Hollow Orbit] Stopped")
         return
     end
 
+    -- Reset catatan Totem untuk sesi baru.
+    handledTotems = {}
+
     print("[Hollow Orbit] Started")
+
+    task.spawn(function()
+        local ok, err = pcall(totemLoop, id)
+
+        if not ok then
+            warn("[Hollow Totem Worker Error]", err)
+        end
+    end)
 
     task.spawn(function()
         local ok, err = pcall(farmLoop, id)
@@ -1799,6 +1954,9 @@ addToggle("Auto Farm Hollow Realm", false, function(state)
     end)
 end)
 
+--============================================================
+-- END HOLLOW REALM
+--============================================================
 -- B. EVENT and Party Game
 setActiveCategory("B")
 
