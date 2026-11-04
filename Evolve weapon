@@ -169,18 +169,18 @@ local REBIRTH_RETRY_INTERVAL = 1.5
 
 local Running = true
 
-local AutoCombat = false
+local AutoCombat = true
 local AutoSkill = false
 local AutoOrbit = false
 local AutoTP = false
 local AutoDungeon = false
 local AutoEclipse = false
 local AutoHallow = false
-local AutoClaim = false
+local AutoClaim = true
 local AutoTower = false
 local AutoEnchant = false
 local AutoCandyShop = false
-local AutoRebirth = false
+local AutoRebirth = true
 -- Fase boss: cegah respawn handler mengirim player balik ke POS 1 saat boss belum mati.
 local DungeonBossPhase = false
 local HallowBossPhase = false
@@ -190,6 +190,9 @@ local EclipseTarget = nil
 local EclipsePriority = false
 local ResumeDungeonAfterEclipse = false
 local ResumeHallowAfterEclipse = false
+-- Mode tetap ON di GUI; worker lama dihentikan sementara selama Eclipse.
+local DungeonPausedForEclipse = false
+local HallowPausedForEclipse = false
 -- TRUE hanya ketika player sudah masuk ke Eclipse dungeon; cegah LeaveDungeon berulang.
 local EclipseDungeonEntered = false
 local SwingIndex = 0
@@ -1228,17 +1231,29 @@ end
 local function stopDungeon()
     DungeonBossPhase = false
     AutoDungeon = false
+    DungeonPausedForEclipse = false
+    ResumeDungeonAfterEclipse = false
     DungeonRunId += 1
     DungeonStatus = "Dungeon: OFF"
 end
 
-local function startDungeon()
-    if not Running or AutoDungeon then return end
+local function startDungeon(resumeFromEclipse)
+    if not Running then return end
 
-if AutoHallow or EclipsePriority or AutoTower then
-    DungeonStatus = "Eclipse sedang prioritas / mode lain aktif!"
-    return
-end
+    if resumeFromEclipse then
+        -- Resume hanya jika toggle masih ON dan sebelumnya memang dijeda Eclipse.
+        if not AutoDungeon or not DungeonPausedForEclipse then return end
+        DungeonPausedForEclipse = false
+    else
+        if AutoDungeon then return end
+
+        if AutoHallow or EclipsePriority or AutoTower then
+            DungeonStatus = "Eclipse sedang prioritas / mode lain aktif!"
+            return
+        end
+
+        AutoDungeon = true
+    end
 
     local name = DungeonNameInput and DungeonNameInput.Text or "Z3"
     name = string.upper(string.match(name, "^%s*(.-)%s*$") or "")
@@ -1419,6 +1434,26 @@ end
 
 local startHallow
 local stopHallow
+
+local function pauseDungeonForEclipse()
+    if AutoDungeon and not DungeonPausedForEclipse then
+        ResumeDungeonAfterEclipse = true
+        DungeonPausedForEclipse = true
+        DungeonBossPhase = false
+        DungeonRunId += 1 -- hentikan worker, tetapi JANGAN matikan toggle AutoDungeon
+        DungeonStatus = "Dungeon: PAUSED sementara | Eclipse priority"
+    end
+end
+
+local function pauseHallowForEclipse()
+    if AutoHallow and not HallowPausedForEclipse then
+        ResumeHallowAfterEclipse = true
+        HallowPausedForEclipse = true
+        HallowBossPhase = false
+        HallowRunId += 1 -- hentikan worker, tetapi JANGAN matikan toggle AutoHallow
+        HallowStatus = "Hallow: PAUSED sementara | Eclipse priority"
+    end
+end
 
 --============================================================
 -- AUTO ECLIPSE | DIRECT TP UMBRA
@@ -1620,21 +1655,18 @@ local function startEclipse()
         EclipsePriority = true
     end
 
-    -- Eclipse mengambil prioritas atas Hallow yang sedang aktif.
-    -- Simpan statusnya, lalu hentikan worker Hallow agar tidak bentrok.
-    if config and AutoHallow then
-        ResumeHallowAfterEclipse = true
-        status("ECLIPSE TERSEDIA! Menghentikan Auto Hallow sementara...")
-        stopHallow()
+    -- Pause worker Hallow tanpa mematikan toggle Auto Hallow.
+    if config and AutoHallow and not HallowPausedForEclipse then
+        status("ECLIPSE TERSEDIA! Pause Auto Hallow sementara (toggle tetap ON)...")
+        pauseHallowForEclipse()
         task.wait(0.25)
     end
 
-    -- Auto Dungeon juga dihentikan sementara jika Eclipse tersedia.
-    if config and AutoDungeon then
-        ResumeDungeonAfterEclipse = true
-        EclipsePriority = true
-        status("ECLIPSE TERSEDIA! Menghentikan Auto Dungeon...")
-        stopDungeon()
+    -- Pause worker Dungeon tanpa mematikan toggle Auto Dungeon.
+    if config and AutoDungeon and not DungeonPausedForEclipse then
+        status("ECLIPSE TERSEDIA! Pause Auto Dungeon sementara (toggle tetap ON)...")
+        pauseDungeonForEclipse()
+        task.wait(0.25)
     end
 
     if Player:GetAttribute("Dungeon") then
@@ -1644,12 +1676,9 @@ local function startEclipse()
         if config and not EclipseDungeonEntered then
             status("ECLIPSE TERSEDIA! Keluar dari dungeon aktif...")
 
-            ResumeDungeonAfterEclipse = ResumeDungeonAfterEclipse or AutoDungeon
             EclipsePriority = true
-
-            if AutoDungeon then
-                stopDungeon()
-            end
+            if AutoDungeon then pauseDungeonForEclipse() end
+            if AutoHallow then pauseHallowForEclipse() end
 
             -- Leave dungeon menggunakan remote
             status("Memanggil LeaveDungeon untuk prioritas Eclipse...")
@@ -1663,15 +1692,15 @@ local function startEclipse()
 
                 EclipsePriority = false
 
-                if ResumeDungeonAfterEclipse and alive() then
-                    ResumeDungeonAfterEclipse = false
+                if ResumeDungeonAfterEclipse and AutoDungeon and DungeonPausedForEclipse and alive() then
                     task.wait(1)
-                    startDungeon()
-                elseif ResumeHallowAfterEclipse and alive() then
-                    ResumeHallowAfterEclipse = false
+                    startDungeon(true)
+                elseif ResumeHallowAfterEclipse and AutoHallow and HallowPausedForEclipse and alive() then
                     task.wait(1)
-                    startHallow()
+                    startHallow(true)
                 end
+                ResumeDungeonAfterEclipse = false
+                ResumeHallowAfterEclipse = false
 
                 task.wait(3)
                 continue
@@ -1694,15 +1723,15 @@ local function startEclipse()
 
                 EclipsePriority = false
 
-                if ResumeDungeonAfterEclipse then
-                    ResumeDungeonAfterEclipse = false
+                if ResumeDungeonAfterEclipse and AutoDungeon and DungeonPausedForEclipse then
                     task.wait(1)
-                    startDungeon()
-                elseif ResumeHallowAfterEclipse then
-                    ResumeHallowAfterEclipse = false
+                    startDungeon(true)
+                elseif ResumeHallowAfterEclipse and AutoHallow and HallowPausedForEclipse then
                     task.wait(1)
-                    startHallow()
+                    startHallow(true)
                 end
+                ResumeDungeonAfterEclipse = false
+                ResumeHallowAfterEclipse = false
 
                 task.wait(3)
                 continue
@@ -1903,18 +1932,17 @@ EclipsePriority = false
 
 -- Dungeon dilanjutkan lebih dulu jika keduanya sempat aktif.
 -- Jika tidak, Hallow otomatis dimulai lagi dari posisi 1.
-if ResumeDungeonAfterEclipse and alive() and not AutoDungeon then
-    ResumeDungeonAfterEclipse = false
-    status("Cooldown Eclipse! Melanjutkan Auto Dungeon...")
+if ResumeDungeonAfterEclipse and AutoDungeon and DungeonPausedForEclipse and alive() then
+    status("Cooldown Eclipse! Melanjutkan Auto Dungeon dari POS 1...")
     task.wait(1)
-    startDungeon()
-elseif ResumeHallowAfterEclipse and alive() and not AutoHallow then
-    ResumeHallowAfterEclipse = false
-    status("Cooldown Eclipse! Melanjutkan Auto Hallow dari posisi 1...")
+    startDungeon(true)
+elseif ResumeHallowAfterEclipse and AutoHallow and HallowPausedForEclipse and alive() then
+    status("Cooldown Eclipse! Melanjutkan Auto Hallow dari POS 1...")
     task.wait(1)
-    startHallow()
+    startHallow(true)
 end
 
+-- Jika toggle dimatikan user selama Eclipse, jangan hidupkan lagi.
 ResumeDungeonAfterEclipse = false
 ResumeHallowAfterEclipse = false
 
@@ -2017,19 +2045,30 @@ end
 stopHallow = function()
     HallowBossPhase = false
     AutoHallow = false
+    HallowPausedForEclipse = false
+    ResumeHallowAfterEclipse = false
     HallowRunId += 1
     HallowStatus = "Hallow: OFF"
 end
 
-startHallow = function()
-    if not Running or AutoHallow then return end
+startHallow = function(resumeFromEclipse)
+    if not Running then return end
 
-    if AutoDungeon or AutoEclipse or AutoTower then
-        HallowStatus = "Matikan mode dungeon lain dahulu!"
-        return
+    if resumeFromEclipse then
+        -- Resume hanya jika toggle masih ON dan sebelumnya dijeda Eclipse.
+        if not AutoHallow or not HallowPausedForEclipse then return end
+        HallowPausedForEclipse = false
+    else
+        if AutoHallow then return end
+
+        if AutoDungeon or AutoEclipse or AutoTower then
+            HallowStatus = "Matikan mode dungeon lain dahulu!"
+            return
+        end
+
+        AutoHallow = true
     end
 
-    AutoHallow = true
     HallowRunId += 1
 
     local id = HallowRunId
@@ -3051,6 +3090,10 @@ function Controller.Cleanup()
     AutoDungeon = false
     AutoEclipse = false
     AutoHallow = false
+    DungeonPausedForEclipse = false
+    HallowPausedForEclipse = false
+    ResumeDungeonAfterEclipse = false
+    ResumeHallowAfterEclipse = false
     AutoClaim = false
     AutoTower = false
     DungeonBossPhase = false
