@@ -1,5 +1,5 @@
 --[[
-  Standalone Multi-Automation GUI
+  Standalone Multi-Automation GUI — FPS/CONFIG OPTIMIZED COPY
   No Ash-Libs dependency. Execute this file in your Roblox client environment.
   Includes a draggable dark/purple UI, minimize/restore, close/cleanup, and toggles.
   Note: game-specific remotes/controllers can change; each feature is guarded with pcall.
@@ -17,8 +17,8 @@ local HttpService = game:GetService("HttpService")
 
 -- Persistent toggle config (requires executor file functions such as readfile/writefile).
 local CONFIG_FILE = "StandaloneAutomationConfig.json"
-local savedConfig = {autoSave = false, toggles = {}}
-local autoSaveConfig = false
+local savedConfig = {autoSave = true, toggles = {}}
+local autoSaveConfig = true
 local features = {}
 local function loadConfig()
     local ok, raw = pcall(function()
@@ -72,39 +72,56 @@ end
 -- PERSISTENT GUI PARENT
 --========================================================
 
-local CoreGui = game:GetService("CoreGui")
+local CoreGui
+pcall(function()
+    CoreGui = game:GetService("CoreGui")
+end)
 
 local function getPersistentGuiParent()
     if type(gethui) == "function" then
         local ok, result = pcall(gethui)
-
         if ok and result then
             return result
         end
     end
-
-    return CoreGui
+    return CoreGui or PlayerGui
 end
 
 local guiParent = getPersistentGuiParent()
 
--- Remove previous GUI from the persistent parent.
-pcall(function()
-    local old = guiParent:FindFirstChild("StandaloneAutomationGUI")
-    if old then
-        old:Destroy()
-    end
-end)
+-- Remove any old copy from every available GUI container.
+local guiContainers = {}
+if guiParent then table.insert(guiContainers, guiParent) end
+if CoreGui and CoreGui ~= guiParent then table.insert(guiContainers, CoreGui) end
+if PlayerGui and PlayerGui ~= guiParent and PlayerGui ~= CoreGui then
+    table.insert(guiContainers, PlayerGui)
+end
+for _, container in ipairs(guiContainers) do
+    pcall(function()
+        local old = container:FindFirstChild("StandaloneAutomationGUI")
+        if old then old:Destroy() end
+    end)
+end
 
--- Create the GUI outside PlayerGui so it can survive
--- PlayerGui being recreated during character respawn.
+-- Create GUI; prefer executor UI, then CoreGui, then PlayerGui.
 local gui = Instance.new("ScreenGui")
 gui.Name = "StandaloneAutomationGUI"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.DisplayOrder = 999999
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-gui.Parent = guiParent
+
+local parented = false
+for _, container in ipairs(guiContainers) do
+    local ok = pcall(function() gui.Parent = container end)
+    if ok and gui.Parent then
+        parented = true
+        break
+    end
+end
+if not parented then
+    error("[Standalone GUI] Tidak bisa memasang ScreenGui ke gethui/CoreGui/PlayerGui.")
+end
 
 
 local function new(class, props, parent)
@@ -157,7 +174,7 @@ new("UICorner", {CornerRadius = UDim.new(0,7)}, close)
 local status = new("TextLabel", {
     BackgroundTransparency = 1, Position = UDim2.fromOffset(13, 47),
     Size = UDim2.new(1,-26,0,22), Font = Enum.Font.Gotham,
-    Text = "Ready • all features OFF", TextColor3 = Color3.fromRGB(190,175,220),
+    Text = "Ready • Auto-start features enabled", TextColor3 = Color3.fromRGB(190,175,220),
     TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left
 }, main)
 
@@ -277,6 +294,7 @@ local function setStatus(msg)
     if status and status.Parent then status.Text = msg end
 end
 
+local toggleInitQueue = 0
 local function addToggle(label, default, callback)
     toggleCount += 1
     local targetScroll = tabPages[activeCategory]
@@ -303,15 +321,21 @@ local function addToggle(label, default, callback)
         BackgroundColor3 = Color3.fromRGB(245,245,250), BorderSizePixel = 0
     }, button)
     new("UICorner", {CornerRadius = UDim.new(1,0)}, knob)
-    -- Safe startup: every toggle starts OFF on each execution.
-    -- Old saved ON values must not automatically start farm loops.
-    local initialState = false
+    local savedState = savedConfig and savedConfig.toggles and savedConfig.toggles[label]
+    local initialState
+    if type(savedState) == "boolean" then
+        initialState = savedState
+    else
+        initialState = (default == true)
+    end
     local enabled = false
+    local userInteracted = false
     local function render()
         button.BackgroundColor3 = enabled and Color3.fromRGB(126,78,220) or Color3.fromRGB(70,68,82)
         knob.Position = enabled and UDim2.new(1,-19,0,3) or UDim2.fromOffset(3,3)
     end
     local function change(state)
+        if enabled == state and features[label] == state then return end
         enabled = state
         render()
         features[label] = state
@@ -325,8 +349,15 @@ local function addToggle(label, default, callback)
         if not ok then warn(label .. ": " .. tostring(err)) end
         setStatus(label .. (state and " • ON" or " • OFF"))
     end
-    button.Activated:Connect(function() change(not enabled) end)
-    task.defer(function() if alive() then change(initialState) end end)
+    button.Activated:Connect(function()
+        userInteracted = true
+        change(not enabled)
+    end)
+    toggleInitQueue += 1
+    local initDelay = math.min((toggleInitQueue - 1) * 0.08, 6)
+    task.delay(initDelay, function()
+        if alive() and not userInteracted then change(initialState) end
+    end)
     return change
 end
 
@@ -446,7 +477,7 @@ local function orbitLoop(label, enabledGlobal, runGlobal, config)
                 local pos = part.Position + Vector3.new(math.cos(angle)*(config.radius or 15), config.height or 7, math.sin(angle)*(config.radius or 15))
                 hrp.CFrame = CFrame.lookAt(pos, part.Position)
             end
-            task.wait(0.03)
+            task.wait(0.06)
         end
     end)
 end
@@ -455,9 +486,9 @@ end
 setActiveCategory("A")
 
 --========================================================
--- AUTO FARM ALL 5 MAPS
--- NPC ORBIT + ZONE ROOM PATROL + ANTI-STUCK
--- Replace the five old farm scripts with this one script.
+-- DUNGEON FARM: SNOW-STYLE NPC FARM + WALLCAP ROTATION + ARSENAL HOLD SUPPORT
+-- Applies the same behavior to Bandits Den, Goblins, Knights,
+-- Catacombs, Snow, Demon (Underworld Gate), Mage, and Arsenal.
 --========================================================
 
 local Players = game:GetService("Players")
@@ -465,43 +496,25 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-local LocalPlayer = Players.LocalPlayer
+local player = Players.LocalPlayer
 
---========================================================
--- REMOTES
---========================================================
+local ORBIT_RADIUS = 5
+local ORBIT_HEIGHT = 5
+local ORBIT_SPEED = 2
+local ATTACK_INTERVAL = 0.1
+local SKILL_INTERVAL = 0.05
+local EMPTY_CONFIRM_TIME = 1.5
 
-local function getAttackRemote()
-    local playerFolder = ReplicatedStorage:FindFirstChild("Player")
-    if not playerFolder then return nil end
+local Inputs = ReplicatedStorage
+    :WaitForChild("Player")
+    :WaitForChild("Remotes")
+    :WaitForChild("Inputs")
 
-    local remotes = playerFolder:FindFirstChild("Remotes")
-    if not remotes then return nil end
+local AttackRemote = Inputs:WaitForChild("Attack")
+local SkillRemote = Inputs:WaitForChild("Skill")
 
-    local inputs = remotes:FindFirstChild("Inputs")
-    if not inputs then return nil end
-
-    return inputs:FindFirstChild("Attack")
-end
-
-local function getSkillRemote()
-    local playerFolder = ReplicatedStorage:FindFirstChild("Player")
-    if not playerFolder then return nil end
-
-    local remotes = playerFolder:FindFirstChild("Remotes")
-    if not remotes then return nil end
-
-    local inputs = remotes:FindFirstChild("Inputs")
-    if not inputs then return nil end
-
-    return inputs:FindFirstChild("Skill")
-end
-
---========================================================
--- FARM CONFIGURATION
---========================================================
-
-local FarmConfigs = {
+-- Each dungeon uses its own generated map and NPC folder.
+local DungeonFarmConfigs = {
     {
         name = "Bandits Den",
         toggle = "Auto Farm Bandits Den",
@@ -509,14 +522,8 @@ local FarmConfigs = {
         runKey = "BanditsDenRunId",
         pattern = "^Generated_Bandits Den_%x+$",
         folders = {"NPCs"},
-        radius = 12,
-        height = 12,
-        orbitSpeed = 2,
-        switchDelay = 5,
-        tpDistance = 22,
-        tpCooldown = 1,
+        default = true,
     },
-
     {
         name = "Goblins",
         toggle = "Auto Farm Goblins",
@@ -524,14 +531,8 @@ local FarmConfigs = {
         runKey = "GoblinsRunId",
         pattern = "^Generated_Goblins_%x+$",
         folders = {"NPCs"},
-        radius = 12,
-        height = 12,
-        orbitSpeed = 2,
-        switchDelay = 5,
-        tpDistance = 22,
-        tpCooldown = 1,
+        default = true,
     },
-
     {
         name = "Knights",
         toggle = "Auto Farm Knights",
@@ -539,14 +540,8 @@ local FarmConfigs = {
         runKey = "KnightsRunId",
         pattern = "^Generated_Knights_%x+$",
         folders = {"NPCs"},
-        radius = 12,
-        height = 12,
-        orbitSpeed = 2,
-        switchDelay = 5,
-        tpDistance = 22,
-        tpCooldown = 1,
+        default = true,
     },
-
     {
         name = "Catacombs",
         toggle = "Auto Farm Catacombs",
@@ -554,14 +549,8 @@ local FarmConfigs = {
         runKey = "CatacombsRunId",
         pattern = "^Generated_Catacombs_%x+$",
         folders = {"NPCs"},
-        radius = 12,
-        height = 12,
-        orbitSpeed = 2,
-        switchDelay = 5,
-        tpDistance = 22,
-        tpCooldown = 1,
+        default = true,
     },
-
     {
         name = "Snow",
         toggle = "Auto Farm Snow",
@@ -569,85 +558,59 @@ local FarmConfigs = {
         runKey = "AutoFarmSnowRunId",
         pattern = "^Generated_Snow_%x+$",
         folders = {"NPCs", "Snow_NPC"},
-        radius = 12,
-        height = 12,
-        orbitSpeed = 1.2,
-        switchDelay = 5,
-        tpDistance = 35,
-        tpCooldown = 2,
-        priorityLast = {"valkskar"},
+        default = true,
+    },
+    {
+        name = "Demon",
+        toggle = "Auto Farm Underworld Gate",
+        stateKey = "AutoFarmDemon",
+        runKey = "AutoFarmDemonRunId",
+        pattern = "^Generated_Demon_%x+$",
+        folders = {"NPCs"},
+        default = false,
+    },
+    {
+        name = "Mage",
+        toggle = "Auto Farm City of Mages",
+        stateKey = "AutoFarmMage",
+        runKey = "AutoFarmMageRunId",
+        pattern = "^Generated_Mage_%x+$",
+        folders = {"NPCs"},
+        default = false,
+    },
+    {
+        -- Dungeon 9: workspace child named Arsenal_<suffix>, all mobs
+        -- are collected from its NPCs folder (including nested models).
+        name = "Arsenal",
+        toggle = "Auto Farm Arsenal",
+        stateKey = "AutoFarmArsenal",
+        runKey = "AutoFarmArsenalRunId",
+        pattern = "^Arsenal_.+$",
+        folders = {"NPCs"},
+        default = false,
     },
 }
 
---========================================================
--- CHARACTER HELPERS
---========================================================
-
-local function getCharacter()
-    return LocalPlayer.Character
-end
-
-local function getHumanoid(character)
-    if not character then return nil end
-    return character:FindFirstChildOfClass("Humanoid")
-end
-
-local function getRoot(character)
-    if not character then return nil end
-
-    local root = character:FindFirstChild("HumanoidRootPart")
-    if root and root:IsA("BasePart") then
-        return root
+local function getFarmRoot()
+    local character = player.Character
+    if not character then
+        return nil
     end
 
-    if character.PrimaryPart
-        and character.PrimaryPart:IsA("BasePart") then
-        return character.PrimaryPart
-    end
-
-    local torso = character:FindFirstChild("Torso")
-    if torso and torso:IsA("BasePart") then
-        return torso
-    end
-
-    local upperTorso = character:FindFirstChild("UpperTorso")
-    if upperTorso and upperTorso:IsA("BasePart") then
-        return upperTorso
-    end
-
-    return nil
+    return character:FindFirstChild("HumanoidRootPart")
+        or character.PrimaryPart
 end
 
-local function characterReady()
-    local character = getCharacter()
-    local humanoid = getHumanoid(character)
-    local root = getRoot(character)
-
-    return character, humanoid, root
-end
-
---========================================================
--- NPC HELPERS
---========================================================
-
-local function getModelRoot(model)
+local function getFarmMobPart(model)
     if not model or not model:IsA("Model") then
         return nil
     end
 
-    local root = model:FindFirstChild("HumanoidRootPart")
-    if root and root:IsA("BasePart") then
-        return root
-    end
-
-    if model.PrimaryPart
-        and model.PrimaryPart:IsA("BasePart") then
-        return model.PrimaryPart
-    end
-
     for _, name in ipairs({
+        "HumanoidRootPart",
         "UpperTorso",
         "Torso",
+        "LowerTorso",
         "Head",
     }) do
         local part = model:FindFirstChild(name, true)
@@ -656,1496 +619,606 @@ local function getModelRoot(model)
         end
     end
 
-    for _, descendant in ipairs(model:GetDescendants()) do
-        if descendant:IsA("BasePart") then
-            return descendant
-        end
-    end
-
-    return nil
-end
-
-local function getAliveHumanoid(model)
-    if not model or not model:IsA("Model") then
-        return nil
-    end
-
-    local humanoid = model:FindFirstChildOfClass("Humanoid")
-    if humanoid and humanoid.Health > 0 then
-        return humanoid
-    end
-
-    return nil
-end
-
-local function isAliveNPC(model)
-    if not model or not model.Parent then
-        return false
-    end
-
-    if not getAliveHumanoid(model) then
-        return false
-    end
-
-    return getModelRoot(model) ~= nil
-end
-
---========================================================
--- MAP SCANNING
---========================================================
-
-local function matchesMapName(name, pattern)
-    return string.match(name, pattern) ~= nil
-end
-
-local function getNPCFolder(map, config)
-    for _, folderName in ipairs(config.folders) do
-        local folder = map:FindFirstChild(folderName, true)
-
-        if folder then
-            return folder
-        end
-    end
-
-    return nil
-end
-
-local function getNPCs(map, config)
-    local results = {}
-    local folder = getNPCFolder(map, config)
-
-    if not folder then
-        return results
-    end
-
-    for _, descendant in ipairs(folder:GetDescendants()) do
-        if descendant:IsA("Model")
-            and isAliveNPC(descendant) then
-            table.insert(results, descendant)
-        end
-    end
-
-    return results
-end
-
-local function findActiveMap(config)
-    local bestMap = nil
-    local bestCount = -1
-
-    for _, child in ipairs(Workspace:GetChildren()) do
-        if matchesMapName(child.Name, config.pattern) then
-            local count = #getNPCs(child, config)
-
-            if count > bestCount then
-                bestCount = count
-                bestMap = child
+    for _, obj in ipairs(model:GetDescendants()) do
+        if obj:IsA("Accessory") then
+            local handle = obj:FindFirstChild("Handle")
+            if handle and handle:IsA("BasePart") then
+                return handle
             end
         end
     end
 
-    return bestMap
+    for _, obj in ipairs(model:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            return obj
+        end
+    end
+
+    return nil
 end
 
---========================================================
--- ZONE HELPERS
--- Zone is the center point used to navigate each room.
--- Supports a BasePart, Model, or Folder named "Zone".
---========================================================
+local function farmMobIsDead(model)
+    if not model or not model:IsA("Model") or not model.Parent then
+        return true
+    end
 
-local function isInsideLocked(zone, map)
-    local current = zone
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+        or model:FindFirstChildWhichIsA("Humanoid", true)
 
-    while current and current ~= map do
-        if string.lower(current.Name) == "locked" then
-            return true
+    if humanoid then
+        return humanoid.Health <= 0
+    end
+
+    local state = model:GetAttribute("State")
+    if state == nil then
+        local stateValue = model:FindFirstChild("State", true)
+        if stateValue and (
+            stateValue:IsA("StringValue")
+            or stateValue:IsA("BoolValue")
+        ) then
+            state = stateValue.Value
         end
+    end
 
-        current = current.Parent
+    if type(state) == "string" then
+        local normalized = string.lower(state)
+        return normalized == "dead"
+            or normalized == "died"
+            or normalized == "destroyed"
+            or normalized == "despawned"
+    elseif type(state) == "boolean" then
+        return state == true
+    end
+
+    local health = model:GetAttribute("Health")
+    if type(health) == "number" then
+        return health <= 0
     end
 
     return false
 end
 
-local function getZonePosition(zone)
-    if not zone or not zone.Parent then
+local function getDungeonMap(config)
+    for _, object in ipairs(Workspace:GetChildren()) do
+        if object.Name:match(config.pattern) then
+            -- The map is valid even while its NPC folders are still streaming in.
+            for _, folderName in ipairs(config.folders) do
+                if object:FindFirstChild(folderName) then
+                    return object, object:FindFirstChild(folderName)
+                end
+            end
+            return object, nil
+        end
+    end
+    return nil, nil
+end
+
+-- Arsenal's Hold objective exposes a BasePart directly under its map.
+-- The objective data defines a 14-stud hold radius; keep the player near
+-- the part's center instead of orbiting mobs and leaving the marked area.
+local function getArsenalHoldArea(map, config)
+    if not map or config.stateKey ~= "AutoFarmArsenal" then
         return nil
     end
 
-    if zone:IsA("BasePart") then
-        return zone.Position
+    local area = map:FindFirstChild("HoldArea")
+    if area and area:IsA("BasePart") then
+        return area
     end
-
-    if zone:IsA("Model") then
-        local success, pivot = pcall(function()
-            return zone:GetBoundingBox()
-        end)
-
-        if success and pivot then
-            return pivot.Position
-        end
-    end
-
-    -- Folder or other container: find the center of its parts.
-    local minX, minY, minZ = math.huge, math.huge, math.huge
-    local maxX, maxY, maxZ = -math.huge, -math.huge, -math.huge
-    local foundPart = false
-
-    local descendants = zone:GetDescendants()
-
-    if zone:IsA("BasePart") then
-        descendants = {zone}
-    end
-
-    for _, item in ipairs(descendants) do
-        if item:IsA("BasePart") then
-            local position = item.Position
-            local half = item.Size / 2
-
-            minX = math.min(minX, position.X - half.X)
-            minY = math.min(minY, position.Y - half.Y)
-            minZ = math.min(minZ, position.Z - half.Z)
-
-            maxX = math.max(maxX, position.X + half.X)
-            maxY = math.max(maxY, position.Y + half.Y)
-            maxZ = math.max(maxZ, position.Z + half.Z)
-
-            foundPart = true
-        end
-    end
-
-    if not foundPart then
-        return nil
-    end
-
-    return Vector3.new(
-        (minX + maxX) / 2,
-        (minY + maxY) / 2,
-        (minZ + maxZ) / 2
-    )
+    return nil
 end
 
-local function getRoomNumber(instance, map)
-    local current = instance
-
-    while current and current ~= map do
-        local number = current.Name:match("[Rr]oom[_ ]?(%d+)")
-
-        if number then
-            return tonumber(number)
-        end
-
-        current = current.Parent
-    end
-
-    return math.huge
-end
-
-local function getZoneList(map)
-    local zones = {}
+-- Scan the entire configured NPC folder. There is deliberately no Zone/Room
+-- filter, so a living NPC anywhere inside that dungeon's NPC folder is valid.
+local function getDungeonNPCState(map, config)
+    local targets = {}
+    local seen = {}
 
     if not map then
-        return zones
+        return targets, false
     end
 
-    for _, descendant in ipairs(map:GetDescendants()) do
-        if descendant.Name == "Zone"
-            and not isInsideLocked(descendant, map) then
+    -- Scan every configured NPC folder (Snow may have NPCs and Snow_NPC).
+    for _, folderName in ipairs(config.folders) do
+        local folder = map:FindFirstChild(folderName)
 
-            local position = getZonePosition(descendant)
+        if folder then
+            for _, model in ipairs(folder:GetDescendants()) do
+                if model:IsA("Model") and model.Parent
+                    and not farmMobIsDead(model) then
 
-            if position then
-                table.insert(zones, {
-                    instance = descendant,
-                    position = position,
-                    roomNumber = getRoomNumber(descendant, map),
-                    name = descendant:GetFullName(),
+                    -- Do not count nested Models inside another NPC model separately.
+                    local ancestor = model.Parent
+                    local nested = false
+
+                    while ancestor and ancestor ~= folder do
+                        if ancestor:IsA("Model") then
+                            nested = true
+                            break
+                        end
+                        ancestor = ancestor.Parent
+                    end
+
+                    if not nested and not seen[model] then
+                        local part = getFarmMobPart(model)
+                        if part and part.Parent and part:IsDescendantOf(folder) then
+                            seen[model] = true
+                            table.insert(targets, {
+                                model = model,
+                                part = part,
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return targets, #targets > 0
+end
+
+-- Shared dungeon layout:
+-- WallCap_Side_Room_N -> Connectors -> Entry
+-- Room_N -> Zone
+local function getObjectPivot(obj)
+    if not obj then return nil end
+
+    if obj:IsA("Model") or obj:IsA("BasePart") then
+        local ok, cf = pcall(function()
+            return obj:GetPivot()
+        end)
+        if ok then return cf end
+    end
+
+    local part = obj:FindFirstChildWhichIsA("BasePart", true)
+    return part and part.CFrame or nil
+end
+
+local function getDungeonWallcapEntries(map)
+    local entries = {}
+    if not map then return entries end
+
+    for _, wallcap in ipairs(map:GetDescendants()) do
+        local number = wallcap.Name:match("^WallCap_Side_Room_(%d+)$")
+        if number then
+            local connectors = wallcap:FindFirstChild("Connectors")
+            local entry = connectors and connectors:FindFirstChild("Entry")
+            local pivot = getObjectPivot(entry)
+
+            if entry and pivot then
+                table.insert(entries, {
+                    number = tonumber(number),
+                    wallcap = wallcap,
+                    entry = entry,
+                    pivotCFrame = pivot,
                 })
             end
         end
     end
 
-    table.sort(zones, function(a, b)
-        if a.roomNumber ~= b.roomNumber then
-            return a.roomNumber < b.roomNumber
-        end
-
-        return a.name < b.name
+    table.sort(entries, function(a, b)
+        return a.number < b.number
     end)
 
-    return zones
+    local unique, seen = {}, {}
+    for _, item in ipairs(entries) do
+        if not seen[item.number] then
+            seen[item.number] = true
+            table.insert(unique, item)
+        end
+    end
+    return unique
 end
 
---========================================================
--- TARGET SELECTION
---========================================================
+local function getDungeonRoomZones(map)
+    local rooms = {}
+    if not map then return rooms end
 
-local function hasPriorityLast(name, config)
-    if not config.priorityLast then
-        return false
-    end
+    for _, room in ipairs(map:GetDescendants()) do
+        local number = room.Name:match("^Room_(%d+)$")
+        if number then
+            local zone = room:FindFirstChild("Zone")
+            local pivot = getObjectPivot(zone)
 
-    local lowerName = string.lower(name)
-
-    for _, word in ipairs(config.priorityLast) do
-        if string.find(lowerName, word, 1, true) then
-            return true
+            if zone and pivot then
+                table.insert(rooms, {
+                    number = tonumber(number),
+                    room = room,
+                    zone = zone,
+                    pivotCFrame = pivot,
+                })
+            end
         end
     end
 
+    table.sort(rooms, function(a, b)
+        return a.number < b.number
+    end)
+
+    local unique, seen = {}, {}
+    for _, item in ipairs(rooms) do
+        if not seen[item.number] then
+            seen[item.number] = true
+            table.insert(unique, item)
+        end
+    end
+    return unique
+end
+
+local function isDungeonBoss(model)
+    if not model then return false end
+    local name = string.lower(model.Name)
+    return name:find("boss", 1, true) ~= nil
+        or name:find("valksar", 1, true) ~= nil
+        or name:find("jefe", 1, true) ~= nil
+end
+
+local function teleportDungeonTo(character, root, pivot)
+    if not pivot then return false end
+
+    local destination = CFrame.new(pivot.Position + Vector3.new(0, 4, 0))
+    if character then
+        local ok = pcall(function()
+            character:PivotTo(destination)
+        end)
+        return ok
+    end
+
+    if root then
+        root.CFrame = destination
+        return true
+    end
     return false
 end
 
-local function sortTargets(npcs, config, origin)
-    table.sort(npcs, function(a, b)
-        local aLast = hasPriorityLast(a.Name, config)
-        local bLast = hasPriorityLast(b.Name, config)
-
-        if aLast ~= bLast then
-            return not aLast
-        end
-
-        local aRoot = getModelRoot(a)
-        local bRoot = getModelRoot(b)
-
-        if not aRoot then return false end
-        if not bRoot then return true end
-
-        return (aRoot.Position - origin).Magnitude
-            < (bRoot.Position - origin).Magnitude
-    end)
-
-    return npcs
-end
-
-local function chooseTarget(npcs, currentTarget, config, origin)
-    if #npcs == 0 then
-        return nil
-    end
-
-    sortTargets(npcs, config, origin)
-
-    -- Keep the existing target if it remains alive and available.
-    if currentTarget and isAliveNPC(currentTarget) then
-        for _, npc in ipairs(npcs) do
-            if npc == currentTarget then
-                return currentTarget
-            end
-        end
-    end
-
-    return npcs[1]
-end
-
---========================================================
--- COMBAT
--- No per-frame task.spawn calls; prevents stacked attacks.
---========================================================
-
-local function attackOnce(target)
-    if not isAliveNPC(target) then
-        return
-    end
-
-    local character, humanoid, root = characterReady()
-    if not character or not humanoid or humanoid.Health <= 0
-        or not root then
-        return
-    end
-
-    local targetRoot = getModelRoot(target)
-    if not targetRoot then
-        return
-    end
-
-    local difference = targetRoot.Position - root.Position
-    local direction = Vector3.new(difference.X, 0, difference.Z)
-
-    if direction.Magnitude > 0.001 then
-        direction = direction.Unit
-    else
-        direction = Vector3.new(0, 0, -1)
-    end
-
-    local attackRemote = getAttackRemote()
-    if attackRemote and attackRemote:IsA("RemoteEvent") then
-        pcall(function()
-            attackRemote:FireServer(direction)
-        end)
-    end
-
-    -- Re-check target and character before each skill.
-    local skillRemote = getSkillRemote()
-
-    if skillRemote and skillRemote:IsA("RemoteEvent") then
-        for skillIndex = 1, 4 do
-            if not isAliveNPC(target) then
-                break
-            end
-
-            local currentCharacter, currentHumanoid, currentRoot =
-                characterReady()
-
-            if not currentCharacter or not currentHumanoid
-                or currentHumanoid.Health <= 0 or not currentRoot then
-                break
-            end
-
-            pcall(function()
-                skillRemote:FireServer(skillIndex, "tap")
-            end)
-        end
-    end
-end
-
---========================================================
--- FARM ENGINE
---========================================================
-
-local function startFarm(config, enabled)
+local function startDungeonSnowStyleFarm(config, enabled)
     _G[config.stateKey] = enabled
-
     _G[config.runKey] = (_G[config.runKey] or 0) + 1
     local runId = _G[config.runKey]
 
+    local function running()
+        return _G[config.stateKey] == true
+            and _G[config.runKey] == runId
+    end
+
     if not enabled then
-        print("[" .. config.name .. "] Farm stopped.")
+        print("[" .. config.name .. " Farm] OFF")
         return
     end
 
-    print("[" .. config.name .. "] Farm started.")
+    print("[" .. config.name .. " Farm] ON")
 
     task.spawn(function()
-        local currentMap = nil
-        local currentTarget = nil
-        local targetChosenAt = 0
-        local lastTeleportAt = 0
-        local lastScanAt = 0
-        local lastAttackAt = 0
+        local currentTarget
+        local lockedY
+        local angle = 0
+        local lastAttack = 0
+        local lastSkill = 0
+        local skillNumber = 1
 
-        local orbitAngle = 0
-        local zoneIndex = 1
-        local visitedZones = {}
-        local zoneList = {}
-        local currentZone = nil
-        local lastZoneScanAt = 0
-
-        local function running()
-            return _G[config.stateKey] == true
-                and _G[config.runKey] == runId
-        end
-
-        local function refreshMap()
-            local foundMap = findActiveMap(config)
-
-            if foundMap ~= currentMap then
-                currentMap = foundMap
-                currentTarget = nil
-                currentZone = nil
-                zoneIndex = 1
-                visitedZones = {}
-                zoneList = {}
-
-                if currentMap then
-                    print("[" .. config.name .. "] Map: "
-                        .. currentMap.Name)
-                end
-            end
-        end
-
-        local function refreshZones()
-            if not currentMap then
-                zoneList = {}
-                return
-            end
-
-            zoneList = getZoneList(currentMap)
-
-            -- If a Zone was removed or rebuilt, discard stale visits.
-            local valid = {}
-
-            for _, zoneInfo in ipairs(zoneList) do
-                valid[zoneInfo.instance] = true
-            end
-
-            for zoneInstance in pairs(visitedZones) do
-                if not valid[zoneInstance] then
-                    visitedZones[zoneInstance] = nil
-                end
-            end
-
-            if currentZone
-                and (not currentZone.instance
-                or not currentZone.instance.Parent) then
-                currentZone = nil
-            end
-        end
-
-        local function selectNextZone()
-            if #zoneList == 0 then
-                currentZone = nil
-                return
-            end
-
-            local unvisited = {}
-
-            for _, zoneInfo in ipairs(zoneList) do
-                if not visitedZones[zoneInfo.instance] then
-                    table.insert(unvisited, zoneInfo)
-                end
-            end
-
-            -- Revisit all rooms when every valid Zone was visited.
-            if #unvisited == 0 then
-                visitedZones = {}
-
-                for _, zoneInfo in ipairs(zoneList) do
-                    table.insert(unvisited, zoneInfo)
-                end
-            end
-
-            if #unvisited == 0 then
-                currentZone = nil
-                return
-            end
-
-            currentZone = unvisited[1]
-        end
+        -- Patrol: WallCap Entry -> Room_N.Zone ascending -> next WallCap Entry.
+        local wallcapIndex = 1
+        local roomIndex = 1
+        local patrolPhase = "Entry"
+        local visitedMap
+        local emptySince
 
         while running() do
-            local dt = RunService.Heartbeat:Wait()
-
-            if not running() then
-                break
+            local map = getDungeonMap(config)
+            if not map then
+                task.wait(0.5)
+                continue
             end
 
-            local character, humanoid, root = characterReady()
-
-            if not character or not humanoid
-                or humanoid.Health <= 0 or not root then
+            if visitedMap ~= map then
+                visitedMap = map
                 currentTarget = nil
-                currentZone = nil
+                lockedY = nil
+                wallcapIndex = 1
+                roomIndex = 1
+                patrolPhase = "Entry"
+                emptySince = nil
+            end
+
+            local root = getFarmRoot()
+            if not root then
                 task.wait(0.25)
                 continue
             end
 
-            -- Periodically reacquire the generated map.
-            if os.clock() - lastScanAt >= 1 then
-                lastScanAt = os.clock()
-                refreshMap()
+            local wallcaps = getDungeonWallcapEntries(map)
+            local rooms = getDungeonRoomZones(map)
+            local targets = getDungeonNPCState(map, config)
+            local holdArea = getArsenalHoldArea(map, config)
+            local holdPosition = holdArea and (holdArea.Position + Vector3.new(0, 3, 0)) or nil
+
+            -- Keep a valid target, but drop ordinary mobs that move beyond 250 studs.
+            local targetValid = false
+            if currentTarget and currentTarget.model
+                and currentTarget.model.Parent
+                and not farmMobIsDead(currentTarget.model) then
+                local part = getFarmMobPart(currentTarget.model)
+                if part and part.Parent then
+                    local distance = (part.Position - root.Position).Magnitude
+                    targetValid = isDungeonBoss(currentTarget.model) or distance <= 250
+                    currentTarget.part = part
+                end
             end
 
-            if not currentMap or not currentMap.Parent then
-                currentMap = nil
-                currentTarget = nil
-                currentZone = nil
-                task.wait(0.25)
-                continue
+            -- A newly spawned boss immediately replaces a normal-mob target.
+            local priorityBoss
+            for _, data in ipairs(targets) do
+                if data.part and data.part.Parent
+                    and not farmMobIsDead(data.model)
+                    and isDungeonBoss(data.model) then
+                    priorityBoss = data
+                    break
+                end
             end
 
-            -- Refresh zones, including newly created rooms.
-            if os.clock() - lastZoneScanAt >= 2 then
-                lastZoneScanAt = os.clock()
-                refreshZones()
-            end
-
-            local npcs = getNPCs(currentMap, config)
-
-            if #npcs > 0 then
-                --================================================
-                -- NPC MODE: ORBIT + COMBAT
-                --================================================
-
-                if not currentTarget or not isAliveNPC(currentTarget)
-                    or os.clock() - targetChosenAt >= config.switchDelay then
-
-                    local newTarget = chooseTarget(
-                        npcs,
-                        nil,
-                        config,
-                        root.Position
+            if priorityBoss and (not currentTarget
+                or currentTarget.model ~= priorityBoss.model) then
+                currentTarget = priorityBoss
+                local bossPart = getFarmMobPart(priorityBoss.model)
+                if bossPart then
+                    angle = math.atan2(
+                        root.Position.Z - bossPart.Position.Z,
+                        root.Position.X - bossPart.Position.X
                     )
+                    lockedY = bossPart.Position.Y + ORBIT_HEIGHT
+                end
+                targetValid = true
+            end
 
-                    if newTarget then
-                        currentTarget = newTarget
-                        targetChosenAt = os.clock()
+            if not targetValid then
+                currentTarget = nil
+                lockedY = nil
+
+                local nearestNormalDistance = 250
+                local selectedBoss
+
+                for _, data in ipairs(targets) do
+                    if data.part and data.part.Parent
+                        and not farmMobIsDead(data.model) then
+
+                        if isDungeonBoss(data.model) then
+                            if not selectedBoss then
+                                selectedBoss = data
+                            end
+                        else
+                            local distance = (data.part.Position - root.Position).Magnitude
+                            if distance <= nearestNormalDistance then
+                                nearestNormalDistance = distance
+                                currentTarget = data
+                            end
+                        end
                     end
                 end
 
-                currentZone = nil
+                if selectedBoss then
+                    currentTarget = selectedBoss
+                end
 
-                if currentTarget and isAliveNPC(currentTarget) then
-                    local targetRoot = getModelRoot(currentTarget)
+                if currentTarget then
+                    local part = getFarmMobPart(currentTarget.model)
+                    currentTarget.part = part
+                    angle = math.atan2(
+                        root.Position.Z - part.Position.Z,
+                        root.Position.X - part.Position.X
+                    )
+                    lockedY = part.Position.Y + ORBIT_HEIGHT
+                end
+            end
 
-                    if targetRoot then
-                        local targetPosition = targetRoot.Position
-                        local distance = (root.Position - targetPosition).Magnitude
+            if currentTarget then
+                emptySince = nil
+                local part = getFarmMobPart(currentTarget.model)
 
-                        -- If far away, close the gap with a cooldown.
-                        if distance > config.tpDistance
-                            and os.clock() - lastTeleportAt
-                                >= config.tpCooldown then
-
-                            lastTeleportAt = os.clock()
-
-                            local offset = Vector3.new(
-                                config.radius,
-                                config.height,
-                                0
-                            )
-
-                            local destination = targetPosition + offset
-
-                            pcall(function()
-                                root.CFrame = CFrame.lookAt(
-                                    destination,
-                                    targetPosition
-                                )
-                            end)
-
-                            orbitAngle = 0
-                        else
-                            orbitAngle += config.orbitSpeed * math.max(dt, 0)
-
-                            local offset = Vector3.new(
-                                math.cos(orbitAngle) * config.radius,
-                                config.height,
-                                math.sin(orbitAngle) * config.radius
-                            )
-
-                            local destination = targetPosition + offset
-
-                            pcall(function()
-                                root.CFrame = CFrame.lookAt(
-                                    destination,
-                                    targetPosition
-                                )
-                            end)
-                        end
-
-                        -- Single controlled combat loop; no stacked tasks.
-                        if os.clock() - lastAttackAt >= 0.15 then
-                            lastAttackAt = os.clock()
-                            attackOnce(currentTarget)
-                        end
-                    else
-                        currentTarget = nil
-                    end
-                else
+                if not part or not part.Parent
+                    or farmMobIsDead(currentTarget.model) then
                     currentTarget = nil
+                    lockedY = nil
+                    task.wait(0.05)
+                    continue
+                end
+
+                currentTarget.part = part
+                local dt = RunService.Heartbeat:Wait()
+                if not running() then break end
+
+                root = getFarmRoot()
+                if root and part.Parent and currentTarget.model.Parent
+                    and not farmMobIsDead(currentTarget.model) then
+
+                    local targetPosition = part.Position
+                    if holdArea and holdArea.Parent and holdPosition then
+                        -- HOLD OBJECTIVE: stay at the marked area's center. Do not
+                        -- orbit the enemy, because that can pull the player outside
+                        -- the 14-stud objective radius.
+                        local lookAt = Vector3.new(targetPosition.X, holdPosition.Y, targetPosition.Z)
+                        root.CFrame = CFrame.lookAt(holdPosition, lookAt)
+                    else
+                        angle += ORBIT_SPEED * math.clamp(dt, 0, 0.05)
+                        local orbitY = lockedY or (targetPosition.Y + ORBIT_HEIGHT)
+                        local destination = Vector3.new(
+                            targetPosition.X + math.cos(angle) * ORBIT_RADIUS,
+                            orbitY,
+                            targetPosition.Z + math.sin(angle) * ORBIT_RADIUS
+                        )
+
+                        root.CFrame = CFrame.lookAt(
+                            destination,
+                            Vector3.new(targetPosition.X, orbitY, targetPosition.Z)
+                        )
+                    end
+
+                    local now = os.clock()
+                    if now - lastAttack >= ATTACK_INTERVAL then
+                        pcall(function()
+                            AttackRemote:FireServer(targetPosition)
+                        end)
+                        lastAttack = now
+                    end
+
+                    if now - lastSkill >= SKILL_INTERVAL then
+                        pcall(function()
+                            SkillRemote:FireServer(skillNumber, "tap", targetPosition, nil)
+                        end)
+                        skillNumber = (skillNumber % 4) + 1
+                        lastSkill = now
+                    end
                 end
 
             else
-                --================================================
-                -- NO NPC MODE: PATROL THE CENTER OF EACH ZONE
-                --================================================
-
-                currentTarget = nil
-
-                if not currentZone then
-                    selectNextZone()
+                -- During Arsenal Hold, stay inside HoldArea even when no NPC is alive.
+                -- Do not run WallCap/Room patrol while the hold marker is present.
+                if holdArea and holdArea.Parent and holdPosition then
+                    root.CFrame = CFrame.new(holdPosition)
+                    currentTarget = nil
+                    lockedY = nil
+                    emptySince = nil
+                    task.wait(0.1)
+                    continue
                 end
 
-                if currentZone then
-                    -- Re-fetch the center in case the Zone moved.
-                    local zonePosition = getZonePosition(
-                        currentZone.instance
-                    )
+                -- No boss and no ordinary NPC within 250 studs: patrol this map.
+                currentTarget = nil
+                lockedY = nil
+                emptySince = emptySince or os.clock()
 
-                    if not zonePosition then
-                        currentZone = nil
-                    else
-                        currentZone.position = zonePosition
+                if os.clock() - emptySince < EMPTY_CONFIRM_TIME then
+                    task.wait(0.1)
+                    continue
+                end
 
-                        local destination = zonePosition
-                            + Vector3.new(0, 3, 0)
-
-                        local difference = destination - root.Position
-                        local distance = difference.Magnitude
-
-                        if distance <= 4 then
-                            visitedZones[currentZone.instance] = true
-                            print("[" .. config.name
-                                .. "] Visited Zone: "
-                                .. currentZone.instance:GetFullName())
-
-                            currentZone = nil
-                        elseif distance > 0.05 then
-                            -- Move steadily toward the room's Zone center.
-                            -- Avoid Humanoid:MoveTo and avoid endless
-                            -- repeated teleports to the same room.
-                            local moveSpeed = 40
-                            local step = math.min(
-                                distance,
-                                moveSpeed * math.max(dt, 0)
-                            )
-
-                            local nextPosition = root.Position
-                                + difference.Unit * step
-
-                            pcall(function()
-                                root.CFrame = CFrame.lookAt(
-                                    nextPosition,
-                                    destination
-                                )
-                            end)
+                -- Re-scan before moving; NPCs may have spawned since the first scan.
+                local refreshedTargets = getDungeonNPCState(map, config)
+                local hasNearbyOrBoss = false
+                for _, data in ipairs(refreshedTargets) do
+                    if data.part and data.part.Parent and not farmMobIsDead(data.model) then
+                        local distance = (data.part.Position - root.Position).Magnitude
+                        if isDungeonBoss(data.model) or distance <= 250 then
+                            hasNearbyOrBoss = true
+                            break
                         end
                     end
-                else
-                    -- No valid Zone found; rescan instead of getting stuck.
-                    if os.clock() - lastZoneScanAt >= 0.5 then
-                        lastZoneScanAt = os.clock()
-                        refreshZones()
+                end
+                if hasNearbyOrBoss then
+                    emptySince = nil
+                    continue
+                end
+
+                if #wallcaps == 0 and #rooms == 0 then
+                    task.wait(0.5)
+                    continue
+                end
+
+                local character = player.Character
+                local moved = false
+
+                if patrolPhase == "Entry" then
+                    if #wallcaps > 0 then
+                        wallcapIndex = math.clamp(wallcapIndex, 1, #wallcaps)
+                        local activeWallcap = wallcaps[wallcapIndex]
+
+                        if activeWallcap and activeWallcap.wallcap.Parent
+                            and activeWallcap.entry and activeWallcap.entry.Parent then
+                            moved = teleportDungeonTo(
+                                character, root, getObjectPivot(activeWallcap.entry)
+                            )
+                        end
+                    elseif #rooms > 0 then
+                        patrolPhase = "Zone"
+                    end
+
+                    if moved then
+                        patrolPhase = "Zone"
+                    elseif #wallcaps > 0 then
+                        task.wait(0.15)
+                        continue
+                    end
+
+                elseif patrolPhase == "Zone" then
+                    if #rooms > 0 then
+                        roomIndex = math.clamp(roomIndex, 1, #rooms)
+                        local activeRoom = rooms[roomIndex]
+
+                        if activeRoom and activeRoom.room.Parent
+                            and activeRoom.zone and activeRoom.zone.Parent then
+                            moved = teleportDungeonTo(
+                                character, root, getObjectPivot(activeRoom.zone)
+                            )
+                        end
+
+                        -- Advance after every Zone, even if its pivot streamed late.
+                        roomIndex += 1
+                        if roomIndex > #rooms then
+                            roomIndex = 1
+                            patrolPhase = "NextEntry"
+                        end
+                    else
+                        patrolPhase = "NextEntry"
                     end
                 end
+
+                if patrolPhase == "NextEntry" then
+                    if #wallcaps > 0 then
+                        wallcapIndex += 1
+                        if wallcapIndex > #wallcaps then
+                            wallcapIndex = 1
+                        end
+                        patrolPhase = "Entry"
+                    else
+                        patrolPhase = "Zone"
+                    end
+                end
+
+                -- Give the visited waypoint one second to spawn NPCs.
+                -- Scan every 0.1s so the farm interrupts the patrol quickly.
+                local checkUntil = os.clock() + 1.0
+                while running() and os.clock() < checkUntil do
+                    task.wait(0.1)
+                    local spawnedTargets = getDungeonNPCState(map, config)
+                    local foundTarget = false
+
+                    for _, data in ipairs(spawnedTargets) do
+                        if data.part and data.part.Parent
+                            and not farmMobIsDead(data.model) then
+                            local distance = (data.part.Position - root.Position).Magnitude
+                            if isDungeonBoss(data.model) or distance <= 250 then
+                                foundTarget = true
+                                break
+                            end
+                        end
+                    end
+
+                    if foundTarget then
+                        emptySince = nil
+                        break
+                    end
+                end
+                emptySince = nil
             end
         end
-
-        print("[" .. config.name .. "] Loop ended.")
     end)
 end
 
---========================================================
--- REGISTER ALL TOGGLES
--- Requires your existing addToggle(text, default, callback).
---========================================================
-
-for _, config in ipairs(FarmConfigs) do
+-- Keep the existing dungeon toggles and add Arsenal as dungeon 9.
+for _, config in ipairs(DungeonFarmConfigs) do
     local cfg = config
-
     _G[cfg.stateKey] = _G[cfg.stateKey] or false
     _G[cfg.runKey] = _G[cfg.runKey] or 0
 
-    addToggle(cfg.toggle, false, function(state)
-        startFarm(cfg, state)
+    addToggle(cfg.toggle, cfg.default, function(state)
+        startDungeonSnowStyleFarm(cfg, state)
     end)
 end
 
-print("[Auto Farm All] Loaded: NPC orbit + Zone room patrol.")
-
--- 6. UNDERWORLD GATE
---==================================================
--- AUTO FARM DEMON - FULL SCRIPT
--- Smooth Orbit + Auto Attack + Skill 1-4
--- Visit ALL Zone in Generated_Demon map
--- Skip Zone inside folders named Locked
---==================================================
-
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-
---==================================================
--- SETTINGS
---==================================================
-
-local ORBIT_RADIUS = 25
-local ORBIT_HEIGHT = 15
-local ORBIT_SPEED = 2
-
-local ZONE_WAIT = 4
-local ZONE_HEIGHT = 4
-local ATTACK_DELAY = 0.12
-local SKILL_DELAY = 0.25
-local RESCAN_DELAY = 0.5
-
---==================================================
--- GLOBAL STATE
---==================================================
-
-_G.AutoFarmDemon = _G.AutoFarmDemon or false
-_G.AutoFarmDemonRunId = _G.AutoFarmDemonRunId or 0
-_G.AutoFarmDemonTarget = nil
-
---==================================================
--- REMOTES
---==================================================
-
-local function getRemotes()
-    local playerFolder = ReplicatedStorage:FindFirstChild("Player")
-    if not playerFolder then
-        return nil, nil
-    end
-
-    local remotes = playerFolder:FindFirstChild("Remotes")
-    if not remotes then
-        return nil, nil
-    end
-
-    local inputs = remotes:FindFirstChild("Inputs")
-    if not inputs then
-        return nil, nil
-    end
-
-    local attack = inputs:FindFirstChild("Attack")
-    local skill = inputs:FindFirstChild("Skill")
-
-    return attack, skill
-end
-
---==================================================
--- CHARACTER HELPERS
---==================================================
-
-local function getCharacter()
-    return LocalPlayer.Character
-end
-
-local function getRoot()
-    local character = getCharacter()
-    if not character then
-        return nil
-    end
-
-    return character:FindFirstChild("HumanoidRootPart")
-        or character:FindFirstChild("UpperTorso")
-        or character:FindFirstChild("Torso")
-end
-
-local function getHumanoid()
-    local character = getCharacter()
-    if not character then
-        return nil
-    end
-
-    return character:FindFirstChildOfClass("Humanoid")
-end
-
-local function getPart(obj)
-    if not obj then
-        return nil
-    end
-
-    if obj:IsA("BasePart") then
-        return obj
-    end
-
-    if obj:IsA("Model") then
-        if obj.PrimaryPart then
-            return obj.PrimaryPart
-        end
-
-        local root = obj:FindFirstChild("HumanoidRootPart")
-        if root and root:IsA("BasePart") then
-            return root
-        end
-
-        local head = obj:FindFirstChild("Head")
-        if head and head:IsA("BasePart") then
-            return head
-        end
-    end
-
-    return obj:FindFirstChildWhichIsA("BasePart", true)
-end
-
-local function isAlive(model)
-    if not model or not model.Parent then
-        return false
-    end
-
-    if not model:IsA("Model") then
-        return false
-    end
-
-    local humanoid = model:FindFirstChildOfClass("Humanoid")
-
-    if humanoid then
-        return humanoid.Health > 0
-    end
-
-    return true
-end
-
---==================================================
--- FIND ACTIVE DEMON MAP
---==================================================
-
-local function getDemonMap()
-    for _, map in ipairs(Workspace:GetChildren()) do
-        if map.Name:match("^Generated_Demon_%x+$") then
-            local npcFolder = map:FindFirstChild("NPCs")
-
-            if npcFolder then
-                return map, npcFolder
-            end
-        end
-    end
-
-    return nil, nil
-end
-
---==================================================
--- FIND ALIVE NPC
---==================================================
-
-local function getAliveTarget(folder)
-    if not folder or not folder.Parent then
-        return nil
-    end
-
-    for _, mob in ipairs(folder:GetChildren()) do
-        if mob:IsA("Model") and isAlive(mob) then
-            if getPart(mob) then
-                return mob
-            end
-        end
-    end
-
-    return nil
-end
-
---==================================================
--- CHECK RUN ID
---==================================================
-
-local function running(runId)
-    return _G.AutoFarmDemon
-        and _G.AutoFarmDemonRunId == runId
-end
-
---==================================================
--- FIND ALL ZONES, EXCEPT LOCKED
---==================================================
-
-local function getDemonZones(map)
-    local zones = {}
-    local seen = {}
-
-    if not map or not map.Parent then
-        return zones
-    end
-
-    for _, obj in ipairs(map:GetDescendants()) do
-        if obj.Name == "Zone" then
-            local current = obj.Parent
-            local isLocked = false
-
-            -- Skip jika ada ancestor bernama Locked,
-            -- Locked_01, Locked_02, dan sejenisnya.
-            while current and current ~= map do
-                if current.Name:match("^Locked") then
-                    isLocked = true
-                    break
-                end
-
-                current = current.Parent
-            end
-
-            if not isLocked then
-                local part = getPart(obj)
-
-                if part and not seen[part] then
-                    seen[part] = true
-
-                    table.insert(zones, {
-                        name = obj:GetFullName(),
-                        part = part
-                    })
-                end
-            end
-        end
-    end
-
-    table.sort(zones, function(a, b)
-        return a.name < b.name
-    end)
-
-    return zones
-end
-
---==================================================
--- VISIT ZONES WHEN NO ALIVE MOB
---==================================================
-
-local function visitZones(map, folder, runId)
-    while running(runId) do
-        -- Update list agar Zone baru ikut terdeteksi.
-        local zones = getDemonZones(map)
-
-        if #zones == 0 then
-            warn("[Demon Farm] Tidak menemukan Zone yang bisa dikunjungi.")
-            task.wait(2)
-            return
-        end
-
-        print("[Demon Farm] Jumlah Zone:", #zones)
-
-        for _, zone in ipairs(zones) do
-            if not running(runId) then
-                return
-            end
-
-            -- Mob muncul? Hentikan patrol dan lanjut farming.
-            local mob = getAliveTarget(folder)
-
-            if mob then
-                _G.AutoFarmDemonTarget = mob
-                return
-            end
-
-            local root = getRoot()
-            local part = zone.part
-
-            if root
-                and part
-                and part.Parent
-                and part:IsDescendantOf(map) then
-
-                print("[Demon Farm] Visit:", zone.name)
-
-                root.CFrame = CFrame.new(
-                    part.Position + Vector3.new(0, ZONE_HEIGHT, 0)
-                )
-
-                local deadline = os.clock() + ZONE_WAIT
-
-                while running(runId) and os.clock() < deadline do
-                    -- Periksa NPC selama menunggu di Zone.
-                    mob = getAliveTarget(folder)
-
-                    if mob then
-                        _G.AutoFarmDemonTarget = mob
-                        return
-                    end
-
-                    task.wait(0.1)
-                end
-            end
-        end
-
-        -- Setelah semua Zone dilewati, scan ulang.
-        task.wait(RESCAN_DELAY)
-    end
-end
-
---==================================================
--- SMOOTH ORBIT TARGET
---==================================================
-
-local function orbitTarget(mob, map, folder, runId)
-    local angle = 0
-    local lastTeleport = 0
-
-    while running(runId) do
-        if not mob or not mob.Parent or not mob:IsDescendantOf(folder) then
-            break
-        end
-
-        if not isAlive(mob) then
-            break
-        end
-
-        local root = getRoot()
-        local targetPart = getPart(mob)
-
-        if not root or not targetPart or not targetPart.Parent then
-            break
-        end
-
-        local dt = RunService.Heartbeat:Wait()
-        dt = math.clamp(dt, 0, 0.05)
-
-        angle += ORBIT_SPEED * dt
-
-        local center = targetPart.Position
-
-        local offset = Vector3.new(
-            math.cos(angle) * ORBIT_RADIUS,
-            ORBIT_HEIGHT,
-            math.sin(angle) * ORBIT_RADIUS
-        )
-
-        local destination = center + offset
-
-        -- Jika terlalu jauh, teleport kembali ke posisi orbit.
-        if (root.Position - destination).Magnitude > 60
-            and os.clock() - lastTeleport >= 2 then
-
-            root.CFrame = CFrame.lookAt(destination, center)
-            lastTeleport = os.clock()
-        else
-            root.CFrame = CFrame.lookAt(destination, center)
-        end
-    end
-
-    if _G.AutoFarmDemonTarget == mob then
-        _G.AutoFarmDemonTarget = nil
-    end
-end
-
---==================================================
--- AUTO ATTACK + SKILLS 1-4
---==================================================
-
-local function attackLoop(runId)
-    while running(runId) do
-        local attackRemote, skillRemote = getRemotes()
-        local mob = _G.AutoFarmDemonTarget
-
-        if mob and mob.Parent and isAlive(mob) then
-            local root = getRoot()
-            local targetPart = getPart(mob)
-
-            if root and targetPart then
-                local direction = targetPart.Position - root.Position
-
-                if attackRemote and attackRemote:IsA("RemoteEvent") then
-                    pcall(function()
-                        attackRemote:FireServer(direction)
-                    end)
-                end
-
-                if skillRemote and skillRemote:IsA("RemoteEvent") then
-                    for i = 1, 4 do
-                        if not running(runId) then
-                            return
-                        end
-
-                        mob = _G.AutoFarmDemonTarget
-
-                        if not mob or not isAlive(mob) then
-                            break
-                        end
-
-                        pcall(function()
-                            skillRemote:FireServer(i, "tap")
-                        end)
-
-                        task.wait(SKILL_DELAY)
-                    end
-                end
-            end
-        end
-
-        task.wait(ATTACK_DELAY)
-    end
-end
-
---==================================================
--- MAIN FARM LOOP
---==================================================
-
-local function farmLoop(runId)
-    while running(runId) do
-        local map, folder = getDemonMap()
-
-        if not map or not folder then
-            warn("[Demon Farm] Generated_Demon map / NPCs belum ditemukan.")
-            task.wait(2)
-            continue
-        end
-
-        local mob = getAliveTarget(folder)
-
-        if mob then
-            _G.AutoFarmDemonTarget = mob
-
-            print("[Demon Farm] Target:", mob.Name)
-
-            orbitTarget(mob, map, folder, runId)
-
-            task.wait(0.1)
-        else
-            _G.AutoFarmDemonTarget = nil
-
-            -- Tidak ada mob hidup: kunjungi semua Zone
-            -- selain Zone yang berada di dalam Locked.
-            visitZones(map, folder, runId)
-        end
-
-        task.wait(0.1)
-    end
-
-    _G.AutoFarmDemonTarget = nil
-end
-
---==================================================
--- TOGGLE
--- Panggil di bagian GUI Ash-Libs kamu.
---==================================================
-
-addToggle("Auto Farm Demon", false, function(state)
-    _G.AutoFarmDemon = state
-    _G.AutoFarmDemonRunId += 1
-
-    local runId = _G.AutoFarmDemonRunId
-
-    _G.AutoFarmDemonTarget = nil
-
-    if not state then
-        print("[Demon Farm] OFF")
-        return
-    end
-
-    print("[Demon Farm] ON")
-
-    task.spawn(function()
-        attackLoop(runId)
-    end)
-
-    task.spawn(function()
-        farmLoop(runId)
-    end)
-end)
--- 7. CITY OF MAGE
-
---==================================================
--- AUTO FARM MAGE - ANTI STUCK
--- Smooth Orbit + Attack + Skills 1-4
--- Scan all Zone, skip Locked
---==================================================
-
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-
--- SETTINGS
-local ORBIT_RADIUS = 15
-local ORBIT_HEIGHT = 7
-local ORBIT_SPEED = 2
-
-local ZONE_WAIT = 4
-local ZONE_HEIGHT = 4
-local ATTACK_DELAY = 0.15
-local SKILL_DELAY = 0.25
-local RESCAN_DELAY = 0.5
-local TARGET_TIMEOUT = 20
-
--- GLOBAL STATE
-_G.AutoFarmMage = _G.AutoFarmMage or false
-_G.AutoFarmMageRunId = _G.AutoFarmMageRunId or 0
-_G.AutoFarmMageTarget = nil
-
--- REMOTES
-local function getRemotes()
-    local playerFolder = ReplicatedStorage:FindFirstChild("Player")
-    local remotes = playerFolder and playerFolder:FindFirstChild("Remotes")
-    local inputs = remotes and remotes:FindFirstChild("Inputs")
-
-    return inputs and inputs:FindFirstChild("Attack"),
-           inputs and inputs:FindFirstChild("Skill")
-end
-
--- CHARACTER
-local function getRoot()
-    local character = LocalPlayer.Character
-    if not character then return nil end
-
-    return character:FindFirstChild("HumanoidRootPart")
-        or character:FindFirstChild("UpperTorso")
-        or character:FindFirstChild("Torso")
-end
-
-local function getPart(obj)
-    if not obj then return nil end
-
-    if obj:IsA("BasePart") then
-        return obj
-    end
-
-    if obj:IsA("Model") and obj.PrimaryPart then
-        return obj.PrimaryPart
-    end
-
-    local root = obj:FindFirstChild("HumanoidRootPart", true)
-    if root and root:IsA("BasePart") then
-        return root
-    end
-
-    local head = obj:FindFirstChild("Head", true)
-    if head and head:IsA("BasePart") then
-        return head
-    end
-
-    return obj:FindFirstChildWhichIsA("BasePart", true)
-end
-
-local function isAlive(mob)
-    if not mob or not mob.Parent or not mob:IsA("Model") then
-        return false
-    end
-
-    local humanoid = mob:FindFirstChildOfClass("Humanoid")
-    return humanoid == nil or humanoid.Health > 0
-end
-
-local function running(id)
-    return _G.AutoFarmMage
-        and _G.AutoFarmMageRunId == id
-end
-
--- FIND CURRENT GENERATED MAGE MAP
-local function getMageMap()
-    for _, map in ipairs(Workspace:GetChildren()) do
-        if map.Name:match("^Generated_Mage_%x+$") then
-            local npcs = map:FindFirstChild("NPCs")
-            if npcs then
-                return map, npcs
-            end
-        end
-    end
-
-    return nil, nil
-end
-
--- FIND ALIVE NPC
-local function getAliveTarget(folder)
-    if not folder or not folder.Parent then
-        return nil
-    end
-
-    for _, mob in ipairs(folder:GetChildren()) do
-        if mob:IsA("Model")
-            and isAlive(mob)
-            and getPart(mob) then
-            return mob
-        end
-    end
-
-    return nil
-end
-
--- FIND ALL ZONE OBJECTS, SKIP LOCKED ANCESTORS
-local function getMageZones(map)
-    local zones = {}
-    local seen = {}
-
-    if not map or not map.Parent then
-        return zones
-    end
-
-    for _, obj in ipairs(map:GetDescendants()) do
-        if obj.Name == "Zone" then
-            local ancestor = obj.Parent
-            local locked = false
-
-            while ancestor and ancestor ~= map do
-                if ancestor.Name:match("^Locked") then
-                    locked = true
-                    break
-                end
-                ancestor = ancestor.Parent
-            end
-
-            if not locked then
-                local part = getPart(obj)
-
-                if part and not seen[part] then
-                    seen[part] = true
-
-                    table.insert(zones, {
-                        name = obj:GetFullName(),
-                        part = part
-                    })
-                end
-            end
-        end
-    end
-
-    table.sort(zones, function(a, b)
-        return a.name < b.name
-    end)
-
-    return zones
-end
-
--- PATROL ZONES WHEN NPC FOLDER IS EMPTY
-local function visitZones(map, folder, id)
-    local zones = getMageZones(map)
-
-    if #zones == 0 then
-        warn("[Mage Farm] Tidak menemukan Zone yang bisa dikunjungi.")
-        task.wait(2)
-        return
-    end
-
-    print("[Mage Farm] Total Zone:", #zones)
-
-    for _, zone in ipairs(zones) do
-        if not running(id) then return end
-
-        -- NPC muncul ketika patrol? Kembali farming.
-        local mob = getAliveTarget(folder)
-        if mob then
-            _G.AutoFarmMageTarget = mob
-            return
-        end
-
-        local root = getRoot()
-        local part = zone.part
-
-        if root and part
-            and part.Parent
-            and part:IsDescendantOf(map) then
-
-            print("[Mage Farm] Visit:", zone.name)
-
-            root.CFrame = CFrame.new(
-                part.Position + Vector3.new(0, ZONE_HEIGHT, 0)
-            )
-
-            local deadline = os.clock() + ZONE_WAIT
-
-            while running(id) and os.clock() < deadline do
-                mob = getAliveTarget(folder)
-
-                if mob then
-                    _G.AutoFarmMageTarget = mob
-                    return
-                end
-
-                task.wait(0.1)
-            end
-        end
-    end
-
-    task.wait(RESCAN_DELAY)
-end
-
--- ORBIT TARGET; FORCE RECHECK AFTER TIMEOUT
-local function orbitTarget(mob, map, folder, id)
-    local angle = 0
-    local started = os.clock()
-
-    while running(id) do
-        if not mob or not mob.Parent
-            or not mob:IsDescendantOf(folder)
-            or not isAlive(mob) then
-            break
-        end
-
-        if os.clock() - started >= TARGET_TIMEOUT then
-            break
-        end
-
-        local root = getRoot()
-        local targetPart = getPart(mob)
-
-        if not root or not targetPart or not targetPart.Parent then
-            break
-        end
-
-        local dt = RunService.Heartbeat:Wait()
-        dt = math.clamp(dt, 0, 0.05)
-        angle += ORBIT_SPEED * dt
-
-        local center = targetPart.Position
-        local destination = center + Vector3.new(
-            math.cos(angle) * ORBIT_RADIUS,
-            ORBIT_HEIGHT,
-            math.sin(angle) * ORBIT_RADIUS
-        )
-
-        root.CFrame = CFrame.lookAt(destination, center)
-    end
-
-    if _G.AutoFarmMageTarget == mob then
-        _G.AutoFarmMageTarget = nil
-    end
-end
-
--- ATTACK + SKILLS
-local function attackLoop(id)
-    while running(id) do
-        local attackRemote, skillRemote = getRemotes()
-        local mob = _G.AutoFarmMageTarget
-
-        if mob and mob.Parent and isAlive(mob) then
-            local root = getRoot()
-            local targetPart = getPart(mob)
-
-            if root and targetPart then
-                if attackRemote and attackRemote:IsA("RemoteEvent") then
-                    pcall(function()
-                        attackRemote:FireServer(
-                            targetPart.Position - root.Position
-                        )
-                    end)
-                end
-
-                if skillRemote and skillRemote:IsA("RemoteEvent") then
-                    for skill = 1, 4 do
-                        if not running(id) then return end
-
-                        mob = _G.AutoFarmMageTarget
-                        if not mob or not isAlive(mob) then
-                            break
-                        end
-
-                        pcall(function()
-                            skillRemote:FireServer(skill, "tap")
-                        end)
-
-                        task.wait(SKILL_DELAY)
-                    end
-                end
-            end
-        end
-
-        task.wait(ATTACK_DELAY)
-    end
-end
-
--- MAIN FARM LOOP
-local function farmLoop(id)
-    while running(id) do
-        local map, folder = getMageMap()
-
-        if not map or not folder then
-            warn("[Mage Farm] Generated_Mage / NPCs belum ditemukan.")
-            task.wait(2)
-            continue
-        end
-
-        local mob = getAliveTarget(folder)
-
-        if mob then
-            _G.AutoFarmMageTarget = mob
-            print("[Mage Farm] Target:", mob.Name)
-
-            orbitTarget(mob, map, folder, id)
-        else
-            _G.AutoFarmMageTarget = nil
-            visitZones(map, folder, id)
-        end
-
-        task.wait(0.1)
-    end
-
-    _G.AutoFarmMageTarget = nil
-end
-
--- GUI TOGGLE
-addToggle("Auto Farm Mage", false, function(state)
-    _G.AutoFarmMage = state
-    _G.AutoFarmMageRunId += 1
-
-    local id = _G.AutoFarmMageRunId
-    _G.AutoFarmMageTarget = nil
-
-    if not state then
-        print("[Mage Farm] OFF")
-        return
-    end
-
-    print("[Mage Farm] ON")
-
-    task.spawn(function()
-        attackLoop(id)
-    end)
-
-    task.spawn(function()
-        farmLoop(id)
-    end)
-end)
-
--- 8. HOLLOW REALM.
+print("[Dungeon Farm] NPC farm + WallCap patrol + Arsenal HoldArea defense loaded.")
+
+--============================================================
+-- 8. HOLLOW REALM | RANDOM ENEMY SPAWN PATROL
+--============================================================
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -2160,9 +1233,16 @@ _G.AutoHollowOrbitTarget = nil
 local ORBIT_RADIUS = 37
 local ORBIT_HEIGHT = 12
 local ORBIT_SPEED = 2
+
 local ATTACK_INTERVAL = 0.1
 local SKILL_INTERVAL = 0.05
-local TARGET_REFRESH = 0.8
+
+local SPAWN_WAIT_TIME = 2.5
+local PATROL_CHECK_INTERVAL = 0.15
+
+--============================================================
+-- RUNNING
+--============================================================
 
 local function running(id)
     return _G.AutoHollowOrbit
@@ -2174,10 +1254,18 @@ local function isTyping()
     return UserInputService:GetFocusedTextBox() ~= nil
 end
 
+local function getHollowRun()
+    return workspace:FindFirstChild("HollowRealmRun")
+end
+
 local function getNPCFolder()
-    local run = workspace:FindFirstChild("HollowRealmRun")
+    local run = getHollowRun()
     return run and run:FindFirstChild("NPCs")
 end
+
+--============================================================
+-- PLAYER
+--============================================================
 
 local function getRoot()
     local char = player.Character
@@ -2190,6 +1278,10 @@ local function getRoot()
 
     return nil, nil
 end
+
+--============================================================
+-- MOB DETECTION
+--============================================================
 
 local function getPart(mob)
     if not mob or not mob:IsA("Model") then
@@ -2216,17 +1308,8 @@ local function isIgnored(mob)
         return true
     end
 
-    if isCoyote(mob) then
-        return false
-    end
-
-    if mob:GetAttribute("IsSpecialBoss")
-        or mob:GetAttribute("IsLootRoomGuard")
-        or mob:GetAttribute("MimicMob") then
-        return true
-    end
-
     local summons = workspace:FindFirstChild("Summons")
+
     if summons and mob:IsDescendantOf(summons) then
         return true
     end
@@ -2243,16 +1326,12 @@ local function getPosition(mob)
         return nil
     end
 
-    if isCoyote(mob) then
-        local ok, pivot = pcall(function()
-            return mob:GetPivot()
-        end)
+    local ok, pivot = pcall(function()
+        return mob:GetPivot()
+    end)
 
-        if ok then
-            return pivot.Position
-        end
-
-        return nil
+    if ok and pivot then
+        return pivot.Position
     end
 
     local part = getPart(mob)
@@ -2264,20 +1343,18 @@ local function isAlive(mob)
         return false
     end
 
-    if isCoyote(mob) then
-        return getPosition(mob) ~= nil
-    end
-
     if not getPart(mob) then
         return false
     end
 
     local hum = mob:FindFirstChildWhichIsA("Humanoid", true)
+
     return not hum or hum.Health > 0
 end
 
 local function getTarget()
     local folder = getNPCFolder()
+
     if not folder then
         return nil
     end
@@ -2290,7 +1367,7 @@ local function getTarget()
     local bestDist = math.huge
 
     for _, mob in ipairs(folder:GetChildren()) do
-        if mob.Name ~= "Coyote" and isAlive(mob) then
+        if isAlive(mob) then
             local pos = getPosition(mob)
 
             if pos then
@@ -2304,6 +1381,7 @@ local function getTarget()
 
                 if room < bestRoom
                     or (room == bestRoom and dist < bestDist) then
+
                     best = mob
                     bestRoom = room
                     bestDist = dist
@@ -2312,17 +1390,96 @@ local function getTarget()
         end
     end
 
-    if best then
-        return best
+    return best
+end
+
+--============================================================
+-- HOLLOW ROOM SPAWN POINTS
+--
+-- Room 1-8  : GetChildren()[4]
+-- Room 9-10 : Boss_Spawn
+--============================================================
+
+local function getSpawnCFrame(spawnObject)
+    if not spawnObject then
+        return nil
     end
 
-    local coyote = folder:FindFirstChild("Coyote")
-    if coyote and isAlive(coyote) then
-        return coyote
+    if spawnObject:IsA("BasePart") then
+        return spawnObject.CFrame
+    end
+
+    if spawnObject:IsA("Model") then
+        return spawnObject:GetPivot()
     end
 
     return nil
 end
+
+local function getHollowSpawnPoints()
+    local run = getHollowRun()
+
+    if not run then
+        return {}
+    end
+
+    local points = {}
+
+    for roomIndex = 1, 10 do
+        local room = run:FindFirstChild("Room_" .. roomIndex)
+
+        if room then
+            local spawnObject
+
+            if roomIndex <= 8 then
+                -- Enemy spawn adalah Part urutan ke-4
+                spawnObject = room:GetChildren()[4]
+            else
+                -- Room 9 dan 10 menggunakan Boss_Spawn
+                spawnObject = room:FindFirstChild(
+                    "Boss_Spawn",
+                    true
+                )
+            end
+
+            local spawnCFrame = getSpawnCFrame(spawnObject)
+
+            if spawnCFrame then
+                table.insert(points, {
+                    Room = roomIndex,
+                    CFrame = spawnCFrame
+                })
+            end
+        end
+    end
+
+    return points
+end
+
+--============================================================
+-- RANDOMIZE PATROL
+--============================================================
+
+local function shufflePoints(points)
+    local shuffled = {}
+
+    for i, point in ipairs(points) do
+        shuffled[i] = point
+    end
+
+    for i = #shuffled, 2, -1 do
+        local j = math.random(1, i)
+
+        shuffled[i], shuffled[j] =
+            shuffled[j], shuffled[i]
+    end
+
+    return shuffled
+end
+
+--============================================================
+-- ATTACK REMOTES
+--============================================================
 
 local function getAttackDirection(mob)
     local root = getRoot()
@@ -2354,20 +1511,23 @@ local function getRemotes()
         inputs and inputs:FindFirstChild("Skill")
 end
 
+--============================================================
+-- AUTO ATTACK + SKILL
+--============================================================
+
 local function attackLoop(id)
     local attackRemote, skillRemote = getRemotes()
     local lastSkill = 0
 
     while running(id) do
         if isTyping() then
-            task.wait(0.1)
+            task.wait(0.2)
             continue
         end
 
         local mob = _G.AutoHollowOrbitTarget
 
         if mob and isAlive(mob) then
-            -- Basic attack: hadapkan karakter ke mob.
             if attackRemote then
                 local root = getRoot()
                 local direction = getAttackDirection(mob)
@@ -2384,7 +1544,6 @@ local function attackLoop(id)
                 end
             end
 
-            -- Skill: tidak diberi rotasi tambahan di sini.
             if skillRemote
                 and os.clock() - lastSkill >= SKILL_INTERVAL then
 
@@ -2401,7 +1560,7 @@ local function attackLoop(id)
                         skillRemote:FireServer(i, "tap")
                     end)
 
-                    task.wait(0.05)
+                    task.wait(0.07)
                 end
 
                 lastSkill = os.clock()
@@ -2412,37 +1571,33 @@ local function attackLoop(id)
     end
 end
 
+--============================================================
+-- ORBIT TARGET
+--============================================================
+
 local function orbitTarget(mob, id)
-    if isCoyote(mob) then
-        while running(id)
-            and _G.AutoHollowOrbitTarget == mob
-            and isAlive(mob) do
-
-            if isTyping() then
-                task.wait(0.1)
-                continue
-            end
-
-            local root = getRoot()
-            local pos = getPosition(mob)
-
-            if not root or not pos then
-                break
-            end
-
-            root.CFrame = CFrame.lookAt(
-                pos + Vector3.new(0, 4, 0),
-                pos
-            )
-
-            task.wait(0.2)
-        end
-
+    if not mob or not mob.Parent then
         return
     end
 
+    local function getMobPosition()
+        if not mob or not mob.Parent then
+            return nil
+        end
+
+        local ok, pivot = pcall(function()
+            return mob:GetPivot()
+        end)
+
+        if ok and pivot then
+            return pivot.Position
+        end
+
+        return nil
+    end
+
     local root = getRoot()
-    local pos = getPosition(mob)
+    local pos = getMobPosition()
 
     if not root or not pos then
         return
@@ -2453,55 +1608,136 @@ local function orbitTarget(mob, id)
         root.Position.X - pos.X
     )
 
+    if isCoyote(mob) then
+        local destination = Vector3.new(
+            pos.X + math.cos(angle) * 35,
+            pos.Y + 12,
+            pos.Z + math.sin(angle) * 35
+        )
+
+        root.CFrame = CFrame.lookAt(destination, pos)
+    end
+
     while running(id)
         and _G.AutoHollowOrbitTarget == mob
         and isAlive(mob) do
 
         if isTyping() then
-            task.wait(0.1)
+            task.wait(0.2)
             continue
         end
 
         root = getRoot()
-        pos = getPosition(mob)
+        pos = getMobPosition()
 
         if not root or not pos then
-            break
+            task.wait(0.05)
+            continue
         end
 
         angle += ORBIT_SPEED * 0.05
 
+        local radius = ORBIT_RADIUS
+        local height = ORBIT_HEIGHT
+
+        if isCoyote(mob) then
+            radius = 35
+            height = 12
+        end
+
         local destination = Vector3.new(
-            pos.X + math.cos(angle) * ORBIT_RADIUS,
-            pos.Y + ORBIT_HEIGHT,
-            pos.Z + math.sin(angle) * ORBIT_RADIUS
+            pos.X + math.cos(angle) * radius,
+            pos.Y + height,
+            pos.Z + math.sin(angle) * radius
         )
 
         root.CFrame = CFrame.lookAt(destination, pos)
 
-        task.wait(0.05)
+        task.wait(0.07)
     end
 end
 
+--============================================================
+-- PATROL SPAWNS WHEN NPC EMPTY
+--============================================================
+
+local function patrolUntilMob(id)
+    local points = getHollowSpawnPoints()
+
+    if #points == 0 then
+        task.wait(1)
+        return nil
+    end
+
+    -- Acak urutan setiap satu putaran patrol
+    points = shufflePoints(points)
+
+    for _, point in ipairs(points) do
+        if not running(id) then
+            return nil
+        end
+
+        -- Jangan TP kalau mob sudah muncul
+        local mob = getTarget()
+
+        if mob then
+            return mob
+        end
+
+        local root = getRoot()
+
+        if root then
+            -- TP ke titik spawn
+            root.CFrame = point.CFrame * CFrame.new(0, 4, 0)
+
+            print(
+                "[Hollow Patrol] Room:",
+                point.Room
+            )
+        end
+
+        -- Tunggu mob spawn sambil terus scan NPC
+        local waitUntil = os.clock() + SPAWN_WAIT_TIME
+
+        while running(id) and os.clock() < waitUntil do
+            mob = getTarget()
+
+            if mob then
+                print(
+                    "[Hollow Patrol] Mob muncul:",
+                    mob.Name
+                )
+
+                return mob
+            end
+
+            task.wait(PATROL_CHECK_INTERVAL)
+        end
+    end
+
+    return nil
+end
+
+--============================================================
+-- MAIN FARM LOOP
+--============================================================
+
 local function farmLoop(id)
-    local lastRefresh = 0
     local target = nil
 
     while running(id) do
-        if os.clock() - lastRefresh >= TARGET_REFRESH
-            or not target
-            or not isAlive(target) then
-
+        if not target or not isAlive(target) then
             target = getTarget()
-            _G.AutoHollowOrbitTarget = target
-            lastRefresh = os.clock()
 
-            if target then
-                print("[Hollow Orbit] Target:", target.Name)
-            end
+            _G.AutoHollowOrbitTarget = target
         end
 
         if target and isAlive(target) then
+            print("[Hollow Farm] Target:", target.Name)
+
+            _G.AutoHollowOrbitTarget = target
+
+            -- Farm target sampai mati/hilang
             orbitTarget(target, id)
 
             if not running(id) then
@@ -2510,45 +1746,58 @@ local function farmLoop(id)
 
             _G.AutoHollowOrbitTarget = nil
             target = nil
+
+            task.wait(0.1)
         else
-            task.wait(0.3)
+            _G.AutoHollowOrbitTarget = nil
+
+            -- NPC kosong: patrol semua titik spawn
+            target = patrolUntilMob(id)
+
+            if target then
+                _G.AutoHollowOrbitTarget = target
+            end
         end
     end
 
     _G.AutoHollowOrbitTarget = nil
 end
 
-addToggle(
-    "Auto Hollow Realm Orbit + Attack + Skills", false,
-    function(state)
-        _G.AutoHollowOrbit = state
-        _G.AutoHollowOrbitRunId += 1
+--============================================================
+-- GUI TOGGLE
+--============================================================
 
-        local id = _G.AutoHollowOrbitRunId
-        _G.AutoHollowOrbitTarget = nil
+addToggle("Auto Farm Hollow Realm", false, function(state)
+    _G.AutoHollowOrbit = state
+    _G.AutoHollowOrbitRunId += 1
 
-        if not state then
-            print("[Hollow Orbit] Stopped")
-            return
-        end
+    local id = _G.AutoHollowOrbitRunId
 
-        print("[Hollow Orbit] Started")
+    _G.AutoHollowOrbitTarget = nil
 
-        task.spawn(function()
-            local ok, err = pcall(farmLoop, id)
-            if not ok then
-                warn("[Hollow Orbit Error]", err)
-            end
-        end)
-
-        task.spawn(function()
-            local ok, err = pcall(attackLoop, id)
-            if not ok then
-                warn("[Hollow Attack Error]", err)
-            end
-        end)
+    if not state then
+        print("[Hollow Orbit] Stopped")
+        return
     end
-)
+
+    print("[Hollow Orbit] Started")
+
+    task.spawn(function()
+        local ok, err = pcall(farmLoop, id)
+
+        if not ok then
+            warn("[Hollow Farm Error]", err)
+        end
+    end)
+
+    task.spawn(function()
+        local ok, err = pcall(attackLoop, id)
+
+        if not ok then
+            warn("[Hollow Attack Error]", err)
+        end
+    end)
+end)
 
 -- B. EVENT and Party Game
 setActiveCategory("B")
@@ -2735,7 +1984,7 @@ local function sendPayloadSkills(skillRemote, mob, id)
             skillRemote:FireServer(i, "tap")
         end)
 
-        task.wait(0.1)
+        task.wait(0.2)
     end
 end
 
@@ -2748,7 +1997,7 @@ local function attackLoop(id, attackRemote, skillRemote)
         local mob = _G.AutoPayloadTarget
 
         if not mob or not mob.Parent or not isAlive(mob) then
-            task.wait(0.1)
+            task.wait(0.2)
             continue
         end
 
@@ -2762,7 +2011,7 @@ local function attackLoop(id, attackRemote, skillRemote)
             sendPayloadSkills(skillRemote, mob, id)
         end
 
-        task.wait(0.03)
+        task.wait(0.06)
     end
 
     if _G.AutoPayloadFarmRunId == id then
@@ -2783,7 +2032,7 @@ local function orbitMob(mob, id)
         local pos = getPosition(mob)
 
         if not root or not pos then
-            task.wait(0.1)
+            task.wait(0.2)
             continue
         end
 
@@ -2797,7 +2046,7 @@ local function orbitMob(mob, id)
 
         root.CFrame = CFrame.lookAt(pos + offset, pos)
 
-        task.wait(0.05)
+        task.wait(0.07)
     end
 end
 
@@ -2863,7 +2112,7 @@ local function farmLoop(id)
 end
 
 -- TOGGLE
-addToggle("Auto Payload Orbit + Attack", false, function(state)
+addToggle("Auto Farm Payload", false, function(state)
     _G.AutoPayloadFarm = state
     _G.AutoPayloadFarmRunId =
         (_G.AutoPayloadFarmRunId or 0) + 1
@@ -3079,7 +2328,7 @@ local function sendBossRushCombat(attackRemote, skillRemote, mob)
                 skillRemote:FireServer(i, "tap")
             end)
 
-            task.wait(0.05)
+            task.wait(0.07)
         end
     end
 end
@@ -3093,7 +2342,7 @@ local function attackLoop(id, attackRemote, skillRemote)
         local mob = _G.BossRushCombatTarget
 
         if not mob or not mob.Parent or not isAlive(mob) then
-            task.wait(0.1)
+            task.wait(0.2)
             continue
         end
 
@@ -3135,11 +2384,11 @@ local function attackLoop(id, attackRemote, skillRemote)
                     skillRemote:FireServer(i, "tap")
                 end)
 
-                task.wait(0.1)
+                task.wait(0.2)
             end
         end
 
-        task.wait(0.03)
+        task.wait(0.06)
     end
 
     if _G.AutoBossRushRunId == id then
@@ -3160,7 +2409,7 @@ local function orbitMob(mob, id)
         local pos = getPosition(mob)
 
         if not root or not pos then
-            task.wait(0.1)
+            task.wait(0.2)
             continue
         end
 
@@ -3174,7 +2423,7 @@ local function orbitMob(mob, id)
 
         root.CFrame = CFrame.lookAt(pos + offset, pos)
 
-        task.wait(0.05)
+        task.wait(0.07)
     end
 end
 
@@ -3232,7 +2481,7 @@ local function farmLoop(id)
 end
 
 -- TOGGLE
-addToggle("Auto BossRush Orbit All Mobs", false, function(state)
+addToggle("Auto BossRush", false, function(state)
     _G.AutoBossRushAll = state
     _G.AutoBossRushRunId = (_G.AutoBossRushRunId or 0) + 1
 
@@ -3450,7 +2699,7 @@ local function sendRaidCombat(attackRemote, skillRemote, mob)
                 skillRemote:FireServer(i, "tap")
             end)
 
-            task.wait(0.05)
+            task.wait(0.07)
         end
     end
 end
@@ -3464,7 +2713,7 @@ local function attackLoop(id, attackRemote, skillRemote)
         local mob = _G.AutoRaidTarget
 
         if not mob or not mob.Parent or not isAlive(mob) then
-            task.wait(0.1)
+            task.wait(0.2)
             continue
         end
 
@@ -3505,12 +2754,12 @@ local function attackLoop(id, attackRemote, skillRemote)
                         skillRemote:FireServer(i, "tap")
                     end)
 
-                    task.wait(0.05)
+                    task.wait(0.07)
                 end
             end
         end
 
-        task.wait(0.03)
+        task.wait(0.06)
     end
 
     if _G.AutoRaidOrbitRunId == id then
@@ -3531,7 +2780,7 @@ local function orbitMob(mob, id)
         local pos = getPosition(mob)
 
         if not root or not pos then
-            task.wait(0.1)
+            task.wait(0.2)
             continue
         end
 
@@ -3545,7 +2794,7 @@ local function orbitMob(mob, id)
 
         root.CFrame = CFrame.lookAt(pos + offset, pos)
 
-        task.wait(0.05)
+        task.wait(0.07)
     end
 end
 
@@ -3605,7 +2854,7 @@ local function farmLoop(id)
 end
 
 -- Toggle
-addToggle("Auto Raid All Mobs Orbit + Attack", false, function(state)
+addToggle("Auto Raid ", false, function(state)
     _G.AutoRaidOrbit = state
     _G.AutoRaidOrbitRunId = (_G.AutoRaidOrbitRunId or 0) + 1
 
@@ -3819,7 +3068,7 @@ addToggle("Auto Farm Challenge", false, function(state)
             local targetPart = getPart(target)
             if not targetPart then
                 target = nil
-                task.wait(0.1)
+                task.wait(0.2)
                 continue
             end
 
@@ -3902,7 +3151,7 @@ end)
 
 
 -- 5. CONQUEST STAGE
-addToggle("Orbit All Conquest Enemies", false, function(state)
+addToggle("Auto Farm Conquest Enemies", false, function(state)
     _G.OrbitConquestAll = state
     _G.OrbitConquestRunId = (_G.OrbitConquestRunId or 0) + 1
 
@@ -4034,13 +3283,13 @@ addToggle("Orbit All Conquest Enemies", false, function(state)
                                 skill:FireServer(i, "tap")
                             end)
 
-                            task.wait(0.05)
+                            task.wait(0.07)
                         end
                     end
                 end
             end
 
-            task.wait(0.03)
+            task.wait(0.06)
         end
     end)
 end)
@@ -4091,7 +3340,7 @@ addToggle("Auto Dodge", false, function(state)
 end)
 
 -- 5. HIDE MOBILE ACTIONS
-addToggle("Hide Mobile Actions", false, function(state)
+addToggle("Hide Mobile Actions", true, function(state)
     _G.HideMobileActions = state
     _G.HideMobileActionsRunId = (_G.HideMobileActionsRunId or 0) + 1
 
@@ -4158,7 +3407,7 @@ addToggle("Auto Ultimate (G)", false, function(state)
     end)
 end)
 -- 7. AUTO CONQUEST TP
-addToggle("Auto Conquest TP", false, function(state)
+addToggle("Auto Conquest Teleport Mob", false, function(state)
     _G.AutoConquestTP=state
     _G.AutoConquestTPRunId=(_G.AutoConquestTPRunId or 0)+1
     local id=_G.AutoConquestTPRunId
@@ -4205,7 +3454,7 @@ addToggle("Auto Conquest TP", false, function(state)
     end)
 end)
 -- 8. ANTI AFK
-addToggle("Anti AFK", false, function(state)
+addToggle("Anti AFK", true, function(state)
     _G.AntiAFK=state
     _G.AntiAFKRunId=(_G.AntiAFKRunId or 0)+1
     local id=_G.AntiAFKRunId
@@ -4214,7 +3463,7 @@ addToggle("Anti AFK", false, function(state)
         while alive() and _G.AntiAFK and _G.AntiAFKRunId==id do
             pcall(function()
                 VirtualInputManager:SendMouseButtonEvent(0,0,0,true,game,0)
-                task.wait(0.1)
+                task.wait(0.2)
                 VirtualInputManager:SendMouseButtonEvent(0,0,0,false,game,0)
             end)
             task.wait(60)
@@ -4223,7 +3472,7 @@ addToggle("Anti AFK", false, function(state)
 end)
 
 -- 9. AUTO POTION HP 50%
-addToggle("Auto Potion HP 50%", false, function(state)
+addToggle("Auto Potion HP 50%", true, function(state)
     _G.AutoPotionHP=state
     _G.AutoPotionRunId=(_G.AutoPotionRunId or 0)+1
     local id=_G.AutoPotionRunId
@@ -4330,7 +3579,7 @@ end
 
 -- 13. AUTO SELECT BOOST
 
-addToggle("Auto Select Boost", false, function(state)
+addToggle("Auto Select Boost", true, function(state)
     _G.AutoSelectBoost = state
     _G.AutoSelectBoostRunId = (_G.AutoSelectBoostRunId or 0) + 1
 
@@ -4598,7 +3847,7 @@ addToggle("Face Mob Terus", false, function(state)
                 end
                 if nearest then hrp.CFrame=CFrame.lookAt(hrp.Position,Vector3.new(nearest.Position.X,hrp.Position.Y,nearest.Position.Z)) end
             end
-            task.wait(0.1)
+            task.wait(0.2)
         end
     end)
 end)
@@ -4607,7 +3856,7 @@ end)
 
 -- Config persistence toggle (placed on the Misc tab).
 setActiveCategory("C")
-addToggle("Auto Save Config", false, function(state)
+addToggle("Auto Save Config", true, function(state)
     autoSaveConfig = state
     writeConfig(true)
     setStatus(state and "Config autosave enabled" or "Config autosave disabled")
@@ -4665,6 +3914,137 @@ local function openGameFrame(frameName)
     setStatus("UI dibuka: " .. frameName)
     print("[Open UI] Dibuka: " .. frameName)
 end
+
+--========================================================
+-- AUTO SELL EQUIPMENT (KEEP EXOTIC) - CONTINUOUS
+--========================================================
+
+addToggle("Auto Sell Equipment (Keep Exotic)", true, function(state)
+    _G.AutoSellEquip = state
+    _G.AutoSellEquipRunId = (_G.AutoSellEquipRunId or 0) + 1
+
+    local runId = _G.AutoSellEquipRunId
+    if not state then return end
+
+    task.spawn(function()
+        local sellRemote
+        local RarityColors
+
+        local ok, err = pcall(function()
+            sellRemote = ReplicatedStorage
+                :WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_knit@1.7.0")
+                :WaitForChild("knit")
+                :WaitForChild("Services")
+                :WaitForChild("ShopService")
+                :WaitForChild("RF")
+                :WaitForChild("SellEquipment")
+
+            RarityColors = require(
+                ReplicatedStorage:WaitForChild("SharedDictionaries")
+                    :WaitForChild("RarityColors")
+            )
+        end)
+
+        if not ok then
+            warn("[Auto Sell] Setup gagal:", err)
+            return
+        end
+
+        local function running()
+            return alive()
+                and _G.AutoSellEquip
+                and _G.AutoSellEquipRunId == runId
+        end
+
+        local function getItemGrid()
+            local pg = player:FindFirstChild("PlayerGui")
+            local mainGui = pg and pg:FindFirstChild("Main")
+            local frames = mainGui and mainGui:FindFirstChild("Frames")
+            local inventory = frames and frames:FindFirstChild("Inventory")
+            local contents = inventory and inventory:FindFirstChild("Contents")
+            local section = contents and contents:FindFirstChild("InventorySection")
+            local panel = section and section:FindFirstChild("ItemPanel")
+            local grid = panel and panel:FindFirstChild("ItemGrid")
+            if grid and grid.Parent then return grid end
+            return nil
+        end
+
+        local function isUUID(value)
+            return type(value) == "string" and value:match(
+                "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$"
+            ) ~= nil
+        end
+
+        local function colorMatches(a, b)
+            return math.abs(a.R - b.R) < 0.015
+                and math.abs(a.G - b.G) < 0.015
+                and math.abs(a.B - b.B) < 0.015
+        end
+
+        local function getRarity(item)
+            local label = item:FindFirstChild("Item_Name", true)
+            local gradient = label and label:FindFirstChild("RarityGradient", true)
+            if not gradient or not gradient:IsA("UIGradient") then return nil end
+
+            local keypoints = gradient.Color.Keypoints
+            if #keypoints == 0 then return nil end
+            local firstColor = keypoints[1].Value
+            local lastColor = keypoints[#keypoints].Value
+
+            for rarity, colors in pairs(RarityColors) do
+                if rarity ~= "Enemy"
+                    and colors.BackgroundColor3
+                    and colors.BorderColor3
+                    and colorMatches(firstColor, colors.BackgroundColor3)
+                    and colorMatches(lastColor, colors.BorderColor3) then
+                    return rarity
+                end
+            end
+            return nil
+        end
+
+        while running() do
+            local grid = getItemGrid()
+            if not grid then
+                task.wait(1)
+                continue
+            end
+
+            local sold, kept, skipped = 0, 0, 0
+            for _, item in ipairs(grid:GetChildren()) do
+                if not running() then break end
+                if item.Parent == grid and isUUID(item.Name) then
+                    local rarity = getRarity(item)
+                    if rarity == "Exotic" then
+                        kept += 1
+                    elseif rarity and rarity ~= "Enemy" then
+                        local success, sellErr = pcall(function()
+                            sellRemote:InvokeServer({item.Name})
+                        end)
+                        if success then
+                            sold += 1
+                        else
+                            warn("[Auto Sell] Gagal:", item.Name, sellErr)
+                        end
+                        task.wait(0.4)
+                    else
+                        skipped += 1
+                    end
+                end
+            end
+
+            if not running() then break end
+            if sold > 0 or kept > 0 then
+                print("[Auto Sell] Terjual:", sold,
+                    "| Exotic disimpan:", kept,
+                    "| Dilewati:", skipped)
+            end
+            task.wait(1)
+        end
+    end)
+end)
 
 addButton("Open Inventory", function()
     openGameFrame("Inventory")
@@ -4797,24 +4177,31 @@ addButton("Close Undead Conquest", function()
     print("[Conquest] UndeadConquest ditutup")
 end)
 
--- Closing kills all loops started by this script and removes its UI.
+-- Closing stops this script's automation loops and removes its UI.
 close.Activated:Connect(function()
     _G.StandaloneAutomationAlive = false
     _G.StandaloneAutomationRunId = (_G.StandaloneAutomationRunId or 0) + 1
-    for key in pairs(_G) do
-        if type(key)=="string" and key:match("^(Auto|Orbit|Fly|Face|TP|Anti)") then
-            -- Only turn off globals used by this bundle; unrelated globals are untouched below.
-        end
-    end
+
+    -- Explicitly stop the feature flags used by this bundle. Config is retained.
     local globals = {
         "AutoOrbitSnowMobs","OrbitHollowAll","OrbitDemonAll","OrbitMageNPCs",
         "OrbitChallengeNPCs","OrbitConquestAll","FaceMobEnabled","TPAllDungeonChests",
         "AutoContinue","AutoReplayDungeon","AutoSelectChest","AutoSelectBoost",
         "AutoMagnetDrops","AutoAttackSkill","FlyDarkProfessor","AutoNextDepth",
         "AutoRefillPotion","AutoOpenBossChests","AutoPotionHP","FlyBossRush",
-        "FlyAutoAttack","AntiAFK","AutoConquestTP","AutoRebirthButton"
+        "FlyAutoAttack","AntiAFK","AutoConquestTP","AutoRebirthButton",
+        "AutoFarmDemon","AutoFarmMage","AutoHollowOrbit","AutoPayloadFarm",
+        "AutoBossRushAll","AutoRaidOrbit","AutoFarmChallenge","AutoFarmConquest",
+        "AutoUltimate","AutoParry","AutoDodge","HideMobileActions",
+        "AutoPotionHP50","AutoSelectBoost","AutoSelectChest","AutoReplayDungeon",
+        "AutoOpenDungeonSelect","AutoFarmBanditsDen","AutoFarmGoblins",
+        "AutoFarmKnights","AutoFarmCatacombs","AutoFarmSnow"
     }
-    for _,key in ipairs(globals) do _G[key]=false end
+    for _, key in ipairs(globals) do
+        _G[key] = false
+    end
+
+    pcall(function() writeConfig(true) end)
     gui:Destroy()
 end)
 
