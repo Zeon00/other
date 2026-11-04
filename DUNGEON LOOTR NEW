@@ -1217,9 +1217,12 @@ end
 print("[Dungeon Farm] NPC farm + WallCap patrol + Arsenal HoldArea defense loaded.")
 
 
+
 --============================================================
 -- 8. HOLLOW REALM | TOTEM PRIORITY + HOLLOW REAPER FIX
 -- HOLLOW REAPER PRIORITY | AUTO FARM | ORBIT
+-- ADD: AUTO SCAN + TP ROOM 1-10 WHEN NPC EMPTY
+-- TOTEM ALWAYS PRIORITY
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1244,6 +1247,12 @@ local TARGET_REFRESH = 0.8
 
 local TOTEM_DISTANCE = 5
 local TOTEM_TIMEOUT = 15
+
+-- ZONE SCAN SETTINGS
+local ZONE_COUNT = 10
+local ZONE_WAIT = 1.5
+local ZONE_TP_HEIGHT = 5
+local ZONE_CHECK_INTERVAL = 0.1
 
 local function running(id)
     return _G.AutoHollowOrbit
@@ -1276,6 +1285,86 @@ local function getRoot()
     return nil, nil
 end
 
+--============================================================
+-- ROOM ZONE SCAN
+--============================================================
+
+local function getRoomZone(index)
+    local run = getRun()
+    if not run then
+        return nil
+    end
+
+    local room = run:FindFirstChild("Room_" .. index)
+    if not room then
+        return nil
+    end
+
+    return room:FindFirstChild("Zone")
+end
+
+local function getZoneCFrame(zone)
+    if not zone then
+        return nil
+    end
+
+    if zone:IsA("BasePart") then
+        return zone.CFrame
+    end
+
+    if zone:IsA("Model") then
+        local ok, pivot = pcall(function()
+            return zone:GetPivot()
+        end)
+
+        if ok then
+            return pivot
+        end
+    end
+
+    local part = zone:FindFirstChildWhichIsA("BasePart", true)
+
+    if part then
+        return part.CFrame
+    end
+
+    return nil
+end
+
+local function teleportToZone(index, id)
+    if not running(id) then
+        return false
+    end
+
+    local zone = getRoomZone(index)
+    if not zone then
+        return false
+    end
+
+    local zoneCF = getZoneCFrame(zone)
+    local root = getRoot()
+
+    if not zoneCF or not root then
+        return false
+    end
+
+    local destination = zoneCF.Position + Vector3.new(
+        0,
+        ZONE_TP_HEIGHT,
+        0
+    )
+
+    root.CFrame = CFrame.new(destination)
+
+    print("[Hollow Zone] TP Room_" .. index)
+
+    return true
+end
+
+--============================================================
+-- TARGET HELPERS
+--============================================================
+
 local function isHollowReaper(mob)
     return mob ~= nil and mob.Name == "Hollow Reaper"
 end
@@ -1306,7 +1395,6 @@ local function isIgnored(mob)
         return true
     end
 
-    -- FIX: Hollow Reaper jangan pernah dilewati filter atribut.
     if isHollowReaper(mob) then
         return false
     end
@@ -1644,7 +1732,7 @@ local function getTarget()
     local root = getRoot()
     local playerPos = root and root.Position
 
-    -- FIX: Hollow Reaper selalu diperiksa lebih dahulu.
+    -- HOLLOW REAPER PRIORITY
     local reaper = folder:FindFirstChild("Hollow Reaper")
 
     if reaper and isAlive(reaper) then
@@ -1689,6 +1777,69 @@ local function getTarget()
     end
 
     return nil
+end
+
+--============================================================
+-- SCAN ALL ZONES WHEN NO MOB
+-- TOTEM CHECKED BEFORE EVERY TP AND DURING WAIT
+--============================================================
+
+local function scanAllZones(id)
+    for index = 1, ZONE_COUNT do
+        if not running(id) then
+            return
+        end
+
+        if _G.AutoHollowTotemBusy then
+            return
+        end
+
+        -- Totem selalu lebih penting daripada zone scan.
+        local totem = getTotem()
+
+        if totem and not handledTotems[totem] then
+            return
+        end
+
+        -- Cek apakah mob sudah muncul sebelum pindah zone.
+        local mob = getTarget()
+
+        if mob then
+            _G.AutoHollowOrbitTarget = mob
+            return
+        end
+
+        teleportToZone(index, id)
+
+        -- Tunggu mob spawn di zone, tetapi tetap cek totem.
+        local started = os.clock()
+
+        while running(id)
+            and os.clock() - started < ZONE_WAIT do
+
+            if _G.AutoHollowTotemBusy then
+                return
+            end
+
+            totem = getTotem()
+
+            if totem and not handledTotems[totem] then
+                return
+            end
+
+            mob = getTarget()
+
+            if mob then
+                _G.AutoHollowOrbitTarget = mob
+                print("[Hollow Zone] Mob ditemukan di sekitar Room_" .. index)
+                return
+            end
+
+            task.wait(ZONE_CHECK_INTERVAL)
+        end
+    end
+
+    print("[Hollow Zone] Scan Room 1-10 selesai, ulangi scan")
 end
 
 local function getAttackDirection(mob)
@@ -1861,6 +2012,7 @@ local function farmLoop(id)
             continue
         end
 
+        -- Totem check sebelum memilih mob atau scan zone.
         local totem = getTotem()
 
         if totem and not handledTotems[totem] then
@@ -1880,8 +2032,6 @@ local function farmLoop(id)
 
             if target then
                 print("[Hollow Orbit] Target:", target.Name)
-            else
-                print("[Hollow Orbit] Tidak ada target hidup")
             end
         end
 
@@ -1895,7 +2045,14 @@ local function farmLoop(id)
             _G.AutoHollowOrbitTarget = nil
             target = nil
         else
-            task.wait(0.15)
+            _G.AutoHollowOrbitTarget = nil
+            target = nil
+
+            -- NPC kosong: scan Room_1 sampai Room_10.
+            scanAllZones(id)
+
+            lastRefresh = 0
+            task.wait(0.1)
         end
     end
 
@@ -1953,6 +2110,7 @@ end)
 --============================================================
 -- END HOLLOW REALM
 --============================================================
+
 
 -- B. EVENT and Party Game
 setActiveCategory("B")
