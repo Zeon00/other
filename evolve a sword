@@ -1970,40 +1970,31 @@ local function startHallow()
             if not AutoOrbit then startOrbit() end
             if not AutoCombat then startCombat() end
 
-            if not waitForProgressComplete(alive, status) then
-                break
-            end
+            --====================================================
+-- PANCING MOB HALLOW (HANYA 1 KALI)
+--====================================================
 
-            if not alive() then break end
+status("Menunggu 2 detik untuk spawn mob...")
+task.wait(2)
 
-            status("Menunggu semua musuh habis...")
+if not alive() then break end
 
-            local emptySince = nil
+local roamGraves = Workspace
+    :WaitForChild("Dungeons")
+    :WaitForChild("HALLOW")
+    :WaitForChild("Markers")
+    :WaitForChild("Roam_Graves_2")
 
-            while alive() do
-                if getEnemyCount() == 0 then
-                    emptySince = emptySince or os.clock()
+status("TP Roam Graves 2 untuk spawn mob...")
 
-                    if os.clock() - emptySince >= 2 then
-                        break
-                    end
-                else
-                    emptySince = nil
-                end
+if not teleportPosition(roamGraves.Position) then
+    status("TP Roam Graves 2 gagal!")
+    break
+end
 
-                task.wait(0.1)
-            end
+if not alive() then break end
 
-            if not alive() then break end
-
-            status("Semua musuh habis! TP posisi 3...")
-
-            if not teleportPosition(HALLOW_POS3) then
-                status("TP posisi 3 gagal!")
-                break
-            end
-
-            status("Berhasil TP posisi 3!")
+status("Spawn mob dipancing! Lanjut alur Hallow...")
 
             if not alive() then break end
 
@@ -2666,7 +2657,7 @@ addToggle("AUTO ENCHANT", false, function(state)
     if state then startEnchant() else stopEnchant() end
 end)
 
-addToggle("AUTO CANDY SHOP", true, function(state)
+addToggle("AUTO CANDY SHOP", false, function(state)
     if state then startCandyShop() else stopCandyShop() end
 end)
 
