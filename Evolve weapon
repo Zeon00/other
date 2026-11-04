@@ -1,6 +1,6 @@
 --============================================================
 -- ANIME FORGING | ULTIMATE AUTOMATION HUB
--- 10 TOGGLE | STANDALONE GUI
+-- 11 TOGGLE | STANDALONE GUI
 --
 -- 1. AUTO SWING + HIT
 -- 2. AUTO SKILL
@@ -11,7 +11,8 @@
 -- 7. AUTO HALLOW
 -- 8. AUTO CLAIM ALL REWARDS
 -- 9. AUTO TOWER
--- 10. AUTO REBIRTH
+-- 10. AUTO ENCHANT
+-- 11. AUTO CANDY SHOP
 --
 -- DRAG | MINIMIZE | DESTROY
 -- SINGLE INSTANCE | CENTRAL CLEANUP
@@ -177,11 +178,20 @@ local AutoEclipse = false
 local AutoHallow = false
 local AutoClaim = false
 local AutoTower = false
+local AutoEnchant = false
+local AutoCandyShop = false
 local AutoRebirth = false
+-- Fase boss: cegah respawn handler mengirim player balik ke POS 1 saat boss belum mati.
+local DungeonBossPhase = false
+local HallowBossPhase = false
+local RiftRunActive = false
 local EclipseTarget = nil
 -- ECLIPSE PRIORITY
 local EclipsePriority = false
 local ResumeDungeonAfterEclipse = false
+local ResumeHallowAfterEclipse = false
+-- TRUE hanya ketika player sudah masuk ke Eclipse dungeon; cegah LeaveDungeon berulang.
+local EclipseDungeonEntered = false
 local SwingIndex = 0
 local SkillIndex = 0
 
@@ -194,6 +204,8 @@ local EclipseRunId = 0
 local HallowRunId = 0
 local ClaimRunId = 0
 local TowerRunId = 0
+local EnchantRunId = 0
+local CandyShopRunId = 0
 local RebirthRunId = 0
 
 local DungeonStatus = "Dungeon: OFF"
@@ -307,6 +319,35 @@ track(Player.CharacterAdded:Connect(function()
     updateCharacter()
 
     if not Running then return end
+
+    -- Setiap respawn, kembalikan player ke POS 1 sesuai mode yang aktif.
+    -- Prioritas: Eclipse > Dungeon > Hallow > Rift.
+    if Root then
+        if AutoEclipse then
+            -- Eclipse memakai alur teleport/entry miliknya sendiri.
+        elseif AutoDungeon then
+            if not DungeonBossPhase then
+                teleportPosition(DUNGEON_START)
+                DungeonStatus = "Respawn | Kembali ke POS 1 Dungeon"
+            else
+                DungeonStatus = "Respawn saat boss | Tetap di area boss"
+            end
+        elseif AutoHallow then
+            if not HallowBossPhase then
+                teleportPosition(HALLOW_POS1)
+                HallowStatus = "Respawn | Kembali ke POS 1 Hallow"
+            else
+                HallowStatus = "Respawn saat boss | Tetap di area boss"
+            end
+        elseif AutoTower then
+            if not RiftRunActive then
+                teleportPosition(TOWER_POS1)
+                TowerStatus = "Respawn | Kembali ke POS 1 Rift"
+            else
+                TowerStatus = "Respawn saat Rift aktif | Menunggu Rift selesai"
+            end
+        end
+    end
 
     if AutoOrbit then
         cleanupHover()
@@ -957,7 +998,8 @@ local function getDungeonProgress()
 end
 
 
-local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
+local function waitForProgressComplete(isAlive, statusCallback, useBeacon, dungeonName)
+    dungeonName = dungeonName or SelectedDungeon
     local emptyStart = nil
     local lastTPTime = 0
     local encounterIndex = 1
@@ -972,6 +1014,22 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
     end
 
     local function findMonsterBeacon()
+        -- Hallow: cek marker yang diminta user terlebih dahulu.
+        -- Gunakan child index 12 jika masih tersedia, lalu fallback ke pencarian nama.
+        local indexedContainer = Workspace:GetChildren()[12]
+        if indexedContainer then
+            local indexedBeacon = indexedContainer:FindFirstChild("MonsterBeacon")
+            if indexedBeacon then
+                if indexedBeacon:IsA("BasePart") or indexedBeacon:IsA("Model") then
+                    return indexedBeacon
+                end
+                local nestedPart = indexedBeacon:FindFirstChildWhichIsA("BasePart", true)
+                if nestedPart then
+                    return nestedPart
+                end
+            end
+        end
+
         for _, fx in ipairs(Workspace:GetChildren()) do
             if fx.Name == "ClientFX" then
                 local candidate = fx:FindFirstChild("MonsterBeacon")
@@ -1014,8 +1072,14 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
                 (caption.Text or ""):match("^%s*(.-)%s*$")
             )
 
-            if captionText == "open!" or captionText == "open" then
-                status("BOSS OPEN! Teleport FloorGlow...")
+            local currentProgress, totalProgress = getDungeonProgress()
+            local progressFinished = currentProgress ~= nil
+                and totalProgress ~= nil
+                and totalProgress > 0
+                and currentProgress >= totalProgress
+
+            if captionText == "open!" or captionText == "open" or progressFinished then
+                status("Progress selesai / BOSS OPEN! Teleport FloorGlow...")
                 return true
             end
         end
@@ -1040,7 +1104,9 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
                         updateCharacter()
 
                         if Root then
-                            local distance = (Root.Position - beacon.Position).Magnitude
+                            local beaconPart = beacon:IsA("BasePart") and beacon
+                                or (beacon:IsA("Model") and (beacon.PrimaryPart or beacon:FindFirstChildWhichIsA("BasePart", true)))
+                            local distance = beaconPart and (Root.Position - beaconPart.Position).Magnitude or math.huge
 
                             if distance > 12 and os.clock() - lastTPTime >= 3 then
                                 status("MonsterBeacon ditemukan! TP marker...")
@@ -1058,7 +1124,7 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
                         local encounterName = "Encounter" .. encounterIndex
 
                         local encounter = getDungeonObject(
-                            SelectedDungeon,
+                            dungeonName,
                             {"Markers", encounterName}
                         )
 
@@ -1113,19 +1179,21 @@ local function dungeonAlive(id)
 end
 
 local function waitDungeonStart(id)
-    DungeonStatus = "Menunggu posisi 1..."
-
-    while dungeonAlive(id) do
-        updateCharacter()
-
-        if Root
-            and (Root.Position - DUNGEON_START).Magnitude <= DUNGEON_TOLERANCE then
-            return true
-        end
-
-        task.wait(DUNGEON_WAIT_DELAY)
+    DungeonStatus = "Teleport ke POS 1 Dungeon..."
+    updateCharacter()
+    if Root and (Root.Position - DUNGEON_START).Magnitude > DUNGEON_TOLERANCE then
+        teleportPosition(DUNGEON_START)
+        task.wait(0.35)
     end
 
+    DungeonStatus = "Menunggu posisi 1..."
+    while dungeonAlive(id) do
+        updateCharacter()
+        if Root and (Root.Position - DUNGEON_START).Magnitude <= DUNGEON_TOLERANCE then
+            return true
+        end
+        task.wait(DUNGEON_WAIT_DELAY)
+    end
     return false
 end
 
@@ -1158,6 +1226,7 @@ local function walkDungeonEntry(id)
 end
 
 local function stopDungeon()
+    DungeonBossPhase = false
     AutoDungeon = false
     DungeonRunId += 1
     DungeonStatus = "Dungeon: OFF"
@@ -1275,7 +1344,9 @@ end
                 break
             end
 
+            DungeonBossPhase = true
             if not teleportObject(glow) then
+                DungeonBossPhase = false
                 status("Teleport FloorGlow gagal!")
                 break
             end
@@ -1289,6 +1360,7 @@ end
                 break
             end
 
+            DungeonBossPhase = false
             if not alive() then break end
 
             status("Boss habis, tunggu 2 detik...")
@@ -1331,6 +1403,7 @@ end
         end
 
         if DungeonRunId == id then
+            DungeonBossPhase = false
             if not combatWasOn and AutoCombat then
                 stopCombat()
             end
@@ -1343,6 +1416,9 @@ end
         end
     end)
 end
+
+local startHallow
+local stopHallow
 
 --============================================================
 -- AUTO ECLIPSE | DIRECT TP UMBRA
@@ -1445,6 +1521,7 @@ end
 local function stopEclipse()
     AutoEclipse = false
     EclipseRunId += 1
+    EclipseDungeonEntered = false
 
     EclipseTarget = nil
 
@@ -1464,8 +1541,8 @@ local function startEclipse()
         return
     end
 
-    if AutoHallow or AutoTower then
-        EclipseStatus = "Matikan Hallow / Tower dahulu!"
+    if AutoTower then
+        EclipseStatus = "Matikan Tower dahulu!"
         return
     end
 
@@ -1538,16 +1615,38 @@ local function startEclipse()
     -- ECLIPSE PRIORITY: POTONG DUNGEON YANG SEDANG JALAN
     --====================================================
 
+    -- Selama konfigurasi Eclipse tersedia, blokir mode dungeon lain.
+    if config then
+        EclipsePriority = true
+    end
+
+    -- Eclipse mengambil prioritas atas Hallow yang sedang aktif.
+    -- Simpan statusnya, lalu hentikan worker Hallow agar tidak bentrok.
+    if config and AutoHallow then
+        ResumeHallowAfterEclipse = true
+        status("ECLIPSE TERSEDIA! Menghentikan Auto Hallow sementara...")
+        stopHallow()
+        task.wait(0.25)
+    end
+
+    -- Auto Dungeon juga dihentikan sementara jika Eclipse tersedia.
+    if config and AutoDungeon then
+        ResumeDungeonAfterEclipse = true
+        EclipsePriority = true
+        status("ECLIPSE TERSEDIA! Menghentikan Auto Dungeon...")
+        stopDungeon()
+    end
+
     if Player:GetAttribute("Dungeon") then
 
-        if config then
-            status("ECLIPSE TERSEDIA! Menghentikan dungeon...")
+        -- Jangan pernah mengeluarkan player dari Eclipse yang sedang berjalan.
+        -- LeaveDungeon hanya untuk dungeon LAIN sebelum masuk Eclipse.
+        if config and not EclipseDungeonEntered then
+            status("ECLIPSE TERSEDIA! Keluar dari dungeon aktif...")
 
-            -- Simpan status agar Auto Dungeon bisa dilanjutkan
-            ResumeDungeonAfterEclipse = AutoDungeon
+            ResumeDungeonAfterEclipse = ResumeDungeonAfterEclipse or AutoDungeon
             EclipsePriority = true
 
-            -- Hentikan worker Auto Dungeon
             if AutoDungeon then
                 stopDungeon()
             end
@@ -1568,6 +1667,10 @@ local function startEclipse()
                     ResumeDungeonAfterEclipse = false
                     task.wait(1)
                     startDungeon()
+                elseif ResumeHallowAfterEclipse and alive() then
+                    ResumeHallowAfterEclipse = false
+                    task.wait(1)
+                    startHallow()
                 end
 
                 task.wait(3)
@@ -1595,6 +1698,10 @@ local function startEclipse()
                     ResumeDungeonAfterEclipse = false
                     task.wait(1)
                     startDungeon()
+                elseif ResumeHallowAfterEclipse then
+                    ResumeHallowAfterEclipse = false
+                    task.wait(1)
+                    startHallow()
                 end
 
                 task.wait(3)
@@ -1676,7 +1783,10 @@ local function startEclipse()
                 break
             end
 
-            status("Berhasil masuk! Mencari Umbra...")
+            -- Tandai bahwa dungeon aktif sekarang adalah Eclipse.
+            -- Loop berikutnya tidak boleh memanggil LeaveDungeon lagi.
+            EclipseDungeonEntered = true
+            status("Berhasil masuk Eclipse! Mencari Umbra...")
 
             local umbra = waitUmbra()
 
@@ -1786,24 +1896,27 @@ end
 if not alive() then break end
 
 status("Berhasil keluar dari Eclipse!")
+EclipseDungeonEntered = false
 
--- Buka kembali izin Auto Dungeon
+-- Buka kembali izin mode setelah Eclipse selesai.
 EclipsePriority = false
 
--- Lanjutkan Auto Dungeon jika sebelumnya sedang ON
-if ResumeDungeonAfterEclipse
-    and alive()
-    and not AutoDungeon then
-
+-- Dungeon dilanjutkan lebih dulu jika keduanya sempat aktif.
+-- Jika tidak, Hallow otomatis dimulai lagi dari posisi 1.
+if ResumeDungeonAfterEclipse and alive() and not AutoDungeon then
     ResumeDungeonAfterEclipse = false
-
     status("Cooldown Eclipse! Melanjutkan Auto Dungeon...")
     task.wait(1)
-
     startDungeon()
-else
-    ResumeDungeonAfterEclipse = false
+elseif ResumeHallowAfterEclipse and alive() and not AutoHallow then
+    ResumeHallowAfterEclipse = false
+    status("Cooldown Eclipse! Melanjutkan Auto Hallow dari posisi 1...")
+    task.wait(1)
+    startHallow()
 end
+
+ResumeDungeonAfterEclipse = false
+ResumeHallowAfterEclipse = false
 
 task.wait(2)
         end
@@ -1835,19 +1948,21 @@ local function hallowAlive(id)
 end
 
 local function hallowWaitPosition1(id)
-    HallowStatus = "HALLOW | Menunggu posisi 1..."
-
-    while hallowAlive(id) do
-        updateCharacter()
-
-        if Root
-            and (Root.Position - HALLOW_POS1).Magnitude <= HALLOW_POS1_TOLERANCE then
-            return true
-        end
-
-        task.wait(0.2)
+    HallowStatus = "HALLOW | Teleport ke POS 1..."
+    updateCharacter()
+    if Root and (Root.Position - HALLOW_POS1).Magnitude > HALLOW_POS1_TOLERANCE then
+        teleportPosition(HALLOW_POS1)
+        task.wait(0.35)
     end
 
+    HallowStatus = "HALLOW | Menunggu posisi 1..."
+    while hallowAlive(id) do
+        updateCharacter()
+        if Root and (Root.Position - HALLOW_POS1).Magnitude <= HALLOW_POS1_TOLERANCE then
+            return true
+        end
+        task.wait(0.2)
+    end
     return false
 end
 
@@ -1899,13 +2014,14 @@ local function hallowWaitClear(id, label)
     return false
 end
 
-local function stopHallow()
+stopHallow = function()
+    HallowBossPhase = false
     AutoHallow = false
     HallowRunId += 1
     HallowStatus = "Hallow: OFF"
 end
 
-local function startHallow()
+startHallow = function()
     if not Running or AutoHallow then return end
 
     if AutoDungeon or AutoEclipse or AutoTower then
@@ -1969,44 +2085,45 @@ local function startHallow()
             if not AutoOrbit then startOrbit() end
             if not AutoCombat then startCombat() end
 
-            if not waitForProgressComplete(alive, status) then
+            --====================================================
+-- PANCING MOB HALLOW (HANYA 1 KALI)
+--====================================================
+
+status("Menunggu 2 detik untuk spawn mob...")
+task.wait(2)
+
+if not alive() then break end
+
+local roamGraves = Workspace
+    :WaitForChild("Dungeons")
+    :WaitForChild("HALLOW")
+    :WaitForChild("Markers")
+    :WaitForChild("Roam_Graves_2")
+
+status("TP Roam Graves 2 untuk spawn mob...")
+
+if not teleportPosition(roamGraves.Position) then
+    status("TP Roam Graves 2 gagal!")
+    break
+end
+
+if not alive() then break end
+
+status("Spawn mob dipancing! Lanjut alur Hallow...")
+
+            if not alive() then break end
+
+            -- Enemy kosong bukan berarti progress Hallow selesai.
+            -- Tunggu progress benar-benar selesai; saat kosong, cek MonsterBeacon
+            -- pada Workspace:GetChildren()[12] dan marker Encounter bila diperlukan.
+            status("Menunggu progress Hallow selesai / MonsterBeacon...")
+            if not waitForProgressComplete(alive, status, true, "HALLOW") then
                 break
             end
 
             if not alive() then break end
 
-            status("Menunggu semua musuh habis...")
-
-            local emptySince = nil
-
-            while alive() do
-                if getEnemyCount() == 0 then
-                    emptySince = emptySince or os.clock()
-
-                    if os.clock() - emptySince >= 2 then
-                        break
-                    end
-                else
-                    emptySince = nil
-                end
-
-                task.wait(0.1)
-            end
-
-            if not alive() then break end
-
-            status("Semua musuh habis! TP posisi 3...")
-
-            if not teleportPosition(HALLOW_POS3) then
-                status("TP posisi 3 gagal!")
-                break
-            end
-
-            status("Berhasil TP posisi 3!")
-
-            if not alive() then break end
-
-            status("Wave selesai, tunggu...")
+            status("Progress Hallow selesai! Menyiapkan FloorGlow...")
             task.wait(HALLOW_BEFORE_FLOOR)
 
             if not alive() then break end
@@ -2022,8 +2139,10 @@ local function startHallow()
             end
 
             status("TP FloorGlow...")
+            HallowBossPhase = true
 
             if not teleportObject(glow) then
+                HallowBossPhase = false
                 status("TP FloorGlow gagal")
                 break
             end
@@ -2037,6 +2156,7 @@ local function startHallow()
                 break
             end
 
+            HallowBossPhase = false
             if not alive() then break end
 
             status("Boss habis, tunggu...")
@@ -2105,6 +2225,7 @@ status("Jeda selesai, memulai Hallow berikutnya...")
         end
 
         if HallowRunId == id then
+            HallowBossPhase = false
             if AutoOrbit then stopOrbit() end
             if AutoSkill then stopSkill() end
             if AutoCombat then stopCombat() end
@@ -2124,6 +2245,7 @@ local function towerAlive(id)
 end
 
 local function stopTower()
+    RiftRunActive = false
     AutoTower = false
     TowerRunId += 1
     TowerStatus = "Tower: OFF"
@@ -2148,16 +2270,19 @@ local function startTower()
         end
 
         while alive() do
-            TowerStatus = "Menunggu posisi 1..."
+            TowerStatus = "Teleport ke POS 1 Rift..."
+            updateCharacter()
+            if Root and (Root.Position - TOWER_POS1).Magnitude > TOWER_TOLERANCE then
+                teleportPosition(TOWER_POS1)
+                task.wait(0.35)
+            end
 
+            TowerStatus = "Menunggu posisi 1..."
             while alive() do
                 updateCharacter()
-
-                if Root
-                    and (Root.Position - TOWER_POS1).Magnitude <= TOWER_TOLERANCE then
+                if Root and (Root.Position - TOWER_POS1).Magnitude <= TOWER_TOLERANCE then
                     break
                 end
-
                 task.wait(0.2)
             end
 
@@ -2201,37 +2326,44 @@ local function startTower()
                 return RequestRemote:InvokeServer(
                     "EnterDungeon",
                     "RIFT",
-                    71
+                    99
                 )
             end)
 
             if not alive() then break end
 
-            if ok then
-                TowerStatus = "RIFT 71 | Remote terkirim: " .. tostring(result)
-            else
-                TowerStatus = "RIFT 71 | Remote error: " .. tostring(result)
+            if not ok or result ~= true then
+                TowerStatus = "RIFT gagal masuk: " .. tostring(result)
+                RiftRunActive = false
+                task.wait(2)
+                continue
             end
 
-            TowerStatus = "Menunggu kembali ke posisi 1..."
+            RiftRunActive = true
+            TowerStatus = "RIFT aktif | Menunggu boss selesai..."
 
+            -- Jangan anggap respawn ke POS 1 sebagai Rift selesai.
+            -- Tunggu atribut Dungeon benar-benar false, lalu baru izinkan siklus berikutnya.
             while alive() do
                 updateCharacter()
-
-                if Root
-                    and (Root.Position - TOWER_POS1).Magnitude <= TOWER_TOLERANCE then
+                if not Player:GetAttribute("Dungeon") then
                     break
                 end
-
                 task.wait(0.5)
             end
 
-            if alive() then
-                task.wait(1)
+            RiftRunActive = false
+            if not alive() then break end
+
+            TowerStatus = "RIFT selesai | Kembali ke POS 1..."
+            if Root and (Root.Position - TOWER_POS1).Magnitude > TOWER_TOLERANCE then
+                teleportPosition(TOWER_POS1)
             end
+            task.wait(1)
         end
 
         if TowerRunId == id then
+            RiftRunActive = false
             AutoTower = false
             TowerStatus = "Tower: OFF"
         end
@@ -2287,9 +2419,61 @@ end
 --============================================================
 
 --============================================================
+-- AUTO ENCHANT
+--============================================================
+
+local function stopEnchant()
+    AutoEnchant = false
+    EnchantRunId += 1
+end
+
+local function startEnchant()
+    if not Running or AutoEnchant then return end
+
+    AutoEnchant = true
+    EnchantRunId += 1
+    local id = EnchantRunId
+
+    task.spawn(function()
+        while Running and AutoEnchant and EnchantRunId == id do
+            pcall(function()
+                RequestRemote:InvokeServer("Enchant")
+            end)
+            task.wait()
+        end
+    end)
+end
+
+--============================================================
+-- AUTO CANDY SHOP
+--============================================================
+
+local function stopCandyShop()
+    AutoCandyShop = false
+    CandyShopRunId += 1
+end
+
+local function startCandyShop()
+    if not Running or AutoCandyShop then return end
+
+    AutoCandyShop = true
+    CandyShopRunId += 1
+    local id = CandyShopRunId
+
+    task.spawn(function()
+        while Running and AutoCandyShop and CandyShopRunId == id do
+            pcall(function()
+                RequestRemote:InvokeServer("CandyBuy", "GemStash")
+            end)
+            -- Yield one scheduler step to keep the client responsive.
+            task.wait()
+        end
+    end)
+end
+
+--============================================================
 -- AUTO REBIRTH
--- Request("Rebirth") akan dicoba berulang; server tetap menentukan
--- apakah syarat Power / dungeon / star sudah terpenuhi.
+-- RequestRemote("Rebirth") dicoba berkala; server menentukan syaratnya.
 --============================================================
 
 local function stopRebirth()
@@ -2308,21 +2492,16 @@ local function startRebirth()
     task.spawn(function()
         while Running and AutoRebirth and RebirthRunId == id do
             RebirthStatus = "Mencoba Rebirth..."
-
             local ok, result = pcall(function()
                 return RequestRemote:InvokeServer("Rebirth")
             end)
 
-            if not Running or not AutoRebirth or RebirthRunId ~= id then
-                break
-            end
-
+            if not Running or not AutoRebirth or RebirthRunId ~= id then break end
             if ok then
-                RebirthStatus = "Rebirth request terkirim: " .. tostring(result)
+                RebirthStatus = "Rebirth request: " .. tostring(result)
             else
                 RebirthStatus = "Rebirth error: " .. tostring(result)
             end
-
             task.wait(REBIRTH_RETRY_INTERVAL)
         end
     end)
@@ -2371,7 +2550,7 @@ stroke.Parent = Main
 
 local minimized = false
 local PANEL_WIDTH = 300
-local PANEL_HEIGHT = 520
+local PANEL_HEIGHT = 560
 
 local function getViewport()
     Camera = Workspace.CurrentCamera
@@ -2387,7 +2566,7 @@ local function updatePanelSize()
     local viewport = getViewport()
 
     PANEL_WIDTH = math.max(220, math.min(310, viewport.X - 16))
-    PANEL_HEIGHT = math.max(220, math.min(520, viewport.Y - 20))
+    PANEL_HEIGHT = math.max(220, math.min(560, viewport.Y - 20))
 
     Main.Size = UDim2.fromOffset(
         PANEL_WIDTH,
@@ -2502,26 +2681,8 @@ ListPadding.PaddingRight = UDim.new(0, 5)
 ListPadding.Parent = Scroll
 
 --============================================================
--- BUTTON CREATOR
+-- INPUT CREATOR
 --============================================================
-
-local function makeButton(label)
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1, -4, 0, 39)
-    b.BackgroundColor3 = Color3.fromRGB(48, 48, 62)
-    b.TextColor3 = Color3.new(1, 1, 1)
-    b.Font = Enum.Font.GothamBold
-    b.TextSize = 11
-    b.Text = label
-    b.AutoButtonColor = true
-    b.Parent = Scroll
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 7)
-    c.Parent = b
-
-    return b
-end
 
 local function makeInput(placeholder, value)
     local box = Instance.new("TextBox")
@@ -2540,232 +2701,186 @@ local function makeInput(placeholder, value)
     c.CornerRadius = UDim.new(0, 7)
     c.Parent = box
 
-    local s = Instance.new("UIStroke")
-    s.Color = Color3.fromRGB(85, 75, 115)
-    s.Thickness = 1
-    s.Parent = box
-
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(85, 75, 115)
+    stroke.Thickness = 1
+    stroke.Parent = box
     return box
 end
 
 --============================================================
--- TOGGLES
+-- UNIVERSAL TOGGLE SYSTEM
+-- Tambah fitur baru cukup: addToggle("NAMA", false, function(state) ... end)
 --============================================================
 
-local CombatButton = makeButton("AUTO SWING + HIT : OFF")
-local SkillButton = makeButton("AUTO SKILL : OFF")
-local OrbitButton = makeButton("ORBIT + HOVER : OFF")
-local TPButton = makeButton("TP BEHIND MOB : OFF")
+local ToggleRegistry = {}
 
-DungeonNameInput = makeInput(
-    "Nama dungeon: S1 / S2 / S3 / E1",
-    "Z3"
-)
-
-DungeonCountInput = makeInput(
-    "Jumlah Dungeon",
-    "30"
-)
-
-local DungeonButton = makeButton("AUTO DUNGEON : OFF")
-local EclipseButton = makeButton("AUTO ECLIPSE : OFF")
-local HallowButton = makeButton("AUTO HALLOW : OFF")
-local ClaimButton = makeButton("AUTO CLAIM ALL REWARDS : OFF")
-local TowerButton = makeButton("AUTO TOWER : OFF")
-local RebirthButton = makeButton("AUTO REBIRTH : OFF")
-
---============================================================
--- STATUS
---============================================================
-
-local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, -24, 0, 22)
-Status.Position = UDim2.new(0, 12, 1, -27)
-Status.BackgroundTransparency = 1
-Status.Text = "Mobs: waiting..."
-Status.TextColor3 = Color3.fromRGB(180, 180, 190)
-Status.Font = Enum.Font.Gotham
-Status.TextSize = 10
-Status.TextXAlignment = Enum.TextXAlignment.Left
-Status.TextTruncate = Enum.TextTruncate.AtEnd
-Status.Parent = Main
-
---============================================================
--- BUTTON COLORS
---============================================================
-
-local function setButton(button, label, state)
-    button.Text = label .. " : " .. (state and "ON" or "OFF")
-
-    button.BackgroundColor3 = state
+local function setToggleVisual(toggle)
+    toggle.button.Text = toggle.name .. " : " .. (toggle.state and "ON" or "OFF")
+    toggle.button.BackgroundColor3 = toggle.state
         and Color3.fromRGB(45, 125, 75)
         or Color3.fromRGB(48, 48, 62)
 end
 
+local function addToggle(name, defaultState, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -4, 0, 39)
+    button.BackgroundColor3 = Color3.fromRGB(48, 48, 62)
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 11
+    button.AutoButtonColor = true
+    button.Parent = Scroll
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 7)
+    corner.Parent = button
+
+    local toggle = {name = name, state = defaultState == true, button = button}
+    table.insert(ToggleRegistry, toggle)
+    setToggleVisual(toggle)
+
+    button.Activated:Connect(function()
+        if not Running then return end
+        toggle.state = not toggle.state
+        setToggleVisual(toggle)
+        local ok, err = pcall(callback, toggle.state)
+        if not ok then warn("[Toggle " .. name .. "] " .. tostring(err)) end
+    end)
+
+    if toggle.state then
+        task.spawn(function()
+            local ok, err = pcall(callback, true)
+            if not ok then warn("[Toggle " .. name .. "] " .. tostring(err)) end
+        end)
+    end
+
+    return toggle
+end
+
+-- Read the REAL automation flags every refresh.
+-- This mirrors the old working setButton(..., AutoFeature) approach.
+local function getActualToggleState(name)
+    if name == "AUTO SWING + HIT" then return AutoCombat end
+    if name == "AUTO SKILL" then return AutoSkill end
+    if name == "ORBIT + HOVER" then return AutoOrbit end
+    if name == "TP BEHIND MOB" then return AutoTP end
+    if name == "AUTO DUNGEON" then return AutoDungeon end
+    if name == "AUTO ECLIPSE" then return AutoEclipse end
+    if name == "AUTO HALLOW" then return AutoHallow end
+    if name == "AUTO CLAIM ALL REWARDS" then return AutoClaim end
+    if name == "AUTO TOWER" then return AutoTower end
+    if name == "AUTO ENCHANT" then return AutoEnchant end
+    if name == "AUTO CANDY SHOP" then return AutoCandyShop end
+    if name == "AUTO REBIRTH" then return AutoRebirth end
+    return false
+end
+
+local function refreshToggles()
+    for _, toggle in ipairs(ToggleRegistry) do
+        toggle.state = getActualToggleState(toggle.name) == true
+        setToggleVisual(toggle)
+    end
+end
+
 --============================================================
--- BUTTON EVENTS
+-- DUNGEON INPUTS
 --============================================================
 
-CombatButton.MouseButton1Click:Connect(function()
-    if not Running then return end
+DungeonNameInput = makeInput("Nama dungeon: S1 / S2 / S3 / E1", "Z3")
+DungeonCountInput = makeInput("Jumlah Dungeon", "30")
 
-    if AutoCombat then
-        stopCombat()
-    else
-        startCombat()
-    end
+--============================================================
+-- ALL AUTOMATION TOGGLES
+--============================================================
 
-    setButton(CombatButton, "AUTO SWING + HIT", AutoCombat)
+addToggle("AUTO SWING + HIT", true, function(state)
+    if state then startCombat() else stopCombat() end
 end)
 
-SkillButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoSkill then
-        stopSkill()
-    else
-        startSkill()
-    end
-
-    setButton(SkillButton, "AUTO SKILL", AutoSkill)
+addToggle("AUTO SKILL", false, function(state)
+    if state then startSkill() else stopSkill() end
 end)
 
-OrbitButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoOrbit then
-        stopOrbit()
-    else
-        startOrbit()
-    end
-
-    setButton(OrbitButton, "ORBIT + HOVER", AutoOrbit)
+addToggle("ORBIT + HOVER", false, function(state)
+    if state then startOrbit() else stopOrbit() end
 end)
 
-TPButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoTP then
-        stopTP()
-    else
-        startTP()
-    end
-
-    setButton(TPButton, "TP BEHIND MOB", AutoTP)
+addToggle("TP BEHIND MOB", false, function(state)
+    if state then startTP() else stopTP() end
 end)
 
-DungeonButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoDungeon then
-        stopDungeon()
-    else
-        startDungeon()
-    end
-
-    setButton(DungeonButton, "AUTO DUNGEON", AutoDungeon)
+addToggle("AUTO DUNGEON", false, function(state)
+    if state then startDungeon() else stopDungeon() end
 end)
 
-EclipseButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoEclipse then
-        stopEclipse()
-    else
-        startEclipse()
-    end
-
-    setButton(EclipseButton, "AUTO ECLIPSE", AutoEclipse)
+addToggle("AUTO ECLIPSE", false, function(state)
+    if state then startEclipse() else stopEclipse() end
 end)
 
-HallowButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoHallow then
-        stopHallow()
-    else
-        startHallow()
-    end
-
-    setButton(HallowButton, "AUTO HALLOW", AutoHallow)
+addToggle("AUTO HALLOW", false, function(state)
+    if state then startHallow() else stopHallow() end
 end)
 
-ClaimButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoClaim then
-        stopClaim()
-    else
-        startClaim()
-    end
-
-    setButton(ClaimButton, "AUTO CLAIM ALL REWARDS", AutoClaim)
+addToggle("AUTO CLAIM ALL REWARDS", true, function(state)
+    if state then startClaim() else stopClaim() end
 end)
 
-TowerButton.MouseButton1Click:Connect(function()
-    if not Running then return end
-
-    if AutoTower then
-        stopTower()
-    else
-        startTower()
-    end
-
-    setButton(TowerButton, "AUTO TOWER", AutoTower)
+addToggle("AUTO TOWER", false, function(state)
+    if state then startTower() else stopTower() end
 end)
 
-RebirthButton.MouseButton1Click:Connect(function()
-    if not Running then return end
+addToggle("AUTO ENCHANT", false, function(state)
+    if state then startEnchant() else stopEnchant() end
+end)
 
-    if AutoRebirth then
-        stopRebirth()
-    else
-        startRebirth()
-    end
+addToggle("AUTO CANDY SHOP", false, function(state)
+    if state then startCandyShop() else stopCandyShop() end
+end)
 
-    setButton(RebirthButton, "AUTO REBIRTH", AutoRebirth)
+addToggle("AUTO REBIRTH", false, function(state)
+    if state then startRebirth() else stopRebirth() end
 end)
 
 --============================================================
--- STATUS UPDATE
+-- STATUS UPDATE | TOGGLE VISUAL SYNC FIX
 --============================================================
 
 task.spawn(function()
     while Running and Gui and Gui.Parent do
-        local mob = getTarget()
-        local count = #getAllMobs()
+        -- Selalu sinkronkan warna dan tulisan toggle
+        pcall(function()
+            refreshToggles()
+        end)
 
-        setButton(CombatButton, "AUTO SWING + HIT", AutoCombat)
-        setButton(SkillButton, "AUTO SKILL", AutoSkill)
-        setButton(OrbitButton, "ORBIT + HOVER", AutoOrbit)
-        setButton(TPButton, "TP BEHIND MOB", AutoTP)
-        setButton(DungeonButton, "AUTO DUNGEON", AutoDungeon)
-        setButton(EclipseButton, "AUTO ECLIPSE", AutoEclipse)
-        setButton(HallowButton, "AUTO HALLOW", AutoHallow)
-        setButton(ClaimButton, "AUTO CLAIM ALL REWARDS", AutoClaim)
-        setButton(TowerButton, "AUTO TOWER", AutoTower)
-        setButton(RebirthButton, "AUTO REBIRTH", AutoRebirth)
+        -- Update status jika label tersedia
+        if Status then
+            pcall(function()
+                local mob = getTarget()
+                local count = #getAllMobs()
 
-        if AutoEclipse then
-            Status.Text = EclipseStatus .. " | Mobs: " .. count
-        elseif AutoHallow then
-            Status.Text = HallowStatus .. " | Mobs: " .. count
-        elseif AutoDungeon then
-            Status.Text = DungeonStatus .. " | Mobs: " .. count
-        elseif AutoTower then
-            Status.Text = TowerStatus .. " | Mobs: " .. count
-        elseif AutoClaim then
-            Status.Text = ClaimStatus
-        elseif AutoRebirth then
-            Status.Text = RebirthStatus
-        elseif mob then
-            Status.Text = "Target: " .. mob.Name .. " | Mobs: " .. count
-        elseif AutoOrbit then
-            Status.Text = "Orbit aktif | Mobs: " .. count
-        elseif AutoTP then
-            Status.Text = "TP aktif | Mobs: " .. count
-        else
-            Status.Text = "Mobs in folder: " .. count
+                if AutoEclipse then
+                    Status.Text = EclipseStatus .. " | Mobs: " .. count
+                elseif AutoHallow then
+                    Status.Text = HallowStatus .. " | Mobs: " .. count
+                elseif AutoDungeon then
+                    Status.Text = DungeonStatus .. " | Mobs: " .. count
+                elseif AutoTower then
+                    Status.Text = TowerStatus .. " | Mobs: " .. count
+                elseif AutoClaim then
+                    Status.Text = ClaimStatus
+                elseif AutoRebirth then
+                    Status.Text = RebirthStatus
+                elseif mob then
+                    Status.Text = "Target: " .. mob.Name .. " | Mobs: " .. count
+                elseif AutoOrbit then
+                    Status.Text = "Orbit aktif | Mobs: " .. count
+                elseif AutoTP then
+                    Status.Text = "TP aktif | Mobs: " .. count
+                else
+                    Status.Text = "Mobs in folder: " .. count
+                end
+            end)
         end
 
         task.wait(0.3)
@@ -2773,33 +2888,83 @@ task.spawn(function()
 end)
 
 --============================================================
--- MINIMIZE / RESTORE
+-- MINIMIZE / RESTORE | FLOATING AF ICON (PC + MOBILE)
 --============================================================
 
-Min.MouseButton1Click:Connect(function()
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Name = "AF_MiniIcon"
+MiniIcon.Size = UDim2.fromOffset(48, 48)
+MiniIcon.Position = Main.Position
+MiniIcon.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+MiniIcon.Text = "AF"
+MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniIcon.TextSize = 15
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.Visible = false
+MiniIcon.Active = true
+MiniIcon.AutoButtonColor = true
+MiniIcon.ZIndex = 100
+MiniIcon.Parent = Gui
+
+local MiniCorner = Instance.new("UICorner")
+MiniCorner.CornerRadius = UDim.new(1, 0)
+MiniCorner.Parent = MiniIcon
+
+local MiniStroke = Instance.new("UIStroke")
+MiniStroke.Color = Color3.fromRGB(125, 75, 220)
+MiniStroke.Thickness = 2
+MiniStroke.Parent = MiniIcon
+
+Min.Activated:Connect(function()
     if not Running then return end
-
-    minimized = not minimized
-
-    Scroll.Visible = not minimized
-    Status.Visible = not minimized
-
-    Main.Size = UDim2.fromOffset(
-        PANEL_WIDTH,
-        minimized and 38 or PANEL_HEIGHT
-    )
-
-    Min.Text = minimized and "+" or "-"
-
-    local viewport = getViewport()
-    local maxX = math.max(0, viewport.X - Main.AbsoluteSize.X)
-    local maxY = math.max(0, viewport.Y - Main.AbsoluteSize.Y)
-
-    Main.Position = UDim2.fromOffset(
-        math.clamp(Main.Position.X.Offset, 0, maxX),
-        math.clamp(Main.Position.Y.Offset, 0, maxY)
-    )
+    Main.Visible = false
+    MiniIcon.Visible = true
+    MiniIcon.Position = Main.Position
 end)
+
+MiniIcon.Activated:Connect(function()
+    if not Running then return end
+    MiniIcon.Visible = false
+    Main.Visible = true
+end)
+
+-- Drag floating icon (PC + mobile)
+local miniDragging = false
+local miniDragStart
+local miniStartPosition
+
+MiniIcon.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        miniDragging = true
+        miniDragStart = input.Position
+        miniStartPosition = MiniIcon.Position
+    end
+end)
+
+track(UserInputService.InputChanged:Connect(function(input)
+    if not miniDragging or not MiniIcon.Visible then return end
+
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+        local delta = input.Position - miniDragStart
+        local viewport = getViewport()
+        local maxX = math.max(0, viewport.X - MiniIcon.AbsoluteSize.X)
+        local maxY = math.max(0, viewport.Y - MiniIcon.AbsoluteSize.Y)
+
+        MiniIcon.Position = UDim2.fromOffset(
+            math.clamp(miniStartPosition.X.Offset + delta.X, 0, maxX),
+            math.clamp(miniStartPosition.Y.Offset + delta.Y, 0, maxY)
+        )
+    end
+end))
+
+track(UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        miniDragging = false
+    end
+end))
 
 --============================================================
 -- DRAG | MOUSE + MOBILE TOUCH
@@ -2888,6 +3053,11 @@ function Controller.Cleanup()
     AutoHallow = false
     AutoClaim = false
     AutoTower = false
+    DungeonBossPhase = false
+    HallowBossPhase = false
+    RiftRunActive = false
+    AutoEnchant = false
+    AutoCandyShop = false
     AutoRebirth = false
 
     OrbitRunId += 1
@@ -2897,6 +3067,8 @@ function Controller.Cleanup()
     HallowRunId += 1
     ClaimRunId += 1
     TowerRunId += 1
+    EnchantRunId += 1
+    CandyShopRunId += 1
     RebirthRunId += 1
 
     releaseAllKeys()
@@ -2923,7 +3095,7 @@ function Controller.Cleanup()
     end
 end
 
-Close.MouseButton1Click:Connect(function()
+Close.Activated:Connect(function()
     Controller.Cleanup()
 end)
 
@@ -2942,7 +3114,7 @@ print("6. AUTO ECLIPSE")
 print("7. AUTO HALLOW")
 print("8. AUTO CLAIM ALL REWARDS")
 print("9. AUTO TOWER")
-print("10. AUTO REBIRTH")
+print("10. AUTO ENCHANT")
+print("11. AUTO CANDY SHOP")
 print("CLAIM INTERVAL: 300 SECONDS")
-print("REBIRTH RETRY: " .. tostring(REBIRTH_RETRY_INTERVAL) .. " SECONDS")
 print("==============================================")
