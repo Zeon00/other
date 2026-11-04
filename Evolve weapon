@@ -14,7 +14,8 @@
 -- 9. AUTO TOWER
 -- 10. AUTO ENCHANT
 -- 11. AUTO CANDY SHOP
---
+-- 12. AUTO REBIRTH
+-- 
 -- DRAG | MINIMIZE | DESTROY
 -- SINGLE INSTANCE | CENTRAL CLEANUP
 --============================================================
@@ -177,11 +178,11 @@ local AutoTP = false
 local AutoDungeon = false
 local AutoEclipse = false
 local AutoHallow = false
-local AutoClaim = false
+local AutoClaim = true
 local AutoTower = false
 local AutoEnchant = false
 local AutoCandyShop = false
-local AutoRebirth = false
+local AutoRebirth = true
 -- Fase boss: cegah respawn handler mengirim player balik ke POS 1 saat boss belum mati.
 local DungeonBossPhase = false
 -- Void Recovery hanya aktif pada fase mob dungeon biasa.
@@ -208,6 +209,7 @@ local TPRunId = 0
 local DungeonRunId = 0
 local EclipseRunId = 0
 local HallowRunId = 0
+local HallowWorkerActive = false
 local ClaimRunId = 0
 local TowerRunId = 0
 local EnchantRunId = 0
@@ -1545,6 +1547,7 @@ end
 
 local startHallow
 local stopHallow
+local pauseHallowForEclipse
 
 --============================================================
 -- AUTO ECLIPSE | DIRECT TP UMBRA
@@ -1750,8 +1753,8 @@ local function startEclipse()
     -- Simpan statusnya, lalu hentikan worker Hallow agar tidak bentrok.
     if config and AutoHallow then
         ResumeHallowAfterEclipse = true
-        status("ECLIPSE TERSEDIA! Menghentikan Auto Hallow sementara...")
-        stopHallow()
+        status("ECLIPSE TERSEDIA! Pause worker Hallow (toggle tetap ON)...")
+        pauseHallowForEclipse()
         task.wait(0.25)
     end
 
@@ -1793,10 +1796,6 @@ local function startEclipse()
                     ResumeDungeonAfterEclipse = false
                     task.wait(1)
                     startDungeon()
-                elseif ResumeHallowAfterEclipse and alive() then
-                    ResumeHallowAfterEclipse = false
-                    task.wait(1)
-                    startHallow()
                 end
 
                 task.wait(3)
@@ -1824,10 +1823,6 @@ local function startEclipse()
                     ResumeDungeonAfterEclipse = false
                     task.wait(1)
                     startDungeon()
-                elseif ResumeHallowAfterEclipse then
-                    ResumeHallowAfterEclipse = false
-                    task.wait(1)
-                    startHallow()
                 end
 
                 task.wait(3)
@@ -2027,23 +2022,8 @@ EclipseDungeonEntered = false
 -- Buka kembali izin mode setelah Eclipse selesai.
 EclipsePriority = false
 
--- Dungeon dilanjutkan lebih dulu jika keduanya sempat aktif.
--- Jika tidak, Hallow otomatis dimulai lagi dari posisi 1.
-if ResumeDungeonAfterEclipse and alive() and not AutoDungeon then
-    ResumeDungeonAfterEclipse = false
-    status("Cooldown Eclipse! Melanjutkan Auto Dungeon...")
-    task.wait(1)
-    startDungeon()
-elseif ResumeHallowAfterEclipse and alive() and not AutoHallow then
-    ResumeHallowAfterEclipse = false
-    status("Cooldown Eclipse! Melanjutkan Auto Hallow dari posisi 1...")
-    task.wait(1)
-    startHallow()
-end
-
-ResumeDungeonAfterEclipse = false
-ResumeHallowAfterEclipse = false
-
+-- Resume dilakukan setelah worker Eclipse benar-benar selesai,
+-- agar AutoEclipse tidak lagi memblokir startHallow().
 task.wait(2)
         end
 
@@ -2060,7 +2040,23 @@ task.wait(2)
             end
 
             AutoEclipse = false
+            EclipsePriority = false
             EclipseStatus = "Eclipse: OFF"
+
+            if Running and ResumeDungeonAfterEclipse and not AutoDungeon then
+                ResumeDungeonAfterEclipse = false
+                ResumeHallowAfterEclipse = false
+                task.wait(1)
+                startDungeon()
+            elseif Running and ResumeHallowAfterEclipse and AutoHallow then
+                ResumeHallowAfterEclipse = false
+                status("Eclipse selesai! Melanjutkan Auto Hallow dari POS 1...")
+                task.wait(1)
+                startHallow(true)
+            else
+                ResumeDungeonAfterEclipse = false
+                ResumeHallowAfterEclipse = false
+            end
         end
     end)
 end
@@ -2140,22 +2136,41 @@ local function hallowWaitClear(id, label)
     return false
 end
 
+pauseHallowForEclipse = function()
+    -- Pause worker saja. Toggle Auto Hallow tetap ON.
+    HallowRunId += 1
+    HallowWorkerActive = false
+    HallowBossPhase = false
+    HallowStatus = "Hallow: PAUSED (Eclipse) | Toggle tetap ON"
+end
+
 stopHallow = function()
+    HallowRunId += 1
+    HallowWorkerActive = false
     HallowBossPhase = false
     AutoHallow = false
-    HallowRunId += 1
     HallowStatus = "Hallow: OFF"
 end
 
-startHallow = function()
-    if not Running or AutoHallow then return end
+startHallow = function(isResume)
+    if not Running or HallowWorkerActive then return end
 
-    if AutoDungeon or AutoEclipse or AutoTower then
-        HallowStatus = "Matikan mode dungeon lain dahulu!"
+    -- User boleh ON-kan Hallow saat Eclipse berjalan.
+    -- Toggle tetap ON, worker menunggu sampai Eclipse benar-benar selesai.
+    if not isResume and AutoEclipse then
+        AutoHallow = true
+        ResumeHallowAfterEclipse = true
+        HallowStatus = "Hallow: ON | Menunggu Eclipse selesai..."
+        return
+    end
+
+    if not isResume and (AutoDungeon or AutoTower) then
+        HallowStatus = "Matikan Auto Dungeon/Tower dahulu!"
         return
     end
 
     AutoHallow = true
+    HallowWorkerActive = true
     HallowRunId += 1
 
     local id = HallowRunId
@@ -2212,30 +2227,48 @@ startHallow = function()
             if not AutoCombat then startCombat() end
 
             --====================================================
--- PANCING MOB HALLOW (HANYA 1 KALI)
+-- HALLOW ENCOUNTER ROUTE
+-- Remote sukses -> Encounter3 selama 3 detik -> Encounter1
 --====================================================
-
-status("Menunggu 2 detik untuk spawn mob...")
-task.wait(2)
 
 if not alive() then break end
 
-local roamGraves = Workspace
-    :WaitForChild("Dungeons")
-    :WaitForChild("HALLOW")
-    :WaitForChild("Markers")
-    :WaitForChild("Roam_Graves_2")
+local encounter3 = getDungeonObject("HALLOW", {
+    "Markers",
+    "Encounter3"
+})
 
-status("TP Roam Graves 2 untuk spawn mob...")
+local encounter1 = getDungeonObject("HALLOW", {
+    "Markers",
+    "Encounter1"
+})
 
-if not teleportPosition(roamGraves.Position) then
-    status("TP Roam Graves 2 gagal!")
+if not encounter3 or not encounter1 then
+    status("Marker Encounter3 / Encounter1 tidak ditemukan")
     break
+end
+
+status("TP ke Encounter3...")
+if not teleportObject(encounter3) then
+    status("TP Encounter3 gagal")
+    break
+end
+
+-- Bertahan 3 detik di Encounter3, sambil tetap menghormati toggle OFF.
+local encounter3Until = os.clock() + 3
+while alive() and os.clock() < encounter3Until do
+    task.wait(0.1)
 end
 
 if not alive() then break end
 
-status("Spawn mob dipancing! Lanjut alur Hallow...")
+status("Kembali ke Encounter1...")
+if not teleportObject(encounter1) then
+    status("TP Encounter1 gagal")
+    break
+end
+
+status("Encounter route selesai, menunggu progress Hallow...")
 
             if not alive() then break end
 
@@ -2351,6 +2384,7 @@ status("Jeda selesai, memulai Hallow berikutnya...")
         end
 
         if HallowRunId == id then
+            HallowWorkerActive = false
             HallowBossPhase = false
             if AutoOrbit then stopOrbit() end
             if AutoSkill then stopSkill() end
@@ -3177,6 +3211,7 @@ function Controller.Cleanup()
     AutoDungeon = false
     AutoEclipse = false
     AutoHallow = false
+    HallowWorkerActive = false
     AutoClaim = false
     AutoTower = false
     stopDungeonVoidRecovery()
