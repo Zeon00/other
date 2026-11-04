@@ -178,11 +178,11 @@ local AutoTP = false
 local AutoDungeon = false
 local AutoEclipse = false
 local AutoHallow = false
-local AutoClaim = true
+local AutoClaim = false
 local AutoTower = false
 local AutoEnchant = false
 local AutoCandyShop = false
-local AutoRebirth = true
+local AutoRebirth = false
 -- Fase boss: cegah respawn handler mengirim player balik ke POS 1 saat boss belum mati.
 local DungeonBossPhase = false
 -- Void Recovery hanya aktif pada fase mob dungeon biasa.
@@ -1740,6 +1740,24 @@ local function startEclipse()
     while alive() do
     local config, attribute = getCurrentEclipse()
 
+    -- Jika Eclipse sudah selesai / tidak tersedia lagi, lanjutkan Hallow.
+    -- AutoEclipse boleh tetap ON untuk memantau Eclipse berikutnya; itu tidak
+    -- boleh menghalangi worker Hallow berjalan di sela-sela event Eclipse.
+    if not config
+        and not EclipseDungeonEntered
+        and not Player:GetAttribute("Dungeon")
+        and AutoHallow
+        and ResumeHallowAfterEclipse
+        and not HallowWorkerActive then
+
+        ResumeHallowAfterEclipse = false
+        status("Eclipse selesai! Melanjutkan Auto Hallow dari POS 1...")
+        task.wait(1)
+        if alive() and AutoHallow and not HallowWorkerActive then
+            startHallow(true)
+        end
+    end
+
     --====================================================
     -- ECLIPSE PRIORITY: POTONG DUNGEON YANG SEDANG JALAN
     --====================================================
@@ -1753,9 +1771,13 @@ local function startEclipse()
     -- Simpan statusnya, lalu hentikan worker Hallow agar tidak bentrok.
     if config and AutoHallow then
         ResumeHallowAfterEclipse = true
-        status("ECLIPSE TERSEDIA! Pause worker Hallow (toggle tetap ON)...")
-        pauseHallowForEclipse()
-        task.wait(0.25)
+        -- Pause hanya sekali saat worker memang sedang berjalan.
+        -- Jangan menaikkan HallowRunId berulang kali setiap polling Eclipse.
+        if HallowWorkerActive then
+            status("ECLIPSE TERSEDIA! Pause worker Hallow (toggle tetap ON)...")
+            pauseHallowForEclipse()
+            task.wait(0.25)
+        end
     end
 
     -- Auto Dungeon juga dihentikan sementara jika Eclipse tersedia.
