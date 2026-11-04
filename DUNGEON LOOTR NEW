@@ -1216,7 +1216,9 @@ end
 
 print("[Dungeon Farm] NPC farm + WallCap patrol + Arsenal HoldArea defense loaded.")
 
--- 8. HOLLOW REALM.
+--============================================================
+-- 8. HOLLOW REALM | RANDOM ENEMY SPAWN PATROL
+--============================================================
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -1231,9 +1233,16 @@ _G.AutoHollowOrbitTarget = nil
 local ORBIT_RADIUS = 37
 local ORBIT_HEIGHT = 12
 local ORBIT_SPEED = 2
+
 local ATTACK_INTERVAL = 0.1
 local SKILL_INTERVAL = 0.05
-local TARGET_REFRESH = 0.8
+
+local SPAWN_WAIT_TIME = 2.5
+local PATROL_CHECK_INTERVAL = 0.15
+
+--============================================================
+-- RUNNING
+--============================================================
 
 local function running(id)
     return _G.AutoHollowOrbit
@@ -1245,10 +1254,18 @@ local function isTyping()
     return UserInputService:GetFocusedTextBox() ~= nil
 end
 
+local function getHollowRun()
+    return workspace:FindFirstChild("HollowRealmRun")
+end
+
 local function getNPCFolder()
-    local run = workspace:FindFirstChild("HollowRealmRun")
+    local run = getHollowRun()
     return run and run:FindFirstChild("NPCs")
 end
+
+--============================================================
+-- PLAYER
+--============================================================
 
 local function getRoot()
     local char = player.Character
@@ -1261,6 +1278,10 @@ local function getRoot()
 
     return nil, nil
 end
+
+--============================================================
+-- MOB DETECTION
+--============================================================
 
 local function getPart(mob)
     if not mob or not mob:IsA("Model") then
@@ -1287,17 +1308,8 @@ local function isIgnored(mob)
         return true
     end
 
-    if isCoyote(mob) then
-        return false
-    end
-
-    if mob:GetAttribute("IsSpecialBoss")
-        or mob:GetAttribute("IsLootRoomGuard")
-        or mob:GetAttribute("MimicMob") then
-        return true
-    end
-
     local summons = workspace:FindFirstChild("Summons")
+
     if summons and mob:IsDescendantOf(summons) then
         return true
     end
@@ -1314,16 +1326,12 @@ local function getPosition(mob)
         return nil
     end
 
-    if isCoyote(mob) then
-        local ok, pivot = pcall(function()
-            return mob:GetPivot()
-        end)
+    local ok, pivot = pcall(function()
+        return mob:GetPivot()
+    end)
 
-        if ok then
-            return pivot.Position
-        end
-
-        return nil
+    if ok and pivot then
+        return pivot.Position
     end
 
     local part = getPart(mob)
@@ -1335,20 +1343,18 @@ local function isAlive(mob)
         return false
     end
 
-    if isCoyote(mob) then
-        return getPosition(mob) ~= nil
-    end
-
     if not getPart(mob) then
         return false
     end
 
     local hum = mob:FindFirstChildWhichIsA("Humanoid", true)
+
     return not hum or hum.Health > 0
 end
 
 local function getTarget()
     local folder = getNPCFolder()
+
     if not folder then
         return nil
     end
@@ -1361,7 +1367,7 @@ local function getTarget()
     local bestDist = math.huge
 
     for _, mob in ipairs(folder:GetChildren()) do
-        if mob.Name ~= "Coyote" and isAlive(mob) then
+        if isAlive(mob) then
             local pos = getPosition(mob)
 
             if pos then
@@ -1375,6 +1381,7 @@ local function getTarget()
 
                 if room < bestRoom
                     or (room == bestRoom and dist < bestDist) then
+
                     best = mob
                     bestRoom = room
                     bestDist = dist
@@ -1383,17 +1390,96 @@ local function getTarget()
         end
     end
 
-    if best then
-        return best
+    return best
+end
+
+--============================================================
+-- HOLLOW ROOM SPAWN POINTS
+--
+-- Room 1-8  : GetChildren()[4]
+-- Room 9-10 : Boss_Spawn
+--============================================================
+
+local function getSpawnCFrame(spawnObject)
+    if not spawnObject then
+        return nil
     end
 
-    local coyote = folder:FindFirstChild("Coyote")
-    if coyote and isAlive(coyote) then
-        return coyote
+    if spawnObject:IsA("BasePart") then
+        return spawnObject.CFrame
+    end
+
+    if spawnObject:IsA("Model") then
+        return spawnObject:GetPivot()
     end
 
     return nil
 end
+
+local function getHollowSpawnPoints()
+    local run = getHollowRun()
+
+    if not run then
+        return {}
+    end
+
+    local points = {}
+
+    for roomIndex = 1, 10 do
+        local room = run:FindFirstChild("Room_" .. roomIndex)
+
+        if room then
+            local spawnObject
+
+            if roomIndex <= 8 then
+                -- Enemy spawn adalah Part urutan ke-4
+                spawnObject = room:GetChildren()[4]
+            else
+                -- Room 9 dan 10 menggunakan Boss_Spawn
+                spawnObject = room:FindFirstChild(
+                    "Boss_Spawn",
+                    true
+                )
+            end
+
+            local spawnCFrame = getSpawnCFrame(spawnObject)
+
+            if spawnCFrame then
+                table.insert(points, {
+                    Room = roomIndex,
+                    CFrame = spawnCFrame
+                })
+            end
+        end
+    end
+
+    return points
+end
+
+--============================================================
+-- RANDOMIZE PATROL
+--============================================================
+
+local function shufflePoints(points)
+    local shuffled = {}
+
+    for i, point in ipairs(points) do
+        shuffled[i] = point
+    end
+
+    for i = #shuffled, 2, -1 do
+        local j = math.random(1, i)
+
+        shuffled[i], shuffled[j] =
+            shuffled[j], shuffled[i]
+    end
+
+    return shuffled
+end
+
+--============================================================
+-- ATTACK REMOTES
+--============================================================
 
 local function getAttackDirection(mob)
     local root = getRoot()
@@ -1425,6 +1511,10 @@ local function getRemotes()
         inputs and inputs:FindFirstChild("Skill")
 end
 
+--============================================================
+-- AUTO ATTACK + SKILL
+--============================================================
+
 local function attackLoop(id)
     local attackRemote, skillRemote = getRemotes()
     local lastSkill = 0
@@ -1438,7 +1528,6 @@ local function attackLoop(id)
         local mob = _G.AutoHollowOrbitTarget
 
         if mob and isAlive(mob) then
-            -- Basic attack: hadapkan karakter ke mob.
             if attackRemote then
                 local root = getRoot()
                 local direction = getAttackDirection(mob)
@@ -1455,7 +1544,6 @@ local function attackLoop(id)
                 end
             end
 
-            -- Skill: tidak diberi rotasi tambahan di sini.
             if skillRemote
                 and os.clock() - lastSkill >= SKILL_INTERVAL then
 
@@ -1483,6 +1571,9 @@ local function attackLoop(id)
     end
 end
 
+--============================================================
+-- ORBIT TARGET
+--============================================================
 
 local function orbitTarget(mob, id)
     if not mob or not mob.Parent then
@@ -1517,21 +1608,16 @@ local function orbitTarget(mob, id)
         root.Position.X - pos.X
     )
 
-    -- Force TP khusus Coyote
     if isCoyote(mob) then
-        local radius = 35
-        local height = 12
-
         local destination = Vector3.new(
-            pos.X + math.cos(angle) * radius,
-            pos.Y + height,
-            pos.Z + math.sin(angle) * radius
+            pos.X + math.cos(angle) * 35,
+            pos.Y + 12,
+            pos.Z + math.sin(angle) * 35
         )
 
         root.CFrame = CFrame.lookAt(destination, pos)
     end
 
-    -- Langsung orbit setelah force TP
     while running(id)
         and _G.AutoHollowOrbitTarget == mob
         and isAlive(mob) do
@@ -1571,26 +1657,87 @@ local function orbitTarget(mob, id)
     end
 end
 
+--============================================================
+-- PATROL SPAWNS WHEN NPC EMPTY
+--============================================================
+
+local function patrolUntilMob(id)
+    local points = getHollowSpawnPoints()
+
+    if #points == 0 then
+        task.wait(1)
+        return nil
+    end
+
+    -- Acak urutan setiap satu putaran patrol
+    points = shufflePoints(points)
+
+    for _, point in ipairs(points) do
+        if not running(id) then
+            return nil
+        end
+
+        -- Jangan TP kalau mob sudah muncul
+        local mob = getTarget()
+
+        if mob then
+            return mob
+        end
+
+        local root = getRoot()
+
+        if root then
+            -- TP ke titik spawn
+            root.CFrame = point.CFrame * CFrame.new(0, 4, 0)
+
+            print(
+                "[Hollow Patrol] Room:",
+                point.Room
+            )
+        end
+
+        -- Tunggu mob spawn sambil terus scan NPC
+        local waitUntil = os.clock() + SPAWN_WAIT_TIME
+
+        while running(id) and os.clock() < waitUntil do
+            mob = getTarget()
+
+            if mob then
+                print(
+                    "[Hollow Patrol] Mob muncul:",
+                    mob.Name
+                )
+
+                return mob
+            end
+
+            task.wait(PATROL_CHECK_INTERVAL)
+        end
+    end
+
+    return nil
+end
+
+--============================================================
+-- MAIN FARM LOOP
+--============================================================
 
 local function farmLoop(id)
-    local lastRefresh = 0
     local target = nil
 
     while running(id) do
-        if os.clock() - lastRefresh >= TARGET_REFRESH
-            or not target
-            or not isAlive(target) then
-
+        if not target or not isAlive(target) then
             target = getTarget()
-            _G.AutoHollowOrbitTarget = target
-            lastRefresh = os.clock()
 
-            if target then
-                print("[Hollow Orbit] Target:", target.Name)
-            end
+            _G.AutoHollowOrbitTarget = target
         end
 
         if target and isAlive(target) then
+            print("[Hollow Farm] Target:", target.Name)
+
+            _G.AutoHollowOrbitTarget = target
+
+            -- Farm target sampai mati/hilang
             orbitTarget(target, id)
 
             if not running(id) then
@@ -1599,43 +1746,58 @@ local function farmLoop(id)
 
             _G.AutoHollowOrbitTarget = nil
             target = nil
+
+            task.wait(0.1)
         else
-            task.wait(0.3)
+            _G.AutoHollowOrbitTarget = nil
+
+            -- NPC kosong: patrol semua titik spawn
+            target = patrolUntilMob(id)
+
+            if target then
+                _G.AutoHollowOrbitTarget = target
+            end
         end
     end
 
     _G.AutoHollowOrbitTarget = nil
 end
 
+--============================================================
+-- GUI TOGGLE
+--============================================================
+
 addToggle("Auto Farm Hollow Realm", false, function(state)
-        _G.AutoHollowOrbit = state
-        _G.AutoHollowOrbitRunId += 1
+    _G.AutoHollowOrbit = state
+    _G.AutoHollowOrbitRunId += 1
 
-        local id = _G.AutoHollowOrbitRunId
-        _G.AutoHollowOrbitTarget = nil
+    local id = _G.AutoHollowOrbitRunId
 
-        if not state then
-            print("[Hollow Orbit] Stopped")
-            return
-        end
+    _G.AutoHollowOrbitTarget = nil
 
-        print("[Hollow Orbit] Started")
-
-        task.spawn(function()
-            local ok, err = pcall(farmLoop, id)
-            if not ok then
-                warn("[Hollow Orbit Error]", err)
-            end
-        end)
-
-        task.spawn(function()
-            local ok, err = pcall(attackLoop, id)
-            if not ok then
-                warn("[Hollow Attack Error]", err)
-            end
-        end)
+    if not state then
+        print("[Hollow Orbit] Stopped")
+        return
     end
-)
+
+    print("[Hollow Orbit] Started")
+
+    task.spawn(function()
+        local ok, err = pcall(farmLoop, id)
+
+        if not ok then
+            warn("[Hollow Farm Error]", err)
+        end
+    end)
+
+    task.spawn(function()
+        local ok, err = pcall(attackLoop, id)
+
+        if not ok then
+            warn("[Hollow Attack Error]", err)
+        end
+    end)
+end)
 
 -- B. EVENT and Party Game
 setActiveCategory("B")
