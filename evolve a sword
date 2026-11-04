@@ -1,6 +1,6 @@
 --============================================================
 -- ANIME FORGING | ULTIMATE AUTOMATION HUB
--- 10 TOGGLE | STANDALONE GUI
+-- 11 TOGGLE | STANDALONE GUI
 --
 -- 1. AUTO SWING + HIT
 -- 2. AUTO SKILL
@@ -12,6 +12,7 @@
 -- 8. AUTO CLAIM ALL REWARDS
 -- 9. AUTO TOWER
 -- 10. AUTO ENCHANT
+-- 11. AUTO CANDY SHOP
 --
 -- DRAG | MINIMIZE | DESTROY
 -- SINGLE INSTANCE | CENTRAL CLEANUP
@@ -159,7 +160,7 @@ local TOWER_POS2 = Vector3.new(
 local TOWER_TOLERANCE = 10
 local TOWER_WAIT = 2
 
-local CLAIM_INTERVAL = 30
+local CLAIM_INTERVAL = 300
 
 --============================================================
 -- STATE
@@ -177,6 +178,7 @@ local AutoHallow = false
 local AutoClaim = false
 local AutoTower = false
 local AutoEnchant = false
+local AutoCandyShop = false
 local EclipseTarget = nil
 -- ECLIPSE PRIORITY
 local EclipsePriority = false
@@ -194,6 +196,7 @@ local HallowRunId = 0
 local ClaimRunId = 0
 local TowerRunId = 0
 local EnchantRunId = 0
+local CandyShopRunId = 0
 
 local DungeonStatus = "Dungeon: OFF"
 local EclipseStatus = "Eclipse: OFF"
@@ -2305,7 +2308,34 @@ local function startEnchant()
             pcall(function()
                 RequestRemote:InvokeServer("Enchant")
             end)
-            task.wait(0.05)
+            task.wait()
+        end
+    end)
+end
+
+--============================================================
+-- AUTO CANDY SHOP
+--============================================================
+
+local function stopCandyShop()
+    AutoCandyShop = false
+    CandyShopRunId += 1
+end
+
+local function startCandyShop()
+    if not Running or AutoCandyShop then return end
+
+    AutoCandyShop = true
+    CandyShopRunId += 1
+    local id = CandyShopRunId
+
+    task.spawn(function()
+        while Running and AutoCandyShop and CandyShopRunId == id do
+            pcall(function()
+                RequestRemote:InvokeServer("CandyBuy", "GemStash")
+            end)
+            -- Yield one scheduler step to keep the client responsive.
+            task.wait()
         end
     end)
 end
@@ -2543,7 +2573,7 @@ local function addToggle(name, defaultState, callback)
     table.insert(ToggleRegistry, toggle)
     setToggleVisual(toggle)
 
-    button.MouseButton1Click:Connect(function()
+    button.Activated:Connect(function()
         if not Running then return end
         toggle.state = not toggle.state
         setToggleVisual(toggle)
@@ -2561,8 +2591,26 @@ local function addToggle(name, defaultState, callback)
     return toggle
 end
 
+-- Read the REAL automation flags every refresh.
+-- This mirrors the old working setButton(..., AutoFeature) approach.
+local function getActualToggleState(name)
+    if name == "AUTO SWING + HIT" then return AutoCombat end
+    if name == "AUTO SKILL" then return AutoSkill end
+    if name == "ORBIT + HOVER" then return AutoOrbit end
+    if name == "TP BEHIND MOB" then return AutoTP end
+    if name == "AUTO DUNGEON" then return AutoDungeon end
+    if name == "AUTO ECLIPSE" then return AutoEclipse end
+    if name == "AUTO HALLOW" then return AutoHallow end
+    if name == "AUTO CLAIM ALL REWARDS" then return AutoClaim end
+    if name == "AUTO TOWER" then return AutoTower end
+    if name == "AUTO ENCHANT" then return AutoEnchant end
+    if name == "AUTO CANDY SHOP" then return AutoCandyShop end
+    return false
+end
+
 local function refreshToggles()
     for _, toggle in ipairs(ToggleRegistry) do
+        toggle.state = getActualToggleState(toggle.name) == true
         setToggleVisual(toggle)
     end
 end
@@ -2578,7 +2626,7 @@ DungeonCountInput = makeInput("Jumlah Dungeon", "30")
 -- ALL AUTOMATION TOGGLES
 --============================================================
 
-addToggle("AUTO SWING + HIT", false, function(state)
+addToggle("AUTO SWING + HIT", true, function(state)
     if state then startCombat() else stopCombat() end
 end)
 
@@ -2606,7 +2654,7 @@ addToggle("AUTO HALLOW", false, function(state)
     if state then startHallow() else stopHallow() end
 end)
 
-addToggle("AUTO CLAIM ALL REWARDS", false, function(state)
+addToggle("AUTO CLAIM ALL REWARDS", true, function(state)
     if state then startClaim() else stopClaim() end
 end)
 
@@ -2618,35 +2666,47 @@ addToggle("AUTO ENCHANT", false, function(state)
     if state then startEnchant() else stopEnchant() end
 end)
 
+addToggle("AUTO CANDY SHOP", true, function(state)
+    if state then startCandyShop() else stopCandyShop() end
+end)
+
 --============================================================
--- STATUS UPDATE
+-- STATUS UPDATE | TOGGLE VISUAL SYNC FIX
 --============================================================
 
 task.spawn(function()
     while Running and Gui and Gui.Parent do
-        local mob = getTarget()
-        local count = #getAllMobs()
+        -- Selalu sinkronkan warna dan tulisan toggle
+        pcall(function()
+            refreshToggles()
+        end)
 
-        refreshToggles()
+        -- Update status jika label tersedia
+        if Status then
+            pcall(function()
+                local mob = getTarget()
+                local count = #getAllMobs()
 
-        if AutoEclipse then
-            Status.Text = EclipseStatus .. " | Mobs: " .. count
-        elseif AutoHallow then
-            Status.Text = HallowStatus .. " | Mobs: " .. count
-        elseif AutoDungeon then
-            Status.Text = DungeonStatus .. " | Mobs: " .. count
-        elseif AutoTower then
-            Status.Text = TowerStatus .. " | Mobs: " .. count
-        elseif AutoClaim then
-            Status.Text = ClaimStatus
-        elseif mob then
-            Status.Text = "Target: " .. mob.Name .. " | Mobs: " .. count
-        elseif AutoOrbit then
-            Status.Text = "Orbit aktif | Mobs: " .. count
-        elseif AutoTP then
-            Status.Text = "TP aktif | Mobs: " .. count
-        else
-            Status.Text = "Mobs in folder: " .. count
+                if AutoEclipse then
+                    Status.Text = EclipseStatus .. " | Mobs: " .. count
+                elseif AutoHallow then
+                    Status.Text = HallowStatus .. " | Mobs: " .. count
+                elseif AutoDungeon then
+                    Status.Text = DungeonStatus .. " | Mobs: " .. count
+                elseif AutoTower then
+                    Status.Text = TowerStatus .. " | Mobs: " .. count
+                elseif AutoClaim then
+                    Status.Text = ClaimStatus
+                elseif mob then
+                    Status.Text = "Target: " .. mob.Name .. " | Mobs: " .. count
+                elseif AutoOrbit then
+                    Status.Text = "Orbit aktif | Mobs: " .. count
+                elseif AutoTP then
+                    Status.Text = "TP aktif | Mobs: " .. count
+                else
+                    Status.Text = "Mobs in folder: " .. count
+                end
+            end)
         end
 
         task.wait(0.3)
@@ -2654,7 +2714,7 @@ task.spawn(function()
 end)
 
 --============================================================
--- MINIMIZE / RESTORE | FLOATING ICON
+-- MINIMIZE / RESTORE | FLOATING AF ICON (PC + MOBILE)
 --============================================================
 
 local MiniIcon = Instance.new("TextButton")
@@ -2683,7 +2743,6 @@ MiniStroke.Parent = MiniIcon
 
 Min.Activated:Connect(function()
     if not Running then return end
-
     Main.Visible = false
     MiniIcon.Visible = true
     MiniIcon.Position = Main.Position
@@ -2691,7 +2750,6 @@ end)
 
 MiniIcon.Activated:Connect(function()
     if not Running then return end
-
     MiniIcon.Visible = false
     Main.Visible = true
 end)
@@ -2704,7 +2762,6 @@ local miniStartPosition
 MiniIcon.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
-
         miniDragging = true
         miniDragStart = input.Position
         miniStartPosition = MiniIcon.Position
@@ -2716,10 +2773,8 @@ track(UserInputService.InputChanged:Connect(function(input)
 
     if input.UserInputType == Enum.UserInputType.MouseMovement
         or input.UserInputType == Enum.UserInputType.Touch then
-
         local delta = input.Position - miniDragStart
         local viewport = getViewport()
-
         local maxX = math.max(0, viewport.X - MiniIcon.AbsoluteSize.X)
         local maxY = math.max(0, viewport.Y - MiniIcon.AbsoluteSize.Y)
 
@@ -2825,6 +2880,7 @@ function Controller.Cleanup()
     AutoClaim = false
     AutoTower = false
     AutoEnchant = false
+    AutoCandyShop = false
 
     OrbitRunId += 1
     TPRunId += 1
@@ -2834,6 +2890,7 @@ function Controller.Cleanup()
     ClaimRunId += 1
     TowerRunId += 1
     EnchantRunId += 1
+    CandyShopRunId += 1
 
     releaseAllKeys()
     cleanupHover()
@@ -2850,9 +2907,7 @@ function Controller.Cleanup()
         pcall(function()
             Gui:Destroy()
         end)
-    if MiniIcon then
-    MiniIcon:Destroy()
-end
+
         Gui = nil
     end
 
@@ -2861,7 +2916,7 @@ end
     end
 end
 
-Close.MouseButton1Click:Connect(function()
+Close.Activated:Connect(function()
     Controller.Cleanup()
 end)
 
@@ -2881,5 +2936,6 @@ print("7. AUTO HALLOW")
 print("8. AUTO CLAIM ALL REWARDS")
 print("9. AUTO TOWER")
 print("10. AUTO ENCHANT")
+print("11. AUTO CANDY SHOP")
 print("CLAIM INTERVAL: 300 SECONDS")
 print("==============================================")
