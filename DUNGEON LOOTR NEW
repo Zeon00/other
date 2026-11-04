@@ -1216,9 +1216,10 @@ end
 
 print("[Dungeon Farm] NPC farm + WallCap patrol + Arsenal HoldArea defense loaded.")
 
+
 --============================================================
--- --============================================================
--- 8. HOLLOW REALM | TOTEM PRIORITY + AUTO FARM
+-- 8. HOLLOW REALM | TOTEM PRIORITY + HOLLOW REAPER FIX
+-- HOLLOW REAPER PRIORITY | AUTO FARM | ORBIT
 --============================================================
 
 local Players = game:GetService("Players")
@@ -1275,13 +1276,18 @@ local function getRoot()
     return nil, nil
 end
 
+local function isHollowReaper(mob)
+    return mob ~= nil and mob.Name == "Hollow Reaper"
+end
+
 local function getPart(mob)
     if not mob or not mob:IsA("Model") then
         return nil
     end
 
-    local part = mob.PrimaryPart
-        or mob:FindFirstChild("HumanoidRootPart")
+    local part = mob:FindFirstChild("HumanoidRootPart", true)
+        or mob:FindFirstChild("RootPart", true)
+        or mob.PrimaryPart
         or mob:FindFirstChildWhichIsA("BasePart", true)
 
     if part and part:IsA("BasePart") then
@@ -1298,6 +1304,11 @@ end
 local function isIgnored(mob)
     if not mob or not mob:IsA("Model") then
         return true
+    end
+
+    -- FIX: Hollow Reaper jangan pernah dilewati filter atribut.
+    if isHollowReaper(mob) then
+        return false
     end
 
     if isCoyote(mob) then
@@ -1345,7 +1356,11 @@ local function getPosition(mob)
 end
 
 local function isAlive(mob)
-    if not mob or not mob.Parent or isIgnored(mob) then
+    if not mob or not mob.Parent then
+        return false
+    end
+
+    if isIgnored(mob) then
         return false
     end
 
@@ -1429,8 +1444,6 @@ local function moveToTotem(totem, id)
     end
 
     local position = attachment.WorldPosition
-
-    -- Berdiri dekat Totem, menghadap ke Attachment.
     local destination = position + Vector3.new(0, 0, TOTEM_DISTANCE)
 
     root.CFrame = CFrame.lookAt(destination, position)
@@ -1469,13 +1482,11 @@ end
 
 local function holdTotemE(totem, id)
     local prompt = getTotemPrompt(totem)
-
     local holdDuration = 1
 
     if prompt then
         holdDuration = math.max(prompt.HoldDuration, 0.5)
 
-        -- Cara executor jika fireproximityprompt tersedia.
         if typeof(fireproximityprompt) == "function" then
             local ok = pcall(function()
                 fireproximityprompt(prompt, holdDuration)
@@ -1488,28 +1499,34 @@ local function holdTotemE(totem, id)
         end
     end
 
-    -- Fallback: tahan tombol E secara manual.
     if not running(id) then
         return false
     end
 
+    local pressed = false
+
     local ok = pcall(function()
         VirtualInputManager:SendKeyEvent(
-            true,
-            Enum.KeyCode.E,
-            false,
-            game
+            true, Enum.KeyCode.E, false, game
         )
 
+        pressed = true
         task.wait(holdDuration)
 
         VirtualInputManager:SendKeyEvent(
-            false,
-            Enum.KeyCode.E,
-            false,
-            game
+            false, Enum.KeyCode.E, false, game
         )
+
+        pressed = false
     end)
+
+    if pressed then
+        pcall(function()
+            VirtualInputManager:SendKeyEvent(
+                false, Enum.KeyCode.E, false, game
+            )
+        end)
+    end
 
     return ok
 end
@@ -1529,7 +1546,6 @@ local function processTotem(totem, id)
         return
     end
 
-    -- Totem langsung mengambil prioritas dari farming.
     _G.AutoHollowTotemBusy = true
     _G.AutoHollowOrbitTarget = nil
 
@@ -1561,7 +1577,6 @@ local function processTotem(totem, id)
 
     task.wait(0.2)
 
-    -- Tandai sebelum memanggil remote agar tidak terpanggil berulang.
     handledTotems[totem] = true
 
     local remote = getSummonRemote()
@@ -1582,8 +1597,6 @@ local function processTotem(totem, id)
         warn("[Hollow Totem] ConfirmSpecialBossSummon tidak ditemukan")
     end
 
-    -- Tunggu Totem hilang, tetapi jangan memanggil remote lagi
-    -- untuk instance Totem yang sama.
     local start = os.clock()
 
     while running(id)
@@ -1598,7 +1611,6 @@ local function processTotem(totem, id)
     _G.AutoHollowTotemBusy = false
 end
 
--- Worker Totem berjalan terus meskipun mob masih hidup.
 local function totemLoop(id)
     while running(id) do
         local totem = getTotem()
@@ -1631,6 +1643,13 @@ local function getTarget()
 
     local root = getRoot()
     local playerPos = root and root.Position
+
+    -- FIX: Hollow Reaper selalu diperiksa lebih dahulu.
+    local reaper = folder:FindFirstChild("Hollow Reaper")
+
+    if reaper and isAlive(reaper) then
+        return reaper
+    end
 
     local best
     local bestRoom = math.huge
@@ -1719,20 +1738,12 @@ local function attackLoop(id)
         local mob = _G.AutoHollowOrbitTarget
 
         if mob and isAlive(mob) then
-            if attackRemote then
-                local root = getRoot()
-                local direction = getAttackDirection(mob)
+            local direction = getAttackDirection(mob)
 
-                if root and direction.Magnitude > 0.001 then
-                    root.CFrame = CFrame.lookAt(
-                        root.Position,
-                        root.Position + direction
-                    )
-
-                    pcall(function()
-                        attackRemote:FireServer(direction)
-                    end)
-                end
+            if attackRemote and direction.Magnitude > 0.001 then
+                pcall(function()
+                    attackRemote:FireServer(direction)
+                end)
             end
 
             if skillRemote
@@ -1798,16 +1809,6 @@ local function orbitTarget(mob, id)
         root.Position.X - pos.X
     )
 
-    if isCoyote(mob) then
-        local destination = Vector3.new(
-            pos.X + math.cos(angle) * 35,
-            pos.Y + 12,
-            pos.Z + math.sin(angle) * 35
-        )
-
-        root.CFrame = CFrame.lookAt(destination, pos)
-    end
-
     while running(id)
         and not _G.AutoHollowTotemBusy
         and _G.AutoHollowOrbitTarget == mob
@@ -1853,7 +1854,6 @@ local function farmLoop(id)
 
     while running(id) do
 
-        -- Totem sedang diproses: jangan pilih target atau orbit.
         if _G.AutoHollowTotemBusy then
             _G.AutoHollowOrbitTarget = nil
             target = nil
@@ -1861,7 +1861,6 @@ local function farmLoop(id)
             continue
         end
 
-        -- Cek Totem juga di farm loop sebagai pengaman.
         local totem = getTotem()
 
         if totem and not handledTotems[totem] then
@@ -1881,6 +1880,8 @@ local function farmLoop(id)
 
             if target then
                 print("[Hollow Orbit] Target:", target.Name)
+            else
+                print("[Hollow Orbit] Tidak ada target hidup")
             end
         end
 
@@ -1891,13 +1892,8 @@ local function farmLoop(id)
                 break
             end
 
-            if _G.AutoHollowTotemBusy then
-                target = nil
-                _G.AutoHollowOrbitTarget = nil
-            else
-                _G.AutoHollowOrbitTarget = nil
-                target = nil
-            end
+            _G.AutoHollowOrbitTarget = nil
+            target = nil
         else
             task.wait(0.15)
         end
@@ -1924,7 +1920,6 @@ addToggle("Auto Farm Hollow Realm", false, function(state)
         return
     end
 
-    -- Reset catatan Totem untuk sesi baru.
     handledTotems = {}
 
     print("[Hollow Orbit] Started")
@@ -1934,6 +1929,7 @@ addToggle("Auto Farm Hollow Realm", false, function(state)
 
         if not ok then
             warn("[Hollow Totem Worker Error]", err)
+            _G.AutoHollowTotemBusy = false
         end
     end)
 
@@ -1957,6 +1953,7 @@ end)
 --============================================================
 -- END HOLLOW REALM
 --============================================================
+
 -- B. EVENT and Party Game
 setActiveCategory("B")
 
