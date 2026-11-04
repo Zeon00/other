@@ -14,8 +14,7 @@
 -- 9. AUTO TOWER
 -- 10. AUTO ENCHANT
 -- 11. AUTO CANDY SHOP
--- 12. AUTO REBIRTH
--- 
+--
 -- DRAG | MINIMIZE | DESTROY
 -- SINGLE INSTANCE | CENTRAL CLEANUP
 --============================================================
@@ -140,7 +139,8 @@ local HALLOW_POS3 = Vector3.new(
 )
 
 local HALLOW_POS1_TOLERANCE = 20
-local HALLOW_POS2_TOLERANCE = 2
+-- teleportPosition menambahkan offset Y +3 studs, jadi toleransi harus >3.
+local HALLOW_POS2_TOLERANCE = 5
 local HALLOW_BEFORE_REMOTE = 1
 local HALLOW_BEFORE_FLOOR = 2
 local HALLOW_AFTER_FLOOR = 3
@@ -2204,7 +2204,8 @@ startHallow = function(isResume)
 
             if not Root
                 or (Root.Position - HALLOW_POS2).Magnitude > HALLOW_POS2_TOLERANCE then
-                status("Posisi 2 tidak valid")
+                status("Posisi 2 belum tercapai (cek jarak), ulangi TP...")
+                task.wait(0.5)
                 continue
             end
 
