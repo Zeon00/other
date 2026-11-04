@@ -1,6 +1,7 @@
 --============================================================
 -- ANIME FORGING | ULTIMATE AUTOMATION HUB
 -- 11 TOGGLE | STANDALONE GUI
+-- DUNGEON VOID RECOVERY: MOB ONLY, OFF BEFORE FLOORGLOW / BOSS
 --
 -- 1. AUTO SWING + HIT
 -- 2. AUTO SKILL
@@ -176,13 +177,18 @@ local AutoTP = false
 local AutoDungeon = false
 local AutoEclipse = false
 local AutoHallow = false
-local AutoClaim = true
+local AutoClaim = false
 local AutoTower = false
 local AutoEnchant = false
 local AutoCandyShop = false
-local AutoRebirth = true
+local AutoRebirth = false
 -- Fase boss: cegah respawn handler mengirim player balik ke POS 1 saat boss belum mati.
 local DungeonBossPhase = false
+-- Void Recovery hanya aktif pada fase mob dungeon biasa.
+local DungeonVoidRecovery = false
+local DungeonVoidRecoveryRunId = 0
+local DungeonVoidSafeCFrame = nil
+local DungeonVoidFloorY = nil
 local HallowBossPhase = false
 local RiftRunActive = false
 local EclipseTarget = nil
@@ -190,9 +196,6 @@ local EclipseTarget = nil
 local EclipsePriority = false
 local ResumeDungeonAfterEclipse = false
 local ResumeHallowAfterEclipse = false
--- Mode tetap ON di GUI; worker lama dihentikan sementara selama Eclipse.
-local DungeonPausedForEclipse = false
-local HallowPausedForEclipse = false
 -- TRUE hanya ketika player sudah masuk ke Eclipse dungeon; cegah LeaveDungeon berulang.
 local EclipseDungeonEntered = false
 local SwingIndex = 0
@@ -544,8 +547,13 @@ local function getTarget()
                 local distance = (mobRoot.Position - Root.Position).Magnitude
                 local height = math.abs(mobRoot.Position.Y - Root.Position.Y)
 
+                -- Mob biasa tetap dibatasi 250 stud.
+                -- Saat boss phase, izinkan beda tinggi sampai 400 stud:
+                -- FloorGlow Y=238.2 dan arena boss Y=-110 (selisih ~348).
+                local allowedHeight = DungeonBossPhase and 400 or MAX_HEIGHT
+
                 if distance <= SCAN_RANGE
-                    and height <= MAX_HEIGHT
+                    and height <= allowedHeight
                     and distance < bestDistance then
 
                     bestDistance = distance
@@ -974,6 +982,38 @@ local function waitForEnemyClear(isAlive, statusCallback)
     return false
 end
 
+-- Boss can die in one hit between polling ticks. Do not require observing
+-- a living boss first; allow its spawn window, then confirm Enemies is empty.
+local function waitForDungeonBossClear(isAlive, statusCallback, spawnGrace)
+    local startedAt = os.clock()
+    local emptySince = nil
+    local seenEnemy = false
+    spawnGrace = tonumber(spawnGrace) or 10
+
+    while isAlive() do
+        local now = os.clock()
+        local count = getEnemyCount()
+
+        if count > 0 then
+            seenEnemy = true
+            emptySince = nil
+            if statusCallback then
+                statusCallback("Boss / mob terdeteksi | menunggu clear...")
+            end
+        else
+            emptySince = emptySince or now
+            if now - emptySince >= MOB_EMPTY_CONFIRM_TIME
+                and (seenEnemy or now - startedAt >= spawnGrace) then
+                return true
+            end
+        end
+
+        task.wait(0.1)
+    end
+
+    return false
+end
+
 --============================================================
 -- DUNGEON PROGRESS
 --============================================================
@@ -1174,6 +1214,83 @@ end
 
 
 --============================================================
+-- DUNGEON VOID RECOVERY (NORMAL MOB PHASE ONLY)
+-- Catat posisi aman setelah EnterDungeon berhasil.
+-- Jika player jatuh jauh di bawah level lantai mob, kembalikan ke posisi aman.
+-- Sengaja dimatikan sebelum TP FloorGlow dan tidak aktif saat boss.
+--============================================================
+
+local function stopDungeonVoidRecovery()
+    DungeonVoidRecovery = false
+    DungeonVoidRecoveryRunId += 1
+    DungeonVoidSafeCFrame = nil
+    DungeonVoidFloorY = nil
+end
+
+local function startDungeonVoidRecovery()
+    stopDungeonVoidRecovery()
+    DungeonVoidRecovery = true
+    DungeonVoidRecoveryRunId += 1
+
+    local runId = DungeonVoidRecoveryRunId
+    updateCharacter()
+
+    if Root then
+        DungeonVoidSafeCFrame = Root.CFrame
+        DungeonVoidFloorY = Root.Position.Y
+    end
+
+    task.spawn(function()
+        local lastRecovery = 0
+
+        while Running
+            and DungeonVoidRecovery
+            and DungeonVoidRecoveryRunId == runId
+            and AutoDungeon
+            and not DungeonBossPhase do
+
+            updateCharacter()
+
+            if Root and Root.Parent and Humanoid and Humanoid.Health > 0 then
+                local position = Root.Position
+                local velocity = Root.AssemblyLinearVelocity
+
+                if DungeonVoidFloorY == nil then
+                    DungeonVoidFloorY = position.Y
+                    DungeonVoidSafeCFrame = Root.CFrame
+                end
+
+                -- Posisi yang masih berada di sekitar level lantai mob dianggap aman.
+                -- Jangan simpan posisi saat sedang jatuh cepat.
+                if position.Y >= DungeonVoidFloorY - 18 and velocity.Y > -24 then
+                    DungeonVoidSafeCFrame = Root.CFrame
+                end
+
+                -- Ambang jatuh dihitung dari lantai dungeon mob saat recovery dimulai,
+                -- bukan dari tinggi arena boss yang memang jauh lebih rendah.
+                if position.Y < DungeonVoidFloorY - 38
+                    and DungeonVoidSafeCFrame
+                    and os.clock() - lastRecovery >= 2 then
+
+                    lastRecovery = os.clock()
+                    local safe = DungeonVoidSafeCFrame
+
+                    pcall(function()
+                        Root.AssemblyLinearVelocity = Vector3.zero
+                        Root.AssemblyAngularVelocity = Vector3.zero
+                        Root.CFrame = safe + Vector3.new(0, 4, 0)
+                    end)
+
+                    task.wait(0.25)
+                end
+            end
+
+            task.wait(0.12)
+        end
+    end)
+end
+
+--============================================================
 -- NORMAL DUNGEON
 --============================================================
 
@@ -1229,31 +1346,20 @@ local function walkDungeonEntry(id)
 end
 
 local function stopDungeon()
+    stopDungeonVoidRecovery()
     DungeonBossPhase = false
     AutoDungeon = false
-    DungeonPausedForEclipse = false
-    ResumeDungeonAfterEclipse = false
     DungeonRunId += 1
     DungeonStatus = "Dungeon: OFF"
 end
 
-local function startDungeon(resumeFromEclipse)
-    if not Running then return end
+local function startDungeon()
+    if not Running or AutoDungeon then return end
 
-    if resumeFromEclipse then
-        -- Resume hanya jika toggle masih ON dan sebelumnya memang dijeda Eclipse.
-        if not AutoDungeon or not DungeonPausedForEclipse then return end
-        DungeonPausedForEclipse = false
-    else
-        if AutoDungeon then return end
-
-        if AutoHallow or EclipsePriority or AutoTower then
-            DungeonStatus = "Eclipse sedang prioritas / mode lain aktif!"
-            return
-        end
-
-        AutoDungeon = true
-    end
+if AutoHallow or EclipsePriority or AutoTower then
+    DungeonStatus = "Eclipse sedang prioritas / mode lain aktif!"
+    return
+end
 
     local name = DungeonNameInput and DungeonNameInput.Text or "Z3"
     name = string.upper(string.match(name, "^%s*(.-)%s*$") or "")
@@ -1335,7 +1441,10 @@ local function startDungeon(resumeFromEclipse)
                 continue
             end
 
-            status("Masuk dungeon! Menunggu progress selesai...")
+            -- Remote EnterDungeon sukses: recovery ON khusus map mob biasa.
+            DungeonBossPhase = false
+            startDungeonVoidRecovery()
+            status("Masuk dungeon! Void Recovery ON | Menunggu progress selesai...")
 
             if not AutoOrbit then startOrbit() end
             if not AutoSkill then startSkill() end
@@ -1347,7 +1456,11 @@ local function startDungeon(resumeFromEclipse)
 
             if not alive() then break end
 
-            status("Progress selesai! Mencari FloorGlow...")
+            -- Progress mob selesai: matikan recovery SEBELUM menuju FloorGlow.
+            -- Tetap OFF sepanjang fase boss; hanya dinyalakan lagi setelah EnterDungeon
+            -- sukses pada putaran dungeon berikutnya.
+            stopDungeonVoidRecovery()
+            status("Progress selesai | Void Recovery OFF. Mencari FloorGlow...")
 
             local glow = getDungeonObject(name, {
                 "BossDoor",
@@ -1371,27 +1484,24 @@ local function startDungeon(resumeFromEclipse)
 
             if not alive() then break end
 
-            if not waitForEnemyClear(alive, status) then
+            if not waitForDungeonBossClear(alive, status, 10) then
                 break
             end
 
             DungeonBossPhase = false
             if not alive() then break end
 
-            status("Boss habis, tunggu 2 detik...")
+            status("Boss clear | konfirmasi area sebelum BossExit...")
             task.wait(DUNGEON_BEFORE_EXIT)
 
             if not alive() then break end
 
             if getEnemyCount() > 0 then
-                status("Mob muncul lagi, melawan...")
-
-                if not waitForEnemyClear(alive, status) then
+                status("Mob muncul lagi, menunggu sampai clear...")
+                if not waitForDungeonBossClear(alive, status, 0) then
                     break
                 end
-
                 if not alive() then break end
-                task.wait(DUNGEON_BEFORE_EXIT)
             end
 
             local exit = getDungeonObject(name, {
@@ -1418,6 +1528,7 @@ local function startDungeon(resumeFromEclipse)
         end
 
         if DungeonRunId == id then
+            stopDungeonVoidRecovery()
             DungeonBossPhase = false
             if not combatWasOn and AutoCombat then
                 stopCombat()
@@ -1434,26 +1545,6 @@ end
 
 local startHallow
 local stopHallow
-
-local function pauseDungeonForEclipse()
-    if AutoDungeon and not DungeonPausedForEclipse then
-        ResumeDungeonAfterEclipse = true
-        DungeonPausedForEclipse = true
-        DungeonBossPhase = false
-        DungeonRunId += 1 -- hentikan worker, tetapi JANGAN matikan toggle AutoDungeon
-        DungeonStatus = "Dungeon: PAUSED sementara | Eclipse priority"
-    end
-end
-
-local function pauseHallowForEclipse()
-    if AutoHallow and not HallowPausedForEclipse then
-        ResumeHallowAfterEclipse = true
-        HallowPausedForEclipse = true
-        HallowBossPhase = false
-        HallowRunId += 1 -- hentikan worker, tetapi JANGAN matikan toggle AutoHallow
-        HallowStatus = "Hallow: PAUSED sementara | Eclipse priority"
-    end
-end
 
 --============================================================
 -- AUTO ECLIPSE | DIRECT TP UMBRA
@@ -1655,18 +1746,21 @@ local function startEclipse()
         EclipsePriority = true
     end
 
-    -- Pause worker Hallow tanpa mematikan toggle Auto Hallow.
-    if config and AutoHallow and not HallowPausedForEclipse then
-        status("ECLIPSE TERSEDIA! Pause Auto Hallow sementara (toggle tetap ON)...")
-        pauseHallowForEclipse()
+    -- Eclipse mengambil prioritas atas Hallow yang sedang aktif.
+    -- Simpan statusnya, lalu hentikan worker Hallow agar tidak bentrok.
+    if config and AutoHallow then
+        ResumeHallowAfterEclipse = true
+        status("ECLIPSE TERSEDIA! Menghentikan Auto Hallow sementara...")
+        stopHallow()
         task.wait(0.25)
     end
 
-    -- Pause worker Dungeon tanpa mematikan toggle Auto Dungeon.
-    if config and AutoDungeon and not DungeonPausedForEclipse then
-        status("ECLIPSE TERSEDIA! Pause Auto Dungeon sementara (toggle tetap ON)...")
-        pauseDungeonForEclipse()
-        task.wait(0.25)
+    -- Auto Dungeon juga dihentikan sementara jika Eclipse tersedia.
+    if config and AutoDungeon then
+        ResumeDungeonAfterEclipse = true
+        EclipsePriority = true
+        status("ECLIPSE TERSEDIA! Menghentikan Auto Dungeon...")
+        stopDungeon()
     end
 
     if Player:GetAttribute("Dungeon") then
@@ -1676,9 +1770,12 @@ local function startEclipse()
         if config and not EclipseDungeonEntered then
             status("ECLIPSE TERSEDIA! Keluar dari dungeon aktif...")
 
+            ResumeDungeonAfterEclipse = ResumeDungeonAfterEclipse or AutoDungeon
             EclipsePriority = true
-            if AutoDungeon then pauseDungeonForEclipse() end
-            if AutoHallow then pauseHallowForEclipse() end
+
+            if AutoDungeon then
+                stopDungeon()
+            end
 
             -- Leave dungeon menggunakan remote
             status("Memanggil LeaveDungeon untuk prioritas Eclipse...")
@@ -1692,15 +1789,15 @@ local function startEclipse()
 
                 EclipsePriority = false
 
-                if ResumeDungeonAfterEclipse and AutoDungeon and DungeonPausedForEclipse and alive() then
+                if ResumeDungeonAfterEclipse and alive() then
+                    ResumeDungeonAfterEclipse = false
                     task.wait(1)
-                    startDungeon(true)
-                elseif ResumeHallowAfterEclipse and AutoHallow and HallowPausedForEclipse and alive() then
+                    startDungeon()
+                elseif ResumeHallowAfterEclipse and alive() then
+                    ResumeHallowAfterEclipse = false
                     task.wait(1)
-                    startHallow(true)
+                    startHallow()
                 end
-                ResumeDungeonAfterEclipse = false
-                ResumeHallowAfterEclipse = false
 
                 task.wait(3)
                 continue
@@ -1723,15 +1820,15 @@ local function startEclipse()
 
                 EclipsePriority = false
 
-                if ResumeDungeonAfterEclipse and AutoDungeon and DungeonPausedForEclipse then
+                if ResumeDungeonAfterEclipse then
+                    ResumeDungeonAfterEclipse = false
                     task.wait(1)
-                    startDungeon(true)
-                elseif ResumeHallowAfterEclipse and AutoHallow and HallowPausedForEclipse then
+                    startDungeon()
+                elseif ResumeHallowAfterEclipse then
+                    ResumeHallowAfterEclipse = false
                     task.wait(1)
-                    startHallow(true)
+                    startHallow()
                 end
-                ResumeDungeonAfterEclipse = false
-                ResumeHallowAfterEclipse = false
 
                 task.wait(3)
                 continue
@@ -1932,17 +2029,18 @@ EclipsePriority = false
 
 -- Dungeon dilanjutkan lebih dulu jika keduanya sempat aktif.
 -- Jika tidak, Hallow otomatis dimulai lagi dari posisi 1.
-if ResumeDungeonAfterEclipse and AutoDungeon and DungeonPausedForEclipse and alive() then
-    status("Cooldown Eclipse! Melanjutkan Auto Dungeon dari POS 1...")
+if ResumeDungeonAfterEclipse and alive() and not AutoDungeon then
+    ResumeDungeonAfterEclipse = false
+    status("Cooldown Eclipse! Melanjutkan Auto Dungeon...")
     task.wait(1)
-    startDungeon(true)
-elseif ResumeHallowAfterEclipse and AutoHallow and HallowPausedForEclipse and alive() then
-    status("Cooldown Eclipse! Melanjutkan Auto Hallow dari POS 1...")
+    startDungeon()
+elseif ResumeHallowAfterEclipse and alive() and not AutoHallow then
+    ResumeHallowAfterEclipse = false
+    status("Cooldown Eclipse! Melanjutkan Auto Hallow dari posisi 1...")
     task.wait(1)
-    startHallow(true)
+    startHallow()
 end
 
--- Jika toggle dimatikan user selama Eclipse, jangan hidupkan lagi.
 ResumeDungeonAfterEclipse = false
 ResumeHallowAfterEclipse = false
 
@@ -2045,30 +2143,19 @@ end
 stopHallow = function()
     HallowBossPhase = false
     AutoHallow = false
-    HallowPausedForEclipse = false
-    ResumeHallowAfterEclipse = false
     HallowRunId += 1
     HallowStatus = "Hallow: OFF"
 end
 
-startHallow = function(resumeFromEclipse)
-    if not Running then return end
+startHallow = function()
+    if not Running or AutoHallow then return end
 
-    if resumeFromEclipse then
-        -- Resume hanya jika toggle masih ON dan sebelumnya dijeda Eclipse.
-        if not AutoHallow or not HallowPausedForEclipse then return end
-        HallowPausedForEclipse = false
-    else
-        if AutoHallow then return end
-
-        if AutoDungeon or AutoEclipse or AutoTower then
-            HallowStatus = "Matikan mode dungeon lain dahulu!"
-            return
-        end
-
-        AutoHallow = true
+    if AutoDungeon or AutoEclipse or AutoTower then
+        HallowStatus = "Matikan mode dungeon lain dahulu!"
+        return
     end
 
+    AutoHallow = true
     HallowRunId += 1
 
     local id = HallowRunId
@@ -3090,12 +3177,9 @@ function Controller.Cleanup()
     AutoDungeon = false
     AutoEclipse = false
     AutoHallow = false
-    DungeonPausedForEclipse = false
-    HallowPausedForEclipse = false
-    ResumeDungeonAfterEclipse = false
-    ResumeHallowAfterEclipse = false
     AutoClaim = false
     AutoTower = false
+    stopDungeonVoidRecovery()
     DungeonBossPhase = false
     HallowBossPhase = false
     RiftRunActive = false
