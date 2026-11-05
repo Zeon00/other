@@ -2326,7 +2326,7 @@ local function startCandyShop()
                 RequestRemote:InvokeServer("CandyBuy", "GemStash")
             end)
             -- Yield one scheduler step to keep the client responsive.
-            task.wait()
+            task.wait(0.5)
         end
     end)
 end
