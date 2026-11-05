@@ -168,17 +168,17 @@ local CLAIM_INTERVAL = 300
 
 local Running = true
 
-local AutoCombat = false
+local AutoCombat = true
 local AutoSkill = false
 local AutoOrbit = false
 local AutoTP = false
 local AutoDungeon = false
 local AutoEclipse = false
 local AutoHallow = false
-local AutoClaim = false
+local AutoClaim = true
 local AutoTower = false
 local AutoEnchant = false
-local AutoCandyShop = false
+local AutoCandyShop = true
 local EclipseTarget = nil
 -- ECLIPSE PRIORITY
 local EclipsePriority = false
@@ -2057,83 +2057,186 @@ local function hallowProgressIsOpen()
     local caption, value = getHallowProgress()
     return caption == "OPEN!" and value == "BOSS"
 end
+local function hallowWaitForBeaconAndBoss(id, statusCallback)
+    local function alive()
+        return hallowAlive(id)
+    end
 
-local function hallowMoveToBossDoor(id)
-    local bossDoor = nil
-    local targetPosition = nil
-    local STEP_DISTANCE = 12 -- teleport bertahap 10-15 stud
-    local STEP_DELAY = 0.25
-    local BOSS_DOOR_RETRY_DELAY = 2
+    local encounterIndex = 1
+    local encounterTarget = nil
+    local waitingEncounterSpawn = false
+    local sawEncounterMobs = false
 
-    -- BossDoor kadang belum direplikasi tepat setelah EnterDungeon.
-    -- Tunggu 2 detik lalu cari lagi sampai object benar-benar muncul.
-    while hallowAlive(id) and not bossDoor do
-        bossDoor = getDungeonObject("HALLOW", {"BossDoor"})
-        if bossDoor then
-            local targetCFrame = getObjectCFrame(bossDoor)
-            if targetCFrame then
-                targetPosition = targetCFrame.Position
-                break
+    local lastBeacon = nil
+    local lastBeaconPosition = nil
+
+    local emptyStart = nil
+    local lastMoveTime = 0
+
+    local function status(msg)
+        if statusCallback then
+            statusCallback(msg)
+        end
+    end
+
+    local function findMonsterBeacon()
+        for _, fx in ipairs(Workspace:GetChildren()) do
+            if fx.Name == "ClientFX" then
+                local beacon = fx:FindFirstChild("MonsterBeacon")
+
+                if beacon and beacon:IsA("BasePart") then
+                    local billboard = beacon:FindFirstChild("BillboardGui")
+                    local hasDistanceText = false
+
+                    if billboard then
+                        for _, label in ipairs(billboard:GetDescendants()) do
+                            if (label:IsA("TextLabel") or label:IsA("TextButton"))
+                                and label.Text:match("%d+%s*m") then
+                                hasDistanceText = true
+                                break
+                            end
+                        end
+                    end
+
+                    if hasDistanceText then
+                        return beacon
+                    end
+                end
             end
-            bossDoor = nil
         end
 
-        HallowStatus = "HALLOW | BossDoor belum muncul, cek ulang 2 detik lagi..."
-        task.wait(BOSS_DOOR_RETRY_DELAY)
+        return nil
     end
 
-    if not hallowAlive(id) or not targetPosition then
-        return false
-    end
+    while alive() do
+        local enemyCount = getEnemyCount()
 
-    while hallowAlive(id) do
-        if hallowProgressIsOpen() then
-            return true
-        end
+        -- MOB MASIH ADA
+        if enemyCount > 0 then
+            emptyStart = nil
 
-        local caption, value = getHallowProgress()
-        if caption == "SLAIN" then
-            HallowStatus = "HALLOW | SLAIN " .. value .. " | menuju BossDoor"
+            if waitingEncounterSpawn then
+                waitingEncounterSpawn = false
+                sawEncounterMobs = true
+            end
+
+            status("Mob ditemukan! Menunggu mob selesai...")
+
         else
-            HallowStatus = "HALLOW | Progress " .. caption .. " " .. value .. " | menuju BossDoor"
-        end
+            -- MOB KOSONG
+            emptyStart = emptyStart or os.clock()
 
-        -- Jangan mengubah sistem Combat. Pergerakan hanya ditahan saat mob ada.
-        if getEnemyCount() > 0 then
-            HallowStatus = "HALLOW | Menunggu mob selesai: " .. value
-            task.wait(0.2)
-        else
-            updateCharacter()
-            if not Root or not Root.Parent then
-                task.wait(0.1)
-            else
-                -- Refresh posisi BossDoor jika object dipindah/dibuat ulang.
-                local currentDoor = getDungeonObject("HALLOW", {"BossDoor"})
-                local currentCFrame = currentDoor and getObjectCFrame(currentDoor)
-                if currentCFrame then
-                    targetPosition = currentCFrame.Position
+            if sawEncounterMobs then
+                encounterIndex += 1
+                encounterTarget = nil
+                sawEncounterMobs = false
+            end
+
+            if os.clock() - emptyStart >= MOB_EMPTY_CONFIRM_TIME then
+
+                -- PRIORITAS 1: MONSTER BEACON
+                local beacon = findMonsterBeacon()
+
+                if beacon then
+                    local movedBeacon =
+                        beacon ~= lastBeacon
+                        or not lastBeaconPosition
+                        or (beacon.Position - lastBeaconPosition).Magnitude > 5
+
+                    updateCharacter()
+
+                    if Root and movedBeacon then
+                        local distance =
+                            (Root.Position - beacon.Position).Magnitude
+
+                        if distance > 12 then
+                            if os.clock() - lastMoveTime >= 1 then
+                                status("MonsterBeacon ditemukan! Pathfinding...")
+
+                                lastMoveTime = os.clock()
+
+                                if moveDungeonPointer(beacon, alive, status) then
+                                    lastBeacon = beacon
+                                    lastBeaconPosition = beacon.Position
+                                end
+                            end
+
+                            task.wait(0.15)
+                            continue
+                        else
+                            lastBeacon = beacon
+                            lastBeaconPosition = beacon.Position
+                        end
+                    end
                 end
 
-                local offset = targetPosition - Root.Position
-                local distance = offset.Magnitude
+                -- PRIORITAS 2: BOSS OPEN
+                if hallowProgressIsOpen() then
+                    status("BOSS OPEN! Lanjut FloorGlow...")
+                    return true
+                end
 
-                if distance <= STEP_DISTANCE then
-                    task.wait(STEP_DELAY)
+                -- PRIORITAS 3: BEACON TIDAK ADA / SUDAH DISAMPERIN
+                -- LANJUT PATHFINDING KE ENCOUNTER
+                if not waitingEncounterSpawn then
+                    local encounterName = "Encounter" .. encounterIndex
+
+                    local encounter = getDungeonObject(
+                        "HALLOW",
+                        {"Markers", encounterName}
+                    )
+
+                    if encounter then
+                        if encounterTarget ~= encounter then
+                            status("MonsterBeacon tidak ada! Pathfinding ke " .. encounterName .. "...")
+
+                            if moveDungeonPointer(encounter, alive, status) then
+                                encounterTarget = encounter
+                                waitingEncounterSpawn = true
+                                emptyStart = nil
+                            else
+                                status("Pathfinding " .. encounterName .. " gagal, mencoba lagi...")
+                                task.wait(1)
+                            end
+                        else
+                            status("Menunggu mob muncul di " .. encounterName .. "...")
+                        end
+                    else
+                        status(encounterName .. " tidak ditemukan!")
+                    end
                 else
-                    local nextPosition = Root.Position + offset.Unit * math.min(STEP_DISTANCE, distance)
-                    local ok = pcall(function()
-                        Root.CFrame = CFrame.new(nextPosition)
-                        Root.AssemblyLinearVelocity = Vector3.zero
-                        Root.AssemblyAngularVelocity = Vector3.zero
-                    end)
-                    if not ok then return false end
-                    task.wait(STEP_DELAY)
+                    status("Sudah sampai pointer! Menunggu mob muncul...")
                 end
             end
         end
+
+        task.wait(0.15)
     end
 
     return false
+end
+local function hallowMoveToBossDoor(id, statusCallback)
+    local function alive()
+        return hallowAlive(id)
+    end
+
+    local dungeon = getDungeonObject("HALLOW", {
+        "BossDoor",
+        "FloorGlow"
+    })
+
+    if not dungeon then
+        if statusCallback then
+            statusCallback("Hallow: FloorGlow belum ditemukan!")
+        end
+        return false
+    end
+
+    if statusCallback then
+        statusCallback("Hallow: Pathfinding menuju FloorGlow...")
+    end
+
+    return moveDungeonPointer(dungeon, alive, statusCallback)
 end
 
 local function hallowStartRiftToastWatcher(id)
@@ -2285,25 +2388,17 @@ local function startHallow()
             if not AutoSkill then startSkill() end
             if not AutoOrbit then startOrbit() end
 
-            -- STEP 3: tunggu BossDoor muncul (retry 2 detik), lalu TP bertahap 12 stud.
-            -- Combat sengaja tidak disentuh; biarkan sesuai toggle milik pengguna.
-            status("Skill + Orbit ON. Menunggu BossDoor...")
-            if not hallowMoveToBossDoor(id) then
-                if alive() then status("Gagal menyelesaikan progress menuju BossDoor") end
-                break
-            end
+            -- STEP 3: SAMPELIN MONSTER BEACON SEBELUM BOSS OPEN
+status("Skill + Orbit ON. Memantau MonsterBeacon...")
 
-            if not alive() then break end
+if not hallowWaitForBeaconAndBoss(id, status) then
+    break
+end
 
-            -- STEP 4: hanya setelah caption OPEN! dan value BOSS, masuk FloorGlow.
-            if not hallowProgressIsOpen() then
-                status("Menunggu Progress OPEN! / BOSS...")
-                repeat
-                    task.wait(0.1)
-                until not alive() or hallowProgressIsOpen()
-            end
+if not alive() then break end
 
-            if not alive() then break end
+-- STEP 4: Progress sudah OPEN! / BOSS.
+status("BOSS OPEN! Mencari FloorGlow...")
 
             local glow = getDungeonObject("HALLOW", {"BossDoor", "FloorGlow"})
             if not glow then
