@@ -79,8 +79,8 @@ local DungeonConfig = require(
 local SCAN_RANGE = 500
 local MAX_HEIGHT = 250
 
-local SWING_DELAY = 0.08
-local HIT_DELAY = 0.08
+local SWING_DELAY = 0.01
+local HIT_DELAY = 0.01
 
 local SKILLS = {"E", "R", "F", "Q"}
 local SKILL_DELAY = 0.5
@@ -162,8 +162,8 @@ local TOWER_POS2 = Vector3.new(
 local TOWER_TOLERANCE = 10
 local TOWER_WAIT = 2
 
-local CLAIM_INTERVAL = 300
-local REBIRTH_RETRY_INTERVAL = 1.5
+local CLAIM_INTERVAL = 10
+local REBIRTH_RETRY_INTERVAL = 2.5
 
 --============================================================
 -- STATE
@@ -1576,6 +1576,42 @@ local function getCurrentEclipse()
     return config, attribute
 end
 
+-- Baca rarity event langsung dari TextLabel HUD yang user tunjuk:
+-- PlayerGui.EclipseHUD.EclipseHunt:GetChildren()[7]
+local function getEclipseHUDRarity()
+    local playerGui = Player:FindFirstChild("PlayerGui")
+    local hud = playerGui and playerGui:FindFirstChild("EclipseHUD")
+    local hunt = hud and hud:FindFirstChild("EclipseHunt")
+    if not hunt then
+        return nil
+    end
+
+    local children = hunt:GetChildren()
+    local rarityLabel = children[7]
+    if not rarityLabel or not rarityLabel:IsA("TextLabel") then
+        return nil
+    end
+
+    local value = tostring(rarityLabel.Text or "")
+    value = value:match("^%s*(.-)%s*$") or ""
+    if value == "" then
+        return nil
+    end
+
+    return value
+end
+
+local function isAllowedEclipseRarity(rarity)
+    if not rarity then
+        return false
+    end
+
+    local normalized = string.lower(rarity)
+    return normalized:find("legendary", 1, true) ~= nil
+        or normalized:find("mythic", 1, true) ~= nil
+        or normalized:find("secret", 1, true) ~= nil
+end
+
 local function findUmbra()
     local enemies = Workspace:FindFirstChild("Enemies")
 
@@ -1652,15 +1688,9 @@ local function stopEclipse()
     EclipseRunId += 1
     EclipseDungeonEntered = false
 
+    -- Matikan pemantauan Eclipse saja.
+    -- Jangan matikan AutoOrbit / AutoSkill karena keduanya juga dipakai Hallow.
     EclipseTarget = nil
-
-    if AutoOrbit then
-        stopOrbit()
-    end
-
-    if AutoSkill then
-        stopSkill()
-    end
 
     EclipseStatus = "Eclipse: OFF"
 end
@@ -1739,6 +1769,23 @@ local function startEclipse()
 
     while alive() do
     local config, attribute = getCurrentEclipse()
+
+    -- FILTER RARITY SEBELUM PRIORITAS ECLIPSE / PAUSE HALLOW / ENTER.
+    -- Event Rare dan Epic dilewati; hanya Legendary, Mythic, Secret yang diproses.
+    if config then
+        local rarity = getEclipseHUDRarity()
+        if not rarity then
+            status("Eclipse terdeteksi | Menunggu TextLabel rarity HUD...")
+            task.wait(0.05)
+            continue
+        end
+
+        if not isAllowedEclipseRarity(rarity) then
+            status("Skip rarity " .. rarity .. " | Hanya Legendary ke atas")
+            task.wait(1)
+            continue
+        end
+    end
 
     -- Jika Eclipse sudah selesai / tidak tersedia lagi, lanjutkan Hallow.
     -- AutoEclipse boleh tetap ON untuk memantau Eclipse berikutnya; itu tidak
@@ -1871,7 +1918,8 @@ local function startEclipse()
     --====================================================
 
     status("Eclipse ditemukan: " .. tostring(attribute))
-    task.wait(0.5)
+    -- Jangan menahan event Legendary yang sudah lolos filter rarity.
+    task.wait(0.05)
 
     if not alive() then
         break
@@ -1890,7 +1938,8 @@ local function startEclipse()
             end
 
             status("Eclipse ditemukan: " .. tostring(attribute))
-            task.wait(1)
+            -- Config sudah divalidasi di atas; lanjutkan ke EclipseEnter dengan jeda minimal.
+            task.wait(0.05)
 
             if not alive() then
                 break
@@ -2177,15 +2226,9 @@ end
 startHallow = function(isResume)
     if not Running or HallowWorkerActive then return end
 
-    -- User boleh ON-kan Hallow saat Eclipse berjalan.
-    -- Toggle tetap ON, worker menunggu sampai Eclipse benar-benar selesai.
-    if not isResume and AutoEclipse then
-        AutoHallow = true
-        ResumeHallowAfterEclipse = true
-        HallowStatus = "Hallow: ON | Menunggu Eclipse selesai..."
-        return
-    end
-
+    -- AutoEclipse hanya memantau event. Hallow tetap boleh berjalan saat
+    -- belum ada Eclipse yang memenuhi rarity; saat event valid terdeteksi,
+    -- worker Hallow akan dipause oleh blok EclipsePriority di worker Eclipse.
     if not isResume and (AutoDungeon or AutoTower) then
         HallowStatus = "Matikan Auto Dungeon/Tower dahulu!"
         return
@@ -2245,65 +2288,66 @@ startHallow = function(isResume)
 
             if not alive() then break end
 
+            -- Remote selesai: beri waktu dungeon dan NPC untuk spawn dahulu.
+            status("Remote selesai | tunggu 5 detik untuk spawn dungeon...")
+            local loadUntil = os.clock() + 5
+            while alive() and os.clock() < loadUntil do task.wait(0.1) end
+            if not alive() then break end
+
+            local function getHallowMarker(markerName)
+                return getDungeonObject("HALLOW", {"Markers", markerName})
+            end
+
+            local function tpHallowMarker(markerName)
+                while alive() do
+                    local marker = getHallowMarker(markerName)
+                    if marker and marker.Parent and teleportObject(marker) then
+                        return true
+                    end
+                    status("Menunggu marker / TP " .. markerName .. "...")
+                    task.wait(0.5)
+                end
+                return false
+            end
+
+            status("TP Encounter3 untuk memancing spawn...")
+            if not tpHallowMarker("Encounter3") then break end
+
+            local encounter3Until = os.clock() + 3
+            while alive() and os.clock() < encounter3Until do task.wait(0.1) end
+            if not alive() then break end
+
+            status("TP kembali Encounter1...")
+            if not tpHallowMarker("Encounter1") then break end
+
+            -- Combat workers mulai setelah route awal selesai, agar tidak
+            -- menarik mob saat karakter masih berpindah antar encounter.
             if not AutoSkill then startSkill() end
             if not AutoOrbit then startOrbit() end
             if not AutoCombat then startCombat() end
 
-            --====================================================
--- HALLOW ENCOUNTER ROUTE
--- Remote sukses -> Encounter3 selama 3 detik -> Encounter1
---====================================================
+            -- Jika area Encounter1 kosong, pindah ke Encounter3 dan tunggu
+            -- sampai musuh benar-benar muncul. Baru kembali ke Encounter1.
+            while alive() do
+                if getEnemyCount() > 0 then
+                    break
+                end
 
-if not alive() then break end
+                status("Enemies kosong di Encounter1 | TP Encounter3 menunggu spawn...")
+                if not tpHallowMarker("Encounter3") then break end
 
--- Marker HALLOW kadang belum direplikasi tepat setelah EnterDungeon.
--- Tunggu sampai kedua marker benar-benar tersedia; jangan matikan toggle
--- hanya karena folder Dungeon belum selesai dimuat.
-local encounter3, encounter1
-status("Menunggu marker Encounter3 / Encounter1 dimuat...")
-while alive() do
-    encounter3 = getDungeonObject("HALLOW", {"Markers", "Encounter3"})
-    encounter1 = getDungeonObject("HALLOW", {"Markers", "Encounter1"})
-    if encounter3 and encounter1 then
-        break
-    end
-    task.wait(0.5)
-end
+                while alive() and getEnemyCount() == 0 do
+                    task.wait(0.25)
+                end
+                if not alive() then break end
 
-if not alive() then break end
+                status("Mob muncul! Kembali ke Encounter1 untuk orbit...")
+                if not tpHallowMarker("Encounter1") then break end
+                task.wait(0.25)
+            end
 
--- Ulangi TP bila karakter/marker belum siap, bukan keluar dari worker.
-status("TP ke Encounter3...")
-while alive() do
-    encounter3 = getDungeonObject("HALLOW", {"Markers", "Encounter3"}) or encounter3
-    if encounter3 and teleportObject(encounter3) then
-        break
-    end
-    status("TP Encounter3 belum berhasil, mencoba lagi...")
-    task.wait(1)
-end
-
-if not alive() then break end
-
--- Bertahan 3 detik di Encounter3, sambil tetap menghormati toggle OFF.
-local encounter3Until = os.clock() + 3
-while alive() and os.clock() < encounter3Until do
-    task.wait(0.1)
-end
-
-if not alive() then break end
-
-status("Kembali ke Encounter1...")
-while alive() do
-    encounter1 = getDungeonObject("HALLOW", {"Markers", "Encounter1"}) or encounter1
-    if encounter1 and teleportObject(encounter1) then
-        break
-    end
-    status("TP Encounter1 belum berhasil, mencoba lagi...")
-    task.wait(1)
-end
-
-status("Encounter route selesai, menunggu progress Hallow...")
+            if not alive() then break end
+            status("Mob terdeteksi | lanjut farm dari Encounter1...")
 
             if not alive() then break end
 
@@ -2425,13 +2469,8 @@ status("Jeda selesai, memulai Hallow berikutnya...")
             if AutoSkill then stopSkill() end
             if AutoCombat then stopCombat() end
 
-            -- Jangan ubah toggle ke OFF saat worker berhenti karena error/marker.
-            -- Toggle hanya boleh OFF dari callback tombol stopHallow().
-            if AutoHallow then
-                HallowStatus = "Hallow: ON | Worker berhenti; tekan OFF lalu ON untuk mulai ulang"
-            else
-                HallowStatus = "Hallow: OFF"
-            end
+            AutoHallow = false
+            HallowStatus = "Hallow: OFF"
         end
     end)
 end
@@ -2660,13 +2699,46 @@ local function startCandyShop()
     CandyShopRunId += 1
     local id = CandyShopRunId
 
+    -- Keys follow ReplicatedStorage.SwordShared.CandyShop.List.
+    -- Server validates current stock, daily limits, ownership and candy balance.
+    local candyItems = {
+        "Pumpkin",
+        "PowerPotion",
+        "GoldPotion",
+        "MegaPotion",
+        "GoldBag",
+        "CoreBrew",
+        "SpiritLantern",
+        "AuraElixir",
+        "GemStash",
+        "TitleTrick",
+        "TitleCandyKing",
+    }
+
     task.spawn(function()
         while Running and AutoCandyShop and CandyShopRunId == id do
-            pcall(function()
-                RequestRemote:InvokeServer("CandyBuy", "GemStash")
-            end)
-            -- Yield one scheduler step to keep the client responsive.
-            task.wait()
+            for _, itemKey in ipairs(candyItems) do
+                if not (Running and AutoCandyShop and CandyShopRunId == id) then
+                    break
+                end
+
+                local ok, result = pcall(function()
+                    return RequestRemote:InvokeServer("CandyBuy", itemKey)
+                end)
+
+                if not ok then
+                    warn("[AUTO CANDY SHOP] " .. tostring(result))
+                end
+
+                -- Small gap between purchases; let the server process each request.
+                task.wait(0.3)
+            end
+
+            -- Retry periodically for stock restocks / items not yet affordable.
+            -- Existing stock, daily caps and currency are always server-authoritative.
+            if Running and AutoCandyShop and CandyShopRunId == id then
+                task.wait(5)
+            end
         end
     end)
 end
@@ -3318,5 +3390,5 @@ print("8. AUTO CLAIM ALL REWARDS")
 print("9. AUTO TOWER")
 print("10. AUTO ENCHANT")
 print("11. AUTO CANDY SHOP")
-print("CLAIM INTERVAL: 300 SECONDS")
+print("CLAIM INTERVAL: 10 SECONDS")
 print("==============================================")
