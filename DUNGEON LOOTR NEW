@@ -853,22 +853,75 @@ local function isDungeonBoss(model)
         or name:find("jefe", 1, true) ~= nil
 end
 
-local function teleportDungeonTo(character, root, pivot)
-    if not pivot then return false end
+-- Pathfinding patrol with segmented teleport hops. No Humanoid:MoveTo / walking.
+local PathfindingService = game:GetService("PathfindingService")
+local TP_HOP_DISTANCE = 25
+local TP_HOP_DELAY = 0.04
 
-    local destination = CFrame.new(pivot.Position + Vector3.new(0, 4, 0))
-    if character then
-        local ok = pcall(function()
-            character:PivotTo(destination)
-        end)
-        return ok
+local function teleportDungeonPath(character, root, pivot, isRunning)
+    if not pivot or not root or not root.Parent then return false end
+
+    local destination = pivot.Position + Vector3.new(0, 4, 0)
+    local path = PathfindingService:CreatePath({
+        AgentRadius = 2,
+        AgentHeight = 5,
+        AgentCanJump = true,
+        AgentCanClimb = true,
+        WaypointSpacing = 12,
+    })
+
+    local computed = pcall(function()
+        path:ComputeAsync(root.Position, destination)
+    end)
+    if not computed or path.Status ~= Enum.PathStatus.Success then
+        return false
     end
 
-    if root then
-        root.CFrame = destination
-        return true
+    local waypoints = path:GetWaypoints()
+    if #waypoints == 0 then return false end
+
+    local points = {}
+    for _, waypoint in ipairs(waypoints) do
+        table.insert(points, waypoint.Position + Vector3.new(0, 3, 0))
     end
-    return false
+    -- Ensure the final hop reaches the actual Entry/Zone offset.
+    table.insert(points, destination)
+
+    local current = root.Position
+    for _, point in ipairs(points) do
+        if isRunning and not isRunning() then return false end
+        local delta = point - current
+        local distance = delta.Magnitude
+        local hops = math.max(1, math.ceil(distance / TP_HOP_DISTANCE))
+
+        for hop = 1, hops do
+            if isRunning and not isRunning() then return false end
+            local alpha = hop / hops
+            local nextPosition = current:Lerp(point, alpha)
+            local lookTarget = point
+            if (lookTarget - nextPosition).Magnitude < 0.1 then
+                lookTarget = nextPosition + Vector3.new(0, 0, -1)
+            end
+
+            local liveCharacter = player.Character
+            local liveRoot = getFarmRoot()
+            if not liveRoot then return false end
+
+            local ok = pcall(function()
+                local cf = CFrame.lookAt(nextPosition, lookTarget)
+                if liveCharacter then
+                    liveCharacter:PivotTo(cf)
+                else
+                    liveRoot.CFrame = cf
+                end
+            end)
+            if not ok then return false end
+            task.wait(TP_HOP_DELAY)
+        end
+        current = point
+    end
+
+    return true
 end
 
 local function startDungeonSnowStyleFarm(config, enabled)
@@ -1123,8 +1176,8 @@ local function startDungeonSnowStyleFarm(config, enabled)
 
                         if activeWallcap and activeWallcap.wallcap.Parent
                             and activeWallcap.entry and activeWallcap.entry.Parent then
-                            moved = teleportDungeonTo(
-                                character, root, getObjectPivot(activeWallcap.entry)
+                            moved = teleportDungeonPath(
+                                character, root, getObjectPivot(activeWallcap.entry), running
                             )
                         end
                     elseif #rooms > 0 then
@@ -1134,6 +1187,10 @@ local function startDungeonSnowStyleFarm(config, enabled)
                     if moved then
                         patrolPhase = "Zone"
                     elseif #wallcaps > 0 then
+                        -- Skip an unreachable Entry instead of retrying it forever.
+                        wallcapIndex += 1
+                        if wallcapIndex > #wallcaps then wallcapIndex = 1 end
+                        patrolPhase = "Entry"
                         task.wait(0.15)
                         continue
                     end
@@ -1145,8 +1202,8 @@ local function startDungeonSnowStyleFarm(config, enabled)
 
                         if activeRoom and activeRoom.room.Parent
                             and activeRoom.zone and activeRoom.zone.Parent then
-                            moved = teleportDungeonTo(
-                                character, root, getObjectPivot(activeRoom.zone)
+                            moved = teleportDungeonPath(
+                                character, root, getObjectPivot(activeRoom.zone), running
                             )
                         end
 
@@ -1214,7 +1271,7 @@ for _, config in ipairs(DungeonFarmConfigs) do
     end)
 end
 
-print("[Dungeon Farm] NPC farm + WallCap patrol + Arsenal HoldArea defense loaded.")
+print("[Dungeon Farm] NPC farm + Pathfinding TP25 patrol + Arsenal HoldArea defense loaded.")
 
 
 
