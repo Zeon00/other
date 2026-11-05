@@ -2256,26 +2256,34 @@ startHallow = function(isResume)
 
 if not alive() then break end
 
-local encounter3 = getDungeonObject("HALLOW", {
-    "Markers",
-    "Encounter3"
-})
-
-local encounter1 = getDungeonObject("HALLOW", {
-    "Markers",
-    "Encounter1"
-})
-
-if not encounter3 or not encounter1 then
-    status("Marker Encounter3 / Encounter1 tidak ditemukan")
-    break
+-- Marker HALLOW kadang belum direplikasi tepat setelah EnterDungeon.
+-- Tunggu sampai kedua marker benar-benar tersedia; jangan matikan toggle
+-- hanya karena folder Dungeon belum selesai dimuat.
+local encounter3, encounter1
+status("Menunggu marker Encounter3 / Encounter1 dimuat...")
+while alive() do
+    encounter3 = getDungeonObject("HALLOW", {"Markers", "Encounter3"})
+    encounter1 = getDungeonObject("HALLOW", {"Markers", "Encounter1"})
+    if encounter3 and encounter1 then
+        break
+    end
+    task.wait(0.5)
 end
 
+if not alive() then break end
+
+-- Ulangi TP bila karakter/marker belum siap, bukan keluar dari worker.
 status("TP ke Encounter3...")
-if not teleportObject(encounter3) then
-    status("TP Encounter3 gagal")
-    break
+while alive() do
+    encounter3 = getDungeonObject("HALLOW", {"Markers", "Encounter3"}) or encounter3
+    if encounter3 and teleportObject(encounter3) then
+        break
+    end
+    status("TP Encounter3 belum berhasil, mencoba lagi...")
+    task.wait(1)
 end
+
+if not alive() then break end
 
 -- Bertahan 3 detik di Encounter3, sambil tetap menghormati toggle OFF.
 local encounter3Until = os.clock() + 3
@@ -2286,9 +2294,13 @@ end
 if not alive() then break end
 
 status("Kembali ke Encounter1...")
-if not teleportObject(encounter1) then
-    status("TP Encounter1 gagal")
-    break
+while alive() do
+    encounter1 = getDungeonObject("HALLOW", {"Markers", "Encounter1"}) or encounter1
+    if encounter1 and teleportObject(encounter1) then
+        break
+    end
+    status("TP Encounter1 belum berhasil, mencoba lagi...")
+    task.wait(1)
 end
 
 status("Encounter route selesai, menunggu progress Hallow...")
@@ -2413,8 +2425,13 @@ status("Jeda selesai, memulai Hallow berikutnya...")
             if AutoSkill then stopSkill() end
             if AutoCombat then stopCombat() end
 
-            AutoHallow = false
-            HallowStatus = "Hallow: OFF"
+            -- Jangan ubah toggle ke OFF saat worker berhenti karena error/marker.
+            -- Toggle hanya boleh OFF dari callback tombol stopHallow().
+            if AutoHallow then
+                HallowStatus = "Hallow: ON | Worker berhenti; tekan OFF lalu ON untuk mulai ulang"
+            else
+                HallowStatus = "Hallow: OFF"
+            end
         end
     end)
 end
