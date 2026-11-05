@@ -2413,40 +2413,78 @@ startHallow = function(isResume)
                 task.wait(HALLOW_BEFORE_EXIT)
             end
 
-            local exit = getDungeonObject("HALLOW", {
-                "Markers",
-                "BossExit"
-            })
+            -- BossExit bisa belum siap tepat saat boss mati. Retry sampai
+            -- marker tersedia dan teleport berhasil, jangan matikan worker Hallow.
+            local exitedHallow = false
+            local exitDeadline = os.clock() + 30
 
-            if not exit then
-                status("BossExit tidak ditemukan")
-                break
-            end
+            while alive() and os.clock() < exitDeadline do
+                local exit = getDungeonObject("HALLOW", {
+                    "Markers",
+                    "BossExit"
+                })
 
-            status("TP BossExit...")
+                if exit and exit.Parent then
+                    status("TP BossExit...")
+                    if teleportObject(exit) then
+                        exitedHallow = true
+                        break
+                    end
+                    status("TP BossExit gagal | mencoba ulang...")
+                else
+                    status("Menunggu marker BossExit...")
+                end
 
-            if not teleportObject(exit) then
-                status("TP BossExit gagal")
-                break
+                task.wait(0.5)
             end
 
             if not alive() then break end
 
+            if not exitedHallow then
+                status("BossExit belum berhasil | ulangi pengecekan...")
+                task.wait(1)
+                continue
+            end
+
+            -- Hentikan worker combat hanya saat transisi keluar.
+            -- Toggle Hallow tetap ON; skill/orbit akan dinyalakan lagi
+            -- setelah masuk dungeon berikutnya.
             if AutoOrbit then stopOrbit() end
             if AutoSkill then stopSkill() end
             if AutoCombat then stopCombat() end
 
-            status("BossExit | Orbit OFF | Skill OFF")
-            task.wait(1)
+            status("BossExit berhasil | menunggu keluar dungeon...")
+            local leaveDeadline = os.clock() + 20
+            while alive()
+                and Player:GetAttribute("Dungeon")
+                and os.clock() < leaveDeadline do
+                task.wait(0.25)
+            end
 
             if not alive() then break end
 
             status("Kembali ke posisi 1...")
+            local returnedToPos1 = false
+            while alive() and not returnedToPos1 do
+                updateCharacter()
+                if Root and (Root.Position - HALLOW_POS1).Magnitude <= HALLOW_POS1_TOLERANCE then
+                    returnedToPos1 = true
+                    break
+                end
 
-            if not teleportPosition(HALLOW_POS1) then
-                status("Gagal kembali posisi 1")
-                break
+                if teleportPosition(HALLOW_POS1) then
+                    task.wait(0.5)
+                    updateCharacter()
+                    returnedToPos1 = Root
+                        and (Root.Position - HALLOW_POS1).Magnitude <= HALLOW_POS1_TOLERANCE
+                else
+                    status("TP posisi 1 gagal | mencoba ulang...")
+                end
+
+                if not returnedToPos1 then task.wait(0.5) end
             end
+
+            if not alive() then break end
 
 local delayTime = math.random(5, 8)
 
