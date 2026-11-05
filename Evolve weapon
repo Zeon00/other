@@ -1,7 +1,6 @@
 --============================================================
 -- ANIME FORGING | ULTIMATE AUTOMATION HUB
 -- 11 TOGGLE | STANDALONE GUI
--- DUNGEON VOID RECOVERY: MOB ONLY, OFF BEFORE FLOORGLOW / BOSS
 --
 -- 1. AUTO SWING + HIT
 -- 2. AUTO SKILL
@@ -26,7 +25,7 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local CoreGui = game:GetService("CoreGui")
 local Workspace = game:GetService("Workspace")
-
+local PathfindingService = game:GetService("PathfindingService")
 local Player = Players.LocalPlayer
 
 --============================================================
@@ -79,8 +78,8 @@ local DungeonConfig = require(
 local SCAN_RANGE = 500
 local MAX_HEIGHT = 250
 
-local SWING_DELAY = 0.01
-local HIT_DELAY = 0.01
+local SWING_DELAY = 0.08
+local HIT_DELAY = 0.08
 
 local SKILLS = {"E", "R", "F", "Q"}
 local SKILL_DELAY = 0.5
@@ -121,9 +120,9 @@ local MOB_EMPTY_CONFIRM_TIME = 2
 
 -- HALLOW
 local HALLOW_POS1 = Vector3.new(
-    185,
+    182.9558868408203,
     3.2580254077911377,
-    31.60000228881836
+    31.391727447509766
 )
 
 local HALLOW_POS2 = Vector3.new(
@@ -139,11 +138,10 @@ local HALLOW_POS3 = Vector3.new(
 )
 
 local HALLOW_POS1_TOLERANCE = 20
--- teleportPosition menambahkan offset Y +3 studs, jadi toleransi harus >3.
-local HALLOW_POS2_TOLERANCE = 5
-local HALLOW_BEFORE_REMOTE = 1
+local HALLOW_POS2_TOLERANCE = 2
+local HALLOW_BEFORE_REMOTE = 3
 local HALLOW_BEFORE_FLOOR = 2
-local HALLOW_AFTER_FLOOR = 3
+local HALLOW_AFTER_FLOOR = 5
 local HALLOW_BEFORE_EXIT = 2
 
 -- AUTO TOWER / RIFT
@@ -162,8 +160,7 @@ local TOWER_POS2 = Vector3.new(
 local TOWER_TOLERANCE = 10
 local TOWER_WAIT = 2
 
-local CLAIM_INTERVAL = 10
-local REBIRTH_RETRY_INTERVAL = 2.5
+local CLAIM_INTERVAL = 300
 
 --============================================================
 -- STATE
@@ -171,7 +168,7 @@ local REBIRTH_RETRY_INTERVAL = 2.5
 
 local Running = true
 
-local AutoCombat = true
+local AutoCombat = false
 local AutoSkill = false
 local AutoOrbit = false
 local AutoTP = false
@@ -182,23 +179,10 @@ local AutoClaim = false
 local AutoTower = false
 local AutoEnchant = false
 local AutoCandyShop = false
-local AutoRebirth = false
--- Fase boss: cegah respawn handler mengirim player balik ke POS 1 saat boss belum mati.
-local DungeonBossPhase = false
--- Void Recovery hanya aktif pada fase mob dungeon biasa.
-local DungeonVoidRecovery = false
-local DungeonVoidRecoveryRunId = 0
-local DungeonVoidSafeCFrame = nil
-local DungeonVoidFloorY = nil
-local HallowBossPhase = false
-local RiftRunActive = false
 local EclipseTarget = nil
 -- ECLIPSE PRIORITY
 local EclipsePriority = false
 local ResumeDungeonAfterEclipse = false
-local ResumeHallowAfterEclipse = false
--- TRUE hanya ketika player sudah masuk ke Eclipse dungeon; cegah LeaveDungeon berulang.
-local EclipseDungeonEntered = false
 local SwingIndex = 0
 local SkillIndex = 0
 
@@ -209,19 +193,24 @@ local TPRunId = 0
 local DungeonRunId = 0
 local EclipseRunId = 0
 local HallowRunId = 0
-local HallowWorkerActive = false
 local ClaimRunId = 0
 local TowerRunId = 0
 local EnchantRunId = 0
 local CandyShopRunId = 0
-local RebirthRunId = 0
+
+-- Anti Void hanya untuk AUTO DUNGEON normal.
+local AntiVoidConnection = nil
+local AntiVoidSafeCFrame = nil
+local AntiVoidLastRescue = 0
+local AntiVoidRunId = 0
+local ANTI_VOID_FALL_DISTANCE = 35
+local ANTI_VOID_RESCUE_COOLDOWN = 2
 
 local DungeonStatus = "Dungeon: OFF"
 local EclipseStatus = "Eclipse: OFF"
 local HallowStatus = "Hallow: OFF"
 local ClaimStatus = "Claim: OFF"
 local TowerStatus = "Tower: OFF"
-local RebirthStatus = "Rebirth: OFF"
 
 local SelectedDungeon = "Z3"
 local DungeonNameInput
@@ -327,35 +316,6 @@ track(Player.CharacterAdded:Connect(function()
     updateCharacter()
 
     if not Running then return end
-
-    -- Setiap respawn, kembalikan player ke POS 1 sesuai mode yang aktif.
-    -- Prioritas: Eclipse > Dungeon > Hallow > Rift.
-    if Root then
-        if AutoEclipse then
-            -- Eclipse memakai alur teleport/entry miliknya sendiri.
-        elseif AutoDungeon then
-            if not DungeonBossPhase then
-                teleportPosition(DUNGEON_START)
-                DungeonStatus = "Respawn | Kembali ke POS 1 Dungeon"
-            else
-                DungeonStatus = "Respawn saat boss | Tetap di area boss"
-            end
-        elseif AutoHallow then
-            if not HallowBossPhase then
-                teleportPosition(HALLOW_POS1)
-                HallowStatus = "Respawn | Kembali ke POS 1 Hallow"
-            else
-                HallowStatus = "Respawn saat boss | Tetap di area boss"
-            end
-        elseif AutoTower then
-            if not RiftRunActive then
-                teleportPosition(TOWER_POS1)
-                TowerStatus = "Respawn | Kembali ke POS 1 Rift"
-            else
-                TowerStatus = "Respawn saat Rift aktif | Menunggu Rift selesai"
-            end
-        end
-    end
 
     if AutoOrbit then
         cleanupHover()
@@ -549,13 +509,8 @@ local function getTarget()
                 local distance = (mobRoot.Position - Root.Position).Magnitude
                 local height = math.abs(mobRoot.Position.Y - Root.Position.Y)
 
-                -- Mob biasa tetap dibatasi 250 stud.
-                -- Saat boss phase, izinkan beda tinggi sampai 400 stud:
-                -- FloorGlow Y=238.2 dan arena boss Y=-110 (selisih ~348).
-                local allowedHeight = DungeonBossPhase and 400 or MAX_HEIGHT
-
                 if distance <= SCAN_RANGE
-                    and height <= allowedHeight
+                    and height <= MAX_HEIGHT
                     and distance < bestDistance then
 
                     bestDistance = distance
@@ -867,6 +822,169 @@ local function getDungeonObject(name, path)
 
     return current
 end
+--============================================================
+-- DUNGEON POINTER MOVEMENT | PATHFINDING + TP MAX 15 STUD
+--============================================================
+
+local DUNGEON_TP_STEP = 25
+local DUNGEON_TP_DELAY = 0.12
+
+local function moveDungeonPointer(object, isAlive, statusCallback)
+    if not object or not isAlive() then
+        return false
+    end
+
+    updateCharacter()
+
+    if not Root or not Humanoid then
+        return false
+    end
+
+    local targetCF = getObjectCFrame(object)
+    if not targetCF then
+        return false
+    end
+
+    local path = PathfindingService:CreatePath({
+        AgentRadius = 2,
+        AgentHeight = 5,
+        AgentCanJump = true,
+        AgentCanClimb = true,
+        WaypointSpacing = 6
+    })
+
+    local success = pcall(function()
+        path:ComputeAsync(
+            Root.Position,
+            targetCF.Position
+        )
+    end)
+
+    if not success or path.Status ~= Enum.PathStatus.Success then
+        if statusCallback then
+            statusCallback("Pathfinding gagal, mencoba jalur lagi...")
+        end
+        return false
+    end
+
+    local waypoints = path:GetWaypoints()
+
+    for _, waypoint in ipairs(waypoints) do
+        if not isAlive() then
+            return false
+        end
+
+        updateCharacter()
+
+        if not Root or not Root.Parent then
+            return false
+        end
+
+        if waypoint.Action == Enum.PathWaypointAction.Jump then
+            Humanoid.Jump = true
+        end
+
+        local destination = waypoint.Position + Vector3.new(0, 3, 0)
+        local distance = (destination - Root.Position).Magnitude
+        local steps = math.max(1, math.ceil(distance / DUNGEON_TP_STEP))
+
+        for step = 1, steps do
+            if not isAlive() then
+                return false
+            end
+
+            updateCharacter()
+
+            if not Root or not Root.Parent then
+                return false
+            end
+
+            local currentPosition = Root.Position
+            local nextPosition = currentPosition:Lerp(
+                destination,
+                1 / (steps - step + 1)
+            )
+
+            local moved = pcall(function()
+                Root.CFrame = CFrame.new(nextPosition)
+                Root.AssemblyLinearVelocity = Vector3.zero
+                Root.AssemblyAngularVelocity = Vector3.zero
+            end)
+
+            if not moved then
+                return false
+            end
+
+            task.wait(DUNGEON_TP_DELAY)
+        end
+    end
+
+    return isAlive()
+end
+--============================================================
+-- ANTI VOID | NORMAL AUTO DUNGEON ONLY
+-- Simpan posisi karakter setelah masuk dungeon; rescue jika jatuh.
+--============================================================
+
+local function stopAntiVoid()
+    AntiVoidRunId += 1
+
+    if AntiVoidConnection then
+        pcall(function()
+            AntiVoidConnection:Disconnect()
+        end)
+        AntiVoidConnection = nil
+    end
+
+    AntiVoidSafeCFrame = nil
+    AntiVoidLastRescue = 0
+end
+
+local function startAntiVoid(isAlive)
+    stopAntiVoid()
+
+    local runId = AntiVoidRunId
+
+    task.spawn(function()
+        -- Beri server waktu memindahkan karakter ke dalam dungeon.
+        local deadline = os.clock() + 6
+        repeat
+            if not isAlive() or AntiVoidRunId ~= runId then return end
+            updateCharacter()
+            if Root and Root.Parent then break end
+            task.wait(0.1)
+        until os.clock() >= deadline
+
+        if not isAlive() or AntiVoidRunId ~= runId then return end
+        updateCharacter()
+        if not Root or not Root.Parent then return end
+
+        AntiVoidSafeCFrame = Root.CFrame
+        AntiVoidLastRescue = 0
+
+        AntiVoidConnection = RunService.Heartbeat:Connect(function()
+            if not isAlive() or AntiVoidRunId ~= runId then
+                stopAntiVoid()
+                return
+            end
+
+            updateCharacter()
+            if not Root or not Root.Parent or not AntiVoidSafeCFrame then return end
+
+            local safeY = AntiVoidSafeCFrame.Position.Y
+            if Root.Position.Y < safeY - ANTI_VOID_FALL_DISTANCE
+                and os.clock() - AntiVoidLastRescue >= ANTI_VOID_RESCUE_COOLDOWN then
+
+                AntiVoidLastRescue = os.clock()
+                pcall(function()
+                    Root.CFrame = AntiVoidSafeCFrame + Vector3.new(0, 5, 0)
+                    Root.AssemblyLinearVelocity = Vector3.zero
+                    Root.AssemblyAngularVelocity = Vector3.zero
+                end)
+            end
+        end)
+    end)
+end
 
 --============================================================
 -- ECLIPSE DUNGEON OBJECT FINDER
@@ -951,66 +1069,38 @@ local function waitForEnemyAppear(isAlive, statusCallback, timeout)
 end
 
 local function waitForEnemyClear(isAlive, statusCallback)
-    if not waitForEnemyAppear(isAlive, statusCallback) then
-        return false
-    end
-
     if statusCallback then
-        statusCallback("Menunggu mob habis...")
+        statusCallback("Menunggu Enemies kosong selama 2 detik...")
     end
 
     while isAlive() do
         if getEnemyCount() == 0 then
-            local start = os.clock()
-            local empty = true
+            local emptyStart = os.clock()
+            local stayedEmpty = true
 
-            while isAlive() and os.clock() - start < MOB_EMPTY_CONFIRM_TIME do
+            while isAlive() and os.clock() - emptyStart < 2 do
                 if getEnemyCount() > 0 then
-                    empty = false
+                    stayedEmpty = false
                     break
                 end
 
                 task.wait(0.1)
             end
 
-            if empty and getEnemyCount() == 0 then
-                return true
+            if not isAlive() then
+                return false
             end
-        end
 
-        task.wait(0.1)
-    end
-
-    return false
-end
-
--- Boss can die in one hit between polling ticks. Do not require observing
--- a living boss first; allow its spawn window, then confirm Enemies is empty.
-local function waitForDungeonBossClear(isAlive, statusCallback, spawnGrace)
-    local startedAt = os.clock()
-    local emptySince = nil
-    local seenEnemy = false
-    spawnGrace = tonumber(spawnGrace) or 10
-
-    while isAlive() do
-        local now = os.clock()
-        local count = getEnemyCount()
-
-        if count > 0 then
-            seenEnemy = true
-            emptySince = nil
-            if statusCallback then
-                statusCallback("Boss / mob terdeteksi | menunggu clear...")
+            if stayedEmpty and getEnemyCount() == 0 then
+                return true
             end
         else
-            emptySince = emptySince or now
-            if now - emptySince >= MOB_EMPTY_CONFIRM_TIME
-                and (seenEnemy or now - startedAt >= spawnGrace) then
-                return true
+            if statusCallback then
+                statusCallback("Boss / mob masih ada, menunggu...")
             end
-        end
 
-        task.wait(0.1)
+            task.wait(0.1)
+        end
     end
 
     return false
@@ -1043,8 +1133,7 @@ local function getDungeonProgress()
 end
 
 
-local function waitForProgressComplete(isAlive, statusCallback, useBeacon, dungeonName)
-    dungeonName = dungeonName or SelectedDungeon
+local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
     local emptyStart = nil
     local lastTPTime = 0
     local encounterIndex = 1
@@ -1059,22 +1148,6 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon, dunge
     end
 
     local function findMonsterBeacon()
-        -- Hallow: cek marker yang diminta user terlebih dahulu.
-        -- Gunakan child index 12 jika masih tersedia, lalu fallback ke pencarian nama.
-        local indexedContainer = Workspace:GetChildren()[12]
-        if indexedContainer then
-            local indexedBeacon = indexedContainer:FindFirstChild("MonsterBeacon")
-            if indexedBeacon then
-                if indexedBeacon:IsA("BasePart") or indexedBeacon:IsA("Model") then
-                    return indexedBeacon
-                end
-                local nestedPart = indexedBeacon:FindFirstChildWhichIsA("BasePart", true)
-                if nestedPart then
-                    return nestedPart
-                end
-            end
-        end
-
         for _, fx in ipairs(Workspace:GetChildren()) do
             if fx.Name == "ClientFX" then
                 local candidate = fx:FindFirstChild("MonsterBeacon")
@@ -1117,14 +1190,8 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon, dunge
                 (caption.Text or ""):match("^%s*(.-)%s*$")
             )
 
-            local currentProgress, totalProgress = getDungeonProgress()
-            local progressFinished = currentProgress ~= nil
-                and totalProgress ~= nil
-                and totalProgress > 0
-                and currentProgress >= totalProgress
-
-            if captionText == "open!" or captionText == "open" or progressFinished then
-                status("Progress selesai / BOSS OPEN! Teleport FloorGlow...")
+            if captionText == "open!" or captionText == "open" then
+                status("BOSS OPEN! Teleport FloorGlow...")
                 return true
             end
         end
@@ -1149,17 +1216,19 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon, dunge
                         updateCharacter()
 
                         if Root then
-                            local beaconPart = beacon:IsA("BasePart") and beacon
-                                or (beacon:IsA("Model") and (beacon.PrimaryPart or beacon:FindFirstChildWhichIsA("BasePart", true)))
-                            local distance = beaconPart and (Root.Position - beaconPart.Position).Magnitude or math.huge
+                            local distance = (Root.Position - beacon.Position).Magnitude
 
                             if distance > 12 and os.clock() - lastTPTime >= 3 then
-                                status("MonsterBeacon ditemukan! TP marker...")
-                                teleportObject(beacon)
-                                lastTPTime = os.clock()
-                            else
-                                status("MonsterBeacon aktif! Menunggu mob...")
-                            end
+    status("MonsterBeacon ditemukan! Pathfinding TP bertahap...")
+
+    if moveDungeonPointer(beacon, isAlive, status) then
+        lastTPTime = os.clock()
+    else
+        lastTPTime = os.clock()
+    end
+else
+    status("MonsterBeacon aktif! Menunggu mob...")
+end
                         end
 
                         emptyStart = nil
@@ -1169,7 +1238,7 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon, dunge
                         local encounterName = "Encounter" .. encounterIndex
 
                         local encounter = getDungeonObject(
-                            dungeonName,
+                            SelectedDungeon,
                             {"Markers", encounterName}
                         )
 
@@ -1177,14 +1246,15 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon, dunge
                             if encounterTarget ~= encounter then
                                 status("MonsterBeacon tidak ada! TP " .. encounterName .. "...")
 
-                                if teleportObject(encounter) then
-                                    encounterTarget = encounter
-                                    waitingEncounterSpawn = true
-                                    lastTPTime = os.clock()
-                                    emptyStart = nil
-                                else
-                                    status("TP " .. encounterName .. " gagal!")
-                                end
+                                if moveDungeonPointer(encounter, isAlive, status) then
+    encounterTarget = encounter
+    waitingEncounterSpawn = true
+    lastTPTime = os.clock()
+    emptyStart = nil
+else
+    status("Pathfinding " .. encounterName .. " gagal, coba lagi...")
+    task.wait(1)
+end
                             elseif waitingEncounterSpawn then
                                 status("Menunggu mob muncul di " .. encounterName .. "...")
 
@@ -1216,83 +1286,6 @@ end
 
 
 --============================================================
--- DUNGEON VOID RECOVERY (NORMAL MOB PHASE ONLY)
--- Catat posisi aman setelah EnterDungeon berhasil.
--- Jika player jatuh jauh di bawah level lantai mob, kembalikan ke posisi aman.
--- Sengaja dimatikan sebelum TP FloorGlow dan tidak aktif saat boss.
---============================================================
-
-local function stopDungeonVoidRecovery()
-    DungeonVoidRecovery = false
-    DungeonVoidRecoveryRunId += 1
-    DungeonVoidSafeCFrame = nil
-    DungeonVoidFloorY = nil
-end
-
-local function startDungeonVoidRecovery()
-    stopDungeonVoidRecovery()
-    DungeonVoidRecovery = true
-    DungeonVoidRecoveryRunId += 1
-
-    local runId = DungeonVoidRecoveryRunId
-    updateCharacter()
-
-    if Root then
-        DungeonVoidSafeCFrame = Root.CFrame
-        DungeonVoidFloorY = Root.Position.Y
-    end
-
-    task.spawn(function()
-        local lastRecovery = 0
-
-        while Running
-            and DungeonVoidRecovery
-            and DungeonVoidRecoveryRunId == runId
-            and AutoDungeon
-            and not DungeonBossPhase do
-
-            updateCharacter()
-
-            if Root and Root.Parent and Humanoid and Humanoid.Health > 0 then
-                local position = Root.Position
-                local velocity = Root.AssemblyLinearVelocity
-
-                if DungeonVoidFloorY == nil then
-                    DungeonVoidFloorY = position.Y
-                    DungeonVoidSafeCFrame = Root.CFrame
-                end
-
-                -- Posisi yang masih berada di sekitar level lantai mob dianggap aman.
-                -- Jangan simpan posisi saat sedang jatuh cepat.
-                if position.Y >= DungeonVoidFloorY - 18 and velocity.Y > -24 then
-                    DungeonVoidSafeCFrame = Root.CFrame
-                end
-
-                -- Ambang jatuh dihitung dari lantai dungeon mob saat recovery dimulai,
-                -- bukan dari tinggi arena boss yang memang jauh lebih rendah.
-                if position.Y < DungeonVoidFloorY - 38
-                    and DungeonVoidSafeCFrame
-                    and os.clock() - lastRecovery >= 2 then
-
-                    lastRecovery = os.clock()
-                    local safe = DungeonVoidSafeCFrame
-
-                    pcall(function()
-                        Root.AssemblyLinearVelocity = Vector3.zero
-                        Root.AssemblyAngularVelocity = Vector3.zero
-                        Root.CFrame = safe + Vector3.new(0, 4, 0)
-                    end)
-
-                    task.wait(0.25)
-                end
-            end
-
-            task.wait(0.12)
-        end
-    end)
-end
-
---============================================================
 -- NORMAL DUNGEON
 --============================================================
 
@@ -1301,21 +1294,19 @@ local function dungeonAlive(id)
 end
 
 local function waitDungeonStart(id)
-    DungeonStatus = "Teleport ke POS 1 Dungeon..."
-    updateCharacter()
-    if Root and (Root.Position - DUNGEON_START).Magnitude > DUNGEON_TOLERANCE then
-        teleportPosition(DUNGEON_START)
-        task.wait(0.35)
-    end
-
     DungeonStatus = "Menunggu posisi 1..."
+
     while dungeonAlive(id) do
         updateCharacter()
-        if Root and (Root.Position - DUNGEON_START).Magnitude <= DUNGEON_TOLERANCE then
+
+        if Root
+            and (Root.Position - DUNGEON_START).Magnitude <= DUNGEON_TOLERANCE then
             return true
         end
+
         task.wait(DUNGEON_WAIT_DELAY)
     end
+
     return false
 end
 
@@ -1348,10 +1339,9 @@ local function walkDungeonEntry(id)
 end
 
 local function stopDungeon()
-    stopDungeonVoidRecovery()
-    DungeonBossPhase = false
     AutoDungeon = false
     DungeonRunId += 1
+    stopAntiVoid()
     DungeonStatus = "Dungeon: OFF"
 end
 
@@ -1443,10 +1433,9 @@ end
                 continue
             end
 
-            -- Remote EnterDungeon sukses: recovery ON khusus map mob biasa.
-            DungeonBossPhase = false
-            startDungeonVoidRecovery()
-            status("Masuk dungeon! Void Recovery ON | Menunggu progress selesai...")
+            status("Masuk dungeon! Anti Void aktif...")
+            startAntiVoid(alive)
+            task.wait(0.25)
 
             if not AutoOrbit then startOrbit() end
             if not AutoSkill then startSkill() end
@@ -1458,11 +1447,9 @@ end
 
             if not alive() then break end
 
-            -- Progress mob selesai: matikan recovery SEBELUM menuju FloorGlow.
-            -- Tetap OFF sepanjang fase boss; hanya dinyalakan lagi setelah EnterDungeon
-            -- sukses pada putaran dungeon berikutnya.
-            stopDungeonVoidRecovery()
-            status("Progress selesai | Void Recovery OFF. Mencari FloorGlow...")
+            -- Matikan rescue sebelum perpindahan normal ke FloorGlow.
+            stopAntiVoid()
+            status("Progress selesai! Mencari FloorGlow...")
 
             local glow = getDungeonObject(name, {
                 "BossDoor",
@@ -1474,9 +1461,7 @@ end
                 break
             end
 
-            DungeonBossPhase = true
             if not teleportObject(glow) then
-                DungeonBossPhase = false
                 status("Teleport FloorGlow gagal!")
                 break
             end
@@ -1486,25 +1471,19 @@ end
 
             if not alive() then break end
 
-            if not waitForDungeonBossClear(alive, status, 10) then
+            if not waitForEnemyClear(alive, status) then
                 break
             end
 
-            DungeonBossPhase = false
             if not alive() then break end
 
-            status("Boss clear | konfirmasi area sebelum BossExit...")
-            task.wait(DUNGEON_BEFORE_EXIT)
+            status("Menunggu Enemies kosong selama 2 detik...")
 
-            if not alive() then break end
+if not waitForEnemyClear(alive, status) then
+    break
+end
 
-            if getEnemyCount() > 0 then
-                status("Mob muncul lagi, menunggu sampai clear...")
-                if not waitForDungeonBossClear(alive, status, 0) then
-                    break
-                end
-                if not alive() then break end
-            end
+if not alive() then break end
 
             local exit = getDungeonObject(name, {
                 "Markers",
@@ -1529,9 +1508,9 @@ end
             task.wait(1)
         end
 
+        stopAntiVoid()
+
         if DungeonRunId == id then
-            stopDungeonVoidRecovery()
-            DungeonBossPhase = false
             if not combatWasOn and AutoCombat then
                 stopCombat()
             end
@@ -1544,10 +1523,6 @@ end
         end
     end)
 end
-
-local startHallow
-local stopHallow
-local pauseHallowForEclipse
 
 --============================================================
 -- AUTO ECLIPSE | DIRECT TP UMBRA
@@ -1574,42 +1549,6 @@ local function getCurrentEclipse()
     end
 
     return config, attribute
-end
-
--- Baca rarity event langsung dari TextLabel HUD yang user tunjuk:
--- PlayerGui.EclipseHUD.EclipseHunt:GetChildren()[7]
-local function getEclipseHUDRarity()
-    local playerGui = Player:FindFirstChild("PlayerGui")
-    local hud = playerGui and playerGui:FindFirstChild("EclipseHUD")
-    local hunt = hud and hud:FindFirstChild("EclipseHunt")
-    if not hunt then
-        return nil
-    end
-
-    local children = hunt:GetChildren()
-    local rarityLabel = children[7]
-    if not rarityLabel or not rarityLabel:IsA("TextLabel") then
-        return nil
-    end
-
-    local value = tostring(rarityLabel.Text or "")
-    value = value:match("^%s*(.-)%s*$") or ""
-    if value == "" then
-        return nil
-    end
-
-    return value
-end
-
-local function isAllowedEclipseRarity(rarity)
-    if not rarity then
-        return false
-    end
-
-    local normalized = string.lower(rarity)
-    return normalized:find("legendary", 1, true) ~= nil
-        or normalized:find("mythic", 1, true) ~= nil
-        or normalized:find("secret", 1, true) ~= nil
 end
 
 local function findUmbra()
@@ -1686,11 +1625,16 @@ end
 local function stopEclipse()
     AutoEclipse = false
     EclipseRunId += 1
-    EclipseDungeonEntered = false
 
-    -- Matikan pemantauan Eclipse saja.
-    -- Jangan matikan AutoOrbit / AutoSkill karena keduanya juga dipakai Hallow.
     EclipseTarget = nil
+
+    if AutoOrbit then
+        stopOrbit()
+    end
+
+    if AutoSkill then
+        stopSkill()
+    end
 
     EclipseStatus = "Eclipse: OFF"
 end
@@ -1700,8 +1644,8 @@ local function startEclipse()
         return
     end
 
-    if AutoTower then
-        EclipseStatus = "Matikan Tower dahulu!"
+    if AutoHallow or AutoTower then
+        EclipseStatus = "Matikan Hallow / Tower dahulu!"
         return
     end
 
@@ -1770,81 +1714,20 @@ local function startEclipse()
     while alive() do
     local config, attribute = getCurrentEclipse()
 
-    -- FILTER RARITY SEBELUM PRIORITAS ECLIPSE / PAUSE HALLOW / ENTER.
-    -- Event Rare dan Epic dilewati; hanya Legendary, Mythic, Secret yang diproses.
-    if config then
-        local rarity = getEclipseHUDRarity()
-        if not rarity then
-            status("Eclipse terdeteksi | Menunggu TextLabel rarity HUD...")
-            task.wait(0.05)
-            continue
-        end
-
-        if not isAllowedEclipseRarity(rarity) then
-            status("Skip rarity " .. rarity .. " | Hanya Legendary ke atas")
-            task.wait(1)
-            continue
-        end
-    end
-
-    -- Jika Eclipse sudah selesai / tidak tersedia lagi, lanjutkan Hallow.
-    -- AutoEclipse boleh tetap ON untuk memantau Eclipse berikutnya; itu tidak
-    -- boleh menghalangi worker Hallow berjalan di sela-sela event Eclipse.
-    if not config
-        and not EclipseDungeonEntered
-        and not Player:GetAttribute("Dungeon")
-        and AutoHallow
-        and ResumeHallowAfterEclipse
-        and not HallowWorkerActive then
-
-        ResumeHallowAfterEclipse = false
-        status("Eclipse selesai! Melanjutkan Auto Hallow dari POS 1...")
-        task.wait(1)
-        if alive() and AutoHallow and not HallowWorkerActive then
-            startHallow(true)
-        end
-    end
-
     --====================================================
     -- ECLIPSE PRIORITY: POTONG DUNGEON YANG SEDANG JALAN
     --====================================================
 
-    -- Selama konfigurasi Eclipse tersedia, blokir mode dungeon lain.
-    if config then
-        EclipsePriority = true
-    end
-
-    -- Eclipse mengambil prioritas atas Hallow yang sedang aktif.
-    -- Simpan statusnya, lalu hentikan worker Hallow agar tidak bentrok.
-    if config and AutoHallow then
-        ResumeHallowAfterEclipse = true
-        -- Pause hanya sekali saat worker memang sedang berjalan.
-        -- Jangan menaikkan HallowRunId berulang kali setiap polling Eclipse.
-        if HallowWorkerActive then
-            status("ECLIPSE TERSEDIA! Pause worker Hallow (toggle tetap ON)...")
-            pauseHallowForEclipse()
-            task.wait(0.25)
-        end
-    end
-
-    -- Auto Dungeon juga dihentikan sementara jika Eclipse tersedia.
-    if config and AutoDungeon then
-        ResumeDungeonAfterEclipse = true
-        EclipsePriority = true
-        status("ECLIPSE TERSEDIA! Menghentikan Auto Dungeon...")
-        stopDungeon()
-    end
-
     if Player:GetAttribute("Dungeon") then
 
-        -- Jangan pernah mengeluarkan player dari Eclipse yang sedang berjalan.
-        -- LeaveDungeon hanya untuk dungeon LAIN sebelum masuk Eclipse.
-        if config and not EclipseDungeonEntered then
-            status("ECLIPSE TERSEDIA! Keluar dari dungeon aktif...")
+        if config then
+            status("ECLIPSE TERSEDIA! Menghentikan dungeon...")
 
-            ResumeDungeonAfterEclipse = ResumeDungeonAfterEclipse or AutoDungeon
+            -- Simpan status agar Auto Dungeon bisa dilanjutkan
+            ResumeDungeonAfterEclipse = AutoDungeon
             EclipsePriority = true
 
+            -- Hentikan worker Auto Dungeon
             if AutoDungeon then
                 stopDungeon()
             end
@@ -1918,8 +1801,7 @@ local function startEclipse()
     --====================================================
 
     status("Eclipse ditemukan: " .. tostring(attribute))
-    -- Jangan menahan event Legendary yang sudah lolos filter rarity.
-    task.wait(0.05)
+    task.wait(0.5)
 
     if not alive() then
         break
@@ -1938,8 +1820,7 @@ local function startEclipse()
             end
 
             status("Eclipse ditemukan: " .. tostring(attribute))
-            -- Config sudah divalidasi di atas; lanjutkan ke EclipseEnter dengan jeda minimal.
-            task.wait(0.05)
+            task.wait(1)
 
             if not alive() then
                 break
@@ -1975,10 +1856,7 @@ local function startEclipse()
                 break
             end
 
-            -- Tandai bahwa dungeon aktif sekarang adalah Eclipse.
-            -- Loop berikutnya tidak boleh memanggil LeaveDungeon lagi.
-            EclipseDungeonEntered = true
-            status("Berhasil masuk Eclipse! Mencari Umbra...")
+            status("Berhasil masuk! Mencari Umbra...")
 
             local umbra = waitUmbra()
 
@@ -2088,13 +1966,25 @@ end
 if not alive() then break end
 
 status("Berhasil keluar dari Eclipse!")
-EclipseDungeonEntered = false
 
--- Buka kembali izin mode setelah Eclipse selesai.
+-- Buka kembali izin Auto Dungeon
 EclipsePriority = false
 
--- Resume dilakukan setelah worker Eclipse benar-benar selesai,
--- agar AutoEclipse tidak lagi memblokir startHallow().
+-- Lanjutkan Auto Dungeon jika sebelumnya sedang ON
+if ResumeDungeonAfterEclipse
+    and alive()
+    and not AutoDungeon then
+
+    ResumeDungeonAfterEclipse = false
+
+    status("Cooldown Eclipse! Melanjutkan Auto Dungeon...")
+    task.wait(1)
+
+    startDungeon()
+else
+    ResumeDungeonAfterEclipse = false
+end
+
 task.wait(2)
         end
 
@@ -2111,23 +2001,7 @@ task.wait(2)
             end
 
             AutoEclipse = false
-            EclipsePriority = false
             EclipseStatus = "Eclipse: OFF"
-
-            if Running and ResumeDungeonAfterEclipse and not AutoDungeon then
-                ResumeDungeonAfterEclipse = false
-                ResumeHallowAfterEclipse = false
-                task.wait(1)
-                startDungeon()
-            elseif Running and ResumeHallowAfterEclipse and AutoHallow then
-                ResumeHallowAfterEclipse = false
-                status("Eclipse selesai! Melanjutkan Auto Hallow dari POS 1...")
-                task.wait(1)
-                startHallow(true)
-            else
-                ResumeDungeonAfterEclipse = false
-                ResumeHallowAfterEclipse = false
-            end
         end
     end)
 end
@@ -2140,102 +2014,226 @@ local function hallowAlive(id)
     return Running and AutoHallow and HallowRunId == id
 end
 
-local function hallowWaitPosition1(id)
-    HallowStatus = "HALLOW | Teleport ke POS 1..."
+local function teleportHallowPosition(position)
     updateCharacter()
-    if Root and (Root.Position - HALLOW_POS1).Magnitude > HALLOW_POS1_TOLERANCE then
-        teleportPosition(HALLOW_POS1)
-        task.wait(0.35)
-    end
+    if not Root or not Root.Parent then return false end
 
-    HallowStatus = "HALLOW | Menunggu posisi 1..."
-    while hallowAlive(id) do
-        updateCharacter()
-        if Root and (Root.Position - HALLOW_POS1).Magnitude <= HALLOW_POS1_TOLERANCE then
-            return true
-        end
-        task.wait(0.2)
-    end
-    return false
+    return pcall(function()
+        Root.CFrame = CFrame.new(position)
+        Root.AssemblyLinearVelocity = Vector3.zero
+        Root.AssemblyAngularVelocity = Vector3.zero
+    end)
 end
 
-local function hallowWaitMobs(id, label)
-    HallowStatus = "HALLOW | Menunggu " .. label .. " muncul..."
+local function getHallowProgress()
+    local playerGui = Player:FindFirstChild("PlayerGui")
+    local gameUI = playerGui and playerGui:FindFirstChild("GameUI")
+    local dungeonBar = gameUI and gameUI:FindFirstChild("DungeonBar")
+    local progress = dungeonBar and dungeonBar:FindFirstChild("Progress")
 
-    while hallowAlive(id) do
-        if getEnemyCount() > 0 then
-            return true
-        end
-
-        task.wait(0.2)
+    if not progress then
+        return "", ""
     end
 
-    return false
+    local textFolder = progress:FindFirstChild("Text") or progress
+    local captionObject = textFolder:FindFirstChild("Caption", true)
+    local valueObject = textFolder:FindFirstChild("Value", true)
+
+    local caption = ""
+    local value = ""
+
+    if captionObject and (captionObject:IsA("TextLabel") or captionObject:IsA("TextButton")) then
+        caption = string.upper((captionObject.Text or ""):match("^%s*(.-)%s*$"))
+    end
+
+    if valueObject and (valueObject:IsA("TextLabel") or valueObject:IsA("TextButton")) then
+        value = string.upper((valueObject.Text or ""):match("^%s*(.-)%s*$"))
+    end
+
+    return caption, value
 end
 
-local function hallowWaitClear(id, label)
-    if not hallowWaitMobs(id, label) then
+local function hallowProgressIsOpen()
+    local caption, value = getHallowProgress()
+    return caption == "OPEN!" and value == "BOSS"
+end
+
+local function hallowMoveToBossDoor(id)
+    local bossDoor = nil
+    local targetPosition = nil
+    local STEP_DISTANCE = 12 -- teleport bertahap 10-15 stud
+    local STEP_DELAY = 0.25
+    local BOSS_DOOR_RETRY_DELAY = 2
+
+    -- BossDoor kadang belum direplikasi tepat setelah EnterDungeon.
+    -- Tunggu 2 detik lalu cari lagi sampai object benar-benar muncul.
+    while hallowAlive(id) and not bossDoor do
+        bossDoor = getDungeonObject("HALLOW", {"BossDoor"})
+        if bossDoor then
+            local targetCFrame = getObjectCFrame(bossDoor)
+            if targetCFrame then
+                targetPosition = targetCFrame.Position
+                break
+            end
+            bossDoor = nil
+        end
+
+        HallowStatus = "HALLOW | BossDoor belum muncul, cek ulang 2 detik lagi..."
+        task.wait(BOSS_DOOR_RETRY_DELAY)
+    end
+
+    if not hallowAlive(id) or not targetPosition then
         return false
     end
 
-    HallowStatus = "HALLOW | Melawan " .. label .. "..."
-
     while hallowAlive(id) do
-        if getEnemyCount() == 0 then
-            local start = os.clock()
-            local empty = true
-
-            while hallowAlive(id)
-                and os.clock() - start < MOB_EMPTY_CONFIRM_TIME do
-
-                if getEnemyCount() > 0 then
-                    empty = false
-                    break
-                end
-
-                task.wait(0.1)
-            end
-
-            if empty and getEnemyCount() == 0 then
-                return true
-            end
+        if hallowProgressIsOpen() then
+            return true
         end
 
-        task.wait(0.1)
+        local caption, value = getHallowProgress()
+        if caption == "SLAIN" then
+            HallowStatus = "HALLOW | SLAIN " .. value .. " | menuju BossDoor"
+        else
+            HallowStatus = "HALLOW | Progress " .. caption .. " " .. value .. " | menuju BossDoor"
+        end
+
+        -- Jangan mengubah sistem Combat. Pergerakan hanya ditahan saat mob ada.
+        if getEnemyCount() > 0 then
+            HallowStatus = "HALLOW | Menunggu mob selesai: " .. value
+            task.wait(0.2)
+        else
+            updateCharacter()
+            if not Root or not Root.Parent then
+                task.wait(0.1)
+            else
+                -- Refresh posisi BossDoor jika object dipindah/dibuat ulang.
+                local currentDoor = getDungeonObject("HALLOW", {"BossDoor"})
+                local currentCFrame = currentDoor and getObjectCFrame(currentDoor)
+                if currentCFrame then
+                    targetPosition = currentCFrame.Position
+                end
+
+                local offset = targetPosition - Root.Position
+                local distance = offset.Magnitude
+
+                if distance <= STEP_DISTANCE then
+                    task.wait(STEP_DELAY)
+                else
+                    local nextPosition = Root.Position + offset.Unit * math.min(STEP_DISTANCE, distance)
+                    local ok = pcall(function()
+                        Root.CFrame = CFrame.new(nextPosition)
+                        Root.AssemblyLinearVelocity = Vector3.zero
+                        Root.AssemblyAngularVelocity = Vector3.zero
+                    end)
+                    if not ok then return false end
+                    task.wait(STEP_DELAY)
+                end
+            end
+        end
     end
 
     return false
 end
 
-pauseHallowForEclipse = function()
-    -- Pause worker saja. Toggle Auto Hallow tetap ON.
-    HallowRunId += 1
-    HallowWorkerActive = false
-    HallowBossPhase = false
-    HallowStatus = "Hallow: PAUSED (Eclipse) | Toggle tetap ON"
+local function hallowStartRiftToastWatcher(id)
+    local found = false
+    local closed = false
+    local connections = {}
+    local phrase = "step into the rift to go home"
+
+    local function isActuallyVisible(instance)
+        local current = instance
+        while current do
+            if current:IsA("GuiObject") and not current.Visible then
+                return false
+            end
+            if current:IsA("ScreenGui") and not current.Enabled then
+                return false
+            end
+            current = current.Parent
+        end
+        return true
+    end
+
+    local function inspect(instance, isNew)
+        if found or closed or not instance then return end
+        if not (instance:IsA("TextLabel") or instance:IsA("TextButton")) then return end
+
+        local function checkText()
+            if found or closed or not hallowAlive(id) then return end
+            if not isActuallyVisible(instance) then return end
+            local textValue = string.lower((instance.Text or ""):match("^%s*(.-)%s*$"))
+            if textValue:find(phrase, 1, true) then
+                found = true
+            end
+        end
+
+        -- Toast baru bisa berupa GUI baru atau perubahan Text/Visible pada GUI yang sudah ada.
+        -- Teks lama yang sudah tampil sebelum watcher dimulai tidak dianggap sebagai toast boss.
+        if isNew then checkText() end
+        table.insert(connections, instance:GetPropertyChangedSignal("Text"):Connect(checkText))
+        table.insert(connections, instance:GetPropertyChangedSignal("Visible"):Connect(checkText))
+        local screenGui = instance:FindFirstAncestorOfClass("ScreenGui")
+        if screenGui then
+            table.insert(connections, screenGui:GetPropertyChangedSignal("Enabled"):Connect(checkText))
+        end
+    end
+
+    local function watch(container)
+        if not container then return end
+        for _, descendant in ipairs(container:GetDescendants()) do
+            inspect(descendant, false)
+        end
+        table.insert(connections, container.DescendantAdded:Connect(function(descendant)
+            inspect(descendant, true)
+        end))
+    end
+
+    local playerGui = Player:FindFirstChild("PlayerGui")
+    watch(playerGui)
+    pcall(function() watch(CoreGui) end)
+
+    HallowStatus = "HALLOW | Listener toast rift aktif, menunggu boss..."
+
+    local function disconnect()
+        if closed then return end
+        closed = true
+        for _, connection in ipairs(connections) do
+            pcall(function() connection:Disconnect() end)
+        end
+        table.clear(connections)
+    end
+
+    local function waitForToast()
+        -- task.wait hanya menjaga loop hidup; deteksi teks dilakukan langsung oleh event listener,
+        -- jadi toast yang muncul sangat singkat tetap tertangkap.
+        while hallowAlive(id) and not found do
+            task.wait(0.1)
+        end
+        local result = found and hallowAlive(id)
+        disconnect()
+        return result
+    end
+
+    return waitForToast, disconnect
 end
 
-stopHallow = function()
-    HallowRunId += 1
-    HallowWorkerActive = false
-    HallowBossPhase = false
+local function stopHallow()
     AutoHallow = false
+    HallowRunId += 1
     HallowStatus = "Hallow: OFF"
 end
 
-startHallow = function(isResume)
-    if not Running or HallowWorkerActive then return end
+local function startHallow()
+    if not Running or AutoHallow then return end
 
-    -- AutoEclipse hanya memantau event. Hallow tetap boleh berjalan saat
-    -- belum ada Eclipse yang memenuhi rarity; saat event valid terdeteksi,
-    -- worker Hallow akan dipause oleh blok EclipsePriority di worker Eclipse.
-    if not isResume and (AutoDungeon or AutoTower) then
-        HallowStatus = "Matikan Auto Dungeon/Tower dahulu!"
+    if AutoDungeon or AutoEclipse or AutoTower then
+        HallowStatus = "Matikan mode dungeon lain dahulu!"
         return
     end
 
     AutoHallow = true
-    HallowWorkerActive = true
     HallowRunId += 1
 
     local id = HallowRunId
@@ -2250,32 +2248,28 @@ startHallow = function(isResume)
         end
 
         while alive() do
-            if not hallowWaitPosition1(id) then break end
-            if not alive() then break end
-
-            status("TP posisi 2...")
-
-            if not teleportPosition(HALLOW_POS2) then
-                status("TP posisi 2 gagal")
+            -- STEP 1: teleport ke posisi awal yang diberikan.
+            status("TP Posisi 1...")
+            if not teleportHallowPosition(HALLOW_POS1) then
+                status("TP Posisi 1 gagal")
                 break
             end
 
-            status("Menunggu 3 detik...")
-            task.wait(HALLOW_BEFORE_REMOTE)
-
             if not alive() then break end
+            task.wait(0.25)
 
-            updateCharacter()
-
-            if not Root
-                or (Root.Position - HALLOW_POS2).Magnitude > HALLOW_POS2_TOLERANCE then
-                status("Posisi 2 belum tercapai (cek jarak), ulangi TP...")
-                task.wait(0.5)
-                continue
+            -- STEP 2: Posisi 2, tunggu 5 detik, lalu EnterDungeon HALLOW 3.
+            status("TP Posisi 2...")
+            if not teleportHallowPosition(HALLOW_POS2) then
+                status("TP Posisi 2 gagal")
+                break
             end
 
-            status("EnterDungeon...")
+            status("Menunggu 5 detik sebelum EnterDungeon...")
+            task.wait(HALLOW_BEFORE_REMOTE)
+            if not alive() then break end
 
+            status('Mengirim EnterDungeon, "HALLOW", 3...')
             local ok, result = pcall(function()
                 return RequestRemote:InvokeServer("EnterDungeon", "HALLOW", 3)
             end)
@@ -2288,225 +2282,108 @@ startHallow = function(isResume)
 
             if not alive() then break end
 
-            -- Remote selesai: beri waktu dungeon dan NPC untuk spawn dahulu.
-            status("Remote selesai | tunggu 5 detik untuk spawn dungeon...")
-            local loadUntil = os.clock() + 5
-            while alive() and os.clock() < loadUntil do task.wait(0.1) end
-            if not alive() then break end
-
-            local function getHallowMarker(markerName)
-                return getDungeonObject("HALLOW", {"Markers", markerName})
-            end
-
-            local function tpHallowMarker(markerName)
-                while alive() do
-                    local marker = getHallowMarker(markerName)
-                    if marker and marker.Parent and teleportObject(marker) then
-                        return true
-                    end
-                    status("Menunggu marker / TP " .. markerName .. "...")
-                    task.wait(0.5)
-                end
-                return false
-            end
-
-            status("TP Encounter3 untuk memancing spawn...")
-            if not tpHallowMarker("Encounter3") then break end
-
-            local encounter3Until = os.clock() + 3
-            while alive() and os.clock() < encounter3Until do task.wait(0.1) end
-            if not alive() then break end
-
-            status("TP kembali Encounter1...")
-            if not tpHallowMarker("Encounter1") then break end
-
-            -- Combat workers mulai setelah route awal selesai, agar tidak
-            -- menarik mob saat karakter masih berpindah antar encounter.
             if not AutoSkill then startSkill() end
             if not AutoOrbit then startOrbit() end
-            if not AutoCombat then startCombat() end
 
-            -- Jika area Encounter1 kosong, pindah ke Encounter3 dan tunggu
-            -- sampai musuh benar-benar muncul. Baru kembali ke Encounter1.
-            while alive() do
-                if getEnemyCount() > 0 then
-                    break
-                end
-
-                status("Enemies kosong di Encounter1 | TP Encounter3 menunggu spawn...")
-                if not tpHallowMarker("Encounter3") then break end
-
-                while alive() and getEnemyCount() == 0 do
-                    task.wait(0.25)
-                end
-                if not alive() then break end
-
-                status("Mob muncul! Kembali ke Encounter1 untuk orbit...")
-                if not tpHallowMarker("Encounter1") then break end
-                task.wait(0.25)
-            end
-
-            if not alive() then break end
-            status("Mob terdeteksi | lanjut farm dari Encounter1...")
-
-            if not alive() then break end
-
-            -- Enemy kosong bukan berarti progress Hallow selesai.
-            -- Tunggu progress benar-benar selesai; saat kosong, cek MonsterBeacon
-            -- pada Workspace:GetChildren()[12] dan marker Encounter bila diperlukan.
-            status("Menunggu progress Hallow selesai / MonsterBeacon...")
-            if not waitForProgressComplete(alive, status, true, "HALLOW") then
+            -- STEP 3: tunggu BossDoor muncul (retry 2 detik), lalu TP bertahap 12 stud.
+            -- Combat sengaja tidak disentuh; biarkan sesuai toggle milik pengguna.
+            status("Skill + Orbit ON. Menunggu BossDoor...")
+            if not hallowMoveToBossDoor(id) then
+                if alive() then status("Gagal menyelesaikan progress menuju BossDoor") end
                 break
             end
 
             if not alive() then break end
 
-            status("Progress Hallow selesai! Menyiapkan FloorGlow...")
-            task.wait(HALLOW_BEFORE_FLOOR)
+            -- STEP 4: hanya setelah caption OPEN! dan value BOSS, masuk FloorGlow.
+            if not hallowProgressIsOpen() then
+                status("Menunggu Progress OPEN! / BOSS...")
+                repeat
+                    task.wait(0.1)
+                until not alive() or hallowProgressIsOpen()
+            end
 
             if not alive() then break end
 
-            local glow = getDungeonObject("HALLOW", {
-                "BossDoor",
-                "FloorGlow"
-            })
-
+            local glow = getDungeonObject("HALLOW", {"BossDoor", "FloorGlow"})
             if not glow then
-                status("FloorGlow tidak ditemukan")
+                status("BossDoor.FloorGlow tidak ditemukan")
                 break
             end
 
-            status("TP FloorGlow...")
-            HallowBossPhase = true
+            -- STEP 5: FloorGlow, tunggu boss selesai.
+status("Progress OPEN! / BOSS terdeteksi. TP FloorGlow...")
 
-            if not teleportObject(glow) then
-                HallowBossPhase = false
-                status("TP FloorGlow gagal")
-                break
-            end
+if not teleportObject(glow) then
+    status("TP FloorGlow gagal")
+    break
+end
 
-            status("Menunggu boss...")
-            task.wait(HALLOW_AFTER_FLOOR)
+status("FloorGlow berhasil! Tunggu 5 detik...")
+task.wait(HALLOW_AFTER_FLOOR)
 
-            if not alive() then break end
+if not alive() then break end
 
-            if not hallowWaitClear(id, "BOSS") then
-                break
-            end
-
-            HallowBossPhase = false
-            if not alive() then break end
-
-            status("Boss habis, tunggu...")
-            task.wait(HALLOW_BEFORE_EXIT)
-
-            if not alive() then break end
-
-            if getEnemyCount() > 0 then
-                status("Musuh muncul lagi...")
-
-                if not hallowWaitClear(id, "BOSS") then
-                    break
-                end
-
-                if not alive() then break end
-                task.wait(HALLOW_BEFORE_EXIT)
-            end
-
-            -- BossExit bisa belum siap tepat saat boss mati. Retry sampai
-            -- marker tersedia dan teleport berhasil, jangan matikan worker Hallow.
-            local exitedHallow = false
-            local exitDeadline = os.clock() + 30
-
-            while alive() and os.clock() < exitDeadline do
-                local exit = getDungeonObject("HALLOW", {
-                    "Markers",
-                    "BossExit"
-                })
-
-                if exit and exit.Parent then
-                    status("TP BossExit...")
-                    if teleportObject(exit) then
-                        exitedHallow = true
-                        break
-                    end
-                    status("TP BossExit gagal | mencoba ulang...")
-                else
-                    status("Menunggu marker BossExit...")
-                end
-
-                task.wait(0.5)
-            end
-
-            if not alive() then break end
-
-            if not exitedHallow then
-                status("BossExit belum berhasil | ulangi pengecekan...")
-                task.wait(1)
-                continue
-            end
-
-            -- Hentikan worker combat hanya saat transisi keluar.
-            -- Toggle Hallow tetap ON; skill/orbit akan dinyalakan lagi
-            -- setelah masuk dungeon berikutnya.
-            if AutoOrbit then stopOrbit() end
-            if AutoSkill then stopSkill() end
-            if AutoCombat then stopCombat() end
-
-            status("BossExit berhasil | menunggu keluar dungeon...")
-            local leaveDeadline = os.clock() + 20
-            while alive()
-                and Player:GetAttribute("Dungeon")
-                and os.clock() < leaveDeadline do
-                task.wait(0.25)
-            end
-
-            if not alive() then break end
-
-            status("Kembali ke posisi 1...")
-            local returnedToPos1 = false
-            while alive() and not returnedToPos1 do
-                updateCharacter()
-                if Root and (Root.Position - HALLOW_POS1).Magnitude <= HALLOW_POS1_TOLERANCE then
-                    returnedToPos1 = true
-                    break
-                end
-
-                if teleportPosition(HALLOW_POS1) then
-                    task.wait(0.5)
-                    updateCharacter()
-                    returnedToPos1 = Root
-                        and (Root.Position - HALLOW_POS1).Magnitude <= HALLOW_POS1_TOLERANCE
-                else
-                    status("TP posisi 1 gagal | mencoba ulang...")
-                end
-
-                if not returnedToPos1 then task.wait(0.5) end
-            end
-
-            if not alive() then break end
-
-local delayTime = math.random(5, 8)
-
-status("Di posisi 1! Menunggu " .. delayTime .. " detik...")
-
-for i = 1, delayTime do
-    if not alive() then break end
-    task.wait(1)
+-- Tunggu Enemies kosong stabil selama 2 detik.
+if not waitForEnemyClear(alive, status) then
+    break
 end
 
 if not alive() then break end
 
-status("Jeda selesai, memulai Hallow berikutnya...")
+-- Langsung TP BossExit.
+status("Enemies kosong 2 detik! TP BossExit...")
+
+local exit = getDungeonObject("HALLOW", {
+    "Markers",
+    "BossExit"
+})
+
+if not exit then
+    status("BossExit tidak ditemukan")
+    break
+end
+
+if not teleportObject(exit) then
+    status("TP BossExit gagal")
+    break
+end
+
+if not alive() then break end
+
+-- Matikan Orbit dan Skill setelah BossExit berhasil.
+if AutoOrbit then stopOrbit() end
+if AutoSkill then stopSkill() end
+
+status("BossExit berhasil | Orbit OFF | Skill OFF | Combat tetap")
+task.wait(1)
+
+            if not alive() then break end
+
+            -- Posisi 1 hanya boleh dituju setelah toast rift BARU terdeteksi
+            -- dan teleport BossExit di atas berhasil.
+            status("BossExit berhasil. Kembali ke posisi 1...")
+            if not teleportHallowPosition(HALLOW_POS1) then
+                status("Gagal kembali posisi 1")
+                break
+            end
+
+            local delayTime = math.random(5, 8)
+            status("Di posisi 1! Menunggu " .. delayTime .. " detik...")
+
+            for _ = 1, delayTime do
+                if not alive() then break end
+                task.wait(1)
+            end
+
+            if not alive() then break end
+            status("Jeda selesai, memulai Hallow berikutnya...")
         end
 
         if HallowRunId == id then
-            HallowWorkerActive = false
-            HallowBossPhase = false
-            if AutoOrbit then stopOrbit() end
-            if AutoSkill then stopSkill() end
-            if AutoCombat then stopCombat() end
-
+            -- Jangan matikan Skill/Orbit dari cleanup umum.
+            -- Keduanya hanya OFF setelah toast rift dan TP BossExit berhasil.
+            -- Combat tidak pernah diubah oleh Auto Hallow.
             AutoHallow = false
             HallowStatus = "Hallow: OFF"
         end
@@ -2522,7 +2399,6 @@ local function towerAlive(id)
 end
 
 local function stopTower()
-    RiftRunActive = false
     AutoTower = false
     TowerRunId += 1
     TowerStatus = "Tower: OFF"
@@ -2547,19 +2423,16 @@ local function startTower()
         end
 
         while alive() do
-            TowerStatus = "Teleport ke POS 1 Rift..."
-            updateCharacter()
-            if Root and (Root.Position - TOWER_POS1).Magnitude > TOWER_TOLERANCE then
-                teleportPosition(TOWER_POS1)
-                task.wait(0.35)
-            end
-
             TowerStatus = "Menunggu posisi 1..."
+
             while alive() do
                 updateCharacter()
-                if Root and (Root.Position - TOWER_POS1).Magnitude <= TOWER_TOLERANCE then
+
+                if Root
+                    and (Root.Position - TOWER_POS1).Magnitude <= TOWER_TOLERANCE then
                     break
                 end
+
                 task.wait(0.2)
             end
 
@@ -2603,44 +2476,37 @@ local function startTower()
                 return RequestRemote:InvokeServer(
                     "EnterDungeon",
                     "RIFT",
-                    99
+                    71
                 )
             end)
 
             if not alive() then break end
 
-            if not ok or result ~= true then
-                TowerStatus = "RIFT gagal masuk: " .. tostring(result)
-                RiftRunActive = false
-                task.wait(2)
-                continue
+            if ok then
+                TowerStatus = "RIFT 71 | Remote terkirim: " .. tostring(result)
+            else
+                TowerStatus = "RIFT 71 | Remote error: " .. tostring(result)
             end
 
-            RiftRunActive = true
-            TowerStatus = "RIFT aktif | Menunggu boss selesai..."
+            TowerStatus = "Menunggu kembali ke posisi 1..."
 
-            -- Jangan anggap respawn ke POS 1 sebagai Rift selesai.
-            -- Tunggu atribut Dungeon benar-benar false, lalu baru izinkan siklus berikutnya.
             while alive() do
                 updateCharacter()
-                if not Player:GetAttribute("Dungeon") then
+
+                if Root
+                    and (Root.Position - TOWER_POS1).Magnitude <= TOWER_TOLERANCE then
                     break
                 end
+
                 task.wait(0.5)
             end
 
-            RiftRunActive = false
-            if not alive() then break end
-
-            TowerStatus = "RIFT selesai | Kembali ke POS 1..."
-            if Root and (Root.Position - TOWER_POS1).Magnitude > TOWER_TOLERANCE then
-                teleportPosition(TOWER_POS1)
+            if alive() then
+                task.wait(1)
             end
-            task.wait(1)
         end
 
         if TowerRunId == id then
-            RiftRunActive = false
             AutoTower = false
             TowerStatus = "Tower: OFF"
         end
@@ -2737,8 +2603,7 @@ local function startCandyShop()
     CandyShopRunId += 1
     local id = CandyShopRunId
 
-    -- Keys follow ReplicatedStorage.SwordShared.CandyShop.List.
-    -- Server validates current stock, daily limits, ownership and candy balance.
+    -- Semua item Candy Shop selain Title.
     local candyItems = {
         "Pumpkin",
         "PowerPotion",
@@ -2749,70 +2614,21 @@ local function startCandyShop()
         "SpiritLantern",
         "AuraElixir",
         "GemStash",
-        "TitleTrick",
-        "TitleCandyKing",
     }
 
     task.spawn(function()
         while Running and AutoCandyShop and CandyShopRunId == id do
             for _, itemKey in ipairs(candyItems) do
-                if not (Running and AutoCandyShop and CandyShopRunId == id) then
+                if not Running or not AutoCandyShop or CandyShopRunId ~= id then
                     break
                 end
 
-                local ok, result = pcall(function()
-                    return RequestRemote:InvokeServer("CandyBuy", itemKey)
+                pcall(function()
+                    RequestRemote:InvokeServer("CandyBuy", itemKey)
                 end)
 
-                if not ok then
-                    warn("[AUTO CANDY SHOP] " .. tostring(result))
-                end
-
-                -- Small gap between purchases; let the server process each request.
                 task.wait(0.3)
             end
-
-            -- Retry periodically for stock restocks / items not yet affordable.
-            -- Existing stock, daily caps and currency are always server-authoritative.
-            if Running and AutoCandyShop and CandyShopRunId == id then
-                task.wait(5)
-            end
-        end
-    end)
-end
-
---============================================================
--- AUTO REBIRTH
--- RequestRemote("Rebirth") dicoba berkala; server menentukan syaratnya.
---============================================================
-
-local function stopRebirth()
-    AutoRebirth = false
-    RebirthRunId += 1
-    RebirthStatus = "Rebirth: OFF"
-end
-
-local function startRebirth()
-    if not Running or AutoRebirth then return end
-
-    AutoRebirth = true
-    RebirthRunId += 1
-    local id = RebirthRunId
-
-    task.spawn(function()
-        while Running and AutoRebirth and RebirthRunId == id do
-            RebirthStatus = "Mencoba Rebirth..."
-            local ok, result = pcall(function()
-                return RequestRemote:InvokeServer("Rebirth")
-            end)
-
-            if not Running or not AutoRebirth or RebirthRunId ~= id then break end
-            if ok then
-                RebirthStatus = "Rebirth request: " .. tostring(result)
-            else
-                RebirthStatus = "Rebirth error: " .. tostring(result)
-            end
-            task.wait(REBIRTH_RETRY_INTERVAL)
         end
     end)
 end
@@ -3082,7 +2898,6 @@ local function getActualToggleState(name)
     if name == "AUTO TOWER" then return AutoTower end
     if name == "AUTO ENCHANT" then return AutoEnchant end
     if name == "AUTO CANDY SHOP" then return AutoCandyShop end
-    if name == "AUTO REBIRTH" then return AutoRebirth end
     return false
 end
 
@@ -3148,10 +2963,6 @@ addToggle("AUTO CANDY SHOP", false, function(state)
     if state then startCandyShop() else stopCandyShop() end
 end)
 
-addToggle("AUTO REBIRTH", false, function(state)
-    if state then startRebirth() else stopRebirth() end
-end)
-
 --============================================================
 -- STATUS UPDATE | TOGGLE VISUAL SYNC FIX
 --============================================================
@@ -3179,8 +2990,6 @@ task.spawn(function()
                     Status.Text = TowerStatus .. " | Mobs: " .. count
                 elseif AutoClaim then
                     Status.Text = ClaimStatus
-                elseif AutoRebirth then
-                    Status.Text = RebirthStatus
                 elseif mob then
                     Status.Text = "Target: " .. mob.Name .. " | Mobs: " .. count
                 elseif AutoOrbit then
@@ -3361,27 +3170,21 @@ function Controller.Cleanup()
     AutoDungeon = false
     AutoEclipse = false
     AutoHallow = false
-    HallowWorkerActive = false
     AutoClaim = false
     AutoTower = false
-    stopDungeonVoidRecovery()
-    DungeonBossPhase = false
-    HallowBossPhase = false
-    RiftRunActive = false
     AutoEnchant = false
     AutoCandyShop = false
-    AutoRebirth = false
 
     OrbitRunId += 1
     TPRunId += 1
     DungeonRunId += 1
+    stopAntiVoid()
     EclipseRunId += 1
     HallowRunId += 1
     ClaimRunId += 1
     TowerRunId += 1
     EnchantRunId += 1
     CandyShopRunId += 1
-    RebirthRunId += 1
 
     releaseAllKeys()
     cleanupHover()
@@ -3428,5 +3231,5 @@ print("8. AUTO CLAIM ALL REWARDS")
 print("9. AUTO TOWER")
 print("10. AUTO ENCHANT")
 print("11. AUTO CANDY SHOP")
-print("CLAIM INTERVAL: 10 SECONDS")
+print("CLAIM INTERVAL: 300 SECONDS")
 print("==============================================")
