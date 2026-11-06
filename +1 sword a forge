@@ -28,8 +28,8 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 local GUI_NAME = "UltimateAutomationHub"
 
 -- Hollow orbit
-local ORBIT_RADIUS = 15
-local ORBIT_HEIGHT = 12
+local ORBIT_RADIUS = 13
+local ORBIT_HEIGHT = 5
 local ORBIT_SPEED = 2
 
 -- Hollow normal movement
