@@ -1,0 +1,1401 @@
+--============================================================
+-- HOLLOW + DUNGEON LOOTS | ULTIMATE AUTOMATION HUB
+-- STANDALONE GUI | PC + MOBILE | NO ASH-LIBS
+--
+-- 1. AUTO ENTER HOLLOW
+-- 2. AUTO RUN HOLLOW + ALL MOB AIM
+-- 3. PUMPKIN KING ORBIT
+-- 4. AUTO MAINFUNCTION 1-12
+-- 5. ADD AURA
+-- 6. ORBIT ENEMIES 50 STUDS
+--
+-- Semua toggle terpisah
+--============================================================
+
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local PathfindingService = game:GetService("PathfindingService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+--============================================================
+-- CONFIG
+--============================================================
+
+local GUI_NAME = "UltimateAutomationHub"
+
+-- Hollow orbit
+local ORBIT_RADIUS = 15
+local ORBIT_HEIGHT = 12
+local ORBIT_SPEED = 2
+
+-- Hollow normal movement
+local ATTACK_DISTANCE = 12
+local MOVE_REFRESH = 0.35
+local TARGET_SCAN_INTERVAL = 0.25
+local PUMPKIN_SCAN_INTERVAL = 0.5
+local PATH_REFRESH = 1.2
+
+-- Dungeon Loots orbit
+local ENEMY_MAX_DISTANCE = 50
+local ENEMY_ORBIT_RADIUS = 15
+local ENEMY_ORBIT_HEIGHT = 3
+local ENEMY_ORBIT_SPEED = 2
+
+--============================================================
+-- CLEANUP OLD INSTANCE
+--============================================================
+
+if _G.UltimateAutomationCleanup then
+	pcall(_G.UltimateAutomationCleanup)
+end
+
+local oldGui = PlayerGui:FindFirstChild(GUI_NAME)
+if oldGui then
+	oldGui:Destroy()
+end
+
+--============================================================
+-- SESSION
+--============================================================
+
+local Session = {
+	Alive = true,
+	Connections = {},
+	Tasks = {},
+	Cleaning = false
+}
+
+_G.UltimateAutomationSession = Session
+
+local function Running()
+	return Session.Alive
+		and _G.UltimateAutomationSession == Session
+end
+
+local function TrackConnection(connection)
+	table.insert(Session.Connections, connection)
+	return connection
+end
+
+local function TrackTask(name, token)
+	Session.Tasks[name] = token
+end
+
+local function TaskAlive(name, token)
+	return Running() and Session.Tasks[name] == token
+end
+
+--============================================================
+-- GUI
+--============================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = GUI_NAME
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.DisplayOrder = 999
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PlayerGui
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.fromOffset(325, 420)
+Main.Position = UDim2.new(0.5, -162, 0.5, -210)
+Main.BackgroundColor3 = Color3.fromRGB(24, 18, 35)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = Gui
+
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(145, 75, 220)
+Stroke.Thickness = 1.5
+Stroke.Parent = Main
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 43)
+Header.BackgroundColor3 = Color3.fromRGB(39, 27, 55)
+Header.BorderSizePixel = 0
+Header.Parent = Main
+
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Position = UDim2.fromOffset(12, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "ULTIMATE AUTOMATION HUB"
+Title.TextColor3 = Color3.fromRGB(225, 195, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 13
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local function MakeButton(parent, name, text, size, position, color)
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.Size = size
+	button.Position = position
+	button.BackgroundColor3 = color
+	button.BorderSizePixel = 0
+	button.Text = text
+	button.TextColor3 = Color3.new(1, 1, 1)
+	button.Font = Enum.Font.GothamBold
+	button.TextSize = 12
+	button.AutoButtonColor = true
+	button.Parent = parent
+
+	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 7)
+
+	return button
+end
+
+local Minimize = MakeButton(
+	Header,
+	"Minimize",
+	"—",
+	UDim2.fromOffset(29, 27),
+	UDim2.new(1, -67, 0, 8),
+	Color3.fromRGB(80, 55, 110)
+)
+
+local Close = MakeButton(
+	Header,
+	"Close",
+	"X",
+	UDim2.fromOffset(29, 27),
+	UDim2.new(1, -34, 0, 8),
+	Color3.fromRGB(145, 45, 65)
+)
+
+local Content = Instance.new("ScrollingFrame")
+Content.Name = "ToggleList"
+Content.Position = UDim2.fromOffset(10, 51)
+Content.Size = UDim2.new(1, -20, 1, -105)
+Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
+Content.ScrollBarThickness = 4
+Content.ScrollBarImageColor3 = Color3.fromRGB(145, 75, 220)
+Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Content.ScrollingDirection = Enum.ScrollingDirection.Y
+Content.Parent = Main
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 7)
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Parent = Content
+
+local Padding = Instance.new("UIPadding")
+Padding.PaddingTop = UDim.new(0, 3)
+Padding.PaddingBottom = UDim.new(0, 8)
+Padding.PaddingLeft = UDim.new(0, 2)
+Padding.PaddingRight = UDim.new(0, 5)
+Padding.Parent = Content
+
+local GlobalStatus = Instance.new("TextLabel")
+GlobalStatus.Size = UDim2.new(1, -20, 0, 40)
+GlobalStatus.Position = UDim2.new(0, 10, 1, -45)
+GlobalStatus.BackgroundColor3 = Color3.fromRGB(35, 27, 45)
+GlobalStatus.BorderSizePixel = 0
+GlobalStatus.Text = "Status: Standby"
+GlobalStatus.TextColor3 = Color3.fromRGB(190, 180, 205)
+GlobalStatus.Font = Enum.Font.Gotham
+GlobalStatus.TextSize = 11
+GlobalStatus.TextWrapped = true
+GlobalStatus.Parent = Main
+
+Instance.new("UICorner", GlobalStatus).CornerRadius = UDim.new(0, 7)
+
+local Restore = MakeButton(
+	Gui,
+	"Restore",
+	"AH",
+	UDim2.fromOffset(48, 48),
+	UDim2.new(0, 15, 0.5, 0),
+	Color3.fromRGB(90, 45, 135)
+)
+Restore.Visible = false
+Instance.new("UICorner", Restore).CornerRadius = UDim.new(1, 0)
+
+local function SetStatus(message, success)
+	if not Running() then return end
+
+	GlobalStatus.Text = "Status: " .. tostring(message)
+	GlobalStatus.TextColor3 = success
+		and Color3.fromRGB(125, 235, 165)
+		or Color3.fromRGB(255, 175, 125)
+end
+
+--============================================================
+-- DRAG PC + MOBILE
+--============================================================
+
+local Dragging = false
+local DragStart
+local StartPosition
+
+Header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+
+		Dragging = true
+		DragStart = input.Position
+		StartPosition = Main.Position
+	end
+end)
+
+TrackConnection(UIS.InputChanged:Connect(function(input)
+	if not Running() or not Dragging then return end
+
+	if input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch then
+
+		local delta = input.Position - DragStart
+
+		Main.Position = UDim2.new(
+			StartPosition.X.Scale,
+			StartPosition.X.Offset + delta.X,
+			StartPosition.Y.Scale,
+			StartPosition.Y.Offset + delta.Y
+		)
+	end
+end))
+
+TrackConnection(UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+
+		Dragging = false
+	end
+end))
+
+--============================================================
+-- MINIMIZE / RESTORE
+--============================================================
+
+Minimize.Activated:Connect(function()
+	if not Running() then return end
+
+	Main.Visible = false
+	Restore.Visible = true
+end)
+
+Restore.Activated:Connect(function()
+	if not Running() then return end
+
+	Main.Visible = true
+	Restore.Visible = false
+end)
+
+--============================================================
+-- TOGGLE SYSTEM
+--============================================================
+
+local ToggleRefs = {}
+local ToggleStates = {}
+
+local function AddToggle(name, default, callback)
+	local enabled = default == true
+
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.Size = UDim2.new(1, -4, 0, 46)
+	button.BackgroundColor3 = Color3.fromRGB(42, 36, 52)
+	button.BorderSizePixel = 0
+	button.Text = ""
+	button.AutoButtonColor = false
+	button.Parent = Content
+
+	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -85, 1, 0)
+	label.Position = UDim2.fromOffset(12, 0)
+	label.BackgroundTransparency = 1
+	label.Text = name
+	label.TextColor3 = Color3.fromRGB(240, 235, 245)
+	label.Font = Enum.Font.GothamSemibold
+	label.TextSize = 12
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextWrapped = true
+	label.Parent = button
+
+	local status = Instance.new("Frame")
+	status.Size = UDim2.fromOffset(48, 25)
+	status.Position = UDim2.new(1, -57, 0.5, -12)
+	status.BackgroundColor3 = Color3.fromRGB(75, 75, 85)
+	status.BorderSizePixel = 0
+	status.Parent = button
+
+	Instance.new("UICorner", status).CornerRadius = UDim.new(0, 6)
+
+	local statusText = Instance.new("TextLabel")
+	statusText.Size = UDim2.fromScale(1, 1)
+	statusText.BackgroundTransparency = 1
+	statusText.TextColor3 = Color3.new(1, 1, 1)
+	statusText.Font = Enum.Font.GothamBold
+	statusText.TextSize = 11
+	statusText.Parent = status
+
+	local function update()
+		statusText.Text = enabled and "ON" or "OFF"
+
+		status.BackgroundColor3 = enabled
+			and Color3.fromRGB(145, 75, 220)
+			or Color3.fromRGB(75, 75, 85)
+
+		button.BackgroundColor3 = enabled
+			and Color3.fromRGB(57, 39, 75)
+			or Color3.fromRGB(42, 36, 52)
+	end
+
+	local function setState(newState)
+		if not Running() or enabled == newState then
+			return
+		end
+
+		enabled = newState
+		ToggleStates[name] = newState
+		update()
+
+		local ok, err = pcall(callback, newState)
+
+		if not ok then
+			warn("[Automation Error] " .. name, err)
+			SetStatus(name .. " error: " .. tostring(err), false)
+		end
+	end
+
+	button.Activated:Connect(function()
+		setState(not enabled)
+	end)
+
+	ToggleStates[name] = enabled
+	update()
+
+	local reference = {
+		Set = setState,
+		Get = function()
+			return enabled
+		end
+	}
+
+	ToggleRefs[name] = reference
+
+	return reference
+end
+
+--============================================================
+-- SHARED CHARACTER HELPERS
+--============================================================
+
+local function GetCharacter()
+	return Player.Character
+end
+
+local function GetRoot()
+	local character = GetCharacter()
+	return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function GetHumanoid()
+	local character = GetCharacter()
+	return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+--============================================================
+-- 1. AUTO ENTER HOLLOW
+--============================================================
+
+local HollowShared = RS:WaitForChild("Shared")
+local HollowNetFolder = HollowShared:WaitForChild("Net")
+local HollowNet = require(HollowNetFolder:WaitForChild("Net"))
+local HollowProtocol = require(HollowNetFolder:WaitForChild("Protocol"))
+
+local function GetPortalPad()
+	local map = workspace:FindFirstChild("Map")
+	local lobby = map and map:FindFirstChild("Lobby")
+	local halloween = lobby and lobby:FindFirstChild("Halloween")
+	local portal = halloween and halloween:FindFirstChild("Portal")
+
+	if not portal then
+		return nil
+	end
+
+	local pad = portal:FindFirstChild("Pad", true)
+
+	if pad and pad:IsA("BasePart") then
+		return pad
+	end
+
+	if portal:IsA("BasePart") then
+		return portal
+	end
+
+	return portal:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function TeleportToPortal()
+	local character = GetCharacter()
+	local humanoid = GetHumanoid()
+	local root = GetRoot()
+
+	if not character or not humanoid or humanoid.Health <= 0 or not root then
+		return false, "Character belum siap"
+	end
+
+	local pad = GetPortalPad()
+
+	if not pad then
+		return false, "Portal Pad tidak ditemukan"
+	end
+
+	character:PivotTo(pad.CFrame * CFrame.new(0, 4, 0))
+
+	return true, "Berhasil TP ke portal"
+end
+
+local function JoinHollow()
+	local success, result = pcall(function()
+		return HollowNet.InvokeServer(
+			HollowProtocol.Msg.HollowAction,
+			"Join",
+			{from = "portal"}
+		)
+	end)
+
+	if not success then
+		return false, tostring(result)
+	end
+
+	if type(result) ~= "table" then
+		return false, "Response server tidak valid"
+	end
+
+	if result.ok then
+		return true, "Join request berhasil"
+	end
+
+	local errors = {
+		Closed = "Hollow sedang ditutup",
+		Busy = "Selesaikan aktivitas lain dahulu",
+		Full = "Hollow penuh",
+		TooFar = "Masih terlalu jauh dari portal",
+		NoCharacter = "Character belum siap",
+		Locked = "Stage belum memenuhi syarat"
+	}
+
+	return false, errors[result.err] or tostring(result.err or "Join gagal")
+end
+
+local EnterToken = 0
+
+AddToggle("Auto Enter Hollow", false, function(state)
+	EnterToken += 1
+	local token = EnterToken
+
+	if not state then
+		SetStatus("Auto Enter dihentikan", false)
+		return
+	end
+
+	task.spawn(function()
+		SetStatus("Mencari portal Hollow...", true)
+
+		local pad = GetPortalPad()
+
+		if not pad then
+			SetStatus("Portal Hollow tidak ditemukan", false)
+			ToggleRefs["Auto Enter Hollow"].Set(false)
+			return
+		end
+
+		local ok, message = TeleportToPortal()
+
+		if not ok then
+			SetStatus(message, false)
+			ToggleRefs["Auto Enter Hollow"].Set(false)
+			return
+		end
+
+		SetStatus("TP portal berhasil. Menunggu...", true)
+
+		task.wait(0.5)
+
+		if not Running() or token ~= EnterToken then
+			return
+		end
+
+		SetStatus("Mengirim request Join...", true)
+
+		local joined, response = JoinHollow()
+
+		if not Running() or token ~= EnterToken then
+			return
+		end
+
+		SetStatus(response, joined)
+
+		-- Auto Enter adalah proses sekali jalan.
+		ToggleRefs["Auto Enter Hollow"].Set(false)
+	end)
+end)
+
+--============================================================
+-- 2. HOLLOW FPS API
+--============================================================
+
+local HollowAPI
+local HollowTestAPI
+
+local function FindHollowAPI()
+	if type(getgc) ~= "function" then
+		return nil
+	end
+
+	local ok, objects = pcall(getgc, true)
+
+	if not ok or type(objects) ~= "table" then
+		return nil
+	end
+
+	for _, object in ipairs(objects) do
+		if type(object) == "table" then
+			local test = rawget(object, "Test")
+
+			if type(test) == "table"
+				and type(test.AimAt) == "function"
+				and type(test.Trigger) == "function"
+				and type(test.Targets) == "function" then
+
+				return object
+			end
+		end
+	end
+
+	return nil
+end
+
+local function ConnectHollowAPI()
+	HollowAPI = FindHollowAPI()
+
+	if not HollowAPI then
+		return false
+	end
+
+	HollowTestAPI = HollowAPI.Test
+	return true
+end
+
+local function GetHollowTargets()
+	if not HollowTestAPI then
+		return {}
+	end
+
+	local ok, result = pcall(function()
+		return HollowTestAPI.Targets()
+	end)
+
+	if ok and type(result) == "table" then
+		return result
+	end
+
+	return {}
+end
+
+local function ValidHollowTarget(target)
+	return target
+		and target.id ~= nil
+		and typeof(target.pos) == "Vector3"
+		and (target.hp == nil or target.hp > 0)
+end
+
+local function GetTargetById(targets, id)
+	for _, target in ipairs(targets) do
+		if target.id == id and ValidHollowTarget(target) then
+			return target
+		end
+	end
+end
+
+local function GetNearestHollowTarget(targets)
+	local root = GetRoot()
+	if not root then return nil end
+
+	local nearest
+	local nearestDistance = math.huge
+
+	for _, target in ipairs(targets) do
+		if ValidHollowTarget(target) then
+			local distance = (root.Position - target.pos).Magnitude
+
+			if distance < nearestDistance then
+				nearestDistance = distance
+				nearest = target
+			end
+		end
+	end
+
+	return nearest
+end
+
+local LockedTargetId
+
+local function UpdateHollowTarget(targets)
+	if LockedTargetId ~= nil then
+		local current = GetTargetById(targets, LockedTargetId)
+
+		if current then
+			return current
+		end
+	end
+
+	local target = GetNearestHollowTarget(targets)
+	LockedTargetId = target and target.id or nil
+
+	return target
+end
+
+--============================================================
+-- HOLLOW AIM + FIRE
+--============================================================
+
+local function AimAndFire(target)
+	if not HollowTestAPI or not ValidHollowTarget(target) then
+		return false
+	end
+
+	local aimOK = pcall(function()
+		HollowTestAPI.AimAt(target.pos)
+	end)
+
+	local fireOK = pcall(function()
+		HollowTestAPI.Trigger(true)
+	end)
+
+	return aimOK and fireOK
+end
+
+local function StopHollowFire()
+	if HollowTestAPI then
+		pcall(function()
+			HollowTestAPI.Trigger(false)
+		end)
+	end
+end
+
+--============================================================
+-- PUMPKIN KING DETECTION
+--============================================================
+
+local Pumpkin
+
+local function GetModelPosition(object)
+	if not object then return nil end
+
+	if object:IsA("BasePart") then
+		return object.Position
+	end
+
+	if object:IsA("Model") then
+		local part = object.PrimaryPart
+			or object:FindFirstChild("HumanoidRootPart", true)
+			or object:FindFirstChild("Head", true)
+
+		if part and part:IsA("BasePart") then
+			return part.Position
+		end
+
+		local ok, pivot = pcall(function()
+			return object:GetPivot()
+		end)
+
+		if ok then
+			return pivot.Position
+		end
+	end
+
+	return nil
+end
+
+local function FindPumpkin()
+	local folder = workspace:FindFirstChild("HollowKing")
+	if not folder then return nil end
+
+	local root = GetRoot()
+	local nearest
+	local nearestDistance = math.huge
+
+	for _, runFolder in ipairs(folder:GetChildren()) do
+		if runFolder.Name:match("^Run_") then
+			local candidate = runFolder:FindFirstChild("PumpkinKing")
+
+			if candidate then
+				local position = GetModelPosition(candidate)
+
+				if position then
+					local distance = root
+						and (root.Position - position).Magnitude
+						or 0
+
+					if distance < nearestDistance then
+						nearestDistance = distance
+						nearest = candidate
+					end
+				end
+			end
+		end
+	end
+
+	return nearest
+end
+
+local function PumpkinAlive()
+	if not Pumpkin or not Pumpkin.Parent then
+		return false
+	end
+
+	local humanoid = Pumpkin:FindFirstChildOfClass("Humanoid")
+
+	if humanoid and humanoid.Health <= 0 then
+		return false
+	end
+
+	local health = Pumpkin:GetAttribute("Health")
+
+	if typeof(health) == "number" and health <= 0 then
+		return false
+	end
+
+	return GetModelPosition(Pumpkin) ~= nil
+end
+
+--============================================================
+-- HOLLOW MOVEMENT
+--============================================================
+
+local CurrentPath
+local WaypointIndex = 0
+local MoveClock = 0
+local PathClock = 0
+
+local function SetHollowSprint(state)
+	if not HollowTestAPI then return end
+
+	pcall(function()
+		if type(HollowTestAPI.SetSprintHeld) == "function" then
+			HollowTestAPI.SetSprintHeld(state)
+		elseif type(HollowTestAPI.Movement) == "table"
+			and type(HollowTestAPI.Movement.SetSprintHeld) == "function" then
+
+			HollowTestAPI.Movement.SetSprintHeld(state)
+		end
+	end)
+end
+
+local function StopHollowMovement()
+	local humanoid = GetHumanoid()
+	local root = GetRoot()
+
+	if humanoid then
+		humanoid:Move(Vector3.zero, false)
+
+		if root then
+			humanoid:MoveTo(root.Position)
+		end
+	end
+
+	SetHollowSprint(false)
+
+	CurrentPath = nil
+	WaypointIndex = 0
+	MoveClock = 0
+	PathClock = 0
+end
+
+local function MoveDirect(position)
+	local humanoid = GetHumanoid()
+
+	if not humanoid then return end
+
+	SetHollowSprint(true)
+	humanoid:MoveTo(position)
+end
+
+local function MoveToHollowMob(target, dt)
+	local root = GetRoot()
+	local humanoid = GetHumanoid()
+
+	if not ValidHollowTarget(target) or not root or not humanoid then
+		return
+	end
+
+	local distance = (root.Position - target.pos).Magnitude
+
+	if distance <= ATTACK_DISTANCE then
+		humanoid:Move(Vector3.zero, false)
+		SetHollowSprint(false)
+		CurrentPath = nil
+		return
+	end
+
+	MoveClock += dt
+	PathClock += dt
+
+	if MoveClock < MOVE_REFRESH then
+		return
+	end
+
+	MoveClock = 0
+
+	if PathClock >= PATH_REFRESH or not CurrentPath then
+		PathClock = 0
+
+		local path = PathfindingService:CreatePath({
+			AgentRadius = 2,
+			AgentHeight = 5,
+			AgentCanJump = true,
+			WaypointSpacing = 6
+		})
+
+		local ok = pcall(function()
+			path:ComputeAsync(root.Position, target.pos)
+		end)
+
+		if ok and path.Status == Enum.PathStatus.Success then
+			CurrentPath = path:GetWaypoints()
+			WaypointIndex = 2
+		else
+			CurrentPath = nil
+		end
+	end
+
+	if CurrentPath and CurrentPath[WaypointIndex] then
+		local waypoint = CurrentPath[WaypointIndex]
+
+		if waypoint.Action == Enum.PathWaypointAction.Jump then
+			humanoid.Jump = true
+		end
+
+		if (root.Position - waypoint.Position).Magnitude < 5 then
+			WaypointIndex += 1
+			waypoint = CurrentPath[WaypointIndex]
+		end
+
+		if waypoint then
+			MoveDirect(waypoint.Position)
+			return
+		end
+	end
+
+	MoveDirect(target.pos)
+end
+
+--============================================================
+-- PUMPKIN ORBIT
+--============================================================
+
+local PumpkinAngle = 0
+
+local function OrbitPumpkin(dt)
+	local character = GetCharacter()
+	local root = GetRoot()
+
+	if not character or not root or not root.Parent then
+		return
+	end
+
+	local center = GetModelPosition(Pumpkin)
+	if not center then return end
+
+	PumpkinAngle = (PumpkinAngle + ORBIT_SPEED * dt) % (math.pi * 2)
+
+	local offset = Vector3.new(
+		math.cos(PumpkinAngle) * ORBIT_RADIUS,
+		0,
+		math.sin(PumpkinAngle) * ORBIT_RADIUS
+	)
+
+	local destination = Vector3.new(
+		center.X + offset.X,
+		center.Y + ORBIT_HEIGHT,
+		center.Z + offset.Z
+	)
+
+	local lookAt = Vector3.new(
+		center.X,
+		destination.Y,
+		center.Z
+	)
+
+	SetHollowSprint(false)
+
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
+
+	character:PivotTo(CFrame.lookAt(destination, lookAt))
+end
+
+--============================================================
+-- 3. AUTO RUN HOLLOW
+--============================================================
+
+local HollowRunToken = 0
+local HollowRunConnection
+
+local HollowScanClock = 0
+local HollowPumpkinClock = 0
+
+local function StopAutoRunHollow()
+	HollowRunToken += 1
+
+	if HollowRunConnection then
+		HollowRunConnection:Disconnect()
+		HollowRunConnection = nil
+	end
+
+	StopHollowFire()
+	StopHollowMovement()
+
+	LockedTargetId = nil
+	Pumpkin = nil
+end
+
+AddToggle("Auto Run Hollow + Aim All Mob", false, function(state)
+	StopAutoRunHollow()
+
+	if not state then
+		SetStatus("Auto Run Hollow OFF", false)
+		return
+	end
+
+	if not HollowTestAPI and not ConnectHollowAPI() then
+		SetStatus("HollowFPS API belum ditemukan", false)
+		ToggleRefs["Auto Run Hollow + Aim All Mob"].Set(false)
+		return
+	end
+
+	HollowRunToken += 1
+	local token = HollowRunToken
+
+	PumpkinAngle = 0
+	LockedTargetId = nil
+	Pumpkin = FindPumpkin()
+
+	HollowScanClock = 0
+	HollowPumpkinClock = 0
+
+	SetStatus("Auto Run Hollow aktif", true)
+
+	HollowRunConnection = RunService.RenderStepped:Connect(function(dt)
+		if not Running()
+			or token ~= HollowRunToken
+			or not ToggleRefs["Auto Run Hollow + Aim All Mob"].Get() then
+
+			return
+		end
+
+		local root = GetRoot()
+		local humanoid = GetHumanoid()
+
+		if not root or not humanoid or humanoid.Health <= 0 then
+			StopHollowFire()
+			SetStatus("Menunggu character...", false)
+			return
+		end
+
+		HollowScanClock += dt
+		HollowPumpkinClock += dt
+
+		if HollowPumpkinClock >= PUMPKIN_SCAN_INTERVAL then
+			HollowPumpkinClock = 0
+
+			if not PumpkinAlive() then
+				Pumpkin = FindPumpkin()
+			end
+		end
+
+		local targets = GetHollowTargets()
+
+		-- PUMPKIN KING MODE
+		if PumpkinAlive() then
+			OrbitPumpkin(dt)
+
+			if HollowScanClock >= TARGET_SCAN_INTERVAL then
+				HollowScanClock = 0
+
+				local target = UpdateHollowTarget(targets)
+
+				if target then
+					AimAndFire(target)
+
+					SetStatus(
+						"PUMPKIN ORBIT | Boss: "
+						.. Pumpkin.Name
+						.. " | Aim: "
+						.. tostring(target.name),
+						true
+					)
+				else
+					StopHollowFire()
+					SetStatus("PUMPKIN ORBIT | Menunggu mob terdeteksi", true)
+				end
+			end
+
+		-- NORMAL MOB MODE
+		else
+			local target = UpdateHollowTarget(targets)
+
+			if target then
+				MoveToHollowMob(target, dt)
+
+				if HollowScanClock >= TARGET_SCAN_INTERVAL then
+					HollowScanClock = 0
+					AimAndFire(target)
+
+					local distance = (root.Position - target.pos).Magnitude
+
+					SetStatus(
+						"RUN TO MOB | "
+						.. tostring(target.name)
+						.. " | "
+						.. math.floor(distance)
+						.. " studs",
+						true
+					)
+				end
+			else
+				StopHollowFire()
+				StopHollowMovement()
+
+				SetStatus("Menunggu mob spawn berikutnya...", true)
+			end
+		end
+	end)
+end)
+
+--============================================================
+-- 4. AUTO MAINFUNCTION 1-12
+--============================================================
+
+local MainFunctionToken = 0
+
+AddToggle("Auto MainFunction 1-12", false, function(state)
+	MainFunctionToken += 1
+	local token = MainFunctionToken
+
+	if not state then
+		_G.AutoMainFunction = false
+		SetStatus("Auto MainFunction OFF", false)
+		return
+	end
+
+	_G.AutoMainFunction = true
+
+	task.spawn(function()
+		local remotes = RS:WaitForChild("Remotes")
+		local remote = remotes:WaitForChild("MainFunction")
+
+		while Running()
+			and token == MainFunctionToken
+			and _G.AutoMainFunction
+			and ToggleRefs["Auto MainFunction 1-12"].Get() do
+
+			for i = 1, 12 do
+				if not Running()
+					or token ~= MainFunctionToken
+					or not _G.AutoMainFunction then
+					break
+				end
+
+				pcall(function()
+					remote:InvokeServer(294, i)
+				end)
+			end
+
+			task.wait(1)
+		end
+	end)
+
+	SetStatus("Auto MainFunction aktif", true)
+end)
+
+--============================================================
+-- 5. ADD AURA
+--============================================================
+
+local AuraToken = 0
+
+AddToggle("Add Aura", false, function(state)
+	AuraToken += 1
+	local token = AuraToken
+
+	if not state then
+		_G.DungeonAddAura = false
+		SetStatus("Add Aura OFF", false)
+		return
+	end
+
+	_G.DungeonAddAura = true
+
+	task.spawn(function()
+		local remotes = RS:WaitForChild("Remotes")
+		local mainEvent = remotes:WaitForChild("MainEvent")
+		local mainFunction = remotes:WaitForChild("MainFunction")
+
+		while Running()
+			and token == AuraToken
+			and _G.DungeonAddAura
+			and ToggleRefs["Add Aura"].Get() do
+
+			pcall(function()
+				mainEvent:FireServer(221, 6)
+			end)
+
+			pcall(function()
+				mainFunction:InvokeServer(294, "all")
+			end)
+
+			task.wait()
+		end
+	end)
+
+	SetStatus("Add Aura aktif", true)
+end)
+
+--============================================================
+-- 6. ORBIT ENEMIES 50 STUDS | WALL CHECK
+--============================================================
+
+local EnemyOrbitToken = 0
+
+AddToggle("Orbit Enemies 50 Studs", false, function(state)
+	EnemyOrbitToken += 1
+	local token = EnemyOrbitToken
+
+	if not state then
+		_G.OrbitEnemies = false
+		SetStatus("Orbit Enemies OFF", false)
+		return
+	end
+
+	_G.OrbitEnemies = true
+
+	task.spawn(function()
+		local enemies = workspace:WaitForChild("EnemiesClient")
+
+		local angle = 0
+
+		local rayParams = RaycastParams.new()
+		rayParams.FilterType = Enum.RaycastFilterType.Exclude
+		rayParams.IgnoreWater = true
+
+		local function IsPositionClear(currentRoot, destination, mob)
+			rayParams.FilterDescendantsInstances = {
+				Player.Character,
+				mob
+			}
+
+			local direction = destination - currentRoot.Position
+
+			local result = workspace:Raycast(
+				currentRoot.Position,
+				direction,
+				rayParams
+			)
+
+			return result == nil, result
+		end
+
+		local function FindSafeOrbitPosition(currentRoot, target, mob, currentAngle)
+			local center = target.Position
+
+			for i = 0, 11 do
+				local testAngle = currentAngle + (i * math.pi / 6)
+
+				local offset = Vector3.new(
+					math.cos(testAngle) * ENEMY_ORBIT_RADIUS,
+					ENEMY_ORBIT_HEIGHT,
+					math.sin(testAngle) * ENEMY_ORBIT_RADIUS
+				)
+
+				local destination = center + offset
+
+				local clear = IsPositionClear(
+					currentRoot,
+					destination,
+					mob
+				)
+
+				if clear then
+					return destination
+				end
+			end
+
+			return nil
+		end
+
+		while Running()
+			and token == EnemyOrbitToken
+			and _G.OrbitEnemies
+			and ToggleRefs["Orbit Enemies 50 Studs"].Get() do
+
+			local root = GetRoot()
+
+			if not root then
+				task.wait(0.3)
+				continue
+			end
+
+			local center = root.Position
+			local mob
+			local targetPart
+			local targetHumanoid
+
+			for _, enemy in ipairs(enemies:GetChildren()) do
+				local humanoid = enemy:FindFirstChildOfClass("Humanoid")
+
+				local part = enemy:FindFirstChild("HumanoidRootPart")
+					or enemy.PrimaryPart
+					or enemy:FindFirstChild("Head")
+					or enemy:FindFirstChildWhichIsA("BasePart")
+
+				if humanoid
+					and humanoid.Health > 0
+					and part
+					and (part.Position - center).Magnitude <= ENEMY_MAX_DISTANCE then
+
+					mob = enemy
+					targetPart = part
+					targetHumanoid = humanoid
+					break
+				end
+			end
+
+			if mob then
+				while Running()
+					and token == EnemyOrbitToken
+					and _G.OrbitEnemies
+					and ToggleRefs["Orbit Enemies 50 Studs"].Get()
+					and mob.Parent == enemies
+					and targetHumanoid.Health > 0
+					and targetPart.Parent do
+
+					local dt = RunService.Heartbeat:Wait()
+
+					root = GetRoot()
+					if not root then break end
+
+					if (targetPart.Position - root.Position).Magnitude > ENEMY_MAX_DISTANCE then
+						break
+					end
+
+					angle += ENEMY_ORBIT_SPEED * dt
+
+					local offset = Vector3.new(
+						math.cos(angle) * ENEMY_ORBIT_RADIUS,
+						ENEMY_ORBIT_HEIGHT,
+						math.sin(angle) * ENEMY_ORBIT_RADIUS
+					)
+
+					local desiredPosition = targetPart.Position + offset
+
+					local clear = IsPositionClear(
+						root,
+						desiredPosition,
+						mob
+					)
+
+					if clear then
+						root.CFrame = CFrame.lookAt(
+							desiredPosition,
+							targetPart.Position
+						)
+					else
+						local safePosition = FindSafeOrbitPosition(
+							root,
+							targetPart,
+							mob,
+							angle
+						)
+
+						if safePosition then
+							root.CFrame = CFrame.lookAt(
+								safePosition,
+								targetPart.Position
+							)
+						end
+					end
+				end
+			else
+				task.wait(0.2)
+			end
+		end
+	end)
+
+	SetStatus("Orbit Enemies aktif", true)
+end)
+
+--============================================================
+-- CLEANUP
+--============================================================
+
+local function Cleanup()
+	if Session.Cleaning then return end
+
+	Session.Cleaning = true
+	Session.Alive = false
+
+	-- Stop every toggle/task
+	EnterToken += 1
+	MainFunctionToken += 1
+	AuraToken += 1
+	EnemyOrbitToken += 1
+
+	_G.AutoMainFunction = false
+	_G.DungeonAddAura = false
+	_G.OrbitEnemies = false
+
+	StopAutoRunHollow()
+
+	for _, connection in ipairs(Session.Connections) do
+		pcall(function()
+			connection:Disconnect()
+		end)
+	end
+
+	table.clear(Session.Connections)
+
+	if _G.UltimateAutomationSession == Session then
+		_G.UltimateAutomationSession = nil
+		_G.UltimateAutomationCleanup = nil
+	end
+end
+
+_G.UltimateAutomationCleanup = function()
+	Cleanup()
+
+	if Gui and Gui.Parent then
+		Gui:Destroy()
+	end
+end
+
+Gui.Destroying:Connect(Cleanup)
+
+Close.Activated:Connect(function()
+	Cleanup()
+	Gui:Destroy()
+end)
+
+--============================================================
+-- READY
+--============================================================
+
+SetStatus("Semua fitur siap. Pilih toggle yang ingin dijalankan.", true)
+
+print("ULTIMATE AUTOMATION HUB | 6 TOGGLES LOADED")
