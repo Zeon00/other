@@ -822,15 +822,23 @@ local function getDungeonObject(name, path)
 
     return current
 end
+
 --============================================================
--- DUNGEON POINTER MOVEMENT | PATHFINDING + TP MAX 15 STUD
+-- DUNGEON POINTER MOVEMENT | ROAM MARKER
+-- MAX TP STEP 10 STUD | INTERRUPTIBLE
 --============================================================
 
-local DUNGEON_TP_STEP = 25
-local DUNGEON_TP_DELAY = 0.12
+local DUNGEON_TP_STEP = 10
+local DUNGEON_TP_DELAY = 0.08
+local DUNGEON_PATH_RETRY = 3
 
-local function moveDungeonPointer(object, isAlive, statusCallback)
-    if not object or not isAlive() then
+local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
+    local function active()
+        return isAlive()
+            and (not canMove or canMove())
+    end
+
+    if not object or not active() then
         return false
     end
 
@@ -853,16 +861,38 @@ local function moveDungeonPointer(object, isAlive, statusCallback)
         WaypointSpacing = 6
     })
 
-    local success = pcall(function()
-        path:ComputeAsync(
-            Root.Position,
-            targetCF.Position
-        )
-    end)
+    local success = false
 
-    if not success or path.Status ~= Enum.PathStatus.Success then
+    for attempt = 1, DUNGEON_PATH_RETRY do
+        if not active() then return false end
+
+        updateCharacter()
+        if not Root then return false end
+
+        local ok = pcall(function()
+            path:ComputeAsync(
+                Root.Position,
+                targetCF.Position
+            )
+        end)
+
+        if ok and path.Status == Enum.PathStatus.Success then
+            success = true
+            break
+        end
+
         if statusCallback then
-            statusCallback("Pathfinding gagal, mencoba jalur lagi...")
+            statusCallback(
+                "Pathfinding retry " .. attempt .. "/" .. DUNGEON_PATH_RETRY
+            )
+        end
+
+        task.wait(0.25)
+    end
+
+    if not success then
+        if statusCallback then
+            statusCallback("Path gagal! Marker akan dicoba kembali.")
         end
         return false
     end
@@ -870,9 +900,7 @@ local function moveDungeonPointer(object, isAlive, statusCallback)
     local waypoints = path:GetWaypoints()
 
     for _, waypoint in ipairs(waypoints) do
-        if not isAlive() then
-            return false
-        end
+        if not active() then return false end
 
         updateCharacter()
 
@@ -885,14 +913,8 @@ local function moveDungeonPointer(object, isAlive, statusCallback)
         end
 
         local destination = waypoint.Position + Vector3.new(0, 3, 0)
-        local distance = (destination - Root.Position).Magnitude
-        local steps = math.max(1, math.ceil(distance / DUNGEON_TP_STEP))
 
-        for step = 1, steps do
-            if not isAlive() then
-                return false
-            end
-
+        while active() do
             updateCharacter()
 
             if not Root or not Root.Parent then
@@ -900,10 +922,21 @@ local function moveDungeonPointer(object, isAlive, statusCallback)
             end
 
             local currentPosition = Root.Position
-            local nextPosition = currentPosition:Lerp(
-                destination,
-                1 / (steps - step + 1)
+            local difference = destination - currentPosition
+            local distance = difference.Magnitude
+
+            if distance <= 1.5 then
+                break
+            end
+
+            -- Maksimal 10 stud setiap perpindahan.
+            local stepDistance = math.min(
+                DUNGEON_TP_STEP,
+                distance
             )
+
+            local nextPosition =
+                currentPosition + difference.Unit * stepDistance
 
             local moved = pcall(function()
                 Root.CFrame = CFrame.new(nextPosition)
@@ -917,19 +950,18 @@ local function moveDungeonPointer(object, isAlive, statusCallback)
 
             task.wait(DUNGEON_TP_DELAY)
         end
+
+        if not active() then
+            return false
+        end
     end
 
-    return isAlive()
+    return active()
 end
+
 --============================================================
 -- ANTI VOID | NORMAL AUTO DUNGEON ONLY
 -- Simpan posisi karakter setelah masuk dungeon; rescue jika jatuh.
---============================================================
-
---============================================================
--- ANTI VOID | NORMAL AUTO DUNGEON ONLY
--- Update titik aman saat berada di lantai.
--- Rescue jika karakter jatuh ke jurang.
 --============================================================
 
 local function stopAntiVoid()
@@ -952,48 +984,21 @@ local function startAntiVoid(isAlive)
     local runId = AntiVoidRunId
 
     task.spawn(function()
-        local deadline = os.clock() + 10
-        local rayParams = RaycastParams.new()
-
-        rayParams.FilterType = Enum.RaycastFilterType.Exclude
-
-        -- Tunggu karakter mendapatkan posisi lantai yang valid.
+        -- Beri server waktu memindahkan karakter ke dalam dungeon.
+        local deadline = os.clock() + 6
         repeat
-            if not isAlive() or AntiVoidRunId ~= runId then
-                return
-            end
-
+            if not isAlive() or AntiVoidRunId ~= runId then return end
             updateCharacter()
-
-            if Root and Root.Parent then
-                rayParams.FilterDescendantsInstances = {Character}
-
-                local ground = Workspace:Raycast(
-                    Root.Position,
-                    Vector3.new(0, -12, 0),
-                    rayParams
-                )
-
-                if ground then
-                    AntiVoidSafeCFrame = Root.CFrame
-                    break
-                end
-            end
-
-            task.wait(0.2)
+            if Root and Root.Parent then break end
+            task.wait(0.1)
         until os.clock() >= deadline
 
-        if not isAlive() or AntiVoidRunId ~= runId then
-            return
-        end
+        if not isAlive() or AntiVoidRunId ~= runId then return end
+        updateCharacter()
+        if not Root or not Root.Parent then return end
 
-        if not AntiVoidSafeCFrame then
-            warn("[ANTI VOID] Posisi lantai aman belum ditemukan!")
-            return
-        end
-
+        AntiVoidSafeCFrame = Root.CFrame
         AntiVoidLastRescue = 0
-        local lastSafeUpdate = 0
 
         AntiVoidConnection = RunService.Heartbeat:Connect(function()
             if not isAlive() or AntiVoidRunId ~= runId then
@@ -1002,33 +1007,13 @@ local function startAntiVoid(isAlive)
             end
 
             updateCharacter()
+            if not Root or not Root.Parent or not AntiVoidSafeCFrame then return end
 
-            if not Root or not Root.Parent or not AntiVoidSafeCFrame then
-                return
-            end
-
-            rayParams.FilterDescendantsInstances = {Character}
-
-            local ground = Workspace:Raycast(
-                Root.Position,
-                Vector3.new(0, -10, 0),
-                rayParams
-            )
-
-            -- Simpan posisi terbaru hanya jika lantai terdeteksi dekat.
-            if ground and os.clock() - lastSafeUpdate >= 0.25 then
-                AntiVoidSafeCFrame = Root.CFrame
-                lastSafeUpdate = os.clock()
-            end
-
-            -- Rescue jika jatuh terlalu jauh dari titik aman.
             local safeY = AntiVoidSafeCFrame.Position.Y
-
             if Root.Position.Y < safeY - ANTI_VOID_FALL_DISTANCE
                 and os.clock() - AntiVoidLastRescue >= ANTI_VOID_RESCUE_COOLDOWN then
 
                 AntiVoidLastRescue = os.clock()
-
                 pcall(function()
                     Root.CFrame = AntiVoidSafeCFrame + Vector3.new(0, 5, 0)
                     Root.AssemblyLinearVelocity = Vector3.zero
@@ -1186,157 +1171,272 @@ local function getDungeonProgress()
 end
 
 
+
+--============================================================
+-- NORMAL DUNGEON PROGRESS | ROAM OUTER
+-- NO ENCOUNTER | NO MONSTER BEACON DEPENDENCY
+--============================================================
+
+local function getRoamOuterMarkers()
+    local markers = getDungeonObject(
+        SelectedDungeon,
+        {"Markers"}
+    )
+
+    local result = {}
+
+    if not markers then
+        return result
+    end
+
+    for _, object in ipairs(markers:GetChildren()) do
+        local number = object.Name:match("^Roam_Outer_(%d+)$")
+
+        if number and getObjectCFrame(object) then
+            table.insert(result, {
+                object = object,
+                index = tonumber(number)
+            })
+        end
+    end
+
+    table.sort(result, function(a, b)
+        return a.index < b.index
+    end)
+
+    return result
+end
+
 local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
-    local emptyStart = nil
-    local lastTPTime = 0
-    local encounterIndex = 1
 
-    local encounterTarget = nil
-    local waitingEncounterSpawn = false
-
-    local function status(msg)
+    local function status(message)
         if statusCallback then
-            statusCallback(msg)
+            statusCallback(message)
         end
     end
 
-    local function findMonsterBeacon()
-        for _, fx in ipairs(Workspace:GetChildren()) do
-            if fx.Name == "ClientFX" then
-                local candidate = fx:FindFirstChild("MonsterBeacon")
+    local function bossOpen()
+        local current, total, caption = getDungeonProgress()
 
-                if candidate and candidate:IsA("BasePart") then
-                    local billboard = candidate:FindFirstChild("BillboardGui")
-                    local hasDistanceText = false
-
-                    if billboard then
-                        for _, label in ipairs(billboard:GetDescendants()) do
-                            if (label:IsA("TextLabel") or label:IsA("TextButton"))
-                                and label.Text:match("%d+%s*m") then
-                                hasDistanceText = true
-                                break
-                            end
-                        end
-                    end
-
-                    if hasDistanceText then
-                        return candidate
-                    end
-                end
-            end
-        end
-
-        return nil
-    end
-
-    while isAlive() do
-        -- CEK BOSS OPEN
-        local playerGui = Player:FindFirstChild("PlayerGui")
-        local gameUI = playerGui and playerGui:FindFirstChild("GameUI")
-        local dungeonBar = gameUI and gameUI:FindFirstChild("DungeonBar")
-        local progress = dungeonBar and dungeonBar:FindFirstChild("Progress")
-        local textFolder = progress and progress:FindFirstChild("Text")
-        local caption = textFolder and textFolder:FindFirstChild("Caption")
-
-        if caption and caption:IsA("TextLabel") then
-            local captionText = string.lower(
-                (caption.Text or ""):match("^%s*(.-)%s*$")
+        if caption then
+            local value = string.lower(
+                caption:match("^%s*(.-)%s*$")
             )
 
-            if captionText == "open!" or captionText == "open" then
-                status("BOSS OPEN! Teleport FloorGlow...")
+            if value == "open!" or value == "open" then
                 return true
             end
         end
 
-        if useBeacon then
-            local enemyCount = getEnemyCount()
-
-            if enemyCount > 0 then
-                emptyStart = nil
-                status("Enemies ditemukan! Melawan...")
-            else
-                emptyStart = emptyStart or os.clock()
-
-                if os.clock() - emptyStart >= MOB_EMPTY_CONFIRM_TIME then
-                    -- PRIORITAS 1: MONSTER BEACON
-                    local beacon = findMonsterBeacon()
-
-                    if beacon then
-                        encounterTarget = nil
-                        waitingEncounterSpawn = false
-
-                        updateCharacter()
-
-                        if Root then
-                            local distance = (Root.Position - beacon.Position).Magnitude
-
-                            if distance > 12 and os.clock() - lastTPTime >= 3 then
-    status("MonsterBeacon ditemukan! Pathfinding TP bertahap...")
-
-    if moveDungeonPointer(beacon, isAlive, status) then
-        lastTPTime = os.clock()
-    else
-        lastTPTime = os.clock()
+        return false
     end
-else
-    status("MonsterBeacon aktif! Menunggu mob...")
-end
-                        end
 
-                        emptyStart = nil
+    local emptyStart = nil
+    local markerIndex = 1
+    local lastMarker = nil
+    local retryAt = 0
 
-                    else
-                        -- PRIORITAS 2: ENCOUNTER
-                        local encounterName = "Encounter" .. encounterIndex
+    while isAlive() do
 
-                        local encounter = getDungeonObject(
-                            SelectedDungeon,
-                            {"Markers", encounterName}
-                        )
-
-                        if encounter then
-                            if encounterTarget ~= encounter then
-                                status("MonsterBeacon tidak ada! TP " .. encounterName .. "...")
-
-                                if moveDungeonPointer(encounter, isAlive, status) then
-    encounterTarget = encounter
-    waitingEncounterSpawn = true
-    lastTPTime = os.clock()
-    emptyStart = nil
-else
-    status("Pathfinding " .. encounterName .. " gagal, coba lagi...")
-    task.wait(1)
-end
-                            elseif waitingEncounterSpawn then
-                                status("Menunggu mob muncul di " .. encounterName .. "...")
-
-                                -- Jangan naik Encounter sebelum mob muncul.
-                                emptyStart = nil
-                            else
-                                status("Menunggu Encounter berikutnya...")
-                            end
-                        else
-                            status(encounterName .. " tidak ditemukan!")
-                        end
-                    end
-                end
-            end
+        -- PRIORITAS 1: CEK PROGRESS SELESAI
+        if bossOpen() then
+            status("BOSS OPEN! Progress selesai!")
+            return true
         end
 
-        -- Mob muncul di Encounter: mulai hitung sampai habis.
-        if useBeacon and getEnemyCount() > 0 and waitingEncounterSpawn then
-            waitingEncounterSpawn = false
-            encounterIndex += 1
+        -- PRIORITAS 2: CEK MOB
+        local enemyCount = getEnemyCount()
+
+        if enemyCount > 0 then
             emptyStart = nil
+
+            status(
+                "Enemies ditemukan: "
+                .. enemyCount
+                .. " | Combat berjalan..."
+            )
+
+            task.wait(0.15)
+            continue
         end
 
-        task.wait(0.15)
+        -- ENEMIES KOSONG
+        emptyStart = emptyStart or os.clock()
+
+        local emptyDuration = os.clock() - emptyStart
+
+        if emptyDuration < MOB_EMPTY_CONFIRM_TIME then
+            status(
+                "Enemies kosong | Konfirmasi "
+                .. string.format("%.1f", emptyDuration)
+                .. "/2 detik"
+            )
+
+            task.wait(0.15)
+            continue
+        end
+
+        -- CEK PROGRESS LAGI SEBELUM ROAM
+        if bossOpen() then
+            status("BOSS OPEN! Progress selesai!")
+            return true
+        end
+
+        -- LOAD MARKER
+        local markers = getRoamOuterMarkers()
+
+        if #markers == 0 then
+            status(
+                "Roam_Outer tidak ditemukan di "
+                .. "workspace.Dungeons."
+                .. SelectedDungeon
+                .. ".Markers"
+            )
+
+            task.wait(1)
+            continue
+        end
+
+        -- NORMALISASI INDEX
+        if markerIndex > #markers then
+            markerIndex = 1
+        end
+
+        local entry = markers[markerIndex]
+        local marker = entry.object
+
+        if not marker or not marker.Parent then
+            status("Marker hilang! Scan ulang...")
+            task.wait(0.3)
+            continue
+        end
+
+        -- JANGAN SPAM PATHFINDING
+        if os.clock() < retryAt then
+            task.wait(0.1)
+            continue
+        end
+
+        updateCharacter()
+
+        if not Root then
+            task.wait(0.2)
+            continue
+        end
+
+        local markerCF = getObjectCFrame(marker)
+
+        if not markerCF then
+            markerIndex += 1
+            continue
+        end
+
+        local distance = (
+            Root.Position - markerCF.Position
+        ).Magnitude
+
+        -- SUDAH SAMPAI MARKER
+        if distance <= 8 then
+
+            status(
+                "Roam Outer "
+                .. entry.index
+                .. " tercapai | Mencari spawn berikutnya..."
+            )
+
+            lastMarker = marker
+
+            markerIndex += 1
+            if markerIndex > #markers then
+                markerIndex = 1
+            end
+
+            -- Beri waktu server untuk spawn mob.
+            local waitStart = os.clock()
+
+            while isAlive()
+                and os.clock() - waitStart < 0.75 do
+
+                if getEnemyCount() > 0 then
+                    break
+                end
+
+                if bossOpen() then
+                    return true
+                end
+
+                task.wait(0.1)
+            end
+
+            emptyStart = nil
+            continue
+        end
+
+        -- MENUJU MARKER BERIKUTNYA
+        status(
+            "Enemies kosong! Pathfinding Roam_Outer_"
+            .. entry.index
+            .. " | "
+            .. math.floor(distance)
+            .. " studs"
+        )
+
+        local function canContinueRoaming()
+            return isAlive()
+                and getEnemyCount() == 0
+                and not bossOpen()
+        end
+
+        local moved = moveDungeonPointer(
+            marker,
+            isAlive,
+            status,
+            canContinueRoaming
+        )
+
+        if not isAlive() then
+            return false
+        end
+
+        -- MOB MUNCUL SAAT BERGERAK:
+        -- LANGSUNG KEMBALI KE COMBAT
+        if getEnemyCount() > 0 then
+            status("Mob muncul saat roaming! Combat!")
+            emptyStart = nil
+            task.wait(0.1)
+            continue
+        end
+
+        if bossOpen() then
+            status("BOSS OPEN! Progress selesai!")
+            return true
+        end
+
+        if moved then
+            lastMarker = marker
+
+            markerIndex += 1
+            if markerIndex > #markers then
+                markerIndex = 1
+            end
+
+            emptyStart = nil
+        else
+            -- Retry marker yang sama jika gagal.
+            retryAt = os.clock() + 0.5
+
+            status(
+                "Roam Outer "
+                .. entry.index
+                .. " gagal | Retry..."
+            )
+        end
+
+        task.wait(0.1)
     end
 
     return false
 end
-
 
 --============================================================
 -- NORMAL DUNGEON
