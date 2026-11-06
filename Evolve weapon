@@ -188,6 +188,12 @@ local SkillIndex = 0
 
 local CurrentDungeonTarget = nil
 
+-- Auto Rebirth hanya mem-pause worker dungeon; toggle AutoDungeon tetap ON.
+local RebirthPaused = false
+local RebirthBusy = false
+local REBIRTH_POLL_INTERVAL = 1.5
+local REBIRTH_CONFIRM_TIMEOUT = 3
+
 local OrbitRunId = 0
 local TPRunId = 0
 local DungeonRunId = 0
@@ -835,6 +841,7 @@ local DUNGEON_PATH_RETRY = 3
 local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
     local function active()
         return isAlive()
+            and not RebirthPaused
             and (not canMove or canMove())
     end
 
@@ -1092,6 +1099,11 @@ local function waitForEnemyAppear(isAlive, statusCallback, timeout)
     local deadline = timeout and (os.clock() + timeout) or nil
 
     while isAlive() do
+        if RebirthPaused then
+            task.wait(0.1)
+            continue
+        end
+
         if getEnemyCount() > 0 then
             return true
         end
@@ -1112,11 +1124,23 @@ local function waitForEnemyClear(isAlive, statusCallback)
     end
 
     while isAlive() do
+        if RebirthPaused then
+            task.wait(0.1)
+            continue
+        end
+
         if getEnemyCount() == 0 then
             local emptyStart = os.clock()
             local stayedEmpty = true
 
             while isAlive() and os.clock() - emptyStart < 2 do
+                if RebirthPaused then
+                    while isAlive() and RebirthPaused do
+                        task.wait(0.1)
+                    end
+                    emptyStart = os.clock()
+                end
+
                 if getEnemyCount() > 0 then
                     stayedEmpty = false
                     break
@@ -1237,6 +1261,12 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
     local retryAt = 0
 
     while isAlive() do
+
+        if RebirthPaused then
+            status("PAUSED | Menunggu proses Rebirth...")
+            task.wait(0.1)
+            continue
+        end
 
         -- PRIORITAS 1: CEK PROGRESS SELESAI
         if bossOpen() then
@@ -1398,6 +1428,15 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
             return false
         end
 
+        if RebirthPaused then
+            status("PAUSED | Rebirth berjalan, lanjut dari marker yang sama...")
+            while isAlive() and RebirthPaused do
+                task.wait(0.1)
+            end
+            emptyStart = nil
+            continue
+        end
+
         -- MOB MUNCUL SAAT BERGERAK:
         -- LANGSUNG KEMBALI KE COMBAT
         if getEnemyCount() > 0 then
@@ -1446,10 +1485,21 @@ local function dungeonAlive(id)
     return Running and AutoDungeon and DungeonRunId == id
 end
 
+local function waitDungeonUnpaused(isAlive)
+    while isAlive() and RebirthPaused do
+        task.wait(0.1)
+    end
+    return isAlive()
+end
+
 local function waitDungeonStart(id)
     DungeonStatus = "Menunggu posisi 1..."
 
     while dungeonAlive(id) do
+        if not waitDungeonUnpaused(function() return dungeonAlive(id) end) then
+            return false
+        end
+
         updateCharacter()
 
         if Root
@@ -1469,6 +1519,10 @@ local function walkDungeonEntry(id)
     local lastOrder = 0
 
     while dungeonAlive(id) do
+        if not waitDungeonUnpaused(function() return dungeonAlive(id) end) then
+            return false
+        end
+
         updateCharacter()
 
         if not Root or not Humanoid or Humanoid.Health <= 0 then
@@ -1493,6 +1547,8 @@ end
 
 local function stopDungeon()
     AutoDungeon = false
+    RebirthPaused = false
+    RebirthBusy = false
     DungeonRunId += 1
     stopAntiVoid()
     DungeonStatus = "Dungeon: OFF"
@@ -1539,7 +1595,64 @@ end
             if AutoSkill then stopSkill() end
         end
 
+        -- Cek Rebirth lewat request server. Saat request berlangsung, worker
+        -- dungeon menunggu; AutoDungeon tidak pernah dimatikan.
+        task.spawn(function()
+            while alive() do
+                if not RebirthBusy and not RebirthPaused then
+                    RebirthBusy = true
+                    RebirthPaused = true
+
+                    local beforeRebirths = tonumber(Player:GetAttribute("Rebirths")) or 0
+                    status("Rebirth check | Dungeon pause sementara...")
+
+                    local requestOK, requestResult = pcall(function()
+                        return RequestRemote:InvokeServer("Rebirth")
+                    end)
+
+                    local confirmed = false
+                    local currentRebirths = tonumber(Player:GetAttribute("Rebirths")) or 0
+
+                    if currentRebirths > beforeRebirths then
+                        confirmed = true
+                    elseif requestOK and requestResult ~= false then
+                        local deadline = os.clock() + REBIRTH_CONFIRM_TIMEOUT
+
+                        while alive() and os.clock() < deadline do
+                            currentRebirths = tonumber(Player:GetAttribute("Rebirths")) or 0
+                            if currentRebirths > beforeRebirths then
+                                confirmed = true
+                                break
+                            end
+                            task.wait(0.1)
+                        end
+                    end
+
+                    -- Sukses maupun gagal: selalu buka pause kembali.
+                    RebirthPaused = false
+                    RebirthBusy = false
+
+                    if confirmed then
+                        status("Rebirth terkonfirmasi (" .. tostring(currentRebirths) .. ") | Lanjutkan dungeon...")
+                    else
+                        status("Rebirth gagal / tidak terkonfirmasi | Dungeon lanjut...")
+                    end
+
+                    local waitUntil = os.clock() + REBIRTH_POLL_INTERVAL
+                    while alive() and os.clock() < waitUntil do
+                        task.wait(0.1)
+                    end
+                else
+                    task.wait(0.1)
+                end
+            end
+
+            RebirthPaused = false
+            RebirthBusy = false
+        end)
+
         while alive() do
+            if not waitDungeonUnpaused(alive) then break end
             if not waitDungeonStart(id) then break end
 
             if not walkDungeonEntry(id) then
@@ -1558,6 +1671,7 @@ end
             task.wait(DUNGEON_BEFORE_REMOTE)
 
             if not alive() then break end
+            if not waitDungeonUnpaused(alive) then break end
 
             updateCharacter()
 
@@ -1623,6 +1737,7 @@ end
             task.wait(DUNGEON_AFTER_FLOOR)
 
             if not alive() then break end
+            if not waitDungeonUnpaused(alive) then break end
 
             if not waitForEnemyClear(alive, status) then
                 break
@@ -1662,6 +1777,8 @@ if not alive() then break end
         end
 
         stopAntiVoid()
+        RebirthPaused = false
+        RebirthBusy = false
 
         if DungeonRunId == id then
             if not combatWasOn and AutoCombat then
@@ -3416,6 +3533,8 @@ function Controller.Cleanup()
     AutoOrbit = false
     AutoTP = false
     AutoDungeon = false
+    RebirthPaused = false
+    RebirthBusy = false
     AutoEclipse = false
     AutoHallow = false
     AutoClaim = false
