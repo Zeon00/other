@@ -926,6 +926,12 @@ end
 -- Simpan posisi karakter setelah masuk dungeon; rescue jika jatuh.
 --============================================================
 
+--============================================================
+-- ANTI VOID | NORMAL AUTO DUNGEON ONLY
+-- Update titik aman saat berada di lantai.
+-- Rescue jika karakter jatuh ke jurang.
+--============================================================
+
 local function stopAntiVoid()
     AntiVoidRunId += 1
 
@@ -946,21 +952,48 @@ local function startAntiVoid(isAlive)
     local runId = AntiVoidRunId
 
     task.spawn(function()
-        -- Beri server waktu memindahkan karakter ke dalam dungeon.
-        local deadline = os.clock() + 6
+        local deadline = os.clock() + 10
+        local rayParams = RaycastParams.new()
+
+        rayParams.FilterType = Enum.RaycastFilterType.Exclude
+
+        -- Tunggu karakter mendapatkan posisi lantai yang valid.
         repeat
-            if not isAlive() or AntiVoidRunId ~= runId then return end
+            if not isAlive() or AntiVoidRunId ~= runId then
+                return
+            end
+
             updateCharacter()
-            if Root and Root.Parent then break end
-            task.wait(0.1)
+
+            if Root and Root.Parent then
+                rayParams.FilterDescendantsInstances = {Character}
+
+                local ground = Workspace:Raycast(
+                    Root.Position,
+                    Vector3.new(0, -12, 0),
+                    rayParams
+                )
+
+                if ground then
+                    AntiVoidSafeCFrame = Root.CFrame
+                    break
+                end
+            end
+
+            task.wait(0.2)
         until os.clock() >= deadline
 
-        if not isAlive() or AntiVoidRunId ~= runId then return end
-        updateCharacter()
-        if not Root or not Root.Parent then return end
+        if not isAlive() or AntiVoidRunId ~= runId then
+            return
+        end
 
-        AntiVoidSafeCFrame = Root.CFrame
+        if not AntiVoidSafeCFrame then
+            warn("[ANTI VOID] Posisi lantai aman belum ditemukan!")
+            return
+        end
+
         AntiVoidLastRescue = 0
+        local lastSafeUpdate = 0
 
         AntiVoidConnection = RunService.Heartbeat:Connect(function()
             if not isAlive() or AntiVoidRunId ~= runId then
@@ -969,13 +1002,33 @@ local function startAntiVoid(isAlive)
             end
 
             updateCharacter()
-            if not Root or not Root.Parent or not AntiVoidSafeCFrame then return end
 
+            if not Root or not Root.Parent or not AntiVoidSafeCFrame then
+                return
+            end
+
+            rayParams.FilterDescendantsInstances = {Character}
+
+            local ground = Workspace:Raycast(
+                Root.Position,
+                Vector3.new(0, -10, 0),
+                rayParams
+            )
+
+            -- Simpan posisi terbaru hanya jika lantai terdeteksi dekat.
+            if ground and os.clock() - lastSafeUpdate >= 0.25 then
+                AntiVoidSafeCFrame = Root.CFrame
+                lastSafeUpdate = os.clock()
+            end
+
+            -- Rescue jika jatuh terlalu jauh dari titik aman.
             local safeY = AntiVoidSafeCFrame.Position.Y
+
             if Root.Position.Y < safeY - ANTI_VOID_FALL_DISTANCE
                 and os.clock() - AntiVoidLastRescue >= ANTI_VOID_RESCUE_COOLDOWN then
 
                 AntiVoidLastRescue = os.clock()
+
                 pcall(function()
                     Root.CFrame = AntiVoidSafeCFrame + Vector3.new(0, 5, 0)
                     Root.AssemblyLinearVelocity = Vector3.zero
