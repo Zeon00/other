@@ -35,7 +35,7 @@ if oldPick then oldPick:Destroy() end
 
 -- ORBIT SETTINGS
 local ROTATION_SPEED = 2
-local NORMAL_RADIUS = 16
+local NORMAL_RADIUS = 12
 local NORMAL_HEIGHT = 7
 
 local BOOST_RADIUS = 50
@@ -49,8 +49,8 @@ local jumpBoostId = 0
 local hpBoostActive = false
 
 -- AUTO TP SETTINGS
-local POS1 = Vector3.new(12003.830078125, 5.149999618530273, -12001.181640625)
-local POS2 = Vector3.new(11961, 4.649999618530273, -12078)
+local POS1 = Vector3.new(20997.4375, 3.6999995708465576, -12104.927734375)
+local POS2 = Vector3.new(21039.181640625, 4.819999694824219, -11931.94140625)
 local TOLERANCE = 30
 local tpRunId = 0
 
@@ -59,8 +59,9 @@ local PRIORITY = {
     "c05", "f24", "r16", "r25", "l38",
     "c02", "r15", "c01", "c10", "m39",
     "r22", "e31", "e6", "l31", "l35", 
-    "r17", "r25", "l34", "c09", "e30", 
-    "r15", "c06"
+    "r17", "r25", "l34", "c09", "e30", "r15",
+    "e26", "c41", "c06", "c42", "c43", "l57",
+"r21", "c06"
 }
 
 local HwEvent = ReplicatedStorage
@@ -423,7 +424,7 @@ task.spawn(function()
             end
         end
 
-        task.wait(0.05)
+        task.wait(1.5)
     end
 end)
 
