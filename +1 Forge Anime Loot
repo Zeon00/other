@@ -1,0 +1,2445 @@
+
+
+--============================================================
+
+-- DELTA | ALL-IN-ONE FARM GUI
+
+-- AUTO DUNGEON | AREA/STAGE + DROP PICKUP
+
+-- SMOOTH PHYSICS ORBIT
+
+-- ALIGN POSITION + ALIGN ORIENTATION
+
+-- INSTANT STOP + AUTO SKILL
+
+-- AUTO CLICK + SWING + REBIRTH
+
+-- STANDALONE GUI | PC + MOBILE
+
+--============================================================
+
+
+
+-- SERVICES
+
+local Players = game:GetService("Players")
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local CoreGui = game:GetService("CoreGui")
+
+local CollectionService = game:GetService("CollectionService")
+
+local RunService = game:GetService("RunService")
+
+local UserInputService = game:GetService("UserInputService")
+
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+
+
+local Player = Players.LocalPlayer
+
+
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+
+local Config = require(Shared:WaitForChild("Config"))
+
+
+
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+
+local ClickRemote = Remotes:WaitForChild("Click")
+
+local SwingRemote = Remotes:WaitForChild("Swing")
+
+local RebirthRemote = Remotes:WaitForChild("Rebirth")
+local DungeonLootRemote = Remotes:WaitForChild("Loot")
+local DungeonTeleportRemote = Remotes:WaitForChild("Teleport")
+local DungeonReturnRemote = Remotes:WaitForChild("Return")
+
+
+
+--============================================================
+
+-- CLEAN OLD GUI
+
+--============================================================
+
+
+
+local OldGui = CoreGui:FindFirstChild("DeltaAllInOneGUI")
+
+
+
+if OldGui then
+
+    OldGui:Destroy()
+
+end
+
+
+
+--============================================================
+
+-- SETTINGS
+
+--============================================================
+
+
+
+local Destroyed = false
+
+
+
+local Settings = {
+
+
+    Orbit = false,
+
+    Click = false,
+
+    Swing = false,
+
+    Rebirth = false,
+    Dungeon = false,
+
+
+
+    SkillQ = false,
+
+    SkillF = false,
+
+    SkillR = false,
+
+}
+
+
+
+-- ORBIT SETTINGS
+
+local Radius = 18
+
+local Height = 12
+
+local OrbitSpeed = 2
+
+
+
+-- PHYSICS SETTINGS
+
+local Responsiveness = 12
+
+local MaxVelocity = 35
+
+local MaxForce = 50000
+
+local MaxTorque = 50000
+
+
+
+local ClickDelay = 0.05
+
+local SwingDelay = 0.05
+
+local RebirthDelay = 5
+
+local SkillDelay = 0.5
+
+
+
+local Target = nil
+
+local Angle = 0
+
+
+
+local OrbitStatus
+
+local HeartbeatConnection
+local DungeonLootConnection
+
+
+
+local OrbitAttachment
+
+local TargetAttachment
+
+local AlignPosition
+
+local AlignOrientation
+
+
+
+local OrbitRigTarget = nil
+
+local PreviousAutoRotate = nil
+
+
+
+--============================================================
+
+-- CHARACTER HELPERS
+
+--============================================================
+
+
+
+local function GetCharacter()
+
+    local Character = Player.Character
+
+
+
+    if not Character then
+
+        return
+
+    end
+
+
+
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+
+
+
+    if not Root or not Humanoid or Humanoid.Health <= 0 then
+
+        return
+
+    end
+
+
+
+    return Character, Root, Humanoid
+
+end
+
+
+
+--============================================================
+
+-- DESTROY ORBIT PHYSICS
+
+--============================================================
+
+
+
+local function DestroyOrbitRig()
+
+    if AlignPosition then
+
+        AlignPosition:Destroy()
+
+        AlignPosition = nil
+
+    end
+
+
+
+    if AlignOrientation then
+
+        AlignOrientation:Destroy()
+
+        AlignOrientation = nil
+
+    end
+
+
+
+    if OrbitAttachment then
+
+        OrbitAttachment:Destroy()
+
+        OrbitAttachment = nil
+
+    end
+
+
+
+    if TargetAttachment then
+
+        TargetAttachment:Destroy()
+
+        TargetAttachment = nil
+
+    end
+
+
+
+    local Character = Player.Character
+
+
+
+    if Character then
+
+        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+
+
+
+        if Humanoid and PreviousAutoRotate ~= nil then
+
+            Humanoid.AutoRotate = PreviousAutoRotate
+
+        end
+
+    end
+
+
+
+    PreviousAutoRotate = nil
+
+    OrbitRigTarget = nil
+
+end
+
+
+
+--============================================================
+
+-- INSTANT ORBIT STOP
+
+--============================================================
+
+
+
+local function StopOrbit()
+
+    Settings.Orbit = false
+
+
+
+    Target = nil
+
+    Angle = 0
+
+
+
+    DestroyOrbitRig()
+
+
+
+    local Character, Root, Humanoid = GetCharacter()
+
+
+
+    if Root then
+
+        Root.AssemblyAngularVelocity = Vector3.zero
+
+    end
+
+
+
+    if Humanoid then
+
+        Humanoid:Move(Vector3.zero, false)
+
+    end
+
+
+
+    if OrbitStatus then
+
+        OrbitStatus.Text = "Orbit: OFF"
+
+    end
+
+end
+
+
+
+--============================================================
+
+-- CREATE GUI
+
+--============================================================
+
+
+
+local Gui = Instance.new("ScreenGui")
+
+Gui.Name = "DeltaAllInOneGUI"
+
+Gui.ResetOnSpawn = false
+
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+Gui.Parent = CoreGui
+
+
+
+local Main = Instance.new("Frame")
+
+Main.Name = "Main"
+
+Main.Size = UDim2.fromOffset(300, 510)
+
+Main.Position = UDim2.new(0.5, -150, 0.5, -255)
+
+Main.BackgroundColor3 = Color3.fromRGB(24, 24, 33)
+
+Main.BorderSizePixel = 0
+
+Main.Active = true
+
+Main.Parent = Gui
+
+
+
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 9)
+
+
+
+local MainStroke = Instance.new("UIStroke")
+
+MainStroke.Color = Color3.fromRGB(125, 75, 210)
+
+MainStroke.Thickness = 1.4
+
+MainStroke.Parent = Main
+
+
+
+-- HEADER
+
+local Header = Instance.new("Frame")
+
+Header.Size = UDim2.new(1, 0, 0, 36)
+
+Header.BackgroundColor3 = Color3.fromRGB(39, 39, 54)
+
+Header.BorderSizePixel = 0
+
+Header.Active = true
+
+Header.Parent = Main
+
+
+
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 9)
+
+
+
+local HeaderCover = Instance.new("Frame")
+
+HeaderCover.Size = UDim2.new(1, 0, 0, 9)
+
+HeaderCover.Position = UDim2.new(0, 0, 1, -9)
+
+HeaderCover.BackgroundColor3 = Header.BackgroundColor3
+
+HeaderCover.BorderSizePixel = 0
+
+HeaderCover.Parent = Header
+
+
+
+local Title = Instance.new("TextLabel")
+
+Title.Size = UDim2.new(1, -90, 1, 0)
+
+Title.Position = UDim2.fromOffset(10, 0)
+
+Title.BackgroundTransparency = 1
+
+Title.Text = "DELTA | ALL IN ONE FARM"
+
+Title.TextColor3 = Color3.new(1, 1, 1)
+
+Title.Font = Enum.Font.GothamBold
+
+Title.TextSize = 12
+
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+Title.Parent = Header
+
+
+
+local Min = Instance.new("TextButton")
+
+Min.Size = UDim2.fromOffset(30, 28)
+
+Min.Position = UDim2.new(1, -65, 0, 4)
+
+Min.BackgroundColor3 = Color3.fromRGB(65, 65, 82)
+
+Min.Text = "—"
+
+Min.TextColor3 = Color3.new(1, 1, 1)
+
+Min.Font = Enum.Font.GothamBold
+
+Min.TextSize = 16
+
+Min.Parent = Header
+
+
+
+Instance.new("UICorner", Min).CornerRadius = UDim.new(0, 5)
+
+
+
+local Close = Instance.new("TextButton")
+
+Close.Size = UDim2.fromOffset(28, 28)
+
+Close.Position = UDim2.new(1, -32, 0, 4)
+
+Close.BackgroundColor3 = Color3.fromRGB(145, 45, 55)
+
+Close.Text = "X"
+
+Close.TextColor3 = Color3.new(1, 1, 1)
+
+Close.Font = Enum.Font.GothamBold
+
+Close.TextSize = 13
+
+Close.Parent = Header
+
+
+
+Instance.new("UICorner", Close).CornerRadius = UDim.new(0, 5)
+
+
+
+--============================================================
+
+-- DRAG
+
+--============================================================
+
+
+
+local Dragging = false
+
+local DragStart
+
+local StartPosition
+
+
+
+Header.InputBegan:Connect(function(Input)
+
+    if Input.UserInputType == Enum.UserInputType.MouseButton1
+
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
+
+
+        Dragging = true
+
+        DragStart = Input.Position
+
+        StartPosition = Main.Position
+
+    end
+
+end)
+
+
+
+UserInputService.InputChanged:Connect(function(Input)
+
+    if not Dragging then
+
+        return
+
+    end
+
+
+
+    if Input.UserInputType == Enum.UserInputType.MouseMovement
+
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
+
+
+        local Delta = Input.Position - DragStart
+
+
+
+        Main.Position = UDim2.new(
+
+            StartPosition.X.Scale,
+
+            StartPosition.X.Offset + Delta.X,
+
+            StartPosition.Y.Scale,
+
+            StartPosition.Y.Offset + Delta.Y
+
+        )
+
+    end
+
+end)
+
+
+
+UserInputService.InputEnded:Connect(function(Input)
+
+    if Input.UserInputType == Enum.UserInputType.MouseButton1
+
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
+
+
+        Dragging = false
+
+    end
+
+end)
+
+
+
+--============================================================
+
+-- SCROLL BODY
+
+--============================================================
+
+
+
+local Body = Instance.new("ScrollingFrame")
+
+Body.Name = "Body"
+
+Body.Size = UDim2.new(1, -12, 1, -44)
+
+Body.Position = UDim2.fromOffset(6, 41)
+
+Body.BackgroundTransparency = 1
+
+Body.BorderSizePixel = 0
+
+Body.ScrollBarThickness = 4
+
+Body.ScrollBarImageColor3 = Color3.fromRGB(125, 75, 210)
+
+Body.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+Body.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+Body.Parent = Main
+
+
+
+local Padding = Instance.new("UIPadding")
+
+Padding.PaddingTop = UDim.new(0, 3)
+
+Padding.PaddingBottom = UDim.new(0, 10)
+
+Padding.PaddingLeft = UDim.new(0, 3)
+
+Padding.PaddingRight = UDim.new(0, 5)
+
+Padding.Parent = Body
+
+
+
+local Layout = Instance.new("UIListLayout")
+
+Layout.Padding = UDim.new(0, 5)
+
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+Layout.Parent = Body
+
+
+
+local Order = 0
+
+
+
+local function NextOrder()
+
+    Order += 1
+
+    return Order
+
+end
+
+
+
+--============================================================
+
+-- GUI HELPERS
+
+--============================================================
+
+
+
+local function MakeSection(Text)
+
+    local Label = Instance.new("TextLabel")
+
+    Label.Size = UDim2.new(1, 0, 0, 25)
+
+    Label.BackgroundColor3 = Color3.fromRGB(47, 42, 65)
+
+    Label.BorderSizePixel = 0
+
+    Label.Text = "  " .. Text
+
+    Label.TextColor3 = Color3.fromRGB(205, 180, 255)
+
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    Label.Font = Enum.Font.GothamBold
+
+    Label.TextSize = 11
+
+    Label.LayoutOrder = NextOrder()
+
+    Label.Parent = Body
+
+
+
+    Instance.new("UICorner", Label).CornerRadius = UDim.new(0, 5)
+
+
+
+    return Label
+
+end
+
+
+
+local function MakeButton(Text, Color, HeightSize)
+
+    local Button = Instance.new("TextButton")
+
+    Button.Size = UDim2.new(1, 0, 0, HeightSize or 32)
+
+    Button.BackgroundColor3 = Color
+
+    Button.BorderSizePixel = 0
+
+    Button.Text = Text
+
+    Button.TextColor3 = Color3.new(1, 1, 1)
+
+    Button.Font = Enum.Font.GothamBold
+
+    Button.TextSize = 11
+
+    Button.LayoutOrder = NextOrder()
+
+    Button.Parent = Body
+
+
+
+    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 5)
+
+
+
+    return Button
+
+end
+
+
+
+local function MakeToggle(Name, SettingName, Color)
+
+    local Button = MakeButton(
+
+        Name,
+
+        Color3.fromRGB(125, 45, 48),
+
+        33
+
+    )
+
+
+
+    local function Refresh()
+
+        local State = Settings[SettingName]
+
+
+
+        Button.Text = Name .. (State and " : ON" or " : OFF")
+
+
+
+        Button.BackgroundColor3 = State
+
+            and (Color or Color3.fromRGB(35, 135, 75))
+
+            or Color3.fromRGB(125, 45, 48)
+
+    end
+
+
+
+    Button.MouseButton1Click:Connect(function()
+
+        if Destroyed then
+
+            return
+
+        end
+
+
+
+        if SettingName == "Orbit" then
+
+            if Settings.Orbit then
+
+                StopOrbit()
+
+            else
+
+                DestroyOrbitRig()
+
+
+
+                Settings.Orbit = true
+
+                Angle = 0
+
+                Target = nil
+
+
+
+                if OrbitStatus then
+
+                    OrbitStatus.Text = "Orbit: Searching..."
+
+                end
+
+            end
+
+        else
+
+            Settings[SettingName] = not Settings[SettingName]
+
+        end
+
+
+
+        Refresh()
+
+    end)
+
+
+
+    Refresh()
+
+
+
+    return Button
+
+end
+
+
+
+local function MakeInput(Name, Default, Callback, Getter)
+
+    local Box = Instance.new("TextBox")
+
+    Box.Size = UDim2.new(1, 0, 0, 31)
+
+    Box.BackgroundColor3 = Color3.fromRGB(43, 43, 57)
+
+    Box.BorderSizePixel = 0
+
+    Box.Text = tostring(Default)
+
+    Box.PlaceholderText = Name
+
+    Box.TextColor3 = Color3.new(1, 1, 1)
+
+    Box.PlaceholderColor3 = Color3.fromRGB(170, 170, 180)
+
+    Box.Font = Enum.Font.Gotham
+
+    Box.TextSize = 11
+
+    Box.ClearTextOnFocus = false
+
+    Box.LayoutOrder = NextOrder()
+
+    Box.Parent = Body
+
+
+
+    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 5)
+
+
+
+    Box.FocusLost:Connect(function()
+
+        local Number = tonumber(Box.Text)
+
+
+
+        if Number then
+
+            Callback(Number)
+
+            Box.Text = tostring(Getter and Getter() or Number)
+
+        else
+
+            Box.Text = tostring(Getter and Getter() or Default)
+
+        end
+
+    end)
+
+
+
+    return Box
+
+end
+
+
+
+local function MakeStatus(Text)
+
+    local Label = Instance.new("TextLabel")
+
+    Label.Size = UDim2.new(1, 0, 0, 24)
+
+    Label.BackgroundTransparency = 1
+
+    Label.Text = Text
+
+    Label.TextColor3 = Color3.fromRGB(190, 190, 200)
+
+    Label.Font = Enum.Font.Gotham
+
+    Label.TextSize = 10
+
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    Label.LayoutOrder = NextOrder()
+
+    Label.Parent = Body
+
+
+
+    return Label
+
+end
+
+
+
+--============================================================
+
+-- ORBIT FARM
+
+--============================================================
+
+
+
+MakeSection("ORBIT FARM")
+
+
+
+MakeToggle("AUTO ORBIT", "Orbit")
+
+
+
+OrbitStatus = MakeStatus("Orbit: Idle")
+
+
+
+MakeInput("ORBIT RADIUS", Radius, function(Value)
+
+    Radius = math.clamp(Value, 2, 50)
+
+end, function()
+
+    return Radius
+
+end)
+
+
+
+MakeInput("ORBIT HEIGHT", Height, function(Value)
+
+    Height = math.clamp(Value, 0, 30)
+
+end, function()
+
+    return Height
+
+end)
+
+
+
+MakeInput("ORBIT SPEED", OrbitSpeed, function(Value)
+
+    OrbitSpeed = math.clamp(Value, 0.1, 15)
+
+end, function()
+
+    return OrbitSpeed
+
+end)
+
+
+
+local function GetMobRoot(Mob)
+
+    if not Mob then
+
+        return nil
+
+    end
+
+
+
+    return Mob:FindFirstChild("HumanoidRootPart")
+
+        or Mob:FindFirstChild("Head")
+
+        or Mob.PrimaryPart
+
+end
+
+
+
+local function IsAlive(Mob)
+
+    if not Mob or not Mob.Parent then
+
+        return false
+
+    end
+
+
+
+    local Humanoid = Mob:FindFirstChildOfClass("Humanoid")
+
+    local Root = GetMobRoot(Mob)
+
+
+
+    return Humanoid ~= nil
+
+        and Humanoid.Health > 0
+
+        and Root ~= nil
+
+        and Root:IsA("BasePart")
+
+end
+
+
+
+local function GetNextMob()
+
+    local _, PlayerRoot = GetCharacter()
+
+
+
+    if not PlayerRoot then
+
+        return nil
+
+    end
+
+
+
+    local Mobs = {}
+
+
+
+    for _, Mob in ipairs(CollectionService:GetTagged(Config.BotTag)) do
+
+        if Mob:IsA("Model") and IsAlive(Mob) then
+
+            table.insert(Mobs, Mob)
+
+        end
+
+    end
+
+
+
+    table.sort(Mobs, function(A, B)
+
+        local RootA = GetMobRoot(A)
+
+        local RootB = GetMobRoot(B)
+
+
+
+        if not RootA or not RootB then
+
+            return false
+
+        end
+
+
+
+        return (RootA.Position - PlayerRoot.Position).Magnitude
+
+            < (RootB.Position - PlayerRoot.Position).Magnitude
+
+    end)
+
+
+
+    return Mobs[1]
+
+end
+
+
+
+--============================================================
+
+-- CREATE PHYSICS ORBIT
+
+--============================================================
+
+
+
+local function CreateOrbitRig(Character, Root, Humanoid, MobRoot)
+
+    DestroyOrbitRig()
+
+
+
+    if not Settings.Orbit then
+
+        return false
+
+    end
+
+
+
+    if not Root or not MobRoot then
+
+        return false
+
+    end
+
+
+
+    local Success = pcall(function()
+
+
+
+        -- PLAYER ATTACHMENT
+
+        OrbitAttachment = Instance.new("Attachment")
+
+        OrbitAttachment.Name = "DeltaOrbitAttachment"
+
+        OrbitAttachment.Parent = Root
+
+
+
+        -- TARGET ATTACHMENT
+
+        TargetAttachment = Instance.new("Attachment")
+
+        TargetAttachment.Name = "DeltaTargetAttachment"
+
+        TargetAttachment.Parent = MobRoot
+
+
+
+        -- ALIGN POSITION
+
+        AlignPosition = Instance.new("AlignPosition")
+
+        AlignPosition.Name = "DeltaSmoothPosition"
+
+        AlignPosition.Mode = Enum.PositionAlignmentMode.TwoAttachment
+
+
+
+        AlignPosition.Attachment0 = OrbitAttachment
+
+        AlignPosition.Attachment1 = TargetAttachment
+
+
+
+        AlignPosition.ApplyAtCenterOfMass = true
+
+        AlignPosition.RigidityEnabled = false
+
+        AlignPosition.ReactionForceEnabled = false
+
+
+
+        AlignPosition.Responsiveness = Responsiveness
+
+        AlignPosition.MaxVelocity = MaxVelocity
+
+        AlignPosition.MaxForce = MaxForce
+
+
+
+        AlignPosition.Parent = Root
+
+
+
+        -- ALIGN ORIENTATION
+
+        AlignOrientation = Instance.new("AlignOrientation")
+
+        AlignOrientation.Name = "DeltaSmoothOrientation"
+
+        AlignOrientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+
+
+
+        AlignOrientation.Attachment0 = OrbitAttachment
+
+        AlignOrientation.RigidityEnabled = false
+
+        AlignOrientation.ReactionTorqueEnabled = false
+
+
+
+        AlignOrientation.Responsiveness = Responsiveness
+
+        AlignOrientation.MaxAngularVelocity = 10
+
+        AlignOrientation.MaxTorque = MaxTorque
+
+
+
+        AlignOrientation.Parent = Root
+
+
+
+        PreviousAutoRotate = Humanoid.AutoRotate
+
+        Humanoid.AutoRotate = false
+
+
+
+        OrbitRigTarget = MobRoot
+
+    end)
+
+
+
+    if not Success then
+
+        DestroyOrbitRig()
+
+        return false
+
+    end
+
+
+
+    return true
+
+end
+
+
+
+--============================================================
+
+-- AUTO SKILLS
+
+--============================================================
+
+
+
+MakeSection("AUTO SKILLS")
+
+
+
+MakeToggle("SKILL Q", "SkillQ", Color3.fromRGB(40, 100, 155))
+
+MakeToggle("SKILL F", "SkillF", Color3.fromRGB(40, 100, 155))
+
+MakeToggle("SKILL R", "SkillR", Color3.fromRGB(40, 100, 155))
+
+
+
+local SkillKeys = {
+
+    {key = Enum.KeyCode.Q, setting = "SkillQ"},
+
+    {key = Enum.KeyCode.F, setting = "SkillF"},
+
+    {key = Enum.KeyCode.R, setting = "SkillR"}
+
+}
+
+
+
+local function PressSkill(Key)
+
+    if Destroyed or not Settings.Orbit then
+
+        return
+
+    end
+
+
+
+    pcall(function()
+
+        VirtualInputManager:SendKeyEvent(true, Key, false, game)
+
+        task.wait(0.08)
+
+        VirtualInputManager:SendKeyEvent(false, Key, false, game)
+
+    end)
+
+end
+
+
+
+--============================================================
+
+-- AUTO CLICK / SWING / REBIRTH
+
+--============================================================
+
+
+
+MakeSection("AUTO CLICK / SWING / REBIRTH")
+
+
+
+MakeToggle("AUTO CLICK", "Click")
+
+MakeToggle("AUTO SWING", "Swing")
+
+MakeToggle("AUTO REBIRTH", "Rebirth")
+
+MakeStatus("Click, Swing, dan Rebirth berjalan terpisah.")
+
+MakeSection("AUTO DUNGEON | AREA + STAGE")
+MakeToggle("AUTO DUNGEON", "Dungeon", Color3.fromRGB(45, 115, 170))
+local DungeonStatus = MakeStatus("Dungeon: OFF | Area suffix otomatis")
+
+
+
+--============================================================
+
+-- MINIMIZE
+
+--============================================================
+
+
+
+local Minimized = false
+
+
+
+local NormalSize = UDim2.fromOffset(300, 510)
+
+local MiniSize = UDim2.fromOffset(300, 36)
+
+
+
+local function SetMinimized(State)
+
+    Minimized = State
+
+    Body.Visible = not State
+
+    Main.Size = State and MiniSize or NormalSize
+
+    Min.Text = State and "+" or "—"
+
+end
+
+
+
+Min.MouseButton1Click:Connect(function()
+
+    SetMinimized(not Minimized)
+
+end)
+
+
+
+--============================================================
+
+-- DESTROY
+
+--============================================================
+
+
+
+Close.MouseButton1Click:Connect(function()
+
+    if Destroyed then
+
+        return
+
+    end
+
+
+
+    Destroyed = true
+
+
+
+    StopOrbit()
+
+
+
+    for Name in pairs(Settings) do
+
+        Settings[Name] = false
+
+    end
+
+
+
+    if DungeonLootConnection then
+        DungeonLootConnection:Disconnect()
+        DungeonLootConnection = nil
+    end
+
+
+
+    if HeartbeatConnection then
+
+        HeartbeatConnection:Disconnect()
+
+        HeartbeatConnection = nil
+
+    end
+
+
+
+    Gui:Destroy()
+
+end)
+
+
+
+--============================================================
+
+-- AUTO CLICK LOOP
+
+--============================================================
+
+
+
+task.spawn(function()
+
+    while not Destroyed do
+
+        if Settings.Click then
+
+            pcall(function()
+
+                ClickRemote:FireServer()
+
+            end)
+
+        end
+
+
+
+        task.wait(ClickDelay)
+
+    end
+
+end)
+
+
+
+--============================================================
+
+-- AUTO SWING LOOP
+
+--============================================================
+
+
+
+task.spawn(function()
+
+    while not Destroyed do
+
+        if Settings.Swing then
+
+            pcall(function()
+
+                SwingRemote:FireServer()
+
+            end)
+
+        end
+
+
+
+        task.wait(SwingDelay)
+
+    end
+
+end)
+
+
+
+--============================================================
+
+-- AUTO REBIRTH LOOP
+
+--============================================================
+
+
+
+task.spawn(function()
+
+    while not Destroyed do
+
+        if Settings.Rebirth then
+
+            pcall(function()
+
+                RebirthRemote:InvokeServer("rebirth")
+
+            end)
+
+        end
+
+
+
+        task.wait(RebirthDelay)
+
+    end
+
+end)
+
+
+
+--============================================================
+
+-- SKILL LOOP
+
+--============================================================
+
+
+
+task.spawn(function()
+
+    while not Destroyed do
+
+        if Settings.Orbit and Target and IsAlive(Target) then
+
+            for _, Skill in ipairs(SkillKeys) do
+
+                if Destroyed or not Settings.Orbit then
+
+                    break
+
+                end
+
+
+
+                if Settings[Skill.setting] then
+
+                    PressSkill(Skill.key)
+
+                    task.wait(0.15)
+
+                end
+
+            end
+
+        end
+
+
+
+        task.wait(SkillDelay)
+
+    end
+
+end)
+
+
+
+--============================================================
+
+-- SMOOTH PHYSICS ORBIT LOOP
+
+--============================================================
+
+
+
+local MaxMobDistance = 80
+
+local MaxVerticalDifference = 25
+
+
+
+local function UpdateOrbit(Delta)
+
+    if Destroyed or not Settings.Orbit then
+
+        return
+
+    end
+
+
+
+    local Character, Root, Humanoid = GetCharacter()
+
+
+
+    if not Character or not Root or not Humanoid then
+
+        DestroyOrbitRig()
+
+        OrbitStatus.Text = "Orbit: Waiting character"
+
+        return
+
+    end
+
+
+
+    -- KEEP SAME TARGET UNTIL DEAD / REMOVED
+
+    if not Target or not IsAlive(Target) then
+
+        DestroyOrbitRig()
+
+
+
+        Target = GetNextMob()
+
+        Angle = 0
+
+
+
+        if not Target then
+
+            OrbitStatus.Text = "Orbit: No mob found"
+
+            return
+
+        end
+
+    end
+
+
+
+    if not Settings.Orbit then
+
+        return
+
+    end
+
+
+
+    local MobRoot = GetMobRoot(Target)
+
+
+
+    if not MobRoot then
+
+        return
+
+    end
+
+
+
+    local MobPosition = MobRoot.Position
+
+    local CurrentPosition = Root.Position
+
+
+
+    -- SAFE DISTANCE
+
+    if (MobPosition - CurrentPosition).Magnitude > MaxMobDistance
+
+        or math.abs(MobPosition.Y - CurrentPosition.Y) > MaxVerticalDifference then
+
+
+
+        OrbitStatus.Text = "Orbit: Target outside safe range"
+
+        return
+
+    end
+
+
+
+    -- CREATE PHYSICS IF NEEDED
+
+    if not AlignPosition
+
+        or not AlignOrientation
+
+        or not OrbitAttachment
+
+        or not TargetAttachment
+
+        or OrbitRigTarget ~= MobRoot then
+
+
+
+        local Success = CreateOrbitRig(
+
+            Character,
+
+            Root,
+
+            Humanoid,
+
+            MobRoot
+
+        )
+
+
+
+        if not Success then
+
+            OrbitStatus.Text = "Orbit: Physics setup failed"
+
+            return
+
+        end
+
+    end
+
+
+
+    if not AlignPosition or not TargetAttachment then
+
+        return
+
+    end
+
+
+
+    -- SMOOTH ANGLE
+
+    Angle = (Angle + Delta * OrbitSpeed) % (math.pi * 2)
+
+
+
+    -- WORLD ORBIT POSITION
+
+    local OrbitY = MobPosition.Y + Height
+
+
+
+    local Desired = Vector3.new(
+
+        MobPosition.X + math.cos(Angle) * Radius,
+
+        OrbitY,
+
+        MobPosition.Z + math.sin(Angle) * Radius
+
+    )
+
+
+
+    -- CONVERT WORLD POSITION TO TARGET LOCAL POSITION
+
+    -- ALIGN POSITION WILL FOLLOW THIS ATTACHMENT
+
+    TargetAttachment.Position =
+
+        MobRoot.CFrame:PointToObjectSpace(Desired)
+
+
+
+    -- FACE TARGET
+
+    local LookAt = Vector3.new(
+
+        MobPosition.X,
+
+        Root.Position.Y,
+
+        MobPosition.Z
+
+    )
+
+
+
+    local LookCFrame = CFrame.lookAt(
+
+        Root.Position,
+
+        LookAt
+
+    )
+
+
+
+    -- CONVERT DESIRED WORLD ROTATION TO ROOT LOCAL ROTATION
+
+    if AlignOrientation then
+
+        AlignOrientation.CFrame =
+
+            Root.CFrame:ToObjectSpace(LookCFrame)
+
+    end
+
+
+
+    -- STATUS
+
+    local TargetHumanoid = Target:FindFirstChildOfClass("Humanoid")
+
+
+
+    if TargetHumanoid then
+
+        OrbitStatus.Text = string.format(
+
+            "Orbit: %s | HP: %d | R: %.1f",
+
+            Target.Name,
+
+            math.max(0, math.ceil(TargetHumanoid.Health)),
+
+            Radius
+
+        )
+
+    end
+
+end
+
+
+
+HeartbeatConnection = RunService.Heartbeat:Connect(function(Delta)
+
+    local Success, Error = pcall(function()
+
+        UpdateOrbit(Delta)
+
+    end)
+
+
+
+    if not Success then
+
+        if OrbitStatus then
+
+            OrbitStatus.Text = "Orbit error: " .. tostring(Error)
+
+        end
+
+    end
+
+end)
+
+
+
+--============================================================
+
+
+--============================================================
+-- AUTO DUNGEON CONTROLLER
+-- Uses existing Delta GUI and existing LootRemote.
+-- Ore/Essence rarity auto-loot UI removed; dungeon drop pickup remains.
+--============================================================
+
+local DungeonPathfindingService = game:GetService("PathfindingService")
+local DungeonPlayerGui = Player:WaitForChild("PlayerGui")
+
+local DUNGEON_ID = 10
+local DUNGEON_RETURN_WAIT = 8
+local DUNGEON_PICKUP_RETRY = 0.01
+local DUNGEON_LAND_EXTRA = 0.08
+local DUNGEON_WALK_SPEED = 25
+local DUNGEON_BACKPACK_CHECK = 0.5
+local DUNGEON_STAGE_TIMEOUT = 20
+local DUNGEON_STAGE_WAIT = 1
+
+local DungeonBackpackFull = false
+local DungeonReturning = false
+local DungeonPendingDrops = {}
+local DungeonPickedDrops = {}
+local DungeonDeniedDrops = {}
+local DungeonReservedModels = {}
+local DungeonLootBusy = false
+local DungeonStageMoving = false
+
+local function dungeonEnabled()
+    return not Destroyed and Settings.Dungeon == true
+end
+
+local function dungeonStatus(message)
+    if DungeonStatus and DungeonStatus.Parent then
+        DungeonStatus.Text = "Dungeon: " .. tostring(message)
+    end
+end
+
+local function dungeonGetRoot()
+    local character = Player.Character
+    return character and character:FindFirstChild("HumanoidRootPart")
+end
+
+local function dungeonGetBackpackTitle()
+    local ok, result = pcall(function()
+        return DungeonPlayerGui
+            :WaitForChild("ScreenGui")
+            :WaitForChild("MainUIs")
+            :WaitForChild("PlayerHUD")
+            :WaitForChild("Stats")
+            :WaitForChild("Backpack")
+            :WaitForChild("Title")
+    end)
+    if ok then return result end
+    return nil
+end
+
+local function dungeonIsBackpackFull()
+    local title = dungeonGetBackpackTitle()
+    if not title then return DungeonBackpackFull end
+
+    local current, maximum = tostring(title.Text or ""):match("(%d+)%s*/%s*(%d+)")
+    current, maximum = tonumber(current), tonumber(maximum)
+
+    if current and maximum and maximum > 0 then
+        return current >= maximum
+    end
+    return DungeonBackpackFull
+end
+
+local function dungeonGetLootFolder()
+    return workspace:FindFirstChild("LootDrops")
+end
+
+local function dungeonGetLootAnchor(model)
+    if not model or not model.Parent then return nil end
+
+    local anchor = model:FindFirstChild("LootAnchor", true)
+    if anchor and anchor:IsA("BasePart") then return anchor end
+
+    if model:IsA("BasePart") then return model end
+    if model:IsA("Model") then
+        return model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
+    end
+    return nil
+end
+
+local function dungeonAttributeMatches(model, dropId)
+    for _, key in ipairs({"DropId", "LootId", "PickupId", "Id", "id"}) do
+        local value = model:GetAttribute(key)
+        if value ~= nil and tostring(value) == tostring(dropId) then
+            return true
+        end
+    end
+    return false
+end
+
+local function dungeonFindDropModel(dropData)
+    local folder = workspace:FindFirstChild("LootDrops")
+    if not folder then return nil end
+
+    local dropId = dropData.id
+    local itemId = dropData.itemId or dropData.item or dropData.IngredientId
+
+    for _, model in ipairs(folder:GetDescendants()) do
+        if (model:IsA("Model") or model:IsA("BasePart"))
+            and not DungeonReservedModels[model] then
+            local modelName = tostring(model.Name)
+            local wantedId = tostring(dropId)
+            local normalizedName = modelName:gsub("^[dD]", "")
+            local normalizedId = wantedId:gsub("^[dD]", "")
+            if modelName == wantedId
+                or normalizedName == normalizedId
+                or dungeonAttributeMatches(model, dropId) then
+                return model
+            end
+        end
+    end
+
+    if itemId ~= nil then
+        for _, model in ipairs(folder:GetDescendants()) do
+            if (model:IsA("Model") or model:IsA("BasePart"))
+                and not DungeonReservedModels[model]
+                and tostring(model.Name) == tostring(itemId) then
+                return model
+            end
+        end
+    end
+
+    local targetPosition = dropData.position or dropData.Position
+    if typeof(targetPosition) == "CFrame" then
+        targetPosition = targetPosition.Position
+    end
+
+    if typeof(targetPosition) == "Vector3" then
+        local bestModel, bestDistance = nil, math.huge
+        for _, model in ipairs(folder:GetDescendants()) do
+            if (model:IsA("Model") or model:IsA("BasePart"))
+                and not DungeonReservedModels[model] then
+                local anchor = dungeonGetLootAnchor(model)
+                if anchor then
+                    local distance = (anchor.Position - targetPosition).Magnitude
+                    if distance < bestDistance then
+                        bestDistance, bestModel = distance, model
+                    end
+                end
+            end
+        end
+        if bestDistance <= 30 then return bestModel end
+    end
+
+    return nil
+end
+
+local function dungeonTeleportToDrop(model)
+    if not dungeonEnabled() or not model or not model.Parent then return false end
+
+    local anchor = dungeonGetLootAnchor(model)
+    local root = dungeonGetRoot()
+    if not anchor or not root then return false end
+
+    DungeonLootBusy = true
+    dungeonStatus("TP langsung ke drop " .. model.Name)
+
+    local ok = pcall(function()
+        root.CFrame = CFrame.new(anchor.Position + Vector3.new(0, 3, 0))
+    end)
+
+    task.wait(0.2)
+    root = dungeonGetRoot()
+    local reached = ok and root and (root.Position - anchor.Position).Magnitude <= 12
+    DungeonLootBusy = false
+    return reached == true
+end
+
+local function dungeonPickupDrop(dropData)
+    if not dungeonEnabled() or DungeonBackpackFull or DungeonReturning then return end
+    if type(dropData) ~= "table" or dropData.id == nil then return end
+
+    local dropId = dropData.id
+    if DungeonPickedDrops[dropId] or DungeonPendingDrops[dropId] then return end
+    DungeonPendingDrops[dropId] = true
+
+    task.spawn(function()
+        -- Skip the old long loot-flight delay; scan for the client drop quickly.
+        task.wait(DUNGEON_LAND_EXTRA)
+
+        local model
+        for attempt = 1, 12 do
+            if not dungeonEnabled() or DungeonBackpackFull or DungeonReturning then break end
+            model = dungeonFindDropModel(dropData)
+            if model then break end
+            task.wait(0.08)
+        end
+
+        if model and dungeonEnabled() and not DungeonBackpackFull then
+            DungeonReservedModels[model] = true
+            dungeonTeleportToDrop(model)
+        else
+            -- If the event already contains a world position, use it directly
+            -- rather than waiting for a matching client model to appear.
+            local targetPosition = dropData.position or dropData.Position
+            if typeof(targetPosition) == "CFrame" then
+                targetPosition = targetPosition.Position
+            end
+            local root = dungeonGetRoot()
+            if typeof(targetPosition) == "Vector3" and root and dungeonEnabled() then
+                DungeonLootBusy = true
+                pcall(function()
+                    root.CFrame = CFrame.new(targetPosition + Vector3.new(0, 3, 0))
+                end)
+                task.wait(0.08)
+                DungeonLootBusy = false
+            end
+        end
+
+        while dungeonEnabled() and not DungeonBackpackFull and not DungeonReturning do
+            if DungeonPickedDrops[dropId] then break end
+
+            pcall(function()
+                DungeonLootRemote:FireServer("pickup", dropId)
+            end)
+
+            task.wait(DUNGEON_PICKUP_RETRY)
+
+            if not DungeonDeniedDrops[dropId] then break end
+            DungeonDeniedDrops[dropId] = nil
+        end
+
+        if model then DungeonReservedModels[model] = nil end
+        DungeonPendingDrops[dropId] = nil
+        DungeonLootBusy = false
+    end)
+end
+
+DungeonLootConnection = DungeonLootRemote.OnClientEvent:Connect(function(action, ...)
+    if Destroyed then return end
+    local args = {...}
+
+    if action == "drop" then
+        local dropList = args[1]
+        if type(dropList) == "table" then
+            for _, dropData in pairs(dropList) do
+                dungeonPickupDrop(dropData)
+            end
+        end
+    elseif action == "picked" then
+        local dropId = args[1]
+        if dropId ~= nil then
+            DungeonPickedDrops[dropId] = true
+            DungeonPendingDrops[dropId] = nil
+            DungeonDeniedDrops[dropId] = nil
+        end
+    elseif action == "denied" then
+        local dropId = args[1]
+        if dropId ~= nil then DungeonDeniedDrops[dropId] = true end
+    elseif action == "full" then
+        DungeonBackpackFull = true
+        dungeonStatus("Backpack penuh")
+    end
+end)
+
+task.spawn(function()
+    while not Destroyed do
+        if dungeonEnabled() and dungeonIsBackpackFull() then
+            DungeonBackpackFull = true
+            dungeonStatus("Backpack penuh")
+        end
+        task.wait(DUNGEON_BACKPACK_CHECK)
+    end
+end)
+
+local function dungeonAreaNumber(name)
+    return tonumber(tostring(name):match("[Aa]rea(%d+)$"))
+end
+
+local function dungeonStageNumber(name)
+    return tonumber(tostring(name):match("[Ss]tage(%d+)$"))
+end
+
+local function dungeonGetStages()
+    local stages = {}
+    local areaPrefix = tostring(Config.AreaPrefix or "Area")
+    local stagePrefix = tostring(Config.StagePrefix or "Stage")
+
+    for _, area in ipairs(workspace:GetChildren()) do
+        local areaNumber = dungeonAreaNumber(area.Name)
+        if area:IsA("Folder") and areaNumber
+            and area.Name:sub(1, #areaPrefix):lower() == areaPrefix:lower() then
+            for _, stage in ipairs(area:GetChildren()) do
+                local stageNumber = dungeonStageNumber(stage.Name)
+                if stage:IsA("Folder") and stageNumber
+                    and stage.Name:sub(1, #stagePrefix):lower() == stagePrefix:lower() then
+                    table.insert(stages, {
+                        Object = stage,
+                        Area = area,
+                        AreaNumber = areaNumber,
+                        StageNumber = stageNumber
+                    })
+                end
+            end
+        end
+    end
+
+    table.sort(stages, function(a, b)
+        if a.AreaNumber == b.AreaNumber then
+            return a.StageNumber < b.StageNumber
+        end
+        return a.AreaNumber < b.AreaNumber
+    end)
+    return stages
+end
+
+local function dungeonGetZone(stage)
+    local zoneName = tostring(Config.ZonePartName or "Zone")
+    for _, child in ipairs(stage:GetChildren()) do
+        if child:IsA("BasePart") and child.Name:lower() == zoneName:lower() then
+            return child
+        end
+    end
+    return nil
+end
+
+local function dungeonGetClearedStages()
+    local attributeName = tostring(Config.StagesClearedAttribute or "StagesCleared")
+    local raw = Player:GetAttribute(attributeName)
+    local cleared = {}
+    if type(raw) == "string" then
+        for name in raw:gmatch("[^|]+") do
+            cleared[name] = true
+        end
+    end
+    return cleared
+end
+
+local function dungeonGetStartingArea(stages)
+    local root = dungeonGetRoot()
+    if not root then return nil end
+
+    local bestArea, bestDistance = nil, math.huge
+    for _, entry in ipairs(stages) do
+        local zone = dungeonGetZone(entry.Object)
+        if zone then
+            local distance = (root.Position - zone.Position).Magnitude
+            if distance < bestDistance then
+                bestDistance, bestArea = distance, entry.AreaNumber
+            end
+        end
+    end
+    return bestArea
+end
+
+local function dungeonStageCleared(stage, area, cleared)
+    return cleared[stage:GetFullName()]
+        or cleared[area.Name .. "." .. stage.Name]
+        or cleared[area.Name .. "_" .. stage.Name]
+        or cleared[stage.Name]
+end
+
+local function dungeonMoveToPosition(position, distance, timeout)
+    local character = Player.Character
+    local root = dungeonGetRoot()
+
+    if not character or not root then
+        return false
+    end
+
+    DungeonStageMoving = true
+
+    local path = DungeonPathfindingService:CreatePath({
+        AgentRadius = 2,
+        AgentHeight = 5,
+        AgentCanJump = true,
+        WaypointSpacing = 5
+    })
+
+    local ok = pcall(function()
+        path:ComputeAsync(root.Position, position)
+    end)
+
+    if not ok or path.Status ~= Enum.PathStatus.Success then
+        DungeonStageMoving = false
+        return false
+    end
+
+    local started = os.clock()
+    local maxTime = timeout or DUNGEON_STAGE_TIMEOUT
+
+    for _, waypoint in ipairs(path:GetWaypoints()) do
+        if not dungeonEnabled() or DungeonBackpackFull then
+            break
+        end
+
+        while DungeonLootBusy and dungeonEnabled() do
+            task.wait(0.15)
+        end
+
+        root = dungeonGetRoot()
+        if not root then
+            break
+        end
+
+        -- TP bertahap maksimal 10 stud mengikuti waypoint Pathfinding
+        local startPosition = root.Position
+        local targetPosition = waypoint.Position
+        local direction = targetPosition - startPosition
+        local totalDistance = direction.Magnitude
+        local steps = math.max(1, math.ceil(totalDistance / 10))
+
+        for step = 1, steps do
+            if not dungeonEnabled() or DungeonBackpackFull then
+                break
+            end
+
+            if os.clock() - started > maxTime then
+                break
+            end
+
+            root = dungeonGetRoot()
+            if not root then
+                break
+            end
+
+            local nextPosition = startPosition:Lerp(
+    targetPosition,
+    step / steps
+)
+
+-- Cek lantai sebelum teleport
+local rayParams = RaycastParams.new()
+rayParams.FilterType = Enum.RaycastFilterType.Exclude
+rayParams.FilterDescendantsInstances = {character}
+
+local rayOrigin = nextPosition + Vector3.new(0, 12, 0)
+local rayDirection = Vector3.new(0, -60, 0)
+
+local ground = workspace:Raycast(
+    rayOrigin,
+    rayDirection,
+    rayParams
+)
+
+-- Kalau tidak ada lantai, batalkan pergerakan
+if not ground then
+    break
+end
+
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+local heightOffset = humanoid
+    and (humanoid.HipHeight + root.Size.Y / 2)
+    or 3
+
+local safePosition = Vector3.new(
+    nextPosition.X,
+    ground.Position.Y + heightOffset,
+    nextPosition.Z
+)
+
+root.CFrame = CFrame.new(safePosition) * root.CFrame.Rotation
+
+task.wait(0.05)
+        end
+
+        if os.clock() - started > maxTime then
+            break
+        end
+    end
+
+    root = dungeonGetRoot()
+
+    local reached = root
+        and (root.Position - position).Magnitude <= (distance or 7)
+
+    DungeonStageMoving = false
+
+    return reached == true
+end
+
+local function dungeonRunStages()
+    local stages = dungeonGetStages()
+    if #stages == 0 then
+        dungeonStatus("Area/Stage belum ditemukan")
+        task.wait(2)
+        return
+    end
+
+    -- Area suffix awal mengikuti area terdekat dari posisi saat ini, bukan Area1.
+    local startArea = dungeonGetStartingArea(stages) or stages[1].AreaNumber
+
+    while dungeonEnabled() and not DungeonBackpackFull do
+        local cleared = dungeonGetClearedStages()
+        local nextEntry = nil
+
+        for _, entry in ipairs(stages) do
+            if entry.AreaNumber >= startArea
+                and not dungeonStageCleared(entry.Object, entry.Area, cleared) then
+                nextEntry = entry
+                break
+            end
+        end
+
+        if not nextEntry then
+            dungeonStatus("Stage terakhir selesai - standby menunggu backpack penuh")
+            while dungeonEnabled() and not DungeonBackpackFull do
+                if dungeonIsBackpackFull() then
+                    DungeonBackpackFull = true
+                    break
+                end
+                task.wait(0.5)
+            end
+            break
+        end
+
+        local zone = dungeonGetZone(nextEntry.Object)
+        if zone then
+            while DungeonLootBusy and dungeonEnabled() do task.wait(0.15) end
+            if not dungeonEnabled() then break end
+
+            dungeonStatus(nextEntry.Area.Name .. " / " .. nextEntry.Object.Name)
+            dungeonMoveToPosition(zone.Position, 7, DUNGEON_STAGE_TIMEOUT)
+            task.wait(DUNGEON_STAGE_WAIT)
+        else
+            dungeonStatus("Zone tidak ditemukan: " .. nextEntry.Area.Name .. "/" .. nextEntry.Object.Name)
+            task.wait(1.5)
+        end
+    end
+end
+
+local function dungeonReturnAndReset()
+    if DungeonReturning then return end
+    DungeonReturning = true
+    DungeonBackpackFull = true
+    dungeonStatus("Backpack penuh - Return")
+
+    pcall(function()
+        DungeonReturnRemote:FireServer()
+    end)
+
+    task.wait(DUNGEON_RETURN_WAIT)
+
+    table.clear(DungeonPendingDrops)
+    table.clear(DungeonPickedDrops)
+    table.clear(DungeonDeniedDrops)
+    table.clear(DungeonReservedModels)
+
+    DungeonLootBusy = false
+    DungeonStageMoving = false
+    DungeonBackpackFull = false
+    DungeonReturning = false
+end
+
+task.spawn(function()
+    while not Destroyed do
+        if not dungeonEnabled() then
+            task.wait(0.25)
+        else
+            dungeonStatus("Memasuki dungeon...")
+            local ok, result = pcall(function()
+                return DungeonTeleportRemote:InvokeServer(DUNGEON_ID)
+            end)
+
+            if not ok then
+                dungeonStatus("Teleport gagal: " .. tostring(result))
+                task.wait(3)
+            else
+                dungeonStatus("Aktif | Area suffix otomatis | Pathfinding ON")
+                task.wait(3)
+
+                while dungeonEnabled() and not DungeonBackpackFull do
+                    dungeonRunStages()
+                    if DungeonBackpackFull or not dungeonEnabled() then break end
+
+                    dungeonStatus("Stage selesai - standby menunggu backpack penuh")
+                    while dungeonEnabled() and not DungeonBackpackFull do
+                        if dungeonIsBackpackFull() then
+                            DungeonBackpackFull = true
+                            break
+                        end
+                        task.wait(0.5)
+                    end
+                end
+
+                if dungeonEnabled() and DungeonBackpackFull then
+                    dungeonReturnAndReset()
+                end
+            end
+        end
+    end
+end)
+
+
+-- READY
+
+--============================================================
+
+
+
+print("[DELTA ALL IN ONE] Smooth Physics Orbit Loaded")
