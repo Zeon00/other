@@ -1520,9 +1520,6 @@ SetStatus("Semua fitur siap. Pilih toggle yang ingin dijalankan.", true)
 
 print("ULTIMATE AUTOMATION HUB | 6 TOGGLES LOADED")   
 
-end
-
-do
 --============================================================
 -- AUTO VELZARETH RAID
 -- STANDALONE GUI | PC + MOBILE
@@ -1747,9 +1744,6 @@ TrackConnection(Player.CharacterAdded:Connect(function()
     end
 end))
 
-end
-
-do
 --============================================================
 -- AUTO TP STAGE 1-34 + AUTO RETURN LOOP
 -- STANDALONE GUI | PC + MOBILE | NO ASH-LIBS
