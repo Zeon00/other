@@ -1,4 +1,13 @@
 --============================================================
+-- UNIFIED AUTOMATION HUB
+-- Semua fitur dari file sumber | toggle tetap terpisah
+-- Satu GUI | LOG REPORT | MINIMIZE TO ICON | X DESTROY
+-- Draggable PC + Mobile
+-- Catatan: logika fitur dipertahankan; yang digabung hanya GUI/kontrol.
+--============================================================
+
+do
+--============================================================
 -- HOLLOW + DUNGEON LOOTS | ULTIMATE AUTOMATION HUB
 -- STANDALONE GUI | PC + MOBILE | NO ASH-LIBS
 --
@@ -25,7 +34,7 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 -- CONFIG
 --============================================================
 
-local GUI_NAME = "UltimateAutomationHub"
+local GUI_NAME = "UnifiedAutomationHub"
 
 -- Hollow orbit
 local ORBIT_RADIUS = 13
@@ -41,8 +50,8 @@ local PATH_REFRESH = 1.2
 
 -- Dungeon Loots orbit
 local ENEMY_MAX_DISTANCE = 50
-local ENEMY_ORBIT_RADIUS = 15
-local ENEMY_ORBIT_HEIGHT = 3
+local ENEMY_ORBIT_RADIUS = 8
+local ENEMY_ORBIT_HEIGHT = 12
 local ENEMY_ORBIT_SPEED = 2
 
 --============================================================
@@ -66,7 +75,8 @@ local Session = {
 	Alive = true,
 	Connections = {},
 	Tasks = {},
-	Cleaning = false
+	Cleaning = false,
+    Cleanups = {}
 }
 
 _G.UltimateAutomationSession = Session
@@ -103,8 +113,8 @@ Gui.Parent = PlayerGui
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(325, 420)
-Main.Position = UDim2.new(0.5, -162, 0.5, -210)
+Main.Size = UDim2.fromOffset(340, 560)
+Main.Position = UDim2.new(0.5, -170, 0.5, -280)
 Main.BackgroundColor3 = Color3.fromRGB(24, 18, 35)
 Main.BorderSizePixel = 0
 Main.Active = true
@@ -176,7 +186,7 @@ local Close = MakeButton(
 local Content = Instance.new("ScrollingFrame")
 Content.Name = "ToggleList"
 Content.Position = UDim2.fromOffset(10, 51)
-Content.Size = UDim2.new(1, -20, 1, -105)
+Content.Size = UDim2.new(1, -20, 1, -225)
 Content.BackgroundTransparency = 1
 Content.BorderSizePixel = 0
 Content.ScrollBarThickness = 4
@@ -198,8 +208,8 @@ Padding.PaddingRight = UDim.new(0, 5)
 Padding.Parent = Content
 
 local GlobalStatus = Instance.new("TextLabel")
-GlobalStatus.Size = UDim2.new(1, -20, 0, 40)
-GlobalStatus.Position = UDim2.new(0, 10, 1, -45)
+GlobalStatus.Size = UDim2.new(1, -20, 0, 34)
+GlobalStatus.Position = UDim2.new(0, 10, 1, -126)
 GlobalStatus.BackgroundColor3 = Color3.fromRGB(35, 27, 45)
 GlobalStatus.BorderSizePixel = 0
 GlobalStatus.Text = "Status: Standby"
@@ -210,6 +220,62 @@ GlobalStatus.TextWrapped = true
 GlobalStatus.Parent = Main
 
 Instance.new("UICorner", GlobalStatus).CornerRadius = UDim.new(0, 7)
+
+-- LOG REPORT
+local LogPanel = Instance.new("ScrollingFrame")
+LogPanel.Name = "LogReport"
+LogPanel.Position = UDim2.new(0, 10, 1, -84)
+LogPanel.Size = UDim2.new(1, -20, 0, 76)
+LogPanel.BackgroundColor3 = Color3.fromRGB(20, 16, 28)
+LogPanel.BorderSizePixel = 0
+LogPanel.ScrollBarThickness = 3
+LogPanel.CanvasSize = UDim2.new()
+LogPanel.AutomaticCanvasSize = Enum.AutomaticSize.Y
+LogPanel.Parent = Main
+Instance.new("UICorner", LogPanel).CornerRadius = UDim.new(0, 7)
+
+local LogLayout = Instance.new("UIListLayout")
+LogLayout.Padding = UDim.new(0, 2)
+LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+LogLayout.Parent = LogPanel
+
+local LogPadding = Instance.new("UIPadding")
+LogPadding.PaddingTop = UDim.new(0, 5)
+LogPadding.PaddingBottom = UDim.new(0, 5)
+LogPadding.PaddingLeft = UDim.new(0, 6)
+LogPadding.PaddingRight = UDim.new(0, 6)
+LogPadding.Parent = LogPanel
+
+local LastLogMessage
+local function AddLog(message, success)
+    if not Gui or not Gui.Parent then return end
+    message = tostring(message)
+    if message == LastLogMessage then return end
+    LastLogMessage = message
+    local line = Instance.new("TextLabel")
+    line.BackgroundTransparency = 1
+    line.Size = UDim2.new(1, -4, 0, 17)
+    line.AutomaticSize = Enum.AutomaticSize.Y
+    line.TextWrapped = true
+    line.TextXAlignment = Enum.TextXAlignment.Left
+    line.Font = Enum.Font.Code
+    line.TextSize = 10
+    line.TextColor3 = success and Color3.fromRGB(145, 225, 170)
+        or Color3.fromRGB(245, 175, 135)
+    line.Text = os.date("%H:%M:%S") .. " | " .. tostring(message)
+    line.Parent = LogPanel
+    local count = #LogPanel:GetChildren()
+    if count > 100 then
+        for _, child in ipairs(LogPanel:GetChildren()) do
+            if child:IsA("TextLabel") then child:Destroy(); break end
+        end
+    end
+    task.defer(function()
+        if LogPanel.Parent then
+            LogPanel.CanvasPosition = Vector2.new(0, math.max(0, LogLayout.AbsoluteContentSize.Y))
+        end
+    end)
+end
 
 local Restore = MakeButton(
 	Gui,
@@ -226,6 +292,7 @@ local function SetStatus(message, success)
 	if not Running() then return end
 
 	GlobalStatus.Text = "Status: " .. tostring(message)
+    AddLog(message, success)
 	GlobalStatus.TextColor3 = success
 		and Color3.fromRGB(125, 235, 165)
 		or Color3.fromRGB(255, 175, 125)
@@ -389,6 +456,53 @@ local function AddToggle(name, default, callback)
 
 	return reference
 end
+
+
+--============================================================
+-- 541 + 540 HAUL (LOGIKA ASLI, GUI TERPADU)
+--============================================================
+local MainEvent541 = RS:WaitForChild("Remotes"):WaitForChild("MainEvent")
+local MainFunction540 = RS:WaitForChild("Remotes"):WaitForChild("MainFunction")
+local state541, state540 = false, false
+local run541, run540 = 0, 0
+
+AddToggle("541", false, function(state)
+    state541 = state
+    run541 += 1
+    local thisRun = run541
+    if not state then return end
+    task.spawn(function()
+        while Running() and state541 and run541 == thisRun and Gui.Parent do
+            for i = 1, 8 do
+                if not Running() or not state541 or run541 ~= thisRun or not Gui.Parent then
+                    return
+                end
+                pcall(function() MainEvent541:FireServer(541, i) end)
+                task.wait(0.05)
+            end
+            task.wait(0.05)
+        end
+    end)
+end)
+
+AddToggle("540 HAUL", false, function(state)
+    state540 = state
+    run540 += 1
+    local thisRun = run540
+    if not state then return end
+    task.spawn(function()
+        while Running() and state540 and run540 == thisRun and Gui.Parent do
+            if not Running() or not state540 or run540 ~= thisRun then return end
+            pcall(function() MainFunction540:InvokeServer(540, "Haul") end)
+            for _ = 1, 150 do
+                if not Running() or not state540 or run540 ~= thisRun or not Gui.Parent then
+                    return
+                end
+                task.wait(0.1)
+            end
+        end
+    end)
+end)
 
 --============================================================
 -- SHARED CHARACTER HELPERS
@@ -1362,6 +1476,12 @@ local function Cleanup()
 	_G.OrbitEnemies = false
 
 	StopAutoRunHollow()
+    state541, state540 = false, false
+    run541 += 1
+    run540 += 1
+    for _, cleanupFn in ipairs(Session.Cleanups) do
+        pcall(cleanupFn)
+    end
 
 	for _, connection in ipairs(Session.Connections) do
 		pcall(function()
@@ -1398,4 +1518,583 @@ end)
 
 SetStatus("Semua fitur siap. Pilih toggle yang ingin dijalankan.", true)
 
-print("ULTIMATE AUTOMATION HUB | 6 TOGGLES LOADED")
+print("ULTIMATE AUTOMATION HUB | 6 TOGGLES LOADED")   
+
+end
+
+do
+--============================================================
+-- AUTO VELZARETH RAID
+-- STANDALONE GUI | PC + MOBILE
+-- PRIORITY: ENEMIES > BLOOD CRYSTAL > DRAGON > AGAIN
+-- ORBIT: 12 / 7 / 2
+--============================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Player = Players.LocalPlayer
+
+local RADIUS = 12
+local HEIGHT = 7
+local SPEED = 2
+
+local running = false
+local token = 0
+local angle = 0
+local lastAgain = 0
+
+local function getCharacter()
+    return Player.Character
+end
+
+local function getRoot()
+    local char = getCharacter()
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function getTargetPart(obj)
+    if not obj then return nil end
+
+    if obj:IsA("BasePart") then
+        return obj
+    end
+
+    if obj:IsA("Model") then
+        return obj.PrimaryPart
+            or obj:FindFirstChild("HumanoidRootPart")
+            or obj:FindFirstChild("Head")
+            or obj:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    return nil
+end
+local MOB_MAX_DISTANCE = 50
+
+local function getLivingMob()
+    local folder = workspace:FindFirstChild("EnemiesClient")
+    local root = getRoot()
+
+    if not folder or not root then return nil end
+
+    for _, mob in ipairs(folder:GetChildren()) do
+        local hum = mob:FindFirstChildOfClass("Humanoid")
+        local part = getTargetPart(mob)
+
+        if part and (not hum or hum.Health > 0) then
+            local distance = (root.Position - part.Position).Magnitude
+
+            if distance <= MOB_MAX_DISTANCE then
+                return mob
+            end
+        end
+    end
+
+    return nil
+end
+local function getBloodCrystal()
+    local folder = workspace:FindFirstChild("VelzarethRaidClient")
+    if not folder then return nil end
+
+    for _, obj in ipairs(folder:GetChildren()) do
+        if obj.Name:match("^BloodCrystal_") then
+            local part = getTargetPart(obj)
+            if part then
+                return obj
+            end
+        end
+    end
+
+    return nil
+end
+
+local function getDragon()
+    local folder = workspace:FindFirstChild("VelzarethRaidClient")
+    if not folder then return nil end
+
+    local dragon = folder:FindFirstChild("Dragon")
+    if dragon and getTargetPart(dragon) then
+        return dragon
+    end
+
+    return nil
+end
+
+local function orbitTarget(target, dt)
+    local root = getRoot()
+    local part = getTargetPart(target)
+
+    if not root or not part then return end
+
+    angle += SPEED * dt
+
+    local offset = Vector3.new(
+        math.cos(angle) * RADIUS,
+        HEIGHT,
+        math.sin(angle) * RADIUS
+    )
+
+    local destination = part.Position + offset
+    root.CFrame = CFrame.lookAt(destination, part.Position)
+    root.AssemblyLinearVelocity = Vector3.zero
+end
+
+local function useAgain()
+    if os.clock() - lastAgain < 3 then return end
+    lastAgain = os.clock()
+
+    task.spawn(function()
+        pcall(function()
+            ReplicatedStorage
+                :WaitForChild("Remotes")
+                :WaitForChild("MainFunction")
+                :InvokeServer(500, "Again")
+        end)
+    end)
+end
+
+local function start()
+    token += 1
+    local myToken = token
+
+    task.spawn(function()
+        while running and token == myToken do
+            local dt = RunService.Heartbeat:Wait()
+
+            local root = getRoot()
+            if not root then
+                continue
+            end
+
+            -- PRIORITAS 1: HABISKAN MOB DULU
+            local mob = getLivingMob()
+            if mob then
+                orbitTarget(mob, dt)
+                continue
+            end
+
+            -- PRIORITAS 2: BLOOD CRYSTAL
+            local crystal = getBloodCrystal()
+            if crystal then
+                orbitTarget(crystal, dt)
+                continue
+            end
+
+            -- PRIORITAS 3: DRAGON
+            local dragon = getDragon()
+            if dragon then
+                orbitTarget(dragon, dt)
+                continue
+            end
+
+-- HITBODY HILANG: TUNGGU 2.5 DETIK, LALU AGAIN
+local raidFolder = workspace:FindFirstChild("VelzarethRaidClient")
+local hitBody = raidFolder and raidFolder:FindFirstChild("VelzarethHitBody")
+
+if not hitBody then
+    task.wait(2.5)
+
+    raidFolder = workspace:FindFirstChild("VelzarethRaidClient")
+    hitBody = raidFolder and raidFolder:FindFirstChild("VelzarethHitBody")
+
+    if running and token == myToken
+        and not hitBody
+        and not getLivingMob()
+        and not getBloodCrystal() then
+        useAgain()
+    end
+end
+        end
+
+        local r = getRoot()
+        if r then
+            r.AssemblyLinearVelocity = Vector3.zero
+        end
+    end)
+end
+
+local function stop()
+    running = false
+    token += 1
+
+    local root = getRoot()
+    if root then
+        root.AssemblyLinearVelocity = Vector3.zero
+    end
+end
+
+
+AddToggle("Auto Velzareth Raid", false, function(state)
+    running = state
+    if running then
+        start()
+        SetStatus("Auto Velzareth Raid aktif", true)
+    else
+        stop()
+        SetStatus("Auto Velzareth Raid OFF", false)
+    end
+end)
+
+table.insert(Session.Cleanups, function()
+    stop()
+end)
+
+TrackConnection(Player.CharacterAdded:Connect(function()
+    if running then
+        task.wait(1)
+        if running and Running() then start() end
+    end
+end))
+
+end
+
+do
+--============================================================
+-- AUTO TP STAGE 1-34 + AUTO RETURN LOOP
+-- STANDALONE GUI | PC + MOBILE | NO ASH-LIBS
+-- TELEPORT RETRY | DROP DELAY | REMOTE 42
+--============================================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local GUI_NAME = "AutoWalkReturnStandalone"
+local MAX_STAGE = 34
+local DROP_PICKUP_DELAY = 0.05
+local TARGET_HEIGHT = 3
+local RETRY_DELAY = 1
+local RETURN_TIMEOUT = 120
+
+_G.AutoWalkReturnRunId = (_G.AutoWalkReturnRunId or 0) + 1
+local RunId = _G.AutoWalkReturnRunId
+
+local Enabled = false
+local Destroyed = false
+local Returning = false
+local Busy = false
+local WalkLoopRunning = false
+
+--============================================================
+-- STATE
+--============================================================
+
+local function alive()
+    return Enabled and not Destroyed
+        and not Returning
+        and _G.AutoWalkReturnRunId == RunId
+end
+
+local function getCharacter()
+    local Character = Player.Character
+    if not Character then return end
+
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+
+    if not Humanoid or not Root or Humanoid.Health <= 0 then
+        return
+    end
+
+    return Character, Humanoid, Root
+end
+
+local function getRunMaxClear()
+    local Value = Player:GetAttribute("RunMaxClear")
+    return type(Value) == "number" and Value or 0
+end
+
+--============================================================
+-- LOOT CAPACITY
+--============================================================
+
+local function getLootText()
+    local ok, label = pcall(function()
+        return PlayerGui.MainGui.Main.BottomLeft.LootCapacity.Label
+    end)
+
+    if ok and label then
+        return label.Text
+    end
+
+    return nil
+end
+
+local function parseCapacity(Text)
+    if type(Text) ~= "string" then return nil end
+
+    local Current, Maximum = Text:match("(%d+)%s*/%s*(%d+)")
+    return tonumber(Current), tonumber(Maximum)
+end
+
+local function isLootEmpty()
+    local Current, Maximum = parseCapacity(getLootText())
+    return Current == 0 and Maximum ~= nil and Maximum > 0
+end
+
+--============================================================
+-- STAGE TARGET
+--============================================================
+
+local function getStageArea(StageNumber)
+    local Map = workspace:FindFirstChild("Map")
+    local StageFolder = Map and Map:FindFirstChild("Stages")
+    local Stage = StageFolder and StageFolder:FindFirstChild(tostring(StageNumber))
+
+    if not Stage then return nil end
+
+    local Area = Stage:FindFirstChild("LevelArea")
+        or Stage:FindFirstChild("BattleArea")
+
+    if not Area then return nil end
+
+    if Area:IsA("BasePart") then
+        return Area
+    elseif Area:IsA("Model") then
+        return Area.PrimaryPart or Area:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    return Area:FindFirstChildWhichIsA("BasePart", true)
+end
+
+--============================================================
+-- TELEPORT
+--============================================================
+
+local function moveToStage(StageNumber)
+    if not alive() then
+        return false, "Stopped"
+    end
+
+    local Target = getStageArea(StageNumber)
+    if not Target then
+        return false, "Stage area tidak ditemukan"
+    end
+
+    local _, Humanoid, Root = getCharacter()
+    if not Humanoid or not Root then
+        return false, "Character belum siap"
+    end
+
+    local Position = Target.Position + Vector3.new(0, TARGET_HEIGHT, 0)
+
+    Root.AssemblyLinearVelocity = Vector3.zero
+    Root.AssemblyAngularVelocity = Vector3.zero
+    Root.CFrame = CFrame.new(Position)
+
+    task.wait(0.4)
+
+    if not alive() then
+        return false, "Stopped"
+    end
+
+    local _, _, NewRoot = getCharacter()
+    if not NewRoot then
+        return false, "Root hilang"
+    end
+
+    return (NewRoot.Position - Position).Magnitude <= 15,
+        "Teleport gagal"
+end
+
+--============================================================
+-- FORWARD DECLARATION
+--============================================================
+
+local startWalk
+
+--============================================================
+-- RETURN TOWN
+--============================================================
+
+local function returnTown()
+    if Busy or not alive() then return end
+
+    Busy = true
+    Returning = true
+    SetStatus("LOOT FULL! Sending remote...", true)
+
+    local Success, ErrorMessage = pcall(function()
+        ReplicatedStorage:WaitForChild("Remotes")
+            :WaitForChild("MainEvent"):FireServer(42)
+    end)
+
+    if not Success then
+        Returning = false
+        Busy = false
+        SetStatus("Remote error: " .. tostring(ErrorMessage), true)
+        return
+    end
+
+    SetStatus("Menunggu loot reset di Town...", true)
+
+    local StartTime = os.clock()
+    local ResetDetected = false
+
+    while Enabled and not Destroyed
+        and _G.AutoWalkReturnRunId == RunId
+        and os.clock() - StartTime < RETURN_TIMEOUT do
+
+        if isLootEmpty() then
+            ResetDetected = true
+            break
+        end
+
+        task.wait(0.5)
+    end
+
+    if not Enabled or Destroyed
+        or _G.AutoWalkReturnRunId ~= RunId then
+        Busy = false
+        return
+    end
+
+    if ResetDetected then
+        SetStatus("Loot reset! Persiapan Stage 1...", true)
+        task.wait(2)
+
+        Returning = false
+        Busy = false
+
+        if Enabled and not Destroyed then
+            startWalk()
+        end
+    else
+        Returning = false
+        Busy = false
+        SetStatus("Loot belum reset! Cek Return Town.", true)
+    end
+end
+
+--============================================================
+-- MAIN STAGE LOOP
+--============================================================
+
+startWalk = function()
+    if WalkLoopRunning or not alive() then return end
+
+    WalkLoopRunning = true
+
+    task.spawn(function()
+        while alive() do
+            local Cleared = getRunMaxClear()
+
+            if Cleared >= MAX_STAGE then
+                SetStatus("Stage 1-38 selesai! Ulang run...", true)
+                task.wait(2)
+
+                if not alive() then break end
+                -- Jika run belum reset, tunggu reset dari game.
+                if getRunMaxClear() >= MAX_STAGE then
+                    SetStatus("Menunggu run berikutnya...", true)
+                    task.wait(2)
+                end
+
+                continue
+            end
+
+            local NextStage = Cleared + 1
+            SetStatus("Mencari Stage " .. NextStage, true)
+
+            local Success, Message = moveToStage(NextStage)
+
+            if not alive() then break end
+
+            if not Success then
+                SetStatus(tostring(Message) .. " | Retry...", true)
+                task.wait(RETRY_DELAY)
+                continue
+            end
+
+            SetStatus("Stage " .. NextStage .. " | Menunggu clear", true)
+
+            while alive() and getRunMaxClear() < NextStage do
+                task.wait(0.5)
+
+                -- Jika target belum memicu stage, coba teleport ulang.
+                if getRunMaxClear() < NextStage then
+                    local _, _, Root = getCharacter()
+                    local Target = getStageArea(NextStage)
+
+                    if not Target then
+                        SetStatus("Stage " .. NextStage .. " belum tersedia", true)
+                    elseif Root and (Root.Position - Target.Position).Magnitude > 18 then
+                        SetStatus("Stage " .. NextStage .. " | TP ulang...", true)
+                        moveToStage(NextStage)
+                    end
+                end
+            end
+
+            if not alive() then break end
+
+            if getRunMaxClear() >= NextStage then
+                SetStatus("Stage " .. NextStage .. " clear! Ambil drop...", true)
+
+                local StartTime = os.clock()
+                while alive() and os.clock() - StartTime < DROP_PICKUP_DELAY do
+                    task.wait(0.1)
+                end
+            end
+        end
+
+        WalkLoopRunning = false
+
+        if not Enabled or Destroyed then
+            return
+        end
+
+        if Returning then
+            return
+        end
+    end)
+end
+
+--============================================================
+-- LOOT MONITOR
+--============================================================
+
+task.spawn(function()
+    while not Destroyed and _G.AutoWalkReturnRunId == RunId do
+        local Current, Maximum = parseCapacity(getLootText())
+
+        if Current and Maximum then
+            AddLog("Loot: " .. Current .. "/" .. Maximum, true)
+
+            if alive() and Current >= Maximum then
+                returnTown()
+            end
+        else
+            AddLog("Loot: membaca TextLabel...", false)
+        end
+
+        task.wait(0.4)
+    end
+end)
+
+
+--============================================================
+-- AUTO TP STAGE 1-34 + RETURN | TOGGLE TERPADU
+--============================================================
+AddToggle("Auto TP Stage 1-34 + Return", false, function(state)
+    Enabled = state
+    if state then
+        Returning = false
+        SetStatus("Auto TP: Memulai...", true)
+        startWalk()
+    else
+        SetStatus("Auto TP: Dihentikan", false)
+    end
+end)
+
+table.insert(Session.Cleanups, function()
+    Destroyed = true
+    Enabled = false
+    Returning = true
+    _G.AutoWalkReturnRunId += 1
+end)
+
+end
