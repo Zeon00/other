@@ -1,0 +1,369 @@
+
+--========================================================
+-- AUTO HUB
+-- AUTO HIT | AUTO SWING POWER
+-- AUTO PICKUP | AUTO REBIRTH
+-- Standalone GUI | PC + Mobile | No Library
+-- DEFAULT OFF
+--========================================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+--========================================================
+-- CLEAN OLD INSTANCE
+--========================================================
+
+_G.AutoHubRunning = false
+
+local oldGui = PlayerGui:FindFirstChild("AutoHubStandalone")
+if oldGui then
+    oldGui:Destroy()
+end
+
+_G.AutoHubRunning = true
+local RunId = tick()
+
+local function alive()
+    return _G.AutoHubRunning and _G.AutoHubRunId == RunId
+end
+
+_G.AutoHubRunId = RunId
+
+--========================================================
+-- SERVICES
+--========================================================
+
+local Packages = ReplicatedStorage:WaitForChild("Packages")
+local Knit = require(Packages:WaitForChild("Knit"))
+
+local Services = Packages:WaitForChild("Knit"):WaitForChild("Services")
+
+local CombatService = Services:WaitForChild("CombatService")
+local ProgressService = Services:WaitForChild("ProgressService")
+
+local SwingRemote = CombatService:WaitForChild("RF"):WaitForChild("Swing")
+local RebirthRemote = ProgressService:WaitForChild("RF"):WaitForChild("Rebirth")
+
+local CombatController
+
+pcall(function()
+    CombatController = Knit.GetController("CombatController")
+end)
+
+--========================================================
+-- TOGGLE STATES
+--========================================================
+
+local States = {
+    Hit = false,
+    SwingPower = false,
+    Pickup = false,
+    Rebirth = false
+}
+
+local function stopAll()
+    for key in pairs(States) do
+        States[key] = false
+    end
+
+    pcall(function()
+        if CombatController then
+            CombatController:SetAutoClick(false)
+        end
+    end)
+
+    pcall(function()
+        LocalPlayer:SetAttribute("AutoCollect", false)
+    end)
+end
+
+--========================================================
+-- GUI
+--========================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "AutoHubStandalone"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.DisplayOrder = 999
+Gui.Parent = PlayerGui
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.fromOffset(285, 270)
+Main.Position = UDim2.new(0.5, -142, 0.5, -135)
+Main.BackgroundColor3 = Color3.fromRGB(25, 19, 38)
+Main.BorderSizePixel = 0
+Main.Parent = Gui
+
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(110, 75, 160)
+Stroke.Thickness = 1.4
+Stroke.Parent = Main
+
+local Top = Instance.new("Frame")
+Top.Size = UDim2.new(1, 0, 0, 38)
+Top.BackgroundColor3 = Color3.fromRGB(43, 30, 63)
+Top.BorderSizePixel = 0
+Top.Parent = Main
+Instance.new("UICorner", Top).CornerRadius = UDim.new(0, 10)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -85, 1, 0)
+Title.Position = UDim2.fromOffset(12, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "AUTOMATION HUB"
+Title.TextColor3 = Color3.fromRGB(240, 225, 255)
+Title.TextSize = 14
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Top
+
+local Minimize = Instance.new("TextButton")
+Minimize.Size = UDim2.fromOffset(28, 26)
+Minimize.Position = UDim2.new(1, -62, 0, 6)
+Minimize.BackgroundColor3 = Color3.fromRGB(75, 55, 100)
+Minimize.Text = "-"
+Minimize.TextColor3 = Color3.new(1, 1, 1)
+Minimize.TextSize = 18
+Minimize.Font = Enum.Font.GothamBold
+Minimize.Parent = Top
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(28, 26)
+Close.Position = UDim2.new(1, -31, 0, 6)
+Close.BackgroundColor3 = Color3.fromRGB(130, 48, 70)
+Close.Text = "X"
+Close.TextColor3 = Color3.new(1, 1, 1)
+Close.TextSize = 12
+Close.Font = Enum.Font.GothamBold
+Close.Parent = Top
+
+local Container = Instance.new("Frame")
+Container.Size = UDim2.new(1, -20, 1, -55)
+Container.Position = UDim2.fromOffset(10, 47)
+Container.BackgroundTransparency = 1
+Container.Parent = Main
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 8)
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Parent = Container
+
+local function createToggle(key, label, order)
+    local Button = Instance.new("TextButton")
+    Button.Name = key
+    Button.Size = UDim2.new(1, 0, 0, 43)
+    Button.BackgroundColor3 = Color3.fromRGB(48, 39, 65)
+    Button.BorderSizePixel = 0
+    Button.Text = label .. " : OFF"
+    Button.TextColor3 = Color3.fromRGB(245, 240, 255)
+    Button.TextSize = 13
+    Button.Font = Enum.Font.GothamBold
+    Button.LayoutOrder = order
+    Button.Parent = Container
+
+    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 7)
+
+    local function refresh()
+        local enabled = States[key]
+        Button.Text = label .. (enabled and " : ON" or " : OFF")
+        Button.BackgroundColor3 = enabled
+            and Color3.fromRGB(95, 55, 155)
+            or Color3.fromRGB(48, 39, 65)
+    end
+
+    return Button, refresh
+end
+
+local HitButton, refreshHit = createToggle("Hit", "AUTO HIT", 1)
+local SwingButton, refreshSwing = createToggle("SwingPower", "AUTO SWING POWER", 2)
+local PickupButton, refreshPickup = createToggle("Pickup", "AUTO PICKUP", 3)
+local RebirthButton, refreshRebirth = createToggle("Rebirth", "AUTO REBIRTH", 4)
+
+--========================================================
+-- AUTO HIT
+--========================================================
+
+HitButton.MouseButton1Click:Connect(function()
+    if not alive() then return end
+
+    States.Hit = not States.Hit
+
+    if States.Hit then
+        pcall(function()
+            CombatController = CombatController or Knit.GetController("CombatController")
+            CombatController:SetAutoClick(true)
+        end)
+    else
+        pcall(function()
+            if CombatController then
+                CombatController:SetAutoClick(false)
+            end
+        end)
+    end
+
+    refreshHit()
+end)
+
+--========================================================
+-- AUTO SWING POWER
+--========================================================
+
+SwingButton.MouseButton1Click:Connect(function()
+    if not alive() then return end
+
+    States.SwingPower = not States.SwingPower
+    refreshSwing()
+
+    if States.SwingPower then
+        task.spawn(function()
+            while alive() and States.SwingPower do
+                pcall(function()
+                    SwingRemote:InvokeServer({}, {})
+                end)
+
+                task.wait(0.05)
+            end
+        end)
+    end
+end)
+
+--========================================================
+-- AUTO PICKUP
+--========================================================
+
+PickupButton.MouseButton1Click:Connect(function()
+    if not alive() then return end
+
+    States.Pickup = not States.Pickup
+
+    pcall(function()
+        LocalPlayer:SetAttribute("AutoCollect", States.Pickup)
+    end)
+
+    refreshPickup()
+end)
+
+--========================================================
+-- AUTO REBIRTH
+--========================================================
+
+RebirthButton.MouseButton1Click:Connect(function()
+    if not alive() then return end
+
+    States.Rebirth = not States.Rebirth
+    refreshRebirth()
+
+    if States.Rebirth then
+        task.spawn(function()
+            while alive() and States.Rebirth do
+                pcall(function()
+                    RebirthRemote:InvokeServer()
+                end)
+
+                task.wait(2)
+            end
+        end)
+    end
+end)
+
+--========================================================
+-- MINIMIZE ICON
+--========================================================
+
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Size = UDim2.fromOffset(48, 48)
+MiniIcon.Position = UDim2.new(0, 20, 0.5, 0)
+MiniIcon.BackgroundColor3 = Color3.fromRGB(75, 45, 115)
+MiniIcon.Text = "AH"
+MiniIcon.TextColor3 = Color3.new(1, 1, 1)
+MiniIcon.TextSize = 14
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.Visible = false
+MiniIcon.Parent = Gui
+
+Instance.new("UICorner", MiniIcon).CornerRadius = UDim.new(1, 0)
+
+Minimize.MouseButton1Click:Connect(function()
+    Main.Visible = false
+    MiniIcon.Visible = true
+end)
+
+MiniIcon.MouseButton1Click:Connect(function()
+    MiniIcon.Visible = false
+    Main.Visible = true
+end)
+
+--========================================================
+-- DRAG PC + MOBILE
+--========================================================
+
+local function makeDraggable(frame, handle)
+    local dragging = false
+    local dragStart
+    local startPosition
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPosition = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if not dragging then return end
+
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - dragStart
+
+            frame.Position = UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+makeDraggable(Main, Top)
+makeDraggable(MiniIcon, MiniIcon)
+
+--========================================================
+-- CLOSE
+--========================================================
+
+Close.MouseButton1Click:Connect(function()
+    stopAll()
+    _G.AutoHubRunning = false
+    _G.AutoHubRunId = nil
+    Gui:Destroy()
+end)
+
+--========================================================
+-- DEFAULT OFF
+--========================================================
+
+stopAll()
+
+refreshHit()
+refreshSwing()
+refreshPickup()
+refreshRebirth()
