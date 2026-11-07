@@ -1744,209 +1744,491 @@ TrackConnection(Player.CharacterAdded:Connect(function()
     end
 end))
 
---============================================================
 
 --============================================================
--- AUTO TP POS 1 + MAINFUNCTION 301,33
--- AUTO RETURN WHEN BAG FULL
--- LOOP | STANDALONE GUI | PC + MOBILE
+-- AUTO TP POSITION 1 + STAGE SEARCH + AUTO RETURN LOOP
+-- STAGE PATHFINDING / DETECTION LAMA TETAP DIPERTAHANKAN
 --============================================================
 
-local AutoTPPosition = Vector3.new(
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local MAX_STAGE = 34
+local DROP_PICKUP_DELAY = 0.05
+local TARGET_HEIGHT = 3
+local RETRY_DELAY = 1
+local RETURN_TIMEOUT = 120
+
+local START_POSITION = Vector3.new(
     33.741783142089844,
     154.01222229003906,
     309.1888122558594
 )
 
-local AutoTPRemote = RS:WaitForChild("Remotes"):WaitForChild("MainFunction")
-local AutoReturnRemote = RS:WaitForChild("Remotes"):WaitForChild("MainEvent")
+local START_REMOTE_ID = 301
+local START_REMOTE_STAGE = 33
+local START_WAIT = 2.5
+local RETURN_WAIT = 3
 
-local AutoTPEnabled = false
-local AutoTPToken = 0
+_G.AutoWalkReturnRunId = (_G.AutoWalkReturnRunId or 0) + 1
+local RunId = _G.AutoWalkReturnRunId
 
-local function AutoTPAlive(token)
-    return Running()
-        and AutoTPEnabled
-        and token == AutoTPToken
+local Enabled = false
+local Destroyed = false
+local Returning = false
+local Busy = false
+local WalkLoopRunning = false
+local CycleToken = 0
+
+--============================================================
+-- STATE
+--============================================================
+
+local function alive()
+    return Enabled
+        and not Destroyed
+        and not Returning
+        and _G.AutoWalkReturnRunId == RunId
 end
 
-local function AutoTPGetCharacter()
-    local character = Player.Character
-    if not character then return nil end
+local function getCharacter()
+    local Character = Player.Character
+    if not Character then return end
 
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local root = character:FindFirstChild("HumanoidRootPart")
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character:FindFirstChild("HumanoidRootPart")
 
-    if not humanoid or not root or humanoid.Health <= 0 then
-        return nil
+    if not Humanoid or not Root or Humanoid.Health <= 0 then
+        return
     end
 
-    return character, humanoid, root
+    return Character, Humanoid, Root
 end
 
-local function AutoTPGetCapacity()
+local function getRunMaxClear()
+    local Value = Player:GetAttribute("RunMaxClear")
+    return type(Value) == "number" and Value or 0
+end
+
+--============================================================
+-- LOOT CAPACITY
+--============================================================
+
+local function getLootText()
     local ok, label = pcall(function()
         return PlayerGui.MainGui.Main.BottomLeft.LootCapacity.Label
     end)
 
-    if not ok or not label then
-        return nil, nil
-    end
-
-    local current, maximum = label.Text:match("(%d+)%s*/%s*(%d+)")
-
-    return tonumber(current), tonumber(maximum)
-end
-
-local function AutoTPWaitCharacter(token)
-    while AutoTPAlive(token) do
-        local character, humanoid, root = AutoTPGetCharacter()
-
-        if character and humanoid and root then
-            return character, humanoid, root
-        end
-
-        task.wait(0.3)
+    if ok and label then
+        return label.Text
     end
 
     return nil
 end
 
-local function AutoTPTeleport(token)
-    if not AutoTPAlive(token) then
+local function parseCapacity(Text)
+    if type(Text) ~= "string" then return nil end
+
+    local Current, Maximum = Text:match("(%d+)%s*/%s*(%d+)")
+    return tonumber(Current), tonumber(Maximum)
+end
+
+local function isLootEmpty()
+    local Current, Maximum = parseCapacity(getLootText())
+    return Current == 0 and Maximum ~= nil and Maximum > 0
+end
+
+--============================================================
+-- STAGE TARGET | LOGIKA LAMA
+--============================================================
+
+local function getStageArea(StageNumber)
+    local Map = workspace:FindFirstChild("Map")
+    local StageFolder = Map and Map:FindFirstChild("Stages")
+    local Stage = StageFolder and StageFolder:FindFirstChild(tostring(StageNumber))
+
+    if not Stage then return nil end
+
+    local Area = Stage:FindFirstChild("LevelArea")
+        or Stage:FindFirstChild("BattleArea")
+
+    if not Area then return nil end
+
+    if Area:IsA("BasePart") then
+        return Area
+    elseif Area:IsA("Model") then
+        return Area.PrimaryPart or Area:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    return Area:FindFirstChildWhichIsA("BasePart", true)
+end
+
+--============================================================
+-- INITIAL TP POSITION 1
+--============================================================
+
+local function teleportPosition1()
+    if not Enabled or Destroyed
+        or _G.AutoWalkReturnRunId ~= RunId then
         return false
     end
 
-    local character, humanoid, root = AutoTPWaitCharacter(token)
+    local Character, Humanoid, Root
 
-    if not character then
+    repeat
+        Character, Humanoid, Root = getCharacter()
+
+        if not Root then
+            task.wait(0.25)
+        end
+    until Root or not Enabled or Destroyed
+        or _G.AutoWalkReturnRunId ~= RunId
+
+    if not Root then return false end
+
+    Root.AssemblyLinearVelocity = Vector3.zero
+    Root.AssemblyAngularVelocity = Vector3.zero
+
+    Character:PivotTo(CFrame.new(START_POSITION))
+
+    task.wait(0.3)
+
+    if not Enabled or Destroyed
+        or _G.AutoWalkReturnRunId ~= RunId then
         return false
     end
 
-    root.AssemblyLinearVelocity = Vector3.zero
-    root.AssemblyAngularVelocity = Vector3.zero
+    local _, _, NewRoot = getCharacter()
 
-    character:PivotTo(CFrame.new(AutoTPPosition))
+    if not NewRoot then return false end
 
-    SetStatus("TP Pos 1 berhasil | Menunggu 2.5 detik", true)
+    return (NewRoot.Position - START_POSITION).Magnitude <= 20
+end
 
-    task.wait(2.5)
+--============================================================
+-- SEND START REMOTE
+--============================================================
 
-    if not AutoTPAlive(token) then
+local function sendStartRemote()
+    if not Enabled or Destroyed
+        or _G.AutoWalkReturnRunId ~= RunId then
         return false
     end
 
-    -- MAINFUNCTION 301,33
-    local success, result = pcall(function()
-        return AutoTPRemote:InvokeServer(301, 33)
+    SetStatus("Menunggu sebelum MainFunction...", true)
+    task.wait(START_WAIT)
+
+    if not Enabled or Destroyed
+        or _G.AutoWalkReturnRunId ~= RunId then
+        return false
+    end
+
+    local ok, err = pcall(function()
+        ReplicatedStorage:WaitForChild("Remotes")
+            :WaitForChild("MainFunction")
+            :InvokeServer(START_REMOTE_ID, START_REMOTE_STAGE)
     end)
 
-    if not success then
-        SetStatus("MainFunction error: " .. tostring(result), false)
+    if not ok then
+        SetStatus("MainFunction error: " .. tostring(err), false)
         return false
     end
 
-    SetStatus("Remote 301,33 terkirim | Menunggu bag penuh", true)
-
+    SetStatus("MainFunction 301, 33 terkirim", true)
     return true
 end
 
-local function AutoTPReturn(token)
-    if not AutoTPAlive(token) then
-        return false
-    end
+--============================================================
+-- FORWARD DECLARATION
+--============================================================
 
-    SetStatus("BAG FULL! Mengirim Return...", true)
+local startWalk
+local beginCycle
 
-    local success, result = pcall(function()
-        return AutoReturnRemote:FireServer(42)
+--============================================================
+-- RETURN TOWN
+--============================================================
+
+local function returnTown()
+    if Busy or not alive() then return end
+
+    Busy = true
+    Returning = true
+    CycleToken += 1
+
+    local thisCycle = CycleToken
+
+    SetStatus("LOOT FULL! Sending return remote...", true)
+
+    local Success, ErrorMessage = pcall(function()
+        ReplicatedStorage:WaitForChild("Remotes")
+            :WaitForChild("MainEvent"):FireServer(42)
     end)
 
-    if not success then
-        SetStatus("Return error: " .. tostring(result), false)
-        task.wait(1)
-        return false
+    if not Success then
+        Returning = false
+        Busy = false
+        SetStatus("Return remote error: " .. tostring(ErrorMessage), false)
+        return
     end
 
-    SetStatus("Return terkirim | Menunggu 3 detik", true)
+    SetStatus("Menunggu loot reset di Town...", true)
 
-    task.wait(3)
+    local StartTime = os.clock()
+    local ResetDetected = false
 
-    if not AutoTPAlive(token) then
-        return false
+    while Enabled and not Destroyed
+        and _G.AutoWalkReturnRunId == RunId
+        and CycleToken == thisCycle
+        and os.clock() - StartTime < RETURN_TIMEOUT do
+
+        if isLootEmpty() then
+            ResetDetected = true
+            break
+        end
+
+        task.wait(0.5)
     end
 
-    return true
+    if not Enabled or Destroyed
+        or _G.AutoWalkReturnRunId ~= RunId
+        or CycleToken ~= thisCycle then
+        Busy = false
+        return
+    end
+
+    if not ResetDetected then
+        Returning = false
+        Busy = false
+        SetStatus("Loot belum reset! Cek Return Town.", false)
+        return
+    end
+
+    SetStatus("Loot reset! Menunggu 3 detik...", true)
+    task.wait(RETURN_WAIT)
+
+    if not Enabled or Destroyed
+        or _G.AutoWalkReturnRunId ~= RunId
+        or CycleToken ~= thisCycle then
+        Busy = false
+        return
+    end
+
+    Returning = false
+    Busy = false
+
+    beginCycle()
 end
 
-local function StartAutoTP()
-    AutoTPToken += 1
-    local token = AutoTPToken
+--============================================================
+-- MOVE TO STAGE | LOGIKA LAMA
+--============================================================
+
+local function moveToStage(StageNumber)
+    if not alive() then
+        return false, "Stopped"
+    end
+
+    local Target = getStageArea(StageNumber)
+    if not Target then
+        return false, "Stage area tidak ditemukan"
+    end
+
+    local _, Humanoid, Root = getCharacter()
+    if not Humanoid or not Root then
+        return false, "Character belum siap"
+    end
+
+    local Position = Target.Position + Vector3.new(0, TARGET_HEIGHT, 0)
+
+    Root.AssemblyLinearVelocity = Vector3.zero
+    Root.AssemblyAngularVelocity = Vector3.zero
+    Root.CFrame = CFrame.new(Position)
+
+    task.wait(0.4)
+
+    if not alive() then
+        return false, "Stopped"
+    end
+
+    local _, _, NewRoot = getCharacter()
+    if not NewRoot then
+        return false, "Root hilang"
+    end
+
+    return (NewRoot.Position - Position).Magnitude <= 15,
+        "Teleport gagal"
+end
+
+--============================================================
+-- MAIN STAGE LOOP | LOGIKA PENCARIAN LAMA
+--============================================================
+
+startWalk = function()
+    if WalkLoopRunning or not alive() then return end
+
+    WalkLoopRunning = true
 
     task.spawn(function()
-        while AutoTPAlive(token) do
+        while alive() do
+            local Cleared = getRunMaxClear()
 
-            -- TP POS 1 + REMOTE
-            local success = AutoTPTeleport(token)
+            if Cleared >= MAX_STAGE then
+                SetStatus("Stage 1-34 selesai! Menunggu run berikutnya...", true)
+                task.wait(2)
 
-            if not success then
-                if AutoTPAlive(token) then
-                    task.wait(1)
+                if not alive() then break end
+
+                if getRunMaxClear() >= MAX_STAGE then
+                    task.wait(2)
                 end
+
                 continue
             end
 
-            -- WAIT BAG FULL
-            while AutoTPAlive(token) do
-                local current, maximum = AutoTPGetCapacity()
+            local NextStage = Cleared + 1
+            SetStatus("Mencari Stage " .. NextStage, true)
 
-                if current and maximum and maximum > 0 then
-                    if current >= maximum then
-                        break
+            local Success, Message = moveToStage(NextStage)
+
+            if not alive() then break end
+
+            if not Success then
+                SetStatus(tostring(Message) .. " | Retry...", false)
+                task.wait(RETRY_DELAY)
+                continue
+            end
+
+            SetStatus("Stage " .. NextStage .. " | Menunggu clear", true)
+
+            while alive() and getRunMaxClear() < NextStage do
+                task.wait(0.5)
+
+                if getRunMaxClear() < NextStage then
+                    local _, _, Root = getCharacter()
+                    local Target = getStageArea(NextStage)
+
+                    if not Target then
+                        SetStatus("Stage " .. NextStage .. " belum tersedia", true)
+                    elseif Root and (Root.Position - Target.Position).Magnitude > 18 then
+                        SetStatus("Stage " .. NextStage .. " | TP ulang...", true)
+                        moveToStage(NextStage)
                     end
                 end
-
-                task.wait(0.3)
             end
 
-            if not AutoTPAlive(token) then
-                break
-            end
+            if not alive() then break end
 
-            -- RETURN + WAIT 3 SECONDS
-            local returned = AutoTPReturn(token)
+            if getRunMaxClear() >= NextStage then
+                SetStatus("Stage " .. NextStage .. " clear! Ambil drop...", true)
 
-            if not returned then
-                if not AutoTPAlive(token) then
-                    break
+                local StartTime = os.clock()
+
+                while alive()
+                    and os.clock() - StartTime < DROP_PICKUP_DELAY do
+                    task.wait(0.1)
                 end
-
-                task.wait(1)
             end
-
-            -- LOOP KEMBALI KE POS 1
         end
 
-        SetStatus("Auto TP loop berhenti", false)
+        WalkLoopRunning = false
     end)
 end
 
-AddToggle("Auto TP Pos 1 + Return", false, function(state)
-    AutoTPEnabled = state
+--============================================================
+-- START / RESTART CYCLE
+--============================================================
 
-    AutoTPToken += 1
+beginCycle = function()
+    if not Enabled or Destroyed
+        or _G.AutoWalkReturnRunId ~= RunId then
+        return
+    end
+
+    task.spawn(function()
+        SetStatus("TP ke posisi 1...", true)
+
+        local teleported = teleportPosition1()
+
+        if not teleported then
+            if Enabled and not Destroyed then
+                SetStatus("TP posisi 1 gagal, retry...", false)
+                task.wait(RETRY_DELAY)
+                beginCycle()
+            end
+            return
+        end
+
+        SetStatus("TP posisi 1 berhasil", true)
+
+        local sent = sendStartRemote()
+
+        if not sent then
+            if Enabled and not Destroyed then
+                task.wait(RETRY_DELAY)
+                beginCycle()
+            end
+            return
+        end
+
+        if not alive() then return end
+
+        -- Stage search tetap membaca RunMaxClear.
+        -- Tidak di-reset ke stage 33.
+        startWalk()
+    end)
+end
+
+--============================================================
+-- LOOT MONITOR
+--============================================================
+
+task.spawn(function()
+    while not Destroyed and _G.AutoWalkReturnRunId == RunId do
+        local Current, Maximum = parseCapacity(getLootText())
+
+        if Current and Maximum then
+            if alive() and Current >= Maximum then
+                returnTown()
+            end
+        end
+
+        task.wait(0.4)
+    end
+end)
+
+--============================================================
+-- TOGGLE
+--============================================================
+
+AddToggle("Auto TP Stage 1-34 + Return", false, function(state)
+    Enabled = state
 
     if state then
-        SetStatus("Auto TP dimulai...", true)
-        StartAutoTP()
+        Returning = false
+        Busy = false
+        WalkLoopRunning = false
+        CycleToken += 1
+
+        SetStatus("Auto TP: Memulai siklus...", true)
+        beginCycle()
     else
-        SetStatus("Auto TP Pos 1 OFF", false)
+        CycleToken += 1
+        Returning = true
+        SetStatus("Auto TP: Dihentikan", false)
     end
 end)
 
 table.insert(Session.Cleanups, function()
-    AutoTPEnabled = false
-    AutoTPToken += 1
+    Destroyed = true
+    Enabled = false
+    Returning = true
+    CycleToken += 1
+    _G.AutoWalkReturnRunId += 1
 end)
+
 
 end
