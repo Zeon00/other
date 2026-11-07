@@ -2,17 +2,10 @@
 --========================================================
 -- AUTO HUB
 -- AUTO HIT | AUTO SWING POWER
--- AUTO PICKUP | AUTO REBIRTH
+-- AUTO PICKUP | AUTO REBIRTH | AUTO ORBIT
 -- Standalone GUI | PC + Mobile | No Library
 -- DEFAULT OFF
 --========================================================
-
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
-
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 --========================================================
 -- CLEAN OLD INSTANCE
@@ -20,19 +13,32 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 _G.AutoHubRunning = false
 
+if _G.AutoHubCleanup then
+    pcall(_G.AutoHubCleanup)
+end
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
 local oldGui = PlayerGui:FindFirstChild("AutoHubStandalone")
 if oldGui then
     oldGui:Destroy()
 end
 
-_G.AutoHubRunning = true
-local RunId = tick()
-
-local function alive()
-    return _G.AutoHubRunning and _G.AutoHubRunId == RunId
-end
+local RunId = tostring(os.clock()) .. tostring(math.random(1000, 999999))
 
 _G.AutoHubRunId = RunId
+_G.AutoHubRunning = true
+
+local function alive()
+    return _G.AutoHubRunning
+        and _G.AutoHubRunId == RunId
+end
 
 --========================================================
 -- SERVICES
@@ -49,11 +55,36 @@ local ProgressService = Services:WaitForChild("ProgressService")
 local SwingRemote = CombatService:WaitForChild("RF"):WaitForChild("Swing")
 local RebirthRemote = ProgressService:WaitForChild("RF"):WaitForChild("Rebirth")
 
+local LiveFolder = workspace:WaitForChild("Live"):WaitForChild("MobModel")
+
 local CombatController
 
-pcall(function()
-    CombatController = Knit.GetController("CombatController")
-end)
+local function getCombatController()
+    for i = 1, 30 do
+        if not alive() then return nil end
+
+        local success, result = pcall(function()
+            return Knit.GetController("CombatController")
+        end)
+
+        if success and result then
+            CombatController = result
+            return result
+        end
+
+        task.wait(0.2)
+    end
+
+    return nil
+end
+
+--========================================================
+-- SETTINGS
+--========================================================
+
+local ORBIT_RADIUS = 12
+local ORBIT_HEIGHT = 7
+local ORBIT_SPEED = 2
 
 --========================================================
 -- TOGGLE STATES
@@ -63,7 +94,8 @@ local States = {
     Hit = false,
     SwingPower = false,
     Pickup = false,
-    Rebirth = false
+    Rebirth = false,
+    Orbit = false
 }
 
 local function stopAll()
@@ -83,6 +115,154 @@ local function stopAll()
 end
 
 --========================================================
+-- CHARACTER
+--========================================================
+
+local function getCharacter()
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local root = character:FindFirstChild("HumanoidRootPart")
+
+    if not humanoid or not root or humanoid.Health <= 0 then
+        return
+    end
+
+    return character, root, humanoid
+end
+
+--========================================================
+-- AUTO HIT - RESPAWN FIX
+--========================================================
+
+local function enableAutoHit()
+    if not alive() or not States.Hit then return end
+
+    local controller = getCombatController()
+    if not controller then
+        warn("[AUTO HIT] CombatController not found")
+        return
+    end
+
+    if not alive() or not States.Hit then return end
+
+    pcall(function()
+        controller:SetAutoClick(true)
+    end)
+end
+
+local function reenableAutoHitAfterRespawn()
+    task.spawn(function()
+        -- Wait until the new character is ready
+        local character = LocalPlayer.Character
+        if not character then return end
+
+        local humanoid = character:WaitForChild("Humanoid", 10)
+        local root = character:WaitForChild("HumanoidRootPart", 10)
+
+        if not humanoid or not root then return end
+        if not alive() or not States.Hit then return end
+
+        task.wait(0.5)
+
+        if not alive() or not States.Hit then return end
+
+        local controller = getCombatController()
+        if not controller then return end
+
+        if not alive() or not States.Hit then return end
+
+        -- Force refresh AutoClick state after respawn
+        pcall(function()
+            controller:SetAutoClick(false)
+        end)
+
+        task.wait(0.15)
+
+        if not alive() or not States.Hit then return end
+
+        pcall(function()
+            controller:SetAutoClick(true)
+        end)
+
+        print("[AUTO HIT] Re-enabled after respawn")
+    end)
+end
+
+local CharacterAddedConnection =
+    LocalPlayer.CharacterAdded:Connect(function()
+        if States.Hit then
+            reenableAutoHitAfterRespawn()
+        end
+    end)
+
+--========================================================
+-- MOB SCAN FOR ORBIT
+--========================================================
+
+local function getMobRoot(mob)
+    if not mob or not mob.Parent then
+        return nil
+    end
+
+    local root = mob:FindFirstChild("HumanoidRootPart")
+
+    if root and root:IsA("BasePart") then
+        return root
+    end
+
+    if mob:IsA("Model") then
+        return mob.PrimaryPart
+            or mob:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    return nil
+end
+
+local function isMobAlive(mob)
+    if not mob or not mob.Parent then
+        return false
+    end
+
+    local root = getMobRoot(mob)
+    if not root then return false end
+
+    local humanoid = mob:FindFirstChildOfClass("Humanoid")
+
+    if humanoid and humanoid.Health <= 0 then
+        return false
+    end
+
+    return true
+end
+
+local function getNearestMob()
+    local _, playerRoot = getCharacter()
+    if not playerRoot then return nil end
+
+    local nearest
+    local nearestDistance = math.huge
+
+    for _, mob in ipairs(LiveFolder:GetChildren()) do
+        if isMobAlive(mob) then
+            local root = getMobRoot(mob)
+
+            if root then
+                local distance = (root.Position - playerRoot.Position).Magnitude
+
+                if distance < nearestDistance then
+                    nearestDistance = distance
+                    nearest = mob
+                end
+            end
+        end
+    end
+
+    return nearest
+end
+
+--========================================================
 -- GUI
 --========================================================
 
@@ -95,8 +275,8 @@ Gui.Parent = PlayerGui
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(285, 270)
-Main.Position = UDim2.new(0.5, -142, 0.5, -135)
+Main.Size = UDim2.fromOffset(285, 325)
+Main.Position = UDim2.new(0.5, -142, 0.5, -162)
 Main.BackgroundColor3 = Color3.fromRGB(25, 19, 38)
 Main.BorderSizePixel = 0
 Main.Parent = Gui
@@ -113,6 +293,7 @@ Top.Size = UDim2.new(1, 0, 0, 38)
 Top.BackgroundColor3 = Color3.fromRGB(43, 30, 63)
 Top.BorderSizePixel = 0
 Top.Parent = Main
+
 Instance.new("UICorner", Top).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel")
@@ -153,43 +334,45 @@ Container.BackgroundTransparency = 1
 Container.Parent = Main
 
 local Layout = Instance.new("UIListLayout")
-Layout.Padding = UDim.new(0, 8)
+Layout.Padding = UDim.new(0, 7)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Container
 
 local function createToggle(key, label, order)
-    local Button = Instance.new("TextButton")
-    Button.Name = key
-    Button.Size = UDim2.new(1, 0, 0, 43)
-    Button.BackgroundColor3 = Color3.fromRGB(48, 39, 65)
-    Button.BorderSizePixel = 0
-    Button.Text = label .. " : OFF"
-    Button.TextColor3 = Color3.fromRGB(245, 240, 255)
-    Button.TextSize = 13
-    Button.Font = Enum.Font.GothamBold
-    Button.LayoutOrder = order
-    Button.Parent = Container
+    local button = Instance.new("TextButton")
+    button.Name = key
+    button.Size = UDim2.new(1, 0, 0, 43)
+    button.BackgroundColor3 = Color3.fromRGB(48, 39, 65)
+    button.BorderSizePixel = 0
+    button.Text = label .. " : OFF"
+    button.TextColor3 = Color3.fromRGB(245, 240, 255)
+    button.TextSize = 13
+    button.Font = Enum.Font.GothamBold
+    button.LayoutOrder = order
+    button.Parent = Container
 
-    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 7)
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 7)
 
     local function refresh()
         local enabled = States[key]
-        Button.Text = label .. (enabled and " : ON" or " : OFF")
-        Button.BackgroundColor3 = enabled
+
+        button.Text = label .. (enabled and " : ON" or " : OFF")
+        button.BackgroundColor3 = enabled
             and Color3.fromRGB(95, 55, 155)
             or Color3.fromRGB(48, 39, 65)
     end
 
-    return Button, refresh
+    return button, refresh
 end
 
 local HitButton, refreshHit = createToggle("Hit", "AUTO HIT", 1)
 local SwingButton, refreshSwing = createToggle("SwingPower", "AUTO SWING POWER", 2)
 local PickupButton, refreshPickup = createToggle("Pickup", "AUTO PICKUP", 3)
 local RebirthButton, refreshRebirth = createToggle("Rebirth", "AUTO REBIRTH", 4)
+local OrbitButton, refreshOrbit = createToggle("Orbit", "AUTO ORBIT", 5)
 
 --========================================================
--- AUTO HIT
+-- AUTO HIT TOGGLE
 --========================================================
 
 HitButton.MouseButton1Click:Connect(function()
@@ -198,10 +381,7 @@ HitButton.MouseButton1Click:Connect(function()
     States.Hit = not States.Hit
 
     if States.Hit then
-        pcall(function()
-            CombatController = CombatController or Knit.GetController("CombatController")
-            CombatController:SetAutoClick(true)
-        end)
+        task.spawn(enableAutoHit)
     else
         pcall(function()
             if CombatController then
@@ -276,6 +456,67 @@ RebirthButton.MouseButton1Click:Connect(function()
 end)
 
 --========================================================
+-- AUTO ORBIT
+--========================================================
+
+OrbitButton.MouseButton1Click:Connect(function()
+    if not alive() then return end
+
+    States.Orbit = not States.Orbit
+    refreshOrbit()
+
+    if States.Orbit then
+        task.spawn(function()
+            local angle = 0
+            local currentTarget = nil
+
+            while alive() and States.Orbit do
+                local _, playerRoot = getCharacter()
+
+                if not playerRoot then
+                    task.wait(0.15)
+                    continue
+                end
+
+                -- Keep the same target until dead or removed
+                if not isMobAlive(currentTarget) then
+                    currentTarget = nil
+                end
+
+                if not currentTarget then
+                    currentTarget = getNearestMob()
+                end
+
+                local targetRoot = getMobRoot(currentTarget)
+
+                if targetRoot then
+                    local dt = RunService.Heartbeat:Wait()
+                    angle = (angle + ORBIT_SPEED * dt) % (math.pi * 2)
+
+                    -- Orbit around target at locked target Y + height
+                    local targetPosition = targetRoot.Position
+
+                    local orbitPosition = targetPosition + Vector3.new(
+                        math.cos(angle) * ORBIT_RADIUS,
+                        ORBIT_HEIGHT,
+                        math.sin(angle) * ORBIT_RADIUS
+                    )
+
+                    if alive() and States.Orbit then
+                        playerRoot.CFrame = CFrame.lookAt(
+                            orbitPosition,
+                            targetPosition
+                        )
+                    end
+                else
+                    task.wait(0.1)
+                end
+            end
+        end)
+    end
+end)
+
+--========================================================
 -- MINIMIZE ICON
 --========================================================
 
@@ -314,6 +555,7 @@ local function makeDraggable(frame, handle)
     handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
+
             dragging = true
             dragStart = input.Position
             startPosition = frame.Position
@@ -331,6 +573,7 @@ local function makeDraggable(frame, handle)
 
         if input.UserInputType == Enum.UserInputType.MouseMovement
         or input.UserInputType == Enum.UserInputType.Touch then
+
             local delta = input.Position - dragStart
 
             frame.Position = UDim2.new(
@@ -347,15 +590,30 @@ makeDraggable(Main, Top)
 makeDraggable(MiniIcon, MiniIcon)
 
 --========================================================
--- CLOSE
+-- CLOSE / CLEANUP
 --========================================================
 
-Close.MouseButton1Click:Connect(function()
+local function cleanup()
+    if not alive() then return end
+
     stopAll()
+
     _G.AutoHubRunning = false
     _G.AutoHubRunId = nil
-    Gui:Destroy()
-end)
+    _G.AutoHubCleanup = nil
+
+    if CharacterAddedConnection then
+        CharacterAddedConnection:Disconnect()
+    end
+
+    if Gui then
+        Gui:Destroy()
+    end
+end
+
+_G.AutoHubCleanup = cleanup
+
+Close.MouseButton1Click:Connect(cleanup)
 
 --========================================================
 -- DEFAULT OFF
@@ -367,3 +625,6 @@ refreshHit()
 refreshSwing()
 refreshPickup()
 refreshRebirth()
+refreshOrbit()
+
+print("[AUTO HUB] Loaded successfully")
