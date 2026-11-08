@@ -82,8 +82,8 @@ end
 -- SETTINGS
 --========================================================
 
-local ORBIT_RADIUS = 18
-local ORBIT_HEIGHT = 9
+local ORBIT_RADIUS = 15
+local ORBIT_HEIGHT = 7
 local ORBIT_SPEED = 2
 
 --========================================================
