@@ -1,17 +1,18 @@
+
 --============================================================
 -- ANIME FORGING | ULTIMATE AUTOMATION HUB
--- 9 TOGGLE | STANDALONE GUI
+-- 8 TOGGLE | STANDALONE GUI
 --
 -- 1. AUTO SWING + HIT
 -- 2. AUTO SKILL MOB TARGET (Q E R F -> MOB POSITION)
--- 3. ORBIT + HOVER
--- 4. TP BEHIND MOB
--- 5. AUTO DUNGEON
--- 6. AUTO ECLIPSE
--- 7. AUTO CLAIM ALL REWARDS
--- 8. AUTO ENCHANT
--- 9. AUTO REBIRTH (WAIT UNTIL READY)
+-- 3. TP BEHIND MOB
+-- 4. AUTO DUNGEON
+-- 5. AUTO ECLIPSE
+-- 6. AUTO CLAIM ALL REWARDS
+-- 7. AUTO ENCHANT
+-- 8. AUTO REBIRTH (WAIT UNTIL READY)
 --
+-- TP BEHIND OTOMATIS UNTUK DUNGEON + ECLIPSE
 -- DRAG | MINIMIZE | DESTROY
 -- SINGLE INSTANCE | CENTRAL CLEANUP
 --============================================================
@@ -60,7 +61,6 @@ local SwingRemote = Remotes:WaitForChild("Swing")
 local HitRemote = Remotes:WaitForChild("Hit")
 local RequestRemote = Remotes:WaitForChild("Request")
 
--- Eclipse modules
 local PlayerState = require(
     SwordShared:WaitForChild("Client"):WaitForChild("PlayerState")
 )
@@ -73,14 +73,20 @@ local Mastery = require(
     SwordShared:WaitForChild("Mastery")
 )
 
--- Progression is supplied by the game UI. Locate its module if exposed.
+--============================================================
+-- PROGRESSION MODULE
+--============================================================
+
 local ProgressionModule = nil
+
 for _, object in ipairs(ReplicatedStorage:GetDescendants()) do
     if object:IsA("ModuleScript") and object.Name == "Progression" then
         local ok, result = pcall(require, object)
+
         if ok and type(result) == "table"
             and type(result.rebirthCost) == "function"
             and type(result.rebirthNeedMet) == "function" then
+
             ProgressionModule = result
             break
         end
@@ -100,28 +106,16 @@ local HIT_DELAY = 0
 local SKILLS = {"Q", "E", "R", "F"}
 local SKILL_DELAY = 0.5
 
-local ORBIT_RADIUS = 15
-local ORBIT_HEIGHT = 7
-local ORBIT_SPEED = 2
-local ORBIT_SMOOTHNESS = 8
-local ORBIT_SCAN_DELAY = 0.25
-
 local TP_BEHIND_DISTANCE = 3
 local TP_UPDATE_DELAY = 0.15
 
-local HOVER_FORCE = 100000
-
 -- NORMAL DUNGEON
 local DUNGEON_START = Vector3.new(
-    6.320988177321851e-09,
-    3.298025369644165,
-    -52
+    0.0000027100359147880226, 4014.997802734375, -116
 )
 
 local DUNGEON_ENTRY = Vector3.new(
-    -0.3912782669067383,
-    5.53802490234375,
-    -68.19702911376953
+    0.8257005214691162, 4018.31787109375, -128.1840362548828
 )
 
 local DUNGEON_TOLERANCE = 30
@@ -143,38 +137,42 @@ local Running = true
 
 local AutoCombat = false
 local AutoSkill = false
-local AutoOrbit = false
 local AutoTP = false
 local AutoDungeon = false
 local AutoEclipse = false
 local AutoClaim = false
 local AutoEnchant = false
 local AutoRebirth = false
+
 local RebirthStatus = "Rebirth: OFF"
+
 local EclipseTarget = nil
--- ECLIPSE PRIORITY
 local EclipsePriority = false
 local ResumeDungeonAfterEclipse = false
+
 local SwingIndex = 0
 local SkillIndex = 0
-
 local CurrentDungeonTarget = nil
 
--- Auto Rebirth hanya mem-pause worker dungeon ketika request siap dijalankan; toggle AutoDungeon tetap ON.
 local RebirthPaused = false
 local RebirthBusy = false
 local RebirthRunId = 0
 local REBIRTH_POLL_INTERVAL = 1.5
 local REBIRTH_CONFIRM_TIMEOUT = 4
 
-local OrbitRunId = 0
 local TPRunId = 0
 local DungeonRunId = 0
 local EclipseRunId = 0
 local ClaimRunId = 0
 local EnchantRunId = 0
 
--- Anti Void hanya untuk AUTO DUNGEON normal.
+-- TP ownership:
+-- Worker dungeon/eclipse hanya mematikan TP jika TP belum aktif
+-- sebelum worker tersebut dimulai.
+local DungeonOwnsTP = false
+local EclipseOwnsTP = false
+
+-- ANTI VOID
 local AntiVoidConnection = nil
 local AntiVoidSafeCFrame = nil
 local AntiVoidLastRescue = 0
@@ -194,14 +192,12 @@ local Character
 local Root
 local Humanoid
 
-local HoverVelocity
-local HoverAttachment
-local HoverConnection
-
 local HeldKeys = {}
 local Connections = {}
 
 local Gui
+local Status
+local Scroll
 local Controller = {}
 
 _G.AF_SwingSkillOrbitController = Controller
@@ -223,78 +219,9 @@ local function track(connection)
     return connection
 end
 
---============================================================
--- HOVER
---============================================================
-
-local function cleanupHover()
-    if HoverConnection then
-        pcall(function()
-            HoverConnection:Disconnect()
-        end)
-        HoverConnection = nil
-    end
-
-    if HoverVelocity then
-        pcall(function()
-            HoverVelocity:Destroy()
-        end)
-        HoverVelocity = nil
-    end
-
-    if HoverAttachment then
-        pcall(function()
-            HoverAttachment:Destroy()
-        end)
-        HoverAttachment = nil
-    end
-end
-
-local function startHover()
-    updateCharacter()
-
-    if not Root or not Humanoid or HoverVelocity then
-        return
-    end
-
-    HoverAttachment = Instance.new("Attachment")
-    HoverAttachment.Name = "AF_HoverAttachment"
-    HoverAttachment.Parent = Root
-
-    HoverVelocity = Instance.new("LinearVelocity")
-    HoverVelocity.Name = "AF_HoverVelocity"
-    HoverVelocity.Attachment0 = HoverAttachment
-    HoverVelocity.RelativeTo = Enum.ActuatorRelativeTo.World
-    HoverVelocity.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
-    HoverVelocity.ForceLimitsEnabled = true
-    HoverVelocity.ForceLimitMode = Enum.ForceLimitMode.PerAxis
-    HoverVelocity.MaxAxesForce = Vector3.new(0, HOVER_FORCE, 0)
-    HoverVelocity.VectorVelocity = Vector3.zero
-    HoverVelocity.Parent = Root
-
-    HoverConnection = RunService.Heartbeat:Connect(function()
-        if not Running or not AutoOrbit then return end
-
-        if Root and Root.Parent and HoverVelocity and HoverVelocity.Parent then
-            HoverVelocity.VectorVelocity = Vector3.zero
-        end
-    end)
-end
-
-local function stopHover()
-    cleanupHover()
-end
-
 track(Player.CharacterAdded:Connect(function()
     task.wait(0.5)
     updateCharacter()
-
-    if not Running then return end
-
-    if AutoOrbit then
-        cleanupHover()
-        startHover()
-    end
 end))
 
 --============================================================
@@ -497,7 +424,8 @@ local function getTarget()
     CurrentDungeonTarget = bestMob
     return bestMob
 end
-local function getOrbitTarget()
+
+local function getSkillTarget()
     if EclipseTarget then
         if EclipseTarget.Parent and not isDead(EclipseTarget) then
             return EclipseTarget
@@ -508,6 +436,7 @@ local function getOrbitTarget()
 
     return getTarget()
 end
+
 --============================================================
 -- AUTO SWING + HIT ALL MOBS
 --============================================================
@@ -523,24 +452,17 @@ local function startCombat()
 
     task.spawn(function()
         while Running and AutoCombat do
-            -- Swing 1, 2, 3 berulang
             SwingIndex = (SwingIndex % 3) + 1
 
             pcall(function()
                 SwingRemote:FireServer(SwingIndex)
             end)
 
-            -- Ambil seluruh mob hidup
             local mobs = getAllMobs()
 
-            -- Kirim seluruh target dalam satu request
             if #mobs > 0 then
                 pcall(function()
-                    HitRemote:FireServer(
-                        SwingIndex,
-                        1,
-                        mobs
-                    )
+                    HitRemote:FireServer(SwingIndex, 1, mobs)
                 end)
             end
 
@@ -551,20 +473,7 @@ end
 
 --============================================================
 -- AUTO SKILL MOB TARGET
--- Skill Q -> E -> R -> F diarahkan ke posisi mob terdekat.
--- EclipseTarget diprioritaskan ketika worker Eclipse sedang aktif.
 --============================================================
-
-local function getSkillTarget()
-    if EclipseTarget then
-        if EclipseTarget.Parent and not isDead(EclipseTarget) then
-            return EclipseTarget
-        end
-        return nil
-    end
-
-    return getTarget()
-end
 
 local function stopSkill()
     AutoSkill = false
@@ -586,8 +495,8 @@ local function startSkill()
                 continue
             end
 
-            -- Ambil posisi target terbaru sebelum setiap pemanggilan skill.
             SkillIndex = (SkillIndex % #SKILLS) + 1
+
             local key = SKILLS[SkillIndex]
             local point = mobRoot.Position
 
@@ -609,105 +518,21 @@ local function startSkill()
 end
 
 --============================================================
--- ORBIT
---============================================================
-
-local function orbitMob(mob, runId)
-    updateCharacter()
-
-    if not Root or not Humanoid or not mob or isDead(mob) then
-        return
-    end
-
-    local mobRoot = getMobRoot(mob)
-
-    if not mobRoot then return end
-
-    local angle = 0
-    local lastTime = os.clock()
-
-    while Running
-        and AutoOrbit
-        and OrbitRunId == runId
-        and mob.Parent
-        and not isDead(mob) do
-
-        updateCharacter()
-
-        if not Root or not Humanoid or Humanoid.Health <= 0 then
-            break
-        end
-
-        mobRoot = getMobRoot(mob)
-
-        if not mobRoot then break end
-
-        local now = os.clock()
-        local dt = math.clamp(now - lastTime, 0, 0.1)
-        lastTime = now
-
-        angle += ORBIT_SPEED * dt
-
-        local center = mobRoot.Position
-
-        local offset = Vector3.new(
-            math.cos(angle) * ORBIT_RADIUS,
-            ORBIT_HEIGHT,
-            math.sin(angle) * ORBIT_RADIUS
-        )
-
-        local destination = center + offset
-        local targetCF = CFrame.lookAt(destination, center)
-        local alpha = 1 - math.exp(-ORBIT_SMOOTHNESS * dt)
-
-        pcall(function()
-            Root.CFrame = Root.CFrame:Lerp(targetCF, alpha)
-        end)
-
-        RunService.Heartbeat:Wait()
-    end
-end
-
-local function startOrbit()
-    if not Running or AutoOrbit then return end
-
-    AutoOrbit = true
-    OrbitRunId += 1
-
-    local id = OrbitRunId
-
-    startHover()
-
-    task.spawn(function()
-        while Running and AutoOrbit and OrbitRunId == id do
-            local mob = getOrbitTarget()
-
-            if mob and mob.Parent and not isDead(mob) then
-                orbitMob(mob, id)
-
-                if CurrentDungeonTarget == mob then
-                    CurrentDungeonTarget = nil
-                end
-            else
-                task.wait(ORBIT_SCAN_DELAY)
-            end
-
-            task.wait(0.05)
-        end
-    end)
-end
-
-local function stopOrbit()
-    AutoOrbit = false
-    OrbitRunId += 1
-    stopHover()
-end
-
---============================================================
--- TP BEHIND
+-- TP BEHIND MOB
+-- Prioritas target:
+-- 1. EclipseTarget ketika Eclipse aktif
+-- 2. CurrentDungeonTarget / target terdekat
 --============================================================
 
 local function getTPTarget()
+    if EclipseTarget then
+        if EclipseTarget.Parent and not isDead(EclipseTarget) then
+            return EclipseTarget
+        end
+
+        return nil
+    end
+
     return getTarget()
 end
 
@@ -739,15 +564,21 @@ local function startTP()
                 local mobRoot = getMobRoot(mob)
 
                 if mobRoot then
+                    -- Posisi belakang berdasarkan arah hadap mob.
                     local behind = mobRoot.CFrame:PointToWorldSpace(
                         Vector3.new(0, 0, TP_BEHIND_DISTANCE)
                     )
 
-                    local targetCF = CFrame.lookAt(behind, mobRoot.Position)
+                    local targetCF = CFrame.lookAt(
+                        behind,
+                        mobRoot.Position
+                    )
 
                     if Running and AutoTP and TPRunId == id then
                         pcall(function()
                             Root.CFrame = targetCF
+                            Root.AssemblyLinearVelocity = Vector3.zero
+                            Root.AssemblyAngularVelocity = Vector3.zero
                         end)
                     end
                 end
@@ -822,7 +653,6 @@ end
 
 --============================================================
 -- DUNGEON POINTER MOVEMENT | ROAM MARKER
--- MAX TP STEP 10 STUD | INTERRUPTIBLE
 --============================================================
 
 local DUNGEON_TP_STEP = 10
@@ -847,9 +677,7 @@ local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
     end
 
     local targetCF = getObjectCFrame(object)
-    if not targetCF then
-        return false
-    end
+    if not targetCF then return false end
 
     local path = PathfindingService:CreatePath({
         AgentRadius = 2,
@@ -868,10 +696,7 @@ local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
         if not Root then return false end
 
         local ok = pcall(function()
-            path:ComputeAsync(
-                Root.Position,
-                targetCF.Position
-            )
+            path:ComputeAsync(Root.Position, targetCF.Position)
         end)
 
         if ok and path.Status == Enum.PathStatus.Success then
@@ -892,6 +717,7 @@ local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
         if statusCallback then
             statusCallback("Path gagal! Marker akan dicoba kembali.")
         end
+
         return false
     end
 
@@ -927,14 +753,8 @@ local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
                 break
             end
 
-            -- Maksimal 10 stud setiap perpindahan.
-            local stepDistance = math.min(
-                DUNGEON_TP_STEP,
-                distance
-            )
-
-            local nextPosition =
-                currentPosition + difference.Unit * stepDistance
+            local stepDistance = math.min(DUNGEON_TP_STEP, distance)
+            local nextPosition = currentPosition + difference.Unit * stepDistance
 
             local moved = pcall(function()
                 Root.CFrame = CFrame.new(nextPosition)
@@ -959,7 +779,6 @@ end
 
 --============================================================
 -- ANTI VOID | NORMAL AUTO DUNGEON ONLY
--- Simpan posisi karakter setelah masuk dungeon; rescue jika jatuh.
 --============================================================
 
 local function stopAntiVoid()
@@ -969,6 +788,7 @@ local function stopAntiVoid()
         pcall(function()
             AntiVoidConnection:Disconnect()
         end)
+
         AntiVoidConnection = nil
     end
 
@@ -982,17 +802,22 @@ local function startAntiVoid(isAlive)
     local runId = AntiVoidRunId
 
     task.spawn(function()
-        -- Beri server waktu memindahkan karakter ke dalam dungeon.
         local deadline = os.clock() + 6
+
         repeat
             if not isAlive() or AntiVoidRunId ~= runId then return end
+
             updateCharacter()
+
             if Root and Root.Parent then break end
+
             task.wait(0.1)
         until os.clock() >= deadline
 
         if not isAlive() or AntiVoidRunId ~= runId then return end
+
         updateCharacter()
+
         if not Root or not Root.Parent then return end
 
         AntiVoidSafeCFrame = Root.CFrame
@@ -1005,13 +830,18 @@ local function startAntiVoid(isAlive)
             end
 
             updateCharacter()
-            if not Root or not Root.Parent or not AntiVoidSafeCFrame then return end
+
+            if not Root or not Root.Parent or not AntiVoidSafeCFrame then
+                return
+            end
 
             local safeY = AntiVoidSafeCFrame.Position.Y
+
             if Root.Position.Y < safeY - ANTI_VOID_FALL_DISTANCE
                 and os.clock() - AntiVoidLastRescue >= ANTI_VOID_RESCUE_COOLDOWN then
 
                 AntiVoidLastRescue = os.clock()
+
                 pcall(function()
                     Root.CFrame = AntiVoidSafeCFrame + Vector3.new(0, 5, 0)
                     Root.AssemblyLinearVelocity = Vector3.zero
@@ -1034,15 +864,13 @@ local function getEclipseDungeonObject(config, attribute, path)
 
         local name = tostring(value)
 
-        if name ~= "" then
-            for _, existing in ipairs(names) do
-                if existing == name then
-                    return
-                end
-            end
+        if name == "" then return end
 
-            table.insert(names, name)
+        for _, existing in ipairs(names) do
+            if existing == name then return end
         end
+
+        table.insert(names, name)
     end
 
     addName(config and config.Name)
@@ -1058,7 +886,6 @@ local function getEclipseDungeonObject(config, attribute, path)
         end
     end
 
-    -- Fallback: cari dungeon yang punya struktur BossDoor / Markers
     local folders = Workspace:FindFirstChild("Dungeons")
 
     if folders then
@@ -1129,6 +956,7 @@ local function waitForEnemyClear(isAlive, statusCallback)
                     while isAlive() and RebirthPaused do
                         task.wait(0.1)
                     end
+
                     emptyStart = os.clock()
                 end
 
@@ -1185,11 +1013,8 @@ local function getDungeonProgress()
     return tonumber(current), tonumber(total), caption
 end
 
-
-
 --============================================================
 -- NORMAL DUNGEON PROGRESS | ROAM OUTER
--- NO ENCOUNTER | NO MONSTER BEACON DEPENDENCY
 --============================================================
 
 local function getRoamOuterMarkers()
@@ -1223,7 +1048,6 @@ local function getRoamOuterMarkers()
 end
 
 local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
-
     local function status(message)
         if statusCallback then
             statusCallback(message)
@@ -1248,24 +1072,20 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
 
     local emptyStart = nil
     local markerIndex = 1
-    local lastMarker = nil
     local retryAt = 0
 
     while isAlive() do
-
         if RebirthPaused then
             status("PAUSED | Menunggu proses Rebirth...")
             task.wait(0.1)
             continue
         end
 
-        -- PRIORITAS 1: CEK PROGRESS SELESAI
         if bossOpen() then
             status("BOSS OPEN! Progress selesai!")
             return true
         end
 
-        -- PRIORITAS 2: CEK MOB
         local enemyCount = getEnemyCount()
 
         if enemyCount > 0 then
@@ -1281,9 +1101,7 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
             continue
         end
 
-        -- ENEMIES KOSONG
         emptyStart = emptyStart or os.clock()
-
         local emptyDuration = os.clock() - emptyStart
 
         if emptyDuration < MOB_EMPTY_CONFIRM_TIME then
@@ -1297,19 +1115,16 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
             continue
         end
 
-        -- CEK PROGRESS LAGI SEBELUM ROAM
         if bossOpen() then
             status("BOSS OPEN! Progress selesai!")
             return true
         end
 
-        -- LOAD MARKER
         local markers = getRoamOuterMarkers()
 
         if #markers == 0 then
             status(
-                "Roam_Outer tidak ditemukan di "
-                .. "workspace.Dungeons."
+                "Roam_Outer tidak ditemukan di workspace.Dungeons."
                 .. SelectedDungeon
                 .. ".Markers"
             )
@@ -1318,7 +1133,6 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
             continue
         end
 
-        -- NORMALISASI INDEX
         if markerIndex > #markers then
             markerIndex = 1
         end
@@ -1332,7 +1146,6 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
             continue
         end
 
-        -- JANGAN SPAM PATHFINDING
         if os.clock() < retryAt then
             task.wait(0.1)
             continue
@@ -1352,32 +1165,24 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
             continue
         end
 
-        local distance = (
-            Root.Position - markerCF.Position
-        ).Magnitude
+        local distance = (Root.Position - markerCF.Position).Magnitude
 
-        -- SUDAH SAMPAI MARKER
         if distance <= 8 then
-
             status(
                 "Roam Outer "
                 .. entry.index
                 .. " tercapai | Mencari spawn berikutnya..."
             )
 
-            lastMarker = marker
-
             markerIndex += 1
+
             if markerIndex > #markers then
                 markerIndex = 1
             end
 
-            -- Beri waktu server untuk spawn mob.
             local waitStart = os.clock()
 
-            while isAlive()
-                and os.clock() - waitStart < 0.75 do
-
+            while isAlive() and os.clock() - waitStart < 0.75 do
                 if getEnemyCount() > 0 then
                     break
                 end
@@ -1393,7 +1198,6 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
             continue
         end
 
-        -- MENUJU MARKER BERIKUTNYA
         status(
             "Enemies kosong! Pathfinding Roam_Outer_"
             .. entry.index
@@ -1421,15 +1225,15 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
 
         if RebirthPaused then
             status("PAUSED | Rebirth berjalan, lanjut dari marker yang sama...")
+
             while isAlive() and RebirthPaused do
                 task.wait(0.1)
             end
+
             emptyStart = nil
             continue
         end
 
-        -- MOB MUNCUL SAAT BERGERAK:
-        -- LANGSUNG KEMBALI KE COMBAT
         if getEnemyCount() > 0 then
             status("Mob muncul saat roaming! Combat!")
             emptyStart = nil
@@ -1443,16 +1247,14 @@ local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
         end
 
         if moved then
-            lastMarker = marker
-
             markerIndex += 1
+
             if markerIndex > #markers then
                 markerIndex = 1
             end
 
             emptyStart = nil
         else
-            -- Retry marker yang sama jika gagal.
             retryAt = os.clock() + 0.5
 
             status(
@@ -1480,6 +1282,7 @@ local function waitDungeonUnpaused(isAlive)
     while isAlive() and RebirthPaused do
         task.wait(0.1)
     end
+
     return isAlive()
 end
 
@@ -1487,7 +1290,9 @@ local function waitDungeonStart(id)
     DungeonStatus = "Menunggu posisi 1..."
 
     while dungeonAlive(id) do
-        if not waitDungeonUnpaused(function() return dungeonAlive(id) end) then
+        if not waitDungeonUnpaused(function()
+            return dungeonAlive(id)
+        end) then
             return false
         end
 
@@ -1510,7 +1315,9 @@ local function walkDungeonEntry(id)
     local lastOrder = 0
 
     while dungeonAlive(id) do
-        if not waitDungeonUnpaused(function() return dungeonAlive(id) end) then
+        if not waitDungeonUnpaused(function()
+            return dungeonAlive(id)
+        end) then
             return false
         end
 
@@ -1537,7 +1344,7 @@ local function walkDungeonEntry(id)
 end
 
 --============================================================
--- AUTO REBIRTH | CHECK GAME READINESS BEFORE REQUEST
+-- AUTO REBIRTH
 --============================================================
 
 local function readPlayerState(key)
@@ -1545,8 +1352,10 @@ local function readPlayerState(key)
         if type(PlayerState.get) == "function" then
             return PlayerState.get(key)
         end
+
         return nil
     end)
+
     if ok and value ~= nil then return value end
 
     local attr = Player:GetAttribute(key)
@@ -1554,9 +1363,11 @@ local function readPlayerState(key)
 
     local leaderstats = Player:FindFirstChild("leaderstats")
     local stat = leaderstats and leaderstats:FindFirstChild(key)
+
     if stat and (stat:IsA("NumberValue") or stat:IsA("IntValue")) then
         return stat.Value
     end
+
     return nil
 end
 
@@ -1567,7 +1378,9 @@ local function checkRebirthReady()
 
     local rebirths = tonumber(readPlayerState("Rebirths"))
         or tonumber(Player:GetAttribute("Rebirths")) or 0
+
     local power = tonumber(readPlayerState("Power"))
+
     if power == nil then
         return false, "Data Power belum terbaca"
     end
@@ -1575,24 +1388,33 @@ local function checkRebirthReady()
     local okCost, cost = pcall(function()
         return ProgressionModule.rebirthCost(rebirths)
     end)
+
     if not okCost or tonumber(cost) == nil then
         return false, "Biaya Rebirth belum terbaca"
     end
+
     if power < tonumber(cost) then
-        return false, "Power kurang: " .. tostring(math.floor(power)) .. " / " .. tostring(math.floor(cost))
+        return false,
+            "Power kurang: "
+            .. tostring(math.floor(power))
+            .. " / "
+            .. tostring(math.floor(cost))
     end
 
     local okNeed, needMet = pcall(function()
         local mastery = Mastery.of(Player)
+
         return ProgressionModule.rebirthNeedMet(
             rebirths,
             mastery,
             Player:GetAttribute("GateGrace")
         )
     end)
+
     if not okNeed then
         return false, "Syarat boss/dungeon belum bisa dicek"
     end
+
     if needMet ~= true then
         return false, "Menunggu syarat boss / star dungeon"
     end
@@ -1610,45 +1432,56 @@ end
 
 local function startRebirth()
     if not Running or AutoRebirth then return end
+
     AutoRebirth = true
     RebirthRunId += 1
+
     local runId = RebirthRunId
 
     task.spawn(function()
         while Running and AutoRebirth and RebirthRunId == runId do
             local ready, message = checkRebirthReady()
+
             if ready and not RebirthBusy then
                 RebirthBusy = true
                 RebirthPaused = true
                 RebirthStatus = "Rebirth: READY | Menekan tombol..."
 
                 local before = tonumber(readPlayerState("Rebirths")) or 0
+
                 local requestOK, requestResult = pcall(function()
-                    -- Sama dengan aksi tombol Rebirth di panel game.
                     return PlayerState.request("Rebirth")
                 end)
 
                 local confirmed = false
                 local deadline = os.clock() + REBIRTH_CONFIRM_TIMEOUT
+
                 repeat
                     local now = tonumber(readPlayerState("Rebirths")) or 0
+
                     if now > before then
                         confirmed = true
                         break
                     end
+
                     task.wait(0.1)
-                until not Running or not AutoRebirth or RebirthRunId ~= runId or os.clock() >= deadline
+                until not Running
+                    or not AutoRebirth
+                    or RebirthRunId ~= runId
+                    or os.clock() >= deadline
 
                 RebirthPaused = false
                 RebirthBusy = false
 
                 if confirmed then
-                    RebirthStatus = "Rebirth sukses: " .. tostring(readPlayerState("Rebirths"))
+                    RebirthStatus = "Rebirth sukses: "
+                        .. tostring(readPlayerState("Rebirths"))
                 elseif not requestOK then
                     RebirthStatus = "Rebirth error: " .. tostring(requestResult)
                 else
                     RebirthStatus = "Request terkirim, belum terkonfirmasi"
                 end
+
                 task.wait(1)
             else
                 RebirthStatus = "Rebirth: " .. tostring(message)
@@ -1662,6 +1495,10 @@ local function startRebirth()
         end
     end)
 end
+
+--============================================================
+-- STOP / START DUNGEON
+--============================================================
 
 local function stopDungeon()
     AutoDungeon = false
@@ -1694,6 +1531,10 @@ local function startDungeon()
 
     local id = DungeonRunId
     local combatWasOn = AutoCombat
+    local skillWasOn = AutoSkill
+    local tpWasOn = AutoTP
+
+    DungeonOwnsTP = not tpWasOn
 
     task.spawn(function()
         local function alive()
@@ -1709,10 +1550,16 @@ local function startDungeon()
                 stopCombat()
             end
 
-            if AutoOrbit then stopOrbit() end
-            if AutoSkill then stopSkill() end
-        end
+            if not skillWasOn and AutoSkill then
+                stopSkill()
+            end
 
+            if DungeonOwnsTP and not tpWasOn and AutoTP then
+                stopTP()
+            end
+
+            DungeonOwnsTP = false
+        end
 
         while alive() do
             if not waitDungeonUnpaused(alive) then break end
@@ -1752,7 +1599,11 @@ local function startDungeon()
                     math.floor(tonumber(DungeonCountInput.Text) or 3)
                 )
 
-                return RequestRemote:InvokeServer("EnterDungeon", name, count)
+                return RequestRemote:InvokeServer(
+                    "EnterDungeon",
+                    name,
+                    count
+                )
             end)
 
             if not alive() then break end
@@ -1767,9 +1618,18 @@ local function startDungeon()
             startAntiVoid(alive)
             task.wait(0.25)
 
-            if not AutoOrbit then startOrbit() end
-            if not AutoSkill then startSkill() end
-            if not AutoCombat then startCombat() end
+            -- TP BEHIND OTOMATIS UNTUK DUNGEON
+            if not AutoTP then
+                startTP()
+            end
+
+            if not AutoSkill then
+                startSkill()
+            end
+
+            if not AutoCombat then
+                startCombat()
+            end
 
             if not waitForProgressComplete(alive, status, true) then
                 break
@@ -1777,7 +1637,6 @@ local function startDungeon()
 
             if not alive() then break end
 
-            -- Matikan rescue sebelum perpindahan normal ke FloorGlow.
             stopAntiVoid()
             status("Progress selesai! Mencari FloorGlow...")
 
@@ -1808,13 +1667,13 @@ local function startDungeon()
 
             if not alive() then break end
 
-            status("Menunggu Enemies kosong selama 2 detik...")
+            status("Memastikan Enemies kosong...")
 
-if not waitForEnemyClear(alive, status) then
-    break
-end
+            if not waitForEnemyClear(alive, status) then
+                break
+            end
 
-if not alive() then break end
+            if not alive() then break end
 
             local exit = getDungeonObject(name, {
                 "Markers",
@@ -1848,9 +1707,15 @@ if not alive() then break end
                 stopCombat()
             end
 
-            if AutoOrbit then stopOrbit() end
-            if AutoSkill then stopSkill() end
+            if not skillWasOn and AutoSkill then
+                stopSkill()
+            end
 
+            if DungeonOwnsTP and not tpWasOn and AutoTP then
+                stopTP()
+            end
+
+            DungeonOwnsTP = false
             AutoDungeon = false
             DungeonStatus = "Dungeon: OFF"
         end
@@ -1858,8 +1723,7 @@ if not alive() then break end
 end
 
 --============================================================
--- AUTO ECLIPSE | DIRECT TP UMBRA
--- TP UMBRA -> ORBIT + SKILL -> LEAVE -> REPEAT
+-- AUTO ECLIPSE | TP BEHIND UMBRA + SKILL
 --============================================================
 
 local function eclipseAlive(id)
@@ -1933,23 +1797,16 @@ end
 local function leaveEclipseDungeon()
     local enemies = Workspace:FindFirstChild("Enemies")
 
-    -- Pastikan folder Enemies tersedia
     if not enemies then
         return false
     end
 
-    -- Pastikan Umbra benar-benar sudah hilang
     if enemies:FindFirstChild("Umbra the Sun-Eater") then
         return false
     end
 
-    local event = ReplicatedStorage
-        :WaitForChild("SwordShared")
-        :WaitForChild("Remotes")
-        :WaitForChild("Request")
-
     local success, result = pcall(function()
-        return event:InvokeServer("LeaveDungeon")
+        return RequestRemote:InvokeServer("LeaveDungeon")
     end)
 
     return success, result
@@ -1958,11 +1815,11 @@ end
 local function stopEclipse()
     AutoEclipse = false
     EclipseRunId += 1
-
     EclipseTarget = nil
 
-    if AutoOrbit then
-        stopOrbit()
+    if EclipseOwnsTP then
+        stopTP()
+        EclipseOwnsTP = false
     end
 
     if AutoSkill then
@@ -1981,6 +1838,10 @@ local function startEclipse()
     EclipseRunId += 1
 
     local id = EclipseRunId
+    local tpWasOn = AutoTP
+    local skillWasOn = AutoSkill
+
+    EclipseOwnsTP = not tpWasOn
 
     task.spawn(function()
         local function alive()
@@ -2039,107 +1900,73 @@ local function startEclipse()
             return nil
         end
 
-    while alive() do
-    local config, attribute = getCurrentEclipse()
-
-    --====================================================
-    -- ECLIPSE PRIORITY: POTONG DUNGEON YANG SEDANG JALAN
-    --====================================================
-
-    if Player:GetAttribute("Dungeon") then
-
-        if config then
-            status("ECLIPSE TERSEDIA! Menghentikan dungeon...")
-
-            -- Simpan status agar Auto Dungeon bisa dilanjutkan
-            ResumeDungeonAfterEclipse = AutoDungeon
-            EclipsePriority = true
-
-            -- Hentikan worker Auto Dungeon
-            if AutoDungeon then
-                stopDungeon()
-            end
-
-            -- Leave dungeon menggunakan remote
-            status("Memanggil LeaveDungeon untuk prioritas Eclipse...")
-
-            local leaveOK, leaveResult = pcall(function()
-                return RequestRemote:InvokeServer("LeaveDungeon")
-            end)
-
-            if not leaveOK then
-                status("Leave dungeon error: " .. tostring(leaveResult))
-
-                EclipsePriority = false
-
-                if ResumeDungeonAfterEclipse and alive() then
-                    ResumeDungeonAfterEclipse = false
-                    task.wait(1)
-                    startDungeon()
-                end
-
-                task.wait(3)
-                continue
-            end
-
-            -- Tunggu sampai benar-benar keluar
-            local leaveDeadline = os.clock() + 20
-
-            while alive()
-                and Player:GetAttribute("Dungeon")
-                and os.clock() < leaveDeadline do
-
-                task.wait(0.2)
-            end
-
-            if not alive() then break end
-
-            if Player:GetAttribute("Dungeon") then
-                status("Leave belum berhasil! Mencoba lagi...")
-
-                EclipsePriority = false
-
-                if ResumeDungeonAfterEclipse then
-                    ResumeDungeonAfterEclipse = false
-                    task.wait(1)
-                    startDungeon()
-                end
-
-                task.wait(3)
-                continue
-            end
-
-            status("Berhasil keluar! OTW Eclipse...")
-
-        else
-            status("Masih di dungeon, menunggu Eclipse...")
-            task.wait(0.5)
-            continue
-        end
-    end
-
-    if not config then
-        status("Menunggu EclipseDungeon...")
-        task.wait(1)
-        continue
-    end
-
-    --====================================================
-    -- LANJUT MASUK ECLIPSE
-    --====================================================
-
-    status("Eclipse ditemukan: " .. tostring(attribute))
-    task.wait(0.5)
-
-    if not alive() then
-        break
-    end
-
-    if Player:GetAttribute("Dungeon") then
-        continue
-    end
-
+        while alive() do
             local config, attribute = getCurrentEclipse()
+
+            -- ECLIPSE PRIORITY: POTONG DUNGEON YANG SEDANG JALAN
+            if Player:GetAttribute("Dungeon") then
+                if config then
+                    status("ECLIPSE TERSEDIA! Menghentikan dungeon...")
+
+                    ResumeDungeonAfterEclipse = AutoDungeon
+                    EclipsePriority = true
+
+                    if AutoDungeon then
+                        stopDungeon()
+                    end
+
+                    status("Memanggil LeaveDungeon untuk prioritas Eclipse...")
+
+                    local leaveOK, leaveResult = pcall(function()
+                        return RequestRemote:InvokeServer("LeaveDungeon")
+                    end)
+
+                    if not leaveOK then
+                        status("Leave dungeon error: " .. tostring(leaveResult))
+                        EclipsePriority = false
+
+                        if ResumeDungeonAfterEclipse and alive() then
+                            ResumeDungeonAfterEclipse = false
+                            task.wait(1)
+                            startDungeon()
+                        end
+
+                        task.wait(3)
+                        continue
+                    end
+
+                    local leaveDeadline = os.clock() + 20
+
+                    while alive()
+                        and Player:GetAttribute("Dungeon")
+                        and os.clock() < leaveDeadline do
+
+                        task.wait(0.2)
+                    end
+
+                    if not alive() then break end
+
+                    if Player:GetAttribute("Dungeon") then
+                        status("Leave belum berhasil! Mencoba lagi...")
+                        EclipsePriority = false
+
+                        if ResumeDungeonAfterEclipse then
+                            ResumeDungeonAfterEclipse = false
+                            task.wait(1)
+                            startDungeon()
+                        end
+
+                        task.wait(3)
+                        continue
+                    end
+
+                    status("Berhasil keluar! OTW Eclipse...")
+                else
+                    status("Masih di dungeon, menunggu Eclipse...")
+                    task.wait(0.5)
+                    continue
+                end
+            end
 
             if not config then
                 status("Menunggu EclipseDungeon...")
@@ -2148,11 +1975,9 @@ local function startEclipse()
             end
 
             status("Eclipse ditemukan: " .. tostring(attribute))
-            task.wait(1)
+            task.wait(0.5)
 
-            if not alive() then
-                break
-            end
+            if not alive() then break end
 
             if Player:GetAttribute("Dungeon") then
                 continue
@@ -2164,9 +1989,7 @@ local function startEclipse()
                 return PlayerState.request("EclipseEnter", config.Id)
             end)
 
-            if not alive() then
-                break
-            end
+            if not alive() then break end
 
             if not ok then
                 status("Enter error: " .. tostring(result))
@@ -2180,17 +2003,13 @@ local function startEclipse()
                 break
             end
 
-            if not alive() then
-                break
-            end
+            if not alive() then break end
 
             status("Berhasil masuk! Mencari Umbra...")
 
             local umbra = waitUmbra()
 
-            if not alive() then
-                break
-            end
+            if not alive() then break end
 
             if not umbra then
                 status("Umbra tidak ditemukan / dungeon berakhir.")
@@ -2199,7 +2018,6 @@ local function startEclipse()
                 continue
             end
 
-            -- KUNCI TARGET ORBIT KE UMBRA
             EclipseTarget = umbra
             CurrentDungeonTarget = umbra
 
@@ -2221,25 +2039,20 @@ local function startEclipse()
                 end
             end
 
-            if not alive() then
-                break
+            if not alive() then break end
+
+            -- TP BEHIND AKTIF KHUSUS KE UMBRA
+            status("Mengaktifkan TP Behind + Skill...")
+
+            if not AutoTP then
+                startTP()
             end
-
-            -- ORBIT AKTIF KHUSUS KE UMBRA
-            status("Mengaktifkan Orbit + Skill...")
-
-            if AutoOrbit then
-                stopOrbit()
-            end
-
-            startOrbit()
 
             if not AutoSkill then
                 startSkill()
             end
 
-            -- TUNGGU UMBRA MATI / HILANG
-            status("Orbit + Skill sampai Umbra mati...")
+            status("TP Behind + Skill sampai Umbra mati...")
 
             while alive()
                 and umbra.Parent
@@ -2248,86 +2061,87 @@ local function startEclipse()
                 task.wait(0.2)
             end
 
-            if not alive() then
-                break
+            if not alive() then break end
+
+            status("Umbra hilang! Menghentikan worker...")
+
+            EclipseTarget = nil
+            CurrentDungeonTarget = nil
+
+            if EclipseOwnsTP and not tpWasOn and AutoTP then
+                stopTP()
             end
 
-            -- UMBRA MATI
-            status("Umbra hilang! Mematikan Orbit + Skill...")
+            if not skillWasOn and AutoSkill then
+                stopSkill()
+            end
 
-EclipseTarget = nil
-CurrentDungeonTarget = nil
+            status("Memastikan Umbra sudah hilang...")
 
-if AutoOrbit then stopOrbit() end
-if AutoSkill then stopSkill() end
+            while alive() do
+                local enemies = Workspace:FindFirstChild("Enemies")
+                local umbraStillExists = enemies
+                    and enemies:FindFirstChild("Umbra the Sun-Eater")
 
-status("Memastikan Umbra sudah hilang...")
+                if not umbraStillExists then
+                    break
+                end
 
-while alive() do
-    local enemies = Workspace:FindFirstChild("Enemies")
-    local umbraStillExists = enemies
-        and enemies:FindFirstChild("Umbra the Sun-Eater")
+                task.wait(0.2)
+            end
 
-    if not umbraStillExists then
-        break
-    end
+            if not alive() then break end
 
-    task.wait(0.2)
-end
+            status("Umbra sudah hilang! Memanggil LeaveDungeon...")
 
-if not alive() then break end
+            local success, leaveResult = leaveEclipseDungeon()
 
-status("Umbra sudah hilang! Memanggil LeaveDungeon...")
+            if success then
+                status("LeaveDungeon dipanggil: " .. tostring(leaveResult))
+            else
+                status("LeaveDungeon gagal: " .. tostring(leaveResult))
+            end
 
-local success, result = leaveEclipseDungeon()
+            while alive() and Player:GetAttribute("Dungeon") do
+                task.wait(0.25)
+            end
 
-if success then
-    status("LeaveDungeon dipanggil: " .. tostring(result))
-else
-    status("LeaveDungeon gagal: " .. tostring(result))
-end
+            if not alive() then break end
 
-while alive() and Player:GetAttribute("Dungeon") do
-    task.wait(0.25)
-end
+            status("Berhasil keluar dari Eclipse!")
 
-if not alive() then break end
+            EclipsePriority = false
 
-status("Berhasil keluar dari Eclipse!")
+            if ResumeDungeonAfterEclipse
+                and alive()
+                and not AutoDungeon then
 
--- Buka kembali izin Auto Dungeon
-EclipsePriority = false
+                ResumeDungeonAfterEclipse = false
 
--- Lanjutkan Auto Dungeon jika sebelumnya sedang ON
-if ResumeDungeonAfterEclipse
-    and alive()
-    and not AutoDungeon then
+                status("Cooldown Eclipse! Melanjutkan Auto Dungeon...")
+                task.wait(1)
 
-    ResumeDungeonAfterEclipse = false
+                startDungeon()
+            else
+                ResumeDungeonAfterEclipse = false
+            end
 
-    status("Cooldown Eclipse! Melanjutkan Auto Dungeon...")
-    task.wait(1)
-
-    startDungeon()
-else
-    ResumeDungeonAfterEclipse = false
-end
-
-task.wait(2)
+            task.wait(2)
         end
 
         if EclipseRunId == id then
             EclipseTarget = nil
             CurrentDungeonTarget = nil
 
-            if AutoOrbit then
-                stopOrbit()
+            if EclipseOwnsTP and not tpWasOn and AutoTP then
+                stopTP()
             end
 
-            if AutoSkill then
+            if not skillWasOn and AutoSkill then
                 stopSkill()
             end
 
+            EclipseOwnsTP = false
             AutoEclipse = false
             EclipseStatus = "Eclipse: OFF"
         end
@@ -2394,6 +2208,7 @@ local function startEnchant()
 
     AutoEnchant = true
     EnchantRunId += 1
+
     local id = EnchantRunId
 
     task.spawn(function()
@@ -2401,6 +2216,7 @@ local function startEnchant()
             pcall(function()
                 RequestRemote:InvokeServer("Enchant")
             end)
+
             task.wait()
         end
     end)
@@ -2408,7 +2224,6 @@ end
 
 --============================================================
 -- RESPONSIVE GUI | PC + MOBILE
--- DRAG TOUCH + MOUSE | SCROLL | MINIMIZE | DESTROY
 --============================================================
 
 Gui = Instance.new("ScreenGui")
@@ -2427,6 +2242,7 @@ if not guiOK or not Gui.Parent then
 end
 
 local Camera = Workspace.CurrentCamera
+
 local Main = Instance.new("Frame")
 Main.Name = "Main"
 Main.AnchorPoint = Vector2.new(0, 0)
@@ -2483,10 +2299,7 @@ local function updatePanelSize()
     )
 
     if Scroll then
-        Scroll.Size = UDim2.new(
-            1, -12,
-            1, -80
-        )
+        Scroll.Size = UDim2.new(1, -12, 1, -80)
     end
 
     if Status then
@@ -2554,7 +2367,7 @@ end
 -- SCROLLING CONTENT
 --============================================================
 
-local Scroll = Instance.new("ScrollingFrame")
+Scroll = Instance.new("ScrollingFrame")
 Scroll.Name = "ToggleList"
 Scroll.Position = UDim2.fromOffset(6, 44)
 Scroll.Size = UDim2.new(1, -12, 1, -80)
@@ -2580,6 +2393,23 @@ ListPadding.PaddingRight = UDim.new(0, 5)
 ListPadding.Parent = Scroll
 
 --============================================================
+-- STATUS LABEL
+--============================================================
+
+Status = Instance.new("TextLabel")
+Status.Name = "Status"
+Status.Size = UDim2.new(1, -24, 0, 20)
+Status.Position = UDim2.new(0, 12, 1, -27)
+Status.BackgroundTransparency = 1
+Status.Text = "Mobs in folder: 0"
+Status.TextColor3 = Color3.fromRGB(205, 195, 230)
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 10
+Status.TextXAlignment = Enum.TextXAlignment.Left
+Status.TextTruncate = Enum.TextTruncate.AtEnd
+Status.Parent = Main
+
+--============================================================
 -- INPUT CREATOR
 --============================================================
 
@@ -2600,22 +2430,25 @@ local function makeInput(placeholder, value)
     c.CornerRadius = UDim.new(0, 7)
     c.Parent = box
 
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(85, 75, 115)
-    stroke.Thickness = 1
-    stroke.Parent = box
+    local inputStroke = Instance.new("UIStroke")
+    inputStroke.Color = Color3.fromRGB(85, 75, 115)
+    inputStroke.Thickness = 1
+    inputStroke.Parent = box
+
     return box
 end
 
 --============================================================
 -- UNIVERSAL TOGGLE SYSTEM
--- Tambah fitur baru cukup: addToggle("NAMA", false, function(state) ... end)
 --============================================================
 
 local ToggleRegistry = {}
 
 local function setToggleVisual(toggle)
-    toggle.button.Text = toggle.name .. " : " .. (toggle.state and "ON" or "OFF")
+    toggle.button.Text = toggle.name
+        .. " : "
+        .. (toggle.state and "ON" or "OFF")
+
     toggle.button.BackgroundColor3 = toggle.state
         and Color3.fromRGB(45, 125, 75)
         or Color3.fromRGB(48, 48, 62)
@@ -2631,44 +2464,55 @@ local function addToggle(name, defaultState, callback)
     button.AutoButtonColor = true
     button.Parent = Scroll
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 7)
-    corner.Parent = button
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 7)
+    buttonCorner.Parent = button
 
-    local toggle = {name = name, state = defaultState == true, button = button}
+    local toggle = {
+        name = name,
+        state = defaultState == true,
+        button = button
+    }
+
     table.insert(ToggleRegistry, toggle)
     setToggleVisual(toggle)
 
     button.Activated:Connect(function()
         if not Running then return end
+
         toggle.state = not toggle.state
         setToggleVisual(toggle)
+
         local ok, err = pcall(callback, toggle.state)
-        if not ok then warn("[Toggle " .. name .. "] " .. tostring(err)) end
+
+        if not ok then
+            warn("[Toggle " .. name .. "] " .. tostring(err))
+        end
     end)
 
     if toggle.state then
         task.spawn(function()
             local ok, err = pcall(callback, true)
-            if not ok then warn("[Toggle " .. name .. "] " .. tostring(err)) end
+
+            if not ok then
+                warn("[Toggle " .. name .. "] " .. tostring(err))
+            end
         end)
     end
 
     return toggle
 end
 
--- Read the REAL automation flags every refresh.
--- This mirrors the old working setButton(..., AutoFeature) approach.
 local function getActualToggleState(name)
     if name == "AUTO SWING + HIT" then return AutoCombat end
     if name == "AUTO SKILL MOB TARGET" then return AutoSkill end
-    if name == "ORBIT + HOVER" then return AutoOrbit end
     if name == "TP BEHIND MOB" then return AutoTP end
     if name == "AUTO DUNGEON" then return AutoDungeon end
     if name == "AUTO ECLIPSE" then return AutoEclipse end
     if name == "AUTO CLAIM ALL REWARDS" then return AutoClaim end
     if name == "AUTO ENCHANT" then return AutoEnchant end
     if name == "AUTO REBIRTH" then return AutoRebirth end
+
     return false
 end
 
@@ -2683,7 +2527,7 @@ end
 -- DUNGEON INPUTS
 --============================================================
 
-DungeonNameInput = makeInput("Nama dungeon: S1 / S2 / S3 / E1", "Z3")
+DungeonNameInput = makeInput("Nama dungeon: S1 / S2 / S3", "Z3")
 DungeonCountInput = makeInput("Jumlah Dungeon", "30")
 
 --============================================================
@@ -2691,53 +2535,77 @@ DungeonCountInput = makeInput("Jumlah Dungeon", "30")
 --============================================================
 
 addToggle("AUTO SWING + HIT", false, function(state)
-    if state then startCombat() else stopCombat() end
+    if state then
+        startCombat()
+    else
+        stopCombat()
+    end
 end)
 
 addToggle("AUTO SKILL MOB TARGET", false, function(state)
-    if state then startSkill() else stopSkill() end
-end)
-
-addToggle("ORBIT + HOVER", false, function(state)
-    if state then startOrbit() else stopOrbit() end
+    if state then
+        startSkill()
+    else
+        stopSkill()
+    end
 end)
 
 addToggle("TP BEHIND MOB", false, function(state)
-    if state then startTP() else stopTP() end
+    if state then
+        startTP()
+    else
+        stopTP()
+    end
 end)
 
 addToggle("AUTO DUNGEON", false, function(state)
-    if state then startDungeon() else stopDungeon() end
+    if state then
+        startDungeon()
+    else
+        stopDungeon()
+    end
 end)
 
 addToggle("AUTO ECLIPSE", false, function(state)
-    if state then startEclipse() else stopEclipse() end
+    if state then
+        startEclipse()
+    else
+        stopEclipse()
+    end
 end)
 
 addToggle("AUTO CLAIM ALL REWARDS", false, function(state)
-    if state then startClaim() else stopClaim() end
+    if state then
+        startClaim()
+    else
+        stopClaim()
+    end
 end)
 
 addToggle("AUTO ENCHANT", false, function(state)
-    if state then startEnchant() else stopEnchant() end
+    if state then
+        startEnchant()
+    else
+        stopEnchant()
+    end
 end)
 
 addToggle("AUTO REBIRTH", false, function(state)
-    if state then startRebirth() else stopRebirth() end
+    if state then
+        startRebirth()
+    else
+        stopRebirth()
+    end
 end)
 
 --============================================================
--- STATUS UPDATE | TOGGLE VISUAL SYNC FIX
+-- STATUS UPDATE | TOGGLE SYNC
 --============================================================
 
 task.spawn(function()
     while Running and Gui and Gui.Parent do
-        -- Selalu sinkronkan warna dan tulisan toggle
-        pcall(function()
-            refreshToggles()
-        end)
+        pcall(refreshToggles)
 
-        -- Update status jika label tersedia
         if Status then
             pcall(function()
                 local mob = getTarget()
@@ -2753,10 +2621,8 @@ task.spawn(function()
                     Status.Text = ClaimStatus
                 elseif mob then
                     Status.Text = "Target: " .. mob.Name .. " | Mobs: " .. count
-                elseif AutoOrbit then
-                    Status.Text = "Orbit aktif | Mobs: " .. count
                 elseif AutoTP then
-                    Status.Text = "TP aktif | Mobs: " .. count
+                    Status.Text = "TP Behind aktif | Mobs: " .. count
                 else
                     Status.Text = "Mobs in folder: " .. count
                 end
@@ -2768,7 +2634,7 @@ task.spawn(function()
 end)
 
 --============================================================
--- MINIMIZE / RESTORE | FLOATING AF ICON (PC + MOBILE)
+-- MINIMIZE / RESTORE | FLOATING AF ICON
 --============================================================
 
 local MiniIcon = Instance.new("TextButton")
@@ -2797,6 +2663,8 @@ MiniStroke.Parent = MiniIcon
 
 Min.Activated:Connect(function()
     if not Running then return end
+
+    minimized = true
     Main.Visible = false
     MiniIcon.Visible = true
     MiniIcon.Position = Main.Position
@@ -2804,11 +2672,14 @@ end)
 
 MiniIcon.Activated:Connect(function()
     if not Running then return end
+
+    minimized = false
     MiniIcon.Visible = false
     Main.Visible = true
+    updatePanelSize()
 end)
 
--- Drag floating icon (PC + mobile)
+-- DRAG FLOATING ICON
 local miniDragging = false
 local miniDragStart
 local miniStartPosition
@@ -2816,6 +2687,7 @@ local miniStartPosition
 MiniIcon.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
+
         miniDragging = true
         miniDragStart = input.Position
         miniStartPosition = MiniIcon.Position
@@ -2827,8 +2699,10 @@ track(UserInputService.InputChanged:Connect(function(input)
 
     if input.UserInputType == Enum.UserInputType.MouseMovement
         or input.UserInputType == Enum.UserInputType.Touch then
+
         local delta = input.Position - miniDragStart
         local viewport = getViewport()
+
         local maxX = math.max(0, viewport.X - MiniIcon.AbsoluteSize.X)
         local maxY = math.max(0, viewport.Y - MiniIcon.AbsoluteSize.Y)
 
@@ -2842,16 +2716,16 @@ end))
 track(UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
+
         miniDragging = false
     end
 end))
 
 --============================================================
--- DRAG | MOUSE + MOBILE TOUCH
+-- DRAG MAIN GUI | MOUSE + MOBILE TOUCH
 --============================================================
 
 local dragging = false
-local dragInput = nil
 local dragStart = nil
 local startPosition = nil
 
@@ -2860,7 +2734,6 @@ Header.InputBegan:Connect(function(input)
         or input.UserInputType == Enum.UserInputType.Touch then
 
         dragging = true
-        dragInput = input
         dragStart = input.Position
         startPosition = Main.Position
     end
@@ -2894,7 +2767,6 @@ track(UserInputService.InputEnded:Connect(function(input)
         or input.UserInputType == Enum.UserInputType.Touch then
 
         dragging = false
-        dragInput = nil
     end
 end))
 
@@ -2914,7 +2786,6 @@ end
 
 updatePanelSize()
 
-
 --============================================================
 -- CENTRAL CLEANUP
 --============================================================
@@ -2926,27 +2797,31 @@ function Controller.Cleanup()
 
     AutoCombat = false
     AutoSkill = false
-    AutoOrbit = false
     AutoTP = false
     AutoDungeon = false
-    RebirthPaused = false
-    RebirthBusy = false
-    AutoRebirth = false
     AutoEclipse = false
     AutoClaim = false
     AutoEnchant = false
-    RebirthRunId += 1
+    AutoRebirth = false
 
-    OrbitRunId += 1
+    RebirthPaused = false
+    RebirthBusy = false
+
+    EclipseTarget = nil
+    CurrentDungeonTarget = nil
+
+    RebirthRunId += 1
     TPRunId += 1
     DungeonRunId += 1
-    stopAntiVoid()
     EclipseRunId += 1
     ClaimRunId += 1
     EnchantRunId += 1
 
+    stopAntiVoid()
     releaseAllKeys()
-    cleanupHover()
+
+    DungeonOwnsTP = false
+    EclipseOwnsTP = false
 
     for _, connection in ipairs(Connections) do
         pcall(function()
@@ -2981,11 +2856,12 @@ print("==============================================")
 print("[ANIME FORGING] ULTIMATE HUB LOADED")
 print("1. AUTO SWING + HIT")
 print("2. AUTO SKILL MOB TARGET | Q E R F -> MOB")
-print("3. ORBIT + HOVER")
-print("4. TP BEHIND MOB")
-print("5. AUTO DUNGEON")
-print("6. AUTO ECLIPSE")
-print("7. AUTO CLAIM ALL REWARDS")
-print("8. AUTO ENCHANT")
+print("3. TP BEHIND MOB")
+print("4. AUTO DUNGEON")
+print("5. AUTO ECLIPSE")
+print("6. AUTO CLAIM ALL REWARDS")
+print("7. AUTO ENCHANT")
+print("8. AUTO REBIRTH")
+print("TP BEHIND: AUTO DUNGEON + AUTO ECLIPSE")
 print("CLAIM INTERVAL: 300 SECONDS")
 print("==============================================")
