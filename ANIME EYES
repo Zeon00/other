@@ -1,0 +1,1854 @@
+--============================================================
+-- TRAINING HUB V5 | ULTIMATE STANDALONE
+-- 10 TOGGLE | PC + MOBILE | NO ASH-LIBS
+--
+-- 1. TRAIN
+-- 2. KURAMA
+-- 3. ENEMIES
+-- 4. REBIRTH
+-- 5. AUTO POP (FREE)
+-- 6. AUTO JOIN KURAMA
+-- 7. AUTO DODGE (FAST WALK)
+-- 8. AUTO TP POSITION
+-- 9. AUTO WALK KURAMA
+-- 10. AUTO HATCH VOID x3
+--
+-- DODGE HAS HIGHEST MOVEMENT PRIORITY
+-- WALK INTO KURAMA AFTER DODGE
+-- NO TELEPORT FOR KURAMA MOVEMENT
+--============================================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local TrainRemote = Remotes:WaitForChild("Train")
+local CastRemote = Remotes:WaitForChild("Cast")
+local RebirthRemote = Remotes:WaitForChild("Rebirth")
+local PopsRemote = Remotes:WaitForChild("Pops")
+local BossRemote = Remotes:WaitForChild("Boss")
+local PetActionRemote = Remotes:WaitForChild("PetAction")
+
+local Boss = require(
+    ReplicatedStorage:WaitForChild("Shared")
+        :WaitForChild("Logic")
+        :WaitForChild("Boss")
+)
+
+--============================================================
+-- CONFIG
+--============================================================
+
+local GUI_NAME = "UltimateTrainingHubV5"
+
+local TRAIN_DELAY = 0.05
+local SKILL_DELAY = 0.1
+local REBIRTH_DELAY = 0.1
+local POP_SCAN_DELAY = 0.08
+local JOIN_INTERVAL = 3
+
+local ENEMY_SCAN_DISTANCE = 50
+local ORBIT_RADIUS = 18
+local ORBIT_HEIGHT = 18
+local ORBIT_SPEED = 2
+local ORBIT_SMOOTHNESS = 2
+
+-- KURAMA WALK
+local KURAMA_WALK_DISTANCE = 10
+local KURAMA_STOP_DISTANCE = 11
+local KURAMA_WALK_REFRESH = 0.4
+local KURAMA_WALK_SPEED = 25
+
+-- FAST WALK DODGE
+local DODGE_WALK_SPEED = 60
+local DODGE_MARGIN = 12
+local SAFE_ANGLE_STEP = 10
+local SAFE_RADIUS_START = 12
+local SAFE_RADIUS_STEP = 5
+local DODGE_SEARCH_MAX = 25
+local DODGE_RETURN_DISTANCE = 3
+local DODGE_RETURN_TIMEOUT = 4
+local DODGE_RECHECK_DELAY = 0.25
+local ATTACK_RETURN_DELAY = 0.05
+
+-- PLAYER SPEED
+local DEFAULT_PLAYER_SPEED = 25
+local MIN_PLAYER_SPEED = 0
+local MAX_PLAYER_SPEED = 100
+
+-- AUTO TP POSITION
+local TP_CHECK_DELAY = 0.2
+local TP_TOLERANCE = 10
+
+local TP_TRIGGER_POSITION = Vector3.new(
+    11998.9365234375,
+    3.3980259895324707,
+    44.498863220214844
+)
+
+local TP_TARGET_POSITION = Vector3.new(
+    11940.8896484375,
+    3.2480244636535645,
+    122.11121368408203
+)
+
+--============================================================
+-- CLEAN OLD INSTANCE
+--============================================================
+
+if _G.UltimateTrainingHubV5Cleanup then
+    pcall(_G.UltimateTrainingHubV5Cleanup)
+end
+
+pcall(function()
+    local Old = CoreGui:FindFirstChild(GUI_NAME)
+    if Old then Old:Destroy() end
+end)
+
+pcall(function()
+    local Old = PlayerGui:FindFirstChild(GUI_NAME)
+    if Old then Old:Destroy() end
+end)
+
+--============================================================
+-- STATE
+--============================================================
+
+local Destroyed = false
+
+local TrainEnabled = false
+local KuramaEnabled = false
+local EnemiesEnabled = false
+local RebirthEnabled = false
+local AutoPopEnabled = false
+local AutoJoinEnabled = true
+local AutoDodgeEnabled = true
+local AutoTPEnabled = false
+local AutoWalkKuramaEnabled = false
+local AutoHatchVoidEnabled = false
+
+local HatchWorkerRunning = false
+
+local PlayerSpeed = DEFAULT_PLAYER_SPEED
+
+local CurrentOrbitModel = nil
+
+local NextTrain = 0
+local NextSkill = 0
+local NextRebirth = 0
+local NextPopScan = 0
+local LastJoinTime = 0
+local NextPositionCheck = 0
+
+local Connections = {}
+local PopFired = setmetatable({}, {__mode = "k"})
+local PopKinds = {}
+
+local PendingAttacks = {}
+
+-- DODGE STATE
+local DodgeWalking = false
+local SavedPosition = nil
+local DodgeMoveTarget = nil
+local ReturningFromDodge = false
+local ReturnStarted = 0
+local NextDodgeMove = 0
+local DodgeWorkerRunning = false
+
+-- KURAMA WALK STATE
+local KuramaWalkRunning = false
+local KuramaWalkActive = false
+local LastKuramaWalkCommand = 0
+local LastKuramaWalkTarget = nil
+
+--============================================================
+-- CONNECTION HELPER
+--============================================================
+
+local function Track(Connection)
+    table.insert(Connections, Connection)
+    return Connection
+end
+
+--============================================================
+-- CHARACTER HELPERS
+--============================================================
+
+local function GetCharacter()
+    return Player.Character
+end
+
+local function GetCharacterRoot()
+    local Character = GetCharacter()
+    if not Character then return nil end
+
+    return Character:FindFirstChild("HumanoidRootPart")
+end
+
+local function GetHumanoid()
+    local Character = GetCharacter()
+    if not Character then return nil end
+
+    return Character:FindFirstChildWhichIsA("Humanoid")
+end
+
+local function GetAliveCharacter()
+    local Character = GetCharacter()
+    if not Character then return nil end
+
+    local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+
+    if not Humanoid or not Root or Humanoid.Health <= 0 then
+        return nil
+    end
+
+    return Character, Humanoid, Root
+end
+
+--============================================================
+-- PLAYER SPEED
+--============================================================
+
+local function ApplyPlayerSpeed()
+    if Destroyed then return end
+
+    local Humanoid = GetHumanoid()
+
+    if Humanoid and Humanoid.Health > 0 then
+        pcall(function()
+            if DodgeWalking then
+                Humanoid.WalkSpeed = DODGE_WALK_SPEED
+            else
+                Humanoid.WalkSpeed = PlayerSpeed
+            end
+        end)
+    end
+end
+
+local function SetDodgeWalking(State)
+    DodgeWalking = State == true
+    ApplyPlayerSpeed()
+end
+
+--============================================================
+-- AUTO TP POSITION | POS 1 -> POS 2
+--============================================================
+
+local function ProcessAutoTPPosition()
+    if Destroyed or not AutoTPEnabled then return end
+    if os.clock() < NextPositionCheck then return end
+
+    NextPositionCheck = os.clock() + TP_CHECK_DELAY
+
+    local Root = GetCharacterRoot()
+    if not Root then return end
+
+    local Distance = (
+        Root.Position - TP_TRIGGER_POSITION
+    ).Magnitude
+
+    if Distance <= TP_TOLERANCE then
+        Root.CFrame =
+            CFrame.new(TP_TARGET_POSITION) * Root.CFrame.Rotation
+
+        Root.AssemblyLinearVelocity = Vector3.zero
+    end
+end
+
+--============================================================
+-- MODEL HELPERS
+--============================================================
+
+local function GetRoot(Object)
+    if not Object then return nil end
+
+    if Object:IsA("BasePart") then
+        return Object
+    end
+
+    if Object:IsA("Model") then
+        return Object.PrimaryPart
+            or Object:FindFirstChild("HumanoidRootPart")
+            or Object:FindFirstChild("Torso")
+            or Object:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    return nil
+end
+
+local function IsAlive(Object)
+    if not Object or not Object.Parent then
+        return false
+    end
+
+    local Humanoid = Object:FindFirstChildWhichIsA("Humanoid", true)
+
+    if Humanoid and Humanoid.Health <= 0 then
+        return false
+    end
+
+    return GetRoot(Object) ~= nil
+end
+
+--============================================================
+-- KURAMA TARGET
+--============================================================
+
+local function GetKurama()
+    local Kurama = Workspace:FindFirstChild("Kurama")
+
+    if Kurama and IsAlive(Kurama) then
+        return Kurama
+    end
+
+    return nil
+end
+
+--============================================================
+-- ENEMY SCAN
+--============================================================
+
+local function GetEnemies()
+    local Result = {}
+    local Folder = Workspace:FindFirstChild("MyEnemies")
+    local PlayerRoot = GetCharacterRoot()
+
+    if not Folder or not PlayerRoot then
+        return Result
+    end
+
+    for _, Mob in ipairs(Folder:GetChildren()) do
+        if IsAlive(Mob) then
+            local Root = GetRoot(Mob)
+
+            if Root then
+                local Distance =
+                    (Root.Position - PlayerRoot.Position).Magnitude
+
+                if Distance <= ENEMY_SCAN_DISTANCE then
+                    table.insert(Result, {
+                        Model = Mob,
+                        Root = Root,
+                        Distance = Distance
+                    })
+                end
+            end
+        end
+    end
+
+    return Result
+end
+
+--============================================================
+-- ACTION POSITIONS
+--============================================================
+
+local function GetActionPositions()
+    local Positions = {}
+
+    if KuramaEnabled then
+        local Kurama = GetKurama()
+        local Root = Kurama and GetRoot(Kurama)
+
+        if Root then
+            table.insert(Positions, Root.Position)
+            return Positions
+        end
+    end
+
+    if EnemiesEnabled then
+        for _, Data in ipairs(GetEnemies()) do
+            if Data.Root and Data.Root.Parent then
+                table.insert(Positions, Data.Root.Position)
+            end
+        end
+    end
+
+    return Positions
+end
+
+--============================================================
+-- TRAIN + AUTO SKILL E/R
+--============================================================
+
+local function ProcessTraining()
+    if not TrainEnabled or Destroyed then return end
+
+    local Now = os.clock()
+
+    if Now >= NextTrain then
+        NextTrain = Now + TRAIN_DELAY
+
+        pcall(function()
+            TrainRemote:FireServer()
+        end)
+
+        local Positions = GetActionPositions()
+
+        if #Positions == 0 then
+            local Root = GetCharacterRoot()
+
+            if Root then
+                table.insert(Positions, Root.Position)
+            end
+        end
+
+        for _, Position in ipairs(Positions) do
+            if not TrainEnabled or Destroyed then break end
+
+            pcall(function()
+                CastRemote:FireServer("attack", Position)
+            end)
+        end
+    end
+
+    if not TrainEnabled or Destroyed then return end
+
+    if Now >= NextSkill then
+        NextSkill = Now + SKILL_DELAY
+
+        local Targets = GetActionPositions()
+
+        for _, Position in ipairs(Targets) do
+            if not TrainEnabled or Destroyed then break end
+
+            pcall(function()
+                CastRemote:FireServer("E", Position)
+            end)
+
+            pcall(function()
+                CastRemote:FireServer("R", Position)
+            end)
+        end
+    end
+end
+
+--============================================================
+-- REBIRTH
+--============================================================
+
+local function ProcessRebirth()
+    if not RebirthEnabled or Destroyed then return end
+    if os.clock() < NextRebirth then return end
+
+    NextRebirth = os.clock() + REBIRTH_DELAY
+
+    task.spawn(function()
+        if not RebirthEnabled or Destroyed then return end
+
+        pcall(function()
+            RebirthRemote:InvokeServer()
+        end)
+    end)
+end
+
+--============================================================
+-- ENEMY ORBIT
+--============================================================
+
+local function GetOrbitTarget()
+    local Enemies = GetEnemies()
+
+    if CurrentOrbitModel then
+        for _, Data in ipairs(Enemies) do
+            if Data.Model == CurrentOrbitModel then
+                return Data
+            end
+        end
+    end
+
+    local Nearest = nil
+    local NearestDistance = ENEMY_SCAN_DISTANCE
+
+    for _, Data in ipairs(Enemies) do
+        if Data.Distance < NearestDistance then
+            NearestDistance = Data.Distance
+            Nearest = Data
+        end
+    end
+
+    CurrentOrbitModel = Nearest and Nearest.Model or nil
+
+    return Nearest
+end
+
+local function GetSafeOrbitPosition(PlayerRoot, TargetRoot)
+    if not TargetRoot or not TargetRoot.Parent then
+        return nil
+    end
+
+    local Angle = os.clock() * ORBIT_SPEED
+
+    local Offset = Vector3.new(
+        math.cos(Angle) * ORBIT_RADIUS,
+        0,
+        math.sin(Angle) * ORBIT_RADIUS
+    )
+
+    local DesiredPosition = TargetRoot.Position + Offset
+
+    local Params = RaycastParams.new()
+    Params.FilterType = Enum.RaycastFilterType.Exclude
+
+    local Exclude = {}
+
+    if GetCharacter() then
+        table.insert(Exclude, GetCharacter())
+    end
+
+    if CurrentOrbitModel then
+        table.insert(Exclude, CurrentOrbitModel)
+    end
+
+    Params.FilterDescendantsInstances = Exclude
+
+    local Result = Workspace:Raycast(
+        DesiredPosition + Vector3.new(0, 25, 0),
+        Vector3.new(0, -100, 0),
+        Params
+    )
+
+    if not Result then return nil end
+
+    return Result.Position + Vector3.new(0, ORBIT_HEIGHT, 0)
+end
+
+local function ProcessOrbit(DeltaTime)
+    if not EnemiesEnabled or Destroyed then
+        CurrentOrbitModel = nil
+        return
+    end
+
+    if GetKurama() and KuramaEnabled then
+        CurrentOrbitModel = nil
+        return
+    end
+
+    local PlayerRoot = GetCharacterRoot()
+    if not PlayerRoot then return end
+
+    local Target = GetOrbitTarget()
+
+    if not Target or not Target.Root then
+        CurrentOrbitModel = nil
+        return
+    end
+
+    local SafePosition =
+        GetSafeOrbitPosition(PlayerRoot, Target.Root)
+
+    if not SafePosition then return end
+
+    local LookAtPosition = Vector3.new(
+        Target.Root.Position.X,
+        SafePosition.Y,
+        Target.Root.Position.Z
+    )
+
+    local Goal = CFrame.lookAt(SafePosition, LookAtPosition)
+
+    local Alpha = math.clamp(
+        DeltaTime * ORBIT_SMOOTHNESS,
+        0,
+        0.12
+    )
+
+    PlayerRoot.CFrame = PlayerRoot.CFrame:Lerp(Goal, Alpha)
+end
+
+--============================================================
+-- AUTO POP | FREE ONLY
+--============================================================
+
+local function GetPopsFolder()
+    local MainGui = PlayerGui:FindFirstChild("Main")
+    if not MainGui then return nil end
+
+    local HUD = MainGui:FindFirstChild("HUD")
+    if not HUD then return nil end
+
+    return HUD:FindFirstChild("Pops")
+end
+
+Track(PopsRemote.OnClientEvent:Connect(function(Action, Data)
+    if Destroyed or Action ~= "bubble" then return end
+    if type(Data) ~= "table" then return end
+    if type(Data.id) ~= "number" then return end
+
+    PopKinds[Data.id] = Data.kind
+end))
+
+local function GetBubbleButton(Holder)
+    for _, Object in ipairs(Holder:GetChildren()) do
+        if Object:IsA("GuiButton")
+            and Object.Name == "Bubble" then
+            return Object
+        end
+    end
+
+    return nil
+end
+
+local function ProcessAutoPop()
+    if not AutoPopEnabled or Destroyed then return end
+    if os.clock() < NextPopScan then return end
+
+    NextPopScan = os.clock() + POP_SCAN_DELAY
+
+    local Pops = GetPopsFolder()
+    if not Pops then return end
+
+    for _, Holder in ipairs(Pops:GetChildren()) do
+        if not AutoPopEnabled or Destroyed then break end
+
+        local Id = tonumber(Holder.Name:match("^Bubble(%d+)$"))
+
+        if Holder:IsA("Frame") and Id and PopKinds[Id] == "free" then
+            local Button = GetBubbleButton(Holder)
+            local Show = Holder:FindFirstChild("Show")
+
+            if Button
+                and Button.Visible
+                and Show
+                and Show:IsA("UIScale")
+                and Show.Scale >= 0.8
+                and not PopFired[Holder]
+                and typeof(firesignal) == "function" then
+
+                PopFired[Holder] = true
+
+                local Success = pcall(function()
+                    firesignal(Button.Activated)
+                end)
+
+                if not Success then
+                    PopFired[Holder] = nil
+                end
+            end
+        end
+    end
+end
+
+--============================================================
+-- AUTO JOIN KURAMA
+--============================================================
+
+local function IsInArena()
+    local _, _, Root = GetAliveCharacter()
+    if not Root then return false end
+
+    local Centre = Boss.CENTRE
+    local Position = Root.Position
+
+    local DX = Position.X - Centre.X
+    local DZ = Position.Z - Centre.Z
+
+    return (
+        DX * DX + DZ * DZ
+        <= Boss.INSIDE_RADIUS * Boss.INSIDE_RADIUS
+    ) and math.abs(Position.Y - Centre.Y) < 80
+end
+
+local function TryJoinKurama()
+    if Destroyed or not AutoJoinEnabled then return end
+
+    local Phase = Workspace:GetAttribute("BossPhase")
+
+    if Phase ~= "coming" and Phase ~= "fight" then
+        return
+    end
+
+    if Player:GetAttribute("InStages") == true then return end
+    if Player:GetAttribute("InWave") == true then return end
+    if IsInArena() then return end
+
+    local Now = os.clock()
+
+    if Now - LastJoinTime < JOIN_INTERVAL then
+        return
+    end
+
+    LastJoinTime = Now
+
+    pcall(function()
+        BossRemote:FireServer("join")
+    end)
+end
+
+--============================================================
+-- DODGE ATTACK VALIDATION
+--============================================================
+
+local function IsValidAttack(Kind)
+    if type(Kind) ~= "string" then return false end
+    if type(Boss.ATTACKS) ~= "table" then return false end
+    if not Boss.ATTACKS[Kind] then return false end
+    if type(Boss.ALL) ~= "table" then return false end
+
+    return table.find(Boss.ALL, Kind) ~= nil
+end
+
+local function CopyShapes(Source)
+    local Result = {}
+
+    if type(Source) ~= "table" then
+        return Result
+    end
+
+    for _, Shape in pairs(Source) do
+        if type(Shape) == "table"
+            and type(Shape.x) == "number"
+            and type(Shape.z) == "number"
+            and type(Shape.radius) == "number"
+            and (
+                Shape.kind == "circle"
+                or Shape.kind == "ring"
+                or Shape.kind == "cone"
+            ) then
+
+            table.insert(Result, {
+                kind = Shape.kind,
+                x = Shape.x,
+                z = Shape.z,
+                radius = Shape.radius,
+                inner = Shape.inner,
+                yaw = Shape.yaw,
+                half = Shape.half
+            })
+        end
+    end
+
+    return Result
+end
+
+local function AddAttack(Data)
+    if type(Data) ~= "table" then return end
+    if Data.t ~= "atk" then return end
+    if not IsValidAttack(Data.k) then return end
+    if type(Data.hit) ~= "number" then return end
+
+    local Shapes = CopyShapes(Data.sh)
+
+    if #Shapes == 0 then return end
+
+    table.insert(PendingAttacks, {
+        kind = Data.k,
+        hit = Data.hit,
+        shapes = Shapes
+    })
+end
+
+local function CleanAttacks()
+    local Now = Workspace:GetServerTimeNow()
+
+    for I = #PendingAttacks, 1, -1 do
+        local Attack = PendingAttacks[I]
+
+        if Now >= Attack.hit + ATTACK_RETURN_DELAY then
+            table.remove(PendingAttacks, I)
+        end
+    end
+end
+
+local function IsDangerous(X, Z)
+    for _, Attack in ipairs(PendingAttacks) do
+        local Success, Hit = pcall(function()
+            return Boss.hits(
+                Attack.shapes,
+                X,
+                Z,
+                -DODGE_MARGIN
+            )
+        end)
+
+        if Success and Hit then
+            return true
+        end
+    end
+
+    return false
+end
+
+--============================================================
+-- FIND SAFE POSITION
+--============================================================
+
+local function FindSafePosition(Root)
+    local Centre = Boss.CENTRE
+    local Current = Root.Position
+
+    local BestPosition = nil
+    local BestScore = math.huge
+
+    local Kurama = GetKurama()
+    local KuramaRoot = Kurama and GetRoot(Kurama)
+
+    local function CheckCandidate(X, Z)
+        if not IsDangerous(X, Z) then
+            local DistanceFromPlayer = (
+                Vector2.new(X, Z)
+                - Vector2.new(Current.X, Current.Z)
+            ).Magnitude
+
+            local DistanceFromKurama = 0
+
+            if KuramaRoot and KuramaRoot.Parent then
+                DistanceFromKurama = (
+                    Vector2.new(X, Z)
+                    - Vector2.new(
+                        KuramaRoot.Position.X,
+                        KuramaRoot.Position.Z
+                    )
+                ).Magnitude
+            else
+                DistanceFromKurama = (
+                    Vector2.new(X, Z)
+                    - Vector2.new(Centre.X, Centre.Z)
+                ).Magnitude
+            end
+
+            local Score =
+                DistanceFromKurama + DistanceFromPlayer * 0.15
+
+            if Score < BestScore then
+                BestScore = Score
+
+                BestPosition = Vector3.new(
+                    X,
+                    Current.Y,
+                    Z
+                )
+            end
+        end
+    end
+
+    -- PRIORITAS 1: AREA SEKITAR KURAMA
+    if KuramaRoot and KuramaRoot.Parent then
+        local BossPosition = KuramaRoot.Position
+
+        for Radius = 8, DODGE_SEARCH_MAX, 2 do
+            for Angle = 0, 350, SAFE_ANGLE_STEP do
+                local Radians = math.rad(Angle)
+
+                local X =
+                    BossPosition.X + math.cos(Radians) * Radius
+
+                local Z =
+                    BossPosition.Z + math.sin(Radians) * Radius
+
+                CheckCandidate(X, Z)
+            end
+        end
+    end
+
+    -- PRIORITAS 2: AREA ARENA
+    if not BestPosition then
+        local MaxRadius = math.max(
+            10,
+            Boss.INSIDE_RADIUS - 8
+        )
+
+        for Radius = SAFE_RADIUS_START, MaxRadius, SAFE_RADIUS_STEP do
+            for Angle = 0, 350, SAFE_ANGLE_STEP do
+                local Radians = math.rad(Angle)
+
+                local X =
+                    Centre.X + math.cos(Radians) * Radius
+
+                local Z =
+                    Centre.Z + math.sin(Radians) * Radius
+
+                CheckCandidate(X, Z)
+            end
+        end
+    end
+
+    return BestPosition
+end
+
+--============================================================
+-- STOP DODGE MOVEMENT
+--============================================================
+
+local function StopDodgeMovement()
+    local Humanoid = GetHumanoid()
+    local Root = GetCharacterRoot()
+
+    if Humanoid and Root then
+        pcall(function()
+            Humanoid:MoveTo(Root.Position)
+        end)
+    end
+
+    SetDodgeWalking(false)
+
+    SavedPosition = nil
+    DodgeMoveTarget = nil
+    ReturningFromDodge = false
+    ReturnStarted = 0
+end
+
+--============================================================
+-- MOVE TO SAFE POSITION | WALK ONLY
+--============================================================
+
+local function MoveToSafePosition(Position)
+    if not Position then return false end
+
+    local _, Humanoid, Root = GetAliveCharacter()
+
+    if not Humanoid or not Root then
+        return false
+    end
+
+    SetDodgeWalking(true)
+
+    DodgeMoveTarget = Position
+
+    pcall(function()
+        Humanoid:MoveTo(Position)
+    end)
+
+    return true
+end
+
+--============================================================
+-- RETURN TO SAVED POSITION | WALK ONLY
+--============================================================
+
+local function ReturnToSavedPosition()
+    if not SavedPosition then
+        StopDodgeMovement()
+        return
+    end
+
+    local _, Humanoid, Root = GetAliveCharacter()
+
+    if not Humanoid or not Root then
+        StopDodgeMovement()
+        return
+    end
+
+    if not ReturningFromDodge then
+        ReturningFromDodge = true
+        ReturnStarted = os.clock()
+
+        SetDodgeWalking(true)
+
+        pcall(function()
+            Humanoid:MoveTo(SavedPosition)
+        end)
+    end
+
+    local Distance = (
+        Root.Position - SavedPosition
+    ).Magnitude
+
+    if Distance <= DODGE_RETURN_DISTANCE
+        or os.clock() - ReturnStarted >= DODGE_RETURN_TIMEOUT then
+
+        StopDodgeMovement()
+    end
+end
+
+--============================================================
+-- DODGE WORKER
+--============================================================
+
+local function StartDodgeWorker()
+    if DodgeWorkerRunning or Destroyed then return end
+
+    DodgeWorkerRunning = true
+
+    task.spawn(function()
+        while not Destroyed do
+            CleanAttacks()
+
+            local Phase = Workspace:GetAttribute("BossPhase")
+
+            if not AutoDodgeEnabled or Phase ~= "fight" then
+                if SavedPosition or DodgeWalking then
+                    StopDodgeMovement()
+                end
+
+                task.wait(0.05)
+                continue
+            end
+
+            local _, Humanoid, Root = GetAliveCharacter()
+
+            if not Humanoid or not Root then
+                task.wait(0.05)
+                continue
+            end
+
+            if #PendingAttacks > 0 then
+                local Unsafe = IsDangerous(
+                    Root.Position.X,
+                    Root.Position.Z
+                )
+
+                if Unsafe then
+                    -- DODGE MENGAMBIL PRIORITAS.
+                    if not SavedPosition then
+                        SavedPosition = Root.Position
+                        ReturningFromDodge = false
+                    end
+
+                    if os.clock() >= NextDodgeMove then
+                        NextDodgeMove =
+                            os.clock() + DODGE_RECHECK_DELAY
+
+                        local SafePosition = FindSafePosition(Root)
+
+                        if SafePosition then
+                            MoveToSafePosition(SafePosition)
+                        end
+                    end
+                end
+
+                ReturningFromDodge = false
+
+            elseif SavedPosition then
+                ReturnToSavedPosition()
+            end
+
+            task.wait(0.03)
+        end
+
+        StopDodgeMovement()
+        DodgeWorkerRunning = false
+    end)
+end
+
+--============================================================
+-- BOSS REMOTE LISTENER
+--============================================================
+
+Track(BossRemote.OnClientEvent:Connect(function(Batch)
+    if Destroyed or not AutoDodgeEnabled then return end
+    if type(Batch) ~= "table" then return end
+
+    for _, EventData in pairs(Batch) do
+        if type(EventData) == "table" then
+            AddAttack(EventData)
+        end
+    end
+
+    if #PendingAttacks > 0 then
+        StartDodgeWorker()
+    end
+end))
+
+--============================================================
+-- AUTO WALK INTO KURAMA
+-- DODGE ALWAYS HAS PRIORITY
+--============================================================
+
+local function StopKuramaWalk()
+    if not KuramaWalkActive then return end
+
+    local Humanoid = GetHumanoid()
+    local Root = GetCharacterRoot()
+
+    if Humanoid and Root then
+        pcall(function()
+            Humanoid:MoveTo(Root.Position)
+        end)
+    end
+
+    KuramaWalkActive = false
+    LastKuramaWalkTarget = nil
+    LastKuramaWalkCommand = 0
+end
+
+local function GetKuramaWalkPosition(KuramaRoot, PlayerRoot)
+    local BossPosition = KuramaRoot.Position
+    local PlayerPosition = PlayerRoot.Position
+
+    local Direction = Vector3.new(
+        PlayerPosition.X - BossPosition.X,
+        0,
+        PlayerPosition.Z - BossPosition.Z
+    )
+
+    if Direction.Magnitude < 0.1 then
+        Direction = Vector3.new(1, 0, 0)
+    else
+        Direction = Direction.Unit
+    end
+
+    -- Posisi berhenti di luar tubuh Kurama.
+    local TargetPosition =
+        BossPosition + Direction * KURAMA_WALK_DISTANCE
+
+    return Vector3.new(
+        TargetPosition.X,
+        PlayerPosition.Y,
+        TargetPosition.Z
+    )
+end
+
+local function StartKuramaWalkWorker()
+    if KuramaWalkRunning or Destroyed then return end
+
+    KuramaWalkRunning = true
+
+    task.spawn(function()
+        while not Destroyed do
+            -- TOGGLE OFF
+            if not AutoWalkKuramaEnabled then
+                StopKuramaWalk()
+                task.wait(0.15)
+                continue
+            end
+
+            -- DODGE PRIORITY
+            -- Jangan jalankan pendekatan ketika dodge sedang aktif.
+            if DodgeWalking
+                or SavedPosition ~= nil
+                or ReturningFromDodge
+                or #PendingAttacks > 0 then
+
+                task.wait(0.08)
+                continue
+            end
+
+            local Phase = Workspace:GetAttribute("BossPhase")
+
+            if Phase ~= "fight" then
+                StopKuramaWalk()
+                task.wait(0.2)
+                continue
+            end
+
+            local _, Humanoid, PlayerRoot = GetAliveCharacter()
+
+            local Kurama = GetKurama()
+            local KuramaRoot = Kurama and GetRoot(Kurama)
+
+            if not Humanoid
+                or not PlayerRoot
+                or not KuramaRoot
+                or not KuramaRoot.Parent then
+
+                StopKuramaWalk()
+                task.wait(0.2)
+                continue
+            end
+
+            local Distance = (
+                PlayerRoot.Position - KuramaRoot.Position
+            ).Magnitude
+
+            -- SUDAH CUKUP DEKAT
+            if Distance <= KURAMA_STOP_DISTANCE then
+                if KuramaWalkActive then
+                    StopKuramaWalk()
+                end
+
+                task.wait(0.15)
+                continue
+            end
+
+            -- UPDATE POSISI BERKALA AGAR MENGIKUTI KURAMA
+            if os.clock() - LastKuramaWalkCommand
+                >= KURAMA_WALK_REFRESH then
+
+                LastKuramaWalkCommand = os.clock()
+
+                local TargetPosition = GetKuramaWalkPosition(
+                    KuramaRoot,
+                    PlayerRoot
+                )
+
+                -- Pastikan dodge belum mengambil alih.
+                if not DodgeWalking
+                    and SavedPosition == nil
+                    and #PendingAttacks == 0 then
+
+                    KuramaWalkActive = true
+                    LastKuramaWalkTarget = TargetPosition
+
+                    -- Kecepatan normal Player Speed.
+                    ApplyPlayerSpeed()
+
+                    pcall(function()
+                        Humanoid:MoveTo(TargetPosition)
+                    end)
+                end
+            end
+
+            task.wait(0.08)
+        end
+
+        StopKuramaWalk()
+        KuramaWalkRunning = false
+    end)
+end
+
+--============================================================
+-- AUTO HATCH VOID x3
+--============================================================
+
+local function StartAutoHatchVoid()
+    if HatchWorkerRunning or Destroyed then return end
+
+    HatchWorkerRunning = true
+
+    task.spawn(function()
+        while not Destroyed and AutoHatchVoidEnabled do
+            pcall(function()
+                PetActionRemote:InvokeServer("hatch", {
+                    egg = "void",
+                    count = 3
+                })
+            end)
+
+            -- Menunggu pemanggilan server selesai sebelum mengulang.
+            -- Tidak menggunakan cooldown waktu tambahan.
+            task.wait()
+        end
+
+        HatchWorkerRunning = false
+    end)
+end
+
+--============================================================
+-- CHARACTER RESPAWN
+--============================================================
+
+Track(Player.CharacterAdded:Connect(function()
+    table.clear(PendingAttacks)
+
+    SavedPosition = nil
+    DodgeMoveTarget = nil
+    DodgeWalking = false
+    ReturningFromDodge = false
+
+    KuramaWalkActive = false
+    LastKuramaWalkTarget = nil
+    LastKuramaWalkCommand = 0
+
+    task.wait(0.5)
+
+    ApplyPlayerSpeed()
+end))
+
+--============================================================
+-- GUI
+--============================================================
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = GUI_NAME
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.DisplayOrder = 999
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local ParentSuccess = pcall(function()
+    ScreenGui.Parent = CoreGui
+end)
+
+if not ParentSuccess then
+    ScreenGui.Parent = PlayerGui
+end
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.fromOffset(300, 515)
+Main.Position = UDim2.new(0.5, -150, 0.5, -257)
+Main.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+Main.BorderSizePixel = 0
+Main.Parent = ScreenGui
+
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(125, 75, 220)
+MainStroke.Thickness = 1.5
+MainStroke.Parent = Main
+
+--============================================================
+-- HEADER
+--============================================================
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(35, 30, 48)
+Header.BorderSizePixel = 0
+Header.Parent = Main
+
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -90, 1, 0)
+Title.Position = UDim2.fromOffset(12, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "ULTIMATE TRAINING HUB"
+Title.TextColor3 = Color3.fromRGB(235, 225, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 12
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Size = UDim2.fromOffset(28, 26)
+MinimizeButton.Position = UDim2.new(1, -64, 0, 7)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(75, 55, 110)
+MinimizeButton.Text = "—"
+MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 16
+MinimizeButton.Parent = Header
+
+Instance.new("UICorner", MinimizeButton).CornerRadius = UDim.new(0, 5)
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.fromOffset(28, 26)
+CloseButton.Position = UDim2.new(1, -32, 0, 7)
+CloseButton.BackgroundColor3 = Color3.fromRGB(155, 45, 65)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 12
+CloseButton.Parent = Header
+
+Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 5)
+
+--============================================================
+-- BODY
+--============================================================
+
+local Body = Instance.new("Frame")
+Body.Name = "Body"
+Body.Position = UDim2.fromOffset(10, 48)
+Body.Size = UDim2.new(1, -20, 1, -58)
+Body.BackgroundTransparency = 1
+Body.Parent = Main
+
+local Status = Instance.new("TextLabel")
+Status.Position = UDim2.new(0, 0, 1, -20)
+Status.Size = UDim2.new(1, 0, 0, 18)
+Status.BackgroundTransparency = 1
+Status.Text = "ALL SYSTEMS OFF"
+Status.TextColor3 = Color3.fromRGB(165, 170, 190)
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 9
+Status.TextXAlignment = Enum.TextXAlignment.Center
+Status.Parent = Body
+
+--============================================================
+-- STATUS UPDATE
+--============================================================
+
+local function UpdateStatus()
+    if Destroyed or not Status then return end
+
+    local Active = {}
+
+    if TrainEnabled then table.insert(Active, "TRAIN") end
+    if KuramaEnabled then table.insert(Active, "KURAMA") end
+    if EnemiesEnabled then table.insert(Active, "ENEMIES") end
+    if RebirthEnabled then table.insert(Active, "REBIRTH") end
+    if AutoPopEnabled then table.insert(Active, "POP") end
+    if AutoJoinEnabled then table.insert(Active, "JOIN") end
+    if AutoDodgeEnabled then table.insert(Active, "DODGE") end
+    if AutoTPEnabled then table.insert(Active, "TP POS") end
+    if AutoWalkKuramaEnabled then table.insert(Active, "WALK KURAMA") end
+    if AutoHatchVoidEnabled then table.insert(Active, "HATCH VOID") end
+
+    Status.Text = #Active == 0
+        and "ALL SYSTEMS OFF"
+        or table.concat(Active, " | ")
+end
+
+--============================================================
+-- ADD TOGGLE
+--============================================================
+
+local ToggleCount = 0
+
+local function AddToggle(Name, DefaultState, Callback)
+    ToggleCount += 1
+
+    local Button = Instance.new("TextButton")
+    Button.Name = Name
+    Button.Size = UDim2.new(1, 0, 0, 32)
+    Button.Position = UDim2.fromOffset(0, (ToggleCount - 1) * 35)
+    Button.BackgroundColor3 = Color3.fromRGB(42, 46, 63)
+    Button.BorderSizePixel = 0
+    Button.Text = ""
+    Button.Parent = Body
+
+    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 7)
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -65, 1, 0)
+    Label.Position = UDim2.fromOffset(10, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = Name
+    Label.TextColor3 = Color3.fromRGB(240, 242, 250)
+    Label.Font = Enum.Font.GothamBold
+    Label.TextSize = 10
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Button
+
+    local StateLabel = Instance.new("TextLabel")
+    StateLabel.Size = UDim2.fromOffset(43, 22)
+    StateLabel.Position = UDim2.new(1, -49, 0.5, -11)
+    StateLabel.BackgroundColor3 = Color3.fromRGB(95, 65, 72)
+    StateLabel.TextColor3 = Color3.new(1, 1, 1)
+    StateLabel.Font = Enum.Font.GothamBold
+    StateLabel.TextSize = 9
+    StateLabel.Parent = Button
+
+    Instance.new("UICorner", StateLabel).CornerRadius = UDim.new(0, 5)
+
+    local State = DefaultState == true
+
+    local function Refresh()
+        StateLabel.Text = State and "ON" or "OFF"
+
+        StateLabel.BackgroundColor3 = State
+            and Color3.fromRGB(35, 155, 95)
+            or Color3.fromRGB(95, 65, 72)
+
+        Button.BackgroundColor3 = State
+            and Color3.fromRGB(43, 65, 66)
+            or Color3.fromRGB(42, 46, 63)
+    end
+
+    Track(Button.MouseButton1Click:Connect(function()
+        if Destroyed then return end
+
+        State = not State
+        Refresh()
+
+        Callback(State)
+        UpdateStatus()
+    end))
+
+    Refresh()
+
+    return Button
+end
+
+--============================================================
+-- 10 TOGGLES
+--============================================================
+
+AddToggle("TRAIN", false, function(State)
+    TrainEnabled = State
+
+    if State then
+        NextTrain = 0
+        NextSkill = 0
+    end
+end)
+
+AddToggle("KURAMA", false, function(State)
+    KuramaEnabled = State
+end)
+
+AddToggle("ENEMIES", false, function(State)
+    EnemiesEnabled = State
+
+    if not State then
+        CurrentOrbitModel = nil
+    end
+end)
+
+AddToggle("REBIRTH", false, function(State)
+    RebirthEnabled = State
+
+    if State then
+        NextRebirth = 0
+    end
+end)
+
+AddToggle("AUTO POP (FREE)", false, function(State)
+    AutoPopEnabled = State
+    NextPopScan = 0
+
+    if not State then
+        table.clear(PopFired)
+    end
+end)
+
+AddToggle("AUTO JOIN KURAMA", true, function(State)
+    AutoJoinEnabled = State
+
+    if State then
+        LastJoinTime = 0
+    end
+end)
+
+AddToggle("AUTO DODGE (FAST WALK)", true, function(State)
+    AutoDodgeEnabled = State
+
+    if not State then
+        table.clear(PendingAttacks)
+        StopDodgeMovement()
+    else
+        StartDodgeWorker()
+    end
+end)
+
+AddToggle("AUTO TP POSITION", false, function(State)
+    AutoTPEnabled = State
+    NextPositionCheck = 0
+end)
+
+AddToggle("AUTO WALK KURAMA", false, function(State)
+    AutoWalkKuramaEnabled = State
+
+    if State then
+        LastKuramaWalkCommand = 0
+        StartKuramaWalkWorker()
+    else
+        StopKuramaWalk()
+    end
+end)
+
+AddToggle("AUTO HATCH VOID x3", false, function(State)
+    AutoHatchVoidEnabled = State
+
+    if State then
+        StartAutoHatchVoid()
+    end
+end)
+
+--============================================================
+-- PLAYER SPEED INPUT
+--============================================================
+
+local SpeedRow = Instance.new("Frame")
+SpeedRow.Name = "PlayerSpeedRow"
+SpeedRow.Size = UDim2.new(1, 0, 0, 32)
+SpeedRow.Position = UDim2.fromOffset(0, 350)
+SpeedRow.BackgroundColor3 = Color3.fromRGB(35, 39, 55)
+SpeedRow.BorderSizePixel = 0
+SpeedRow.Parent = Body
+
+Instance.new("UICorner", SpeedRow).CornerRadius = UDim.new(0, 7)
+
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Size = UDim2.new(1, -145, 1, 0)
+SpeedLabel.Position = UDim2.fromOffset(9, 0)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "PLAYER SPEED"
+SpeedLabel.TextColor3 = Color3.fromRGB(240, 242, 250)
+SpeedLabel.Font = Enum.Font.GothamBold
+SpeedLabel.TextSize = 10
+SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+SpeedLabel.Parent = SpeedRow
+
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Name = "SpeedInput"
+SpeedBox.Size = UDim2.fromOffset(54, 24)
+SpeedBox.Position = UDim2.new(1, -119, 0.5, -12)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(22, 24, 34)
+SpeedBox.BorderSizePixel = 0
+SpeedBox.Text = tostring(PlayerSpeed)
+SpeedBox.PlaceholderText = "16"
+SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBox.Font = Enum.Font.GothamBold
+SpeedBox.TextSize = 11
+SpeedBox.ClearTextOnFocus = false
+SpeedBox.Parent = SpeedRow
+
+Instance.new("UICorner", SpeedBox).CornerRadius = UDim.new(0, 5)
+
+local SetSpeedButton = Instance.new("TextButton")
+SetSpeedButton.Size = UDim2.fromOffset(55, 24)
+SetSpeedButton.Position = UDim2.new(1, -59, 0.5, -12)
+SetSpeedButton.BackgroundColor3 = Color3.fromRGB(35, 135, 95)
+SetSpeedButton.BorderSizePixel = 0
+SetSpeedButton.Text = "SET"
+SetSpeedButton.TextColor3 = Color3.new(1, 1, 1)
+SetSpeedButton.Font = Enum.Font.GothamBold
+SetSpeedButton.TextSize = 10
+SetSpeedButton.Parent = SpeedRow
+
+Instance.new("UICorner", SetSpeedButton).CornerRadius = UDim.new(0, 5)
+
+local function SetPlayerSpeed()
+    if Destroyed then return end
+
+    local Value = tonumber(SpeedBox.Text)
+
+    if not Value then
+        SpeedBox.Text = tostring(PlayerSpeed)
+        return
+    end
+
+    Value = math.clamp(Value, MIN_PLAYER_SPEED, MAX_PLAYER_SPEED)
+
+    PlayerSpeed = Value
+    SpeedBox.Text = tostring(PlayerSpeed)
+
+    ApplyPlayerSpeed()
+    UpdateStatus()
+end
+
+Track(SetSpeedButton.MouseButton1Click:Connect(SetPlayerSpeed))
+
+Track(SpeedBox.FocusLost:Connect(function(EnterPressed)
+    if EnterPressed then
+        SetPlayerSpeed()
+    end
+end))
+
+--============================================================
+-- FLOATING MINIMIZE ICON
+--============================================================
+
+local MiniIcon = Instance.new("TextButton")
+MiniIcon.Name = "FloatingIcon"
+MiniIcon.Size = UDim2.fromOffset(54, 54)
+MiniIcon.Position = UDim2.new(0, 20, 0.5, -27)
+MiniIcon.BackgroundColor3 = Color3.fromRGB(85, 45, 155)
+MiniIcon.Text = "HUB"
+MiniIcon.TextColor3 = Color3.new(1, 1, 1)
+MiniIcon.TextSize = 13
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.Visible = false
+MiniIcon.Parent = ScreenGui
+
+Instance.new("UICorner", MiniIcon).CornerRadius = UDim.new(1, 0)
+
+local MiniStroke = Instance.new("UIStroke")
+MiniStroke.Color = Color3.fromRGB(175, 115, 255)
+MiniStroke.Thickness = 2
+MiniStroke.Parent = MiniIcon
+
+--============================================================
+-- MINIMIZE / RESTORE
+--============================================================
+
+Track(MinimizeButton.MouseButton1Click:Connect(function()
+    if Destroyed then return end
+
+    Main.Visible = false
+    MiniIcon.Visible = true
+end))
+
+Track(MiniIcon.MouseButton1Click:Connect(function()
+    if Destroyed then return end
+
+    Main.Visible = true
+    MiniIcon.Visible = false
+end))
+
+--============================================================
+-- DRAG SUPPORT | PC + MOBILE
+--============================================================
+
+local function MakeDraggable(Frame, DragArea)
+    local Dragging = false
+    local DragStart
+    local StartPosition
+
+    Track(DragArea.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1
+            or Input.UserInputType == Enum.UserInputType.Touch then
+
+            Dragging = true
+            DragStart = Input.Position
+            StartPosition = Frame.Position
+        end
+    end))
+
+    Track(UserInputService.InputChanged:Connect(function(Input)
+        if Destroyed or not Dragging then return end
+
+        if Input.UserInputType == Enum.UserInputType.MouseMovement
+            or Input.UserInputType == Enum.UserInputType.Touch then
+
+            local Delta = Input.Position - DragStart
+
+            Frame.Position = UDim2.new(
+                StartPosition.X.Scale,
+                StartPosition.X.Offset + Delta.X,
+                StartPosition.Y.Scale,
+                StartPosition.Y.Offset + Delta.Y
+            )
+        end
+    end))
+
+    Track(UserInputService.InputEnded:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1
+            or Input.UserInputType == Enum.UserInputType.Touch then
+
+            Dragging = false
+        end
+    end))
+end
+
+MakeDraggable(Main, Header)
+MakeDraggable(MiniIcon, MiniIcon)
+
+--============================================================
+-- CLEANUP
+--============================================================
+
+local function StopEverything()
+    if Destroyed then return end
+
+    StopDodgeMovement()
+    StopKuramaWalk()
+
+    Destroyed = true
+
+    TrainEnabled = false
+    KuramaEnabled = false
+    EnemiesEnabled = false
+    RebirthEnabled = false
+    AutoPopEnabled = false
+    AutoJoinEnabled = false
+    AutoDodgeEnabled = false
+    AutoTPEnabled = false
+    AutoWalkKuramaEnabled = false
+    AutoHatchVoidEnabled = false
+
+    CurrentOrbitModel = nil
+
+    table.clear(PendingAttacks)
+
+    for _, Connection in ipairs(Connections) do
+        pcall(function()
+            Connection:Disconnect()
+        end)
+    end
+
+    table.clear(Connections)
+    table.clear(PopKinds)
+    table.clear(PopFired)
+
+    if ScreenGui then
+        pcall(function()
+            ScreenGui:Destroy()
+        end)
+    end
+
+    _G.UltimateTrainingHubV5Cleanup = nil
+end
+
+_G.UltimateTrainingHubV5Cleanup = StopEverything
+
+Track(CloseButton.MouseButton1Click:Connect(StopEverything))
+
+--============================================================
+-- MAIN HEARTBEAT
+--============================================================
+
+Track(RunService.Heartbeat:Connect(function(DeltaTime)
+    if Destroyed then return end
+
+    pcall(ProcessAutoTPPosition)
+
+    ApplyPlayerSpeed()
+
+    if TrainEnabled then
+        pcall(ProcessTraining)
+    end
+
+    if RebirthEnabled then
+        pcall(ProcessRebirth)
+    end
+
+    if EnemiesEnabled then
+        pcall(ProcessOrbit, DeltaTime)
+    else
+        CurrentOrbitModel = nil
+    end
+end))
+
+--============================================================
+-- AUTO POP WORKER
+--============================================================
+
+task.spawn(function()
+    while not Destroyed do
+        task.wait(POP_SCAN_DELAY)
+
+        if Destroyed then break end
+
+        if AutoPopEnabled then
+            pcall(ProcessAutoPop)
+        end
+    end
+end)
+
+--============================================================
+-- AUTO JOIN WORKER
+--============================================================
+
+task.spawn(function()
+    while not Destroyed do
+        if AutoJoinEnabled then
+            pcall(TryJoinKurama)
+        end
+
+        task.wait(0.5)
+    end
+end)
+
+--============================================================
+-- WORKERS START
+--============================================================
+
+StartDodgeWorker()
+StartKuramaWalkWorker()
+
+--============================================================
+-- STATUS WORKER
+--============================================================
+
+task.spawn(function()
+    while not Destroyed do
+        if Status and Status.Parent then
+            local Phase =
+                Workspace:GetAttribute("BossPhase") or "wait"
+
+            if DodgeWalking then
+                Status.Text = "KURAMA: FAST WALK DODGE"
+            elseif KuramaWalkActive then
+                Status.Text = "KURAMA: WALKING INTO BOSS"
+            elseif IsInArena() then
+                Status.Text =
+                    "KURAMA: IN ARENA | " .. tostring(Phase)
+            else
+                UpdateStatus()
+            end
+        end
+
+        task.wait(0.1)
+    end
+end)
+
+--============================================================
+-- START
+--============================================================
+
+ApplyPlayerSpeed()
+UpdateStatus()
+
+print("========================================")
+print("[ULTIMATE TRAINING HUB V5] LOADED")
+print("[AUTO DODGE] FAST WALK")
+print("[AUTO WALK KURAMA] READY")
+print("[DODGE PRIORITY] HIGH")
+print("[AUTO SKILL] E + R")
+print("[AUTO TP POSITION] OFF")
+print("[AUTO HATCH VOID x3] READY")
+print("========================================")
