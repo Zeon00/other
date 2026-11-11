@@ -2073,7 +2073,8 @@ local function startDungeon()
 end
 
 --============================================================
--- ECLIPSE
+-- ECLIPSE | WORLD 1 + WORLD 2
+-- AUTO TRAVEL | AUTO ENTER | UMBRA ONLY | AUTO LEAVE
 --============================================================
 
 local function eclipseAlive(id)
@@ -2083,7 +2084,9 @@ end
 local function getCurrentEclipse()
     local attribute = Workspace:GetAttribute("EclipseDungeon")
 
-    if not attribute then return nil, nil end
+    if not attribute then
+        return nil, nil
+    end
 
     local success, config = pcall(function()
         return DungeonConfig.get(attribute)
@@ -2096,17 +2099,26 @@ local function getCurrentEclipse()
     return config, attribute
 end
 
+local function getEclipseWorld(config)
+    if not config then return nil end
+
+    local ok, world = pcall(function()
+        return DungeonConfig.worldOf(config)
+    end)
+
+    if not ok then return nil end
+
+    return tonumber(world)
+end
+
 local function findUmbra()
     local enemies = Workspace:FindFirstChild("Enemies")
     if not enemies then return nil end
 
-    for _, mob in ipairs(enemies:GetChildren()) do
-        if mob:IsA("Model")
-            and mob.Name == "Umbra the Sun-Eater"
-            and not isDead(mob) then
+    local mob = enemies:FindFirstChild("Umbra the Sun-Eater")
 
-            return mob
-        end
+    if mob and mob:IsA("Model") and not isDead(mob) then
+        return mob
     end
 
     return nil
@@ -2137,8 +2149,9 @@ end
 local function leaveEclipseDungeon()
     local enemies = Workspace:FindFirstChild("Enemies")
 
-    if not enemies then return false end
-    if enemies:FindFirstChild("Umbra the Sun-Eater") then return false end
+    if enemies and enemies:FindFirstChild("Umbra the Sun-Eater") then
+        return false, "Umbra masih ada"
+    end
 
     return pcall(function()
         return RequestRemote:InvokeServer("LeaveDungeon")
@@ -2181,11 +2194,94 @@ local function startEclipse()
             EclipseStatus = "ECLIPSE | " .. message
         end
 
+       local function waitWorld(targetWorld)
+    local currentWorld = tonumber(Player:GetAttribute("World")) or 1
+
+    if currentWorld == targetWorld then
+        status("Sudah berada di World " .. targetWorld)
+        return true
+    end
+
+    -- Portal berdasarkan WORLD SEKARANG.
+    local currentLobbyName = currentWorld == 1 and "Lobby"
+        or currentWorld == 2 and "Lobby2"
+
+    if not currentLobbyName then
+        status("World saat ini tidak dikenal: " .. tostring(currentWorld))
+        return false
+    end
+
+    local lobby = Workspace:FindFirstChild(currentLobbyName)
+    local zones = lobby and lobby:FindFirstChild("Zones")
+    local portal = zones and zones:FindFirstChild("WorldPortal")
+
+    if not portal then
+        status("Portal world saat ini tidak ditemukan")
+        return false
+    end
+
+    local portalPart
+
+    if portal:IsA("BasePart") then
+        portalPart = portal
+    elseif portal:IsA("Model") then
+        portalPart = portal.PrimaryPart
+            or portal:FindFirstChildWhichIsA("BasePart", true)
+    else
+        portalPart = portal:FindFirstChildWhichIsA("BasePart", true)
+    end
+
+    if not portalPart then
+        status("BasePart portal tidak ditemukan")
+        return false
+    end
+
+    updateCharacter()
+    if not Root then return false end
+
+    status("TP ke portal World " .. currentWorld)
+
+    Root.CFrame = portalPart.CFrame * CFrame.new(0, 3, 5)
+    task.wait(1)
+
+    if not alive() then return false end
+
+    status("Travel ke World " .. targetWorld)
+
+    local ok, result = pcall(function()
+        return RequestRemote:InvokeServer("Travel", targetWorld)
+    end)
+
+    if not ok or result == false then
+        status("Travel gagal: " .. tostring(result))
+        return false
+    end
+
+    local deadline = os.clock() + 30
+
+    while alive() and os.clock() < deadline do
+        currentWorld = tonumber(Player:GetAttribute("World")) or 1
+
+        if currentWorld == targetWorld then
+            status("Berhasil masuk World " .. targetWorld)
+            return true
+        end
+
+        task.wait(0.2)
+    end
+
+    status("World belum berubah ke " .. targetWorld)
+    return false
+end
+
         local function waitDungeonEntry()
-            status("Menunggu masuk dungeon...")
+            status("Menunggu masuk Eclipse...")
 
             while alive() do
-                if Player:GetAttribute("Dungeon") then return true end
+                if Player:GetAttribute("Dungeon") then
+                    return true
+                end
+
                 task.wait(0.2)
             end
 
@@ -2196,7 +2292,10 @@ local function startEclipse()
             status("Menunggu keluar dungeon...")
 
             while alive() do
-                if not Player:GetAttribute("Dungeon") then return true end
+                if not Player:GetAttribute("Dungeon") then
+                    return true
+                end
+
                 task.wait(0.25)
             end
 
@@ -2207,10 +2306,15 @@ local function startEclipse()
             status("Menunggu Umbra the Sun-Eater...")
 
             while alive() do
-                if not Player:GetAttribute("Dungeon") then return nil end
+                if not Player:GetAttribute("Dungeon") then
+                    return nil
+                end
 
                 local mob = findUmbra()
-                if mob then return mob end
+
+                if mob then
+                    return mob
+                end
 
                 task.wait(0.2)
             end
@@ -2221,23 +2325,26 @@ local function startEclipse()
         while alive() do
             local config, attribute = getCurrentEclipse()
 
+            -- Jika sedang di dungeon normal, keluar dahulu.
             if Player:GetAttribute("Dungeon") then
                 if config then
-                    status("ECLIPSE TERSEDIA! Menghentikan dungeon...")
+                    status("Eclipse tersedia! Menghentikan Auto Dungeon...")
 
                     ResumeDungeonAfterEclipse = AutoDungeon
                     EclipsePriority = true
 
-                    if AutoDungeon then stopDungeon() end
+                    if AutoDungeon then
+                        stopDungeon()
+                    end
 
-                    status("Memanggil LeaveDungeon...")
+                    status("Keluar dari dungeon sebelumnya...")
 
                     local leaveOK, leaveResult = pcall(function()
                         return RequestRemote:InvokeServer("LeaveDungeon")
                     end)
 
                     if not leaveOK then
-                        status("Leave dungeon error: " .. tostring(leaveResult))
+                        status("Leave error: " .. tostring(leaveResult))
                         EclipsePriority = false
 
                         if ResumeDungeonAfterEclipse and alive() then
@@ -2262,7 +2369,7 @@ local function startEclipse()
                     if not alive() then break end
 
                     if Player:GetAttribute("Dungeon") then
-                        status("Leave belum berhasil! Mencoba lagi...")
+                        status("Belum berhasil keluar dungeon!")
                         EclipsePriority = false
 
                         if ResumeDungeonAfterEclipse then
@@ -2274,8 +2381,6 @@ local function startEclipse()
                         task.wait(3)
                         continue
                     end
-
-                    status("Berhasil keluar! OTW Eclipse...")
                 else
                     status("Masih di dungeon, menunggu Eclipse...")
                     task.wait(0.5)
@@ -2289,27 +2394,70 @@ local function startEclipse()
                 continue
             end
 
-            status("Eclipse ditemukan: " .. tostring(attribute))
-            task.wait(0.5)
+            -- Tentukan world berdasarkan konfigurasi Eclipse.
+            local targetWorld = getEclipseWorld(config)
 
-            if not alive() then break end
-            if Player:GetAttribute("Dungeon") then continue end
+            if not targetWorld then
+                status("World Eclipse tidak terbaca!")
+                task.wait(2)
+                continue
+            end
 
-            status("Memanggil EclipseEnter...")
-
-            local ok, result = pcall(function()
-                return PlayerState.request("EclipseEnter", config.Id)
-            end)
-
-            if not alive() then break end
-
-            if not ok then
-                status("Enter error: " .. tostring(result))
+            if targetWorld ~= 1 and targetWorld ~= 2 then
+                status("World Eclipse tidak didukung: " .. tostring(targetWorld))
                 task.wait(3)
                 continue
             end
 
-            status("Request terkirim: " .. tostring(result))
+            status("Eclipse ditemukan: " .. tostring(attribute)
+                .. " | World " .. tostring(targetWorld))
+
+            -- Travel otomatis jika berada di world yang salah.
+            if not waitWorld(targetWorld) then
+                if not alive() then break end
+                task.wait(2)
+                continue
+            end
+
+            if not alive() then break end
+
+            -- Pastikan konfigurasi Eclipse masih tersedia.
+            local latestConfig, latestAttribute = getCurrentEclipse()
+
+            if not latestConfig then
+                status("Eclipse sudah tidak tersedia")
+                task.wait(1)
+                continue
+            end
+
+            local latestWorld = getEclipseWorld(latestConfig)
+
+            if latestWorld ~= targetWorld then
+                status("World Eclipse berubah, scan ulang...")
+                task.wait(0.5)
+                continue
+            end
+
+            if Player:GetAttribute("Dungeon") then
+                continue
+            end
+
+            -- Masuk Eclipse.
+            status("World sesuai! Memanggil EclipseEnter...")
+
+            local ok, result = pcall(function()
+                return PlayerState.request("EclipseEnter", latestConfig.Id)
+            end)
+
+            if not alive() then break end
+
+            if not ok or result == false then
+                status("EclipseEnter gagal: " .. tostring(result))
+                task.wait(3)
+                continue
+            end
+
+            status("Request masuk terkirim: " .. tostring(result))
 
             if not waitDungeonEntry() then break end
             if not alive() then break end
@@ -2321,7 +2469,7 @@ local function startEclipse()
             if not alive() then break end
 
             if not umbra then
-                status("Umbra tidak ditemukan / dungeon berakhir.")
+                status("Umbra tidak ditemukan / dungeon berakhir...")
                 waitDungeonExit()
                 task.wait(1)
                 continue
@@ -2333,11 +2481,15 @@ local function startEclipse()
             status("Umbra ditemukan! TP langsung...")
 
             if not teleportToUmbra(umbra) then
-                status("TP Umbra gagal, mencoba ulang...")
+                for attempt = 1, 10 do
+                    if not alive() or isDead(umbra) then
+                        break
+                    end
 
-                for _ = 1, 10 do
-                    if not alive() or isDead(umbra) then break end
-                    if teleportToUmbra(umbra) then break end
+                    if teleportToUmbra(umbra) then
+                        break
+                    end
+
                     task.wait(0.3)
                 end
             end
@@ -2349,70 +2501,109 @@ local function startEclipse()
             if not AutoTP then startTP() end
             if not AutoSkill then startSkill() end
 
-            status("TP Behind + Skill sampai Umbra mati...")
+            -- Hanya menunggu Umbra, bukan mob lain.
+            status("Melawan Umbra the Sun-Eater...")
 
-            while alive() and umbra.Parent and not isDead(umbra) do
-                task.wait(0.2)
-            end
+            while alive()
+    and umbra.Parent
+    and not isDead(umbra) do
 
-            if not alive() then break end
-
-            status("Umbra hilang! Menghentikan worker...")
-
-            EclipseTarget = nil
-            CurrentDungeonTarget = nil
-
-            if EclipseOwnsTP and not tpWasOn and AutoTP then
-                stopTP()
-            end
-
-            if not skillWasOn and AutoSkill then
-                stopSkill()
-            end
-
-            status("Memastikan Umbra sudah hilang...")
-
-            while alive() do
-                local enemies = Workspace:FindFirstChild("Enemies")
-                local umbraStillExists = enemies
-                    and enemies:FindFirstChild("Umbra the Sun-Eater")
-
-                if not umbraStillExists then break end
-
-                task.wait(0.2)
-            end
+    task.wait(0.2)
+end
 
             if not alive() then break end
 
-            status("Umbra sudah hilang! Memanggil LeaveDungeon...")
+            
+-- HANYA MENUNGGU UMBRA
+status("Melawan Umbra the Sun-Eater...")
 
-            local success, leaveResult = leaveEclipseDungeon()
+while alive() and umbra.Parent and not isDead(umbra) do
+    task.wait(0.2)
+end
 
-            if success then
-                status("LeaveDungeon dipanggil: " .. tostring(leaveResult))
-            else
-                status("LeaveDungeon gagal: " .. tostring(leaveResult))
-            end
+if not alive() then break end
 
-            while alive() and Player:GetAttribute("Dungeon") do
-                task.wait(0.25)
-            end
+-- TUNGGU UMBRA HILANG DARI ENEMIES
+status("Menunggu Umbra hilang...")
 
-            if not alive() then break end
+local disappearDeadline = os.clock() + 30
 
-            status("Berhasil keluar dari Eclipse!")
-            EclipsePriority = false
+while alive() and os.clock() < disappearDeadline do
+    local enemies = Workspace:FindFirstChild("Enemies")
+    local remaining = enemies and enemies:FindFirstChild("Umbra the Sun-Eater")
 
-            if ResumeDungeonAfterEclipse and alive() and not AutoDungeon then
-                ResumeDungeonAfterEclipse = false
-                status("Melanjutkan Auto Dungeon...")
-                task.wait(1)
-                startDungeon()
-            else
-                ResumeDungeonAfterEclipse = false
-            end
+    if not remaining then
+        break
+    end
 
-            task.wait(2)
+    task.wait(0.2)
+end
+
+if not alive() then break end
+
+local enemies = Workspace:FindFirstChild("Enemies")
+local remaining = enemies and enemies:FindFirstChild("Umbra the Sun-Eater")
+
+if remaining then
+    status("Umbra masih tercatat, menunggu...")
+    task.wait(2)
+    continue
+end
+
+-- BERSIHKAN TARGET
+EclipseTarget = nil
+CurrentDungeonTarget = nil
+
+if EclipseOwnsTP and not tpWasOn and AutoTP then
+    stopTP()
+end
+
+if not skillWasOn and AutoSkill then
+    stopSkill()
+end
+
+-- KIRIM LEAVE DUNGEON
+status("Umbra hilang! Mengirim LeaveDungeon...")
+
+for attempt = 1, 5 do
+    if not alive() then break end
+    if not Player:GetAttribute("Dungeon") then break end
+
+    pcall(function()
+        RequestRemote:InvokeServer("LeaveDungeon")
+    end)
+
+    local deadline = os.clock() + 5
+
+    while alive()
+        and Player:GetAttribute("Dungeon")
+        and os.clock() < deadline do
+        task.wait(0.2)
+    end
+end
+
+if not alive() then break end
+
+if Player:GetAttribute("Dungeon") then
+    status("LeaveDungeon gagal setelah 5 percobaan!")
+    task.wait(2)
+    continue
+end
+
+status("Berhasil keluar Eclipse!")
+EclipsePriority = false
+
+-- LANJUTKAN AUTO DUNGEON JIKA SEBELUMNYA AKTIF
+if ResumeDungeonAfterEclipse and alive() and not AutoDungeon then
+    ResumeDungeonAfterEclipse = false
+    task.wait(1)
+    startDungeon()
+else
+    ResumeDungeonAfterEclipse = false
+end
+
+task.wait(2)
+
         end
 
         if EclipseRunId == id then
@@ -2429,11 +2620,11 @@ local function startEclipse()
 
             EclipseOwnsTP = false
             AutoEclipse = false
+            EclipsePriority = false
             EclipseStatus = "Eclipse: OFF"
         end
     end)
 end
-
 --============================================================
 -- AUTO CLAIM ALL REWARDS
 --============================================================
