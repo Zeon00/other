@@ -3013,7 +3013,7 @@ track(UserInputService.InputEnded:Connect(function(input)
 
         miniDragging = false
     end
-end))
+end)
 
 --============================================================
 -- DRAG MAIN GUI
