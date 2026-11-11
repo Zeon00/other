@@ -2986,7 +2986,7 @@ MiniIcon.InputBegan:Connect(function(input)
         miniDragStart = input.Position
         miniStartPosition = MiniIcon.Position
     end
-end))
+end)
 
 track(UserInputService.InputChanged:Connect(function(input)
     if not miniDragging or not MiniIcon.Visible then return end
@@ -3013,7 +3013,7 @@ track(UserInputService.InputEnded:Connect(function(input)
 
         miniDragging = false
     end
-end)
+end))
 
 --============================================================
 -- DRAG MAIN GUI
