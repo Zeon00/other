@@ -1,19 +1,18 @@
-
 --============================================================
 -- ANIME FORGING | ULTIMATE AUTOMATION HUB
--- 8 TOGGLE | STANDALONE GUI
+-- 9 TOGGLE | STANDALONE GUI
 --
 -- 1. AUTO SWING + HIT
--- 2. AUTO SKILL MOB TARGET (Q E R F -> MOB POSITION)
+-- 2. AUTO SKILL MOB TARGET
 -- 3. TP BEHIND MOB
 -- 4. AUTO DUNGEON
 -- 5. AUTO ECLIPSE
 -- 6. AUTO CLAIM ALL REWARDS
 -- 7. AUTO ENCHANT
--- 8. AUTO REBIRTH (WAIT UNTIL READY)
+-- 8. AUTO REBIRTH
+-- 9. AUTO DODGE | RING + WEDGE FAN
 --
--- TP BEHIND OTOMATIS UNTUK DUNGEON + ECLIPSE
--- DRAG | MINIMIZE | DESTROY
+-- STANDALONE GUI | DRAG | MINIMIZE | DESTROY
 -- SINGLE INSTANCE | CENTRAL CLEANUP
 --============================================================
 
@@ -25,6 +24,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local CoreGui = game:GetService("CoreGui")
 local Workspace = game:GetService("Workspace")
 local PathfindingService = game:GetService("PathfindingService")
+
 local Player = Players.LocalPlayer
 
 --============================================================
@@ -106,17 +106,8 @@ local HIT_DELAY = 0
 local SKILLS = {"Q", "E", "R", "F"}
 local SKILL_DELAY = 0.5
 
-local TP_BEHIND_DISTANCE = 3
-local TP_UPDATE_DELAY = 0.15
-
--- NORMAL DUNGEON
-local DUNGEON_START = Vector3.new(
-    0.0000027100359147880226, 4014.997802734375, -116
-)
-
-local DUNGEON_ENTRY = Vector3.new(
-    0.8257005214691162, 4018.31787109375, -128.1840362548828
-)
+local DUNGEON_START = Vector3.new(0.0000027100359147880226, 4014.997802734375, -116)
+local DUNGEON_ENTRY = Vector3.new(0.8257005214691162, 4018.31787109375, -128.1840362548828)
 
 local DUNGEON_TOLERANCE = 30
 local ENTRY_TOLERANCE = 2
@@ -124,7 +115,6 @@ local DUNGEON_WAIT_DELAY = 0.25
 
 local DUNGEON_BEFORE_REMOTE = 2
 local DUNGEON_AFTER_FLOOR = 5
-local DUNGEON_BEFORE_EXIT = 2
 local MOB_EMPTY_CONFIRM_TIME = 2
 
 local CLAIM_INTERVAL = 300
@@ -143,6 +133,7 @@ local AutoEclipse = false
 local AutoClaim = false
 local AutoEnchant = false
 local AutoRebirth = false
+local AutoDodge = false
 
 local RebirthStatus = "Rebirth: OFF"
 
@@ -166,23 +157,21 @@ local EclipseRunId = 0
 local ClaimRunId = 0
 local EnchantRunId = 0
 
--- TP ownership:
--- Worker dungeon/eclipse hanya mematikan TP jika TP belum aktif
--- sebelum worker tersebut dimulai.
 local DungeonOwnsTP = false
 local EclipseOwnsTP = false
 
--- ANTI VOID
 local AntiVoidConnection = nil
 local AntiVoidSafeCFrame = nil
 local AntiVoidLastRescue = 0
 local AntiVoidRunId = 0
+
 local ANTI_VOID_FALL_DISTANCE = 35
 local ANTI_VOID_RESCUE_COOLDOWN = 2
 
 local DungeonStatus = "Dungeon: OFF"
 local EclipseStatus = "Eclipse: OFF"
 local ClaimStatus = "Claim: OFF"
+local DodgeStatus = "Dodge: OFF"
 
 local SelectedDungeon = "Z3"
 local DungeonNameInput
@@ -271,9 +260,7 @@ end
 --============================================================
 
 local function getMobRoot(mob)
-    if not mob or not mob:IsA("Model") then
-        return nil
-    end
+    if not mob or not mob:IsA("Model") then return nil end
 
     return mob:FindFirstChild("HumanoidRootPart")
         or mob.PrimaryPart
@@ -283,9 +270,7 @@ end
 local function getHealth(mob)
     local hum = mob:FindFirstChildOfClass("Humanoid")
 
-    if hum then
-        return hum.Health
-    end
+    if hum then return hum.Health end
 
     local health = mob:FindFirstChild("Health")
 
@@ -322,7 +307,6 @@ local function validOwner(mob)
 
     if owner == nil then
         local obj = mob:FindFirstChild("Owner")
-
         if obj and obj:IsA("ValueBase") then
             owner = obj.Value
         end
@@ -356,7 +340,6 @@ end
 
 local function getEnemyCount()
     local folder = Workspace:FindFirstChild("Enemies")
-
     if not folder then return 0 end
 
     local count = 0
@@ -376,27 +359,16 @@ end
 
 local function getTarget()
     updateCharacter()
-
     if not Root then return nil end
 
-    if CurrentDungeonTarget
-        and CurrentDungeonTarget.Parent
-        and not isDead(CurrentDungeonTarget)
-        and validOwner(CurrentDungeonTarget) then
+    local folder = Workspace:FindFirstChild("Enemies")
 
-        local targetRoot = getMobRoot(CurrentDungeonTarget)
-
-        if targetRoot then
-            return CurrentDungeonTarget
-        end
+    if not folder then
+        CurrentDungeonTarget = nil
+        return nil
     end
 
-    CurrentDungeonTarget = nil
-
-    local folder = Workspace:FindFirstChild("Enemies")
-    if not folder then return nil end
-
-    local bestMob = nil
+    local bestMob
     local bestDistance = math.huge
 
     for _, mob in ipairs(folder:GetChildren()) do
@@ -425,20 +397,8 @@ local function getTarget()
     return bestMob
 end
 
-local function getSkillTarget()
-    if EclipseTarget then
-        if EclipseTarget.Parent and not isDead(EclipseTarget) then
-            return EclipseTarget
-        end
-
-        return nil
-    end
-
-    return getTarget()
-end
-
 --============================================================
--- AUTO SWING + HIT ALL MOBS
+-- AUTO SWING + HIT
 --============================================================
 
 local function stopCombat()
@@ -475,6 +435,21 @@ end
 -- AUTO SKILL MOB TARGET
 --============================================================
 
+local function getSkillTarget()
+    if EclipseTarget and EclipseTarget.Parent and not isDead(EclipseTarget) then
+        return EclipseTarget
+    end
+
+    if CurrentDungeonTarget
+        and CurrentDungeonTarget.Parent
+        and not isDead(CurrentDungeonTarget) then
+
+        return CurrentDungeonTarget
+    end
+
+    return getTarget()
+end
+
 local function stopSkill()
     AutoSkill = false
     releaseSkills()
@@ -507,7 +482,7 @@ local function startSkill()
             end)
 
             if not ok then
-                warn("[AUTO SKILL MOB TARGET] " .. tostring(result))
+                warn("[AUTO SKILL] " .. tostring(result))
             end
 
             task.wait(SKILL_DELAY)
@@ -519,9 +494,6 @@ end
 
 --============================================================
 -- TP BEHIND MOB
--- Prioritas target:
--- 1. EclipseTarget ketika Eclipse aktif
--- 2. CurrentDungeonTarget / target terdekat
 --============================================================
 
 local function getTPTarget()
@@ -536,57 +508,625 @@ local function getTPTarget()
     return getTarget()
 end
 
+local TP_BEHIND_DISTANCE = 5
+local TP_REPATH_INTERVAL = 0.8
+local TP_REPATH_DISTANCE = 7
+local TP_ARRIVAL_DISTANCE = 3.5
+local TP_STUCK_TIME = 1.5
+local TP_MOVE_SPEED = 24
+
+local TP_ACTIVE = false
+local TP_ORIGINAL_WALKSPEED = nil
+local TP_DODGE_PAUSED = false
+
+local TP_LAST_GOAL = nil
+local TP_CURRENT_PATH = nil
+local TP_BLOCKED = false
+
+local TP_VIM = game:GetService("VirtualInputManager")
+local TP_PATH_SERVICE = PathfindingService
+
+local function tpKeyW(state)
+    pcall(function()
+        TP_VIM:SendKeyEvent(state, Enum.KeyCode.W, false, game)
+    end)
+end
+
+local function tpReleaseKeys()
+    tpKeyW(false)
+end
+
+local function tpGetCharacter()
+    local character = Player.Character
+    if not character then return nil end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local root = character:FindFirstChild("HumanoidRootPart")
+
+    if not humanoid or not root then return nil end
+
+    return character, humanoid, root
+end
+
+local function tpFaceDirection(direction)
+    if direction.Magnitude < 0.05 then return end
+
+    local camera = Workspace.CurrentCamera
+    if not camera then return end
+
+    local horizontal = Vector3.new(direction.X, 0, direction.Z)
+
+    if horizontal.Magnitude < 0.05 then return end
+
+    camera.CFrame = CFrame.lookAt(
+        camera.CFrame.Position,
+        camera.CFrame.Position + horizontal.Unit
+    )
+end
+
+local function tpGetBehindPosition(mobRoot)
+    local behind = mobRoot.Position
+        - mobRoot.CFrame.LookVector * TP_BEHIND_DISTANCE
+
+    return Vector3.new(
+        behind.X,
+        mobRoot.Position.Y,
+        behind.Z
+    )
+end
+
+local function tpComputePath(startPosition, goalPosition)
+    local path = TP_PATH_SERVICE:CreatePath({
+        AgentRadius = 2,
+        AgentHeight = 5,
+        AgentCanJump = true,
+        AgentCanClimb = true,
+        WaypointSpacing = 3
+    })
+
+    local success = pcall(function()
+        path:ComputeAsync(startPosition, goalPosition)
+    end)
+
+    if not success or path.Status ~= Enum.PathStatus.Success then
+        return nil
+    end
+
+    return path
+end
+
+local function tpStopMovement()
+    tpReleaseKeys()
+
+    local _, humanoid = tpGetCharacter()
+
+    if humanoid then
+        pcall(function()
+            humanoid:Move(Vector3.zero, false)
+        end)
+    end
+end
+
 local function stopTP()
+    TP_ACTIVE = false
     AutoTP = false
+    TP_DODGE_PAUSED = false
+
     TPRunId += 1
+    tpStopMovement()
+
+    local _, humanoid = tpGetCharacter()
+
+    if humanoid and TP_ORIGINAL_WALKSPEED then
+        humanoid.WalkSpeed = TP_ORIGINAL_WALKSPEED
+    end
+
+    TP_ORIGINAL_WALKSPEED = nil
+    TP_CURRENT_PATH = nil
+    TP_LAST_GOAL = nil
 end
 
 local function startTP()
-    if not Running or AutoTP then return end
+    if TP_ACTIVE then return end
 
+    TP_ACTIVE = true
     AutoTP = true
-    TPRunId += 1
 
-    local id = TPRunId
+    TPRunId += 1
+    local thisRun = TPRunId
 
     task.spawn(function()
-        while Running and AutoTP and TPRunId == id do
-            updateCharacter()
+        local _, humanoid = tpGetCharacter()
 
-            if not Root or not Humanoid or Humanoid.Health <= 0 then
+        if not humanoid then
+            TP_ACTIVE = false
+            AutoTP = false
+            return
+        end
+
+        TP_ORIGINAL_WALKSPEED = humanoid.WalkSpeed
+        humanoid.WalkSpeed = TP_MOVE_SPEED
+        humanoid.AutoRotate = true
+
+        local currentWaypointIndex = 1
+        local waypoints = {}
+        local currentTarget
+        local lastProgressPosition
+        local lastProgressTime = os.clock()
+
+        local function running()
+            return Running
+                and TP_ACTIVE
+                and AutoTP
+                and TPRunId == thisRun
+        end
+
+        local function getCurrentMob()
+            local mob = getTPTarget()
+
+            if not mob or not mob.Parent or isDead(mob) then
+                return nil
+            end
+
+            local mobRoot = getMobRoot(mob)
+
+            if not mobRoot then return nil end
+
+            return mob, mobRoot
+        end
+
+        local function makeNewPath(mobRoot, root)
+            local goal = tpGetBehindPosition(mobRoot)
+            local path = tpComputePath(root.Position, goal)
+
+            if not path then return false end
+
+            TP_CURRENT_PATH = path
+            TP_BLOCKED = false
+
+            waypoints = path:GetWaypoints()
+            currentWaypointIndex = math.min(2, #waypoints)
+
+            TP_LAST_GOAL = goal
+            lastProgressPosition = root.Position
+            lastProgressTime = os.clock()
+
+            path.Blocked:Connect(function(blockedIndex)
+                if blockedIndex >= currentWaypointIndex then
+                    TP_BLOCKED = true
+                end
+            end)
+
+            return #waypoints > 0
+        end
+
+        while running() do
+            local character, currentHumanoid, root = tpGetCharacter()
+
+            if not character then
+                task.wait(0.3)
+                continue
+            end
+
+            if TP_DODGE_PAUSED then
+                tpReleaseKeys()
+
+                pcall(function()
+                    currentHumanoid:Move(Vector3.zero, false)
+                end)
+
+                task.wait(0.035)
+                continue
+            end
+
+            currentHumanoid.WalkSpeed = TP_MOVE_SPEED
+
+            local mob, mobRoot = getCurrentMob()
+
+            if not mob or not mobRoot then
+                tpStopMovement()
+                currentTarget = nil
+                waypoints = {}
                 task.wait(0.2)
                 continue
             end
 
-            local mob = getTPTarget()
+            if currentTarget and currentTarget ~= mob then
+                local oldRoot = getMobRoot(currentTarget)
 
-            if mob and mob.Parent and not isDead(mob) then
-                local mobRoot = getMobRoot(mob)
+                if oldRoot and currentTarget.Parent and not isDead(currentTarget) then
+                    mob = currentTarget
+                    mobRoot = oldRoot
+                else
+                    currentTarget = mob
+                    waypoints = {}
+                end
+            else
+                currentTarget = mob
+            end
 
-                if mobRoot then
-                    -- Posisi belakang berdasarkan arah hadap mob.
-                    local behind = mobRoot.CFrame:PointToWorldSpace(
-                        Vector3.new(0, 0, TP_BEHIND_DISTANCE)
-                    )
+            local goal = tpGetBehindPosition(mobRoot)
 
-                    local targetCF = CFrame.lookAt(
-                        behind,
-                        mobRoot.Position
-                    )
+            local needRepath =
+                #waypoints == 0
+                or currentWaypointIndex > #waypoints
+                or TP_BLOCKED
+                or not TP_LAST_GOAL
+                or (goal - TP_LAST_GOAL).Magnitude >= TP_REPATH_DISTANCE
+                or (os.clock() - (TP_LAST_REPATH or 0)) >= TP_REPATH_INTERVAL
 
-                    if Running and AutoTP and TPRunId == id then
-                        pcall(function()
-                            Root.CFrame = targetCF
-                            Root.AssemblyLinearVelocity = Vector3.zero
-                            Root.AssemblyAngularVelocity = Vector3.zero
-                        end)
+            if lastProgressPosition then
+                if (root.Position - lastProgressPosition).Magnitude >= 0.6 then
+                    lastProgressPosition = root.Position
+                    lastProgressTime = os.clock()
+                elseif os.clock() - lastProgressTime >= TP_STUCK_TIME then
+                    needRepath = true
+                    lastProgressPosition = root.Position
+                    lastProgressTime = os.clock()
+                end
+            end
+
+            if needRepath then
+                tpReleaseKeys()
+
+                if makeNewPath(mobRoot, root) then
+                    TP_LAST_REPATH = os.clock()
+                end
+            end
+
+            local waypoint = waypoints[currentWaypointIndex]
+
+            if waypoint then
+                local difference = waypoint.Position - root.Position
+                local distance = difference.Magnitude
+
+                if distance <= TP_ARRIVAL_DISTANCE then
+                    tpReleaseKeys()
+                    currentWaypointIndex += 1
+                else
+                    if waypoint.Action == Enum.PathWaypointAction.Jump then
+                        currentHumanoid.Jump = true
+                    end
+
+                    tpFaceDirection(difference)
+                    tpKeyW(true)
+                end
+            else
+                tpReleaseKeys()
+                task.wait(0.1)
+            end
+
+            task.wait(0.035)
+        end
+
+        tpStopMovement()
+
+        local _, finalHumanoid = tpGetCharacter()
+
+        if finalHumanoid and TP_ORIGINAL_WALKSPEED then
+            finalHumanoid.WalkSpeed = TP_ORIGINAL_WALKSPEED
+        end
+
+        TP_ORIGINAL_WALKSPEED = nil
+    end)
+end
+
+--============================================================
+-- AUTO DODGE | RING + WEDGE FAN
+--============================================================
+
+local DODGE_CONFIG = {
+    SCAN_INTERVAL = 0.03,
+    FX_REFRESH_INTERVAL = 0.5,
+    DODGE_COOLDOWN = 0.15,
+
+    EXTRA_SAFE_DISTANCE = 5,
+    WEDGE_SAFE_MARGIN = 5,
+    TRIGGER_MARGIN = 2,
+
+    WEDGE_SCAN_RANGE = 120,
+
+    SEARCH_DISTANCES = {16, 22, 28, 36, 45, 55, 65},
+    SEARCH_ANGLE_STEP = 15,
+
+    FLOOR_CHECK_UP = 25,
+    FLOOR_CHECK_DOWN = 65
+}
+
+local DodgeLastTime = 0
+local DodgeCachedFX = {}
+local DodgeLastFXRefresh = 0
+
+local function dodgeAlive()
+    updateCharacter()
+
+    return Character
+        and Root
+        and Humanoid
+        and Humanoid.Health > 0
+end
+
+local function dodgeHorizontalDistance(a, b)
+    local dx = a.X - b.X
+    local dz = a.Z - b.Z
+
+    return math.sqrt(dx * dx + dz * dz)
+end
+
+local function getDodgeClientFX()
+    if os.clock() - DodgeLastFXRefresh >= DODGE_CONFIG.FX_REFRESH_INTERVAL then
+        DodgeLastFXRefresh = os.clock()
+        DodgeCachedFX = {}
+
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj.Name == "ClientFX" and obj:IsA("Folder") then
+                table.insert(DodgeCachedFX, obj)
+            end
+        end
+    end
+
+    for i = #DodgeCachedFX, 1, -1 do
+        if not DodgeCachedFX[i].Parent then
+            table.remove(DodgeCachedFX, i)
+        end
+    end
+
+    return DodgeCachedFX
+end
+
+local function getDodgeDangerObjects()
+    local rings = {}
+    local wedges = {}
+
+    if not dodgeAlive() then
+        return rings, wedges
+    end
+
+    local playerPosition = Root.Position
+
+    for _, folder in ipairs(getDodgeClientFX()) do
+        for _, obj in ipairs(folder:GetDescendants()) do
+
+            -- RING
+            if obj.Name == "Ring" and obj:IsA("BasePart") then
+                if obj.Parent and obj.Transparency < 1 then
+                    local radius = math.max(obj.Size.X, obj.Size.Z) / 2
+
+                    if radius > 2 and radius < 100 then
+                        if dodgeHorizontalDistance(
+                            playerPosition,
+                            obj.Position
+                        ) <= DODGE_CONFIG.WEDGE_SCAN_RANGE then
+
+                            table.insert(rings, {
+                                Position = obj.Position,
+                                RawRadius = radius,
+                                Object = obj
+                            })
+                        end
                     end
                 end
             end
 
-            task.wait(TP_UPDATE_DELAY)
+            -- WEDGE / FAN
+            if obj:IsA("WedgePart") and obj.Name == "Wedge" then
+                if obj.Parent then
+                    local distance = dodgeHorizontalDistance(
+                        playerPosition,
+                        obj.Position
+                    )
+
+                    local largestSize = math.max(
+                        obj.Size.X,
+                        obj.Size.Y,
+                        obj.Size.Z
+                    )
+
+                    if distance <= DODGE_CONFIG.WEDGE_SCAN_RANGE
+                        and largestSize > 0.2
+                        and largestSize < 100 then
+
+                        table.insert(wedges, {
+                            CFrame = obj.CFrame,
+                            Size = obj.Size,
+                            Position = obj.Position,
+                            Object = obj
+                        })
+                    end
+                end
+            end
         end
+    end
+
+    return rings, wedges
+end
+
+local function insideDodgeRing(position, ring, margin)
+    return dodgeHorizontalDistance(
+        position,
+        ring.Position
+    ) <= ring.RawRadius + margin
+end
+
+local function insideDodgeWedge(position, wedge, margin)
+    local localPosition = wedge.CFrame:PointToObjectSpace(position)
+    local half = wedge.Size / 2
+
+    return math.abs(localPosition.X) <= half.X + margin
+        and math.abs(localPosition.Y) <= half.Y + margin
+        and math.abs(localPosition.Z) <= half.Z + margin
+end
+
+local function isDodgePositionSafe(position, rings, wedges)
+    for _, ring in ipairs(rings) do
+        if insideDodgeRing(
+            position,
+            ring,
+            DODGE_CONFIG.EXTRA_SAFE_DISTANCE
+        ) then
+            return false
+        end
+    end
+
+    for _, wedge in ipairs(wedges) do
+        if insideDodgeWedge(
+            position,
+            wedge,
+            DODGE_CONFIG.WEDGE_SAFE_MARGIN
+        ) then
+            return false
+        end
+    end
+
+    return true
+end
+
+local function isDodgePlayerInDanger(rings, wedges)
+    if not dodgeAlive() then return false end
+
+    local position = Root.Position
+
+    for _, ring in ipairs(rings) do
+        if insideDodgeRing(
+            position,
+            ring,
+            DODGE_CONFIG.TRIGGER_MARGIN
+        ) then
+            return true
+        end
+    end
+
+    for _, wedge in ipairs(wedges) do
+        if insideDodgeWedge(
+            position,
+            wedge,
+            DODGE_CONFIG.TRIGGER_MARGIN
+        ) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function getDodgeGroundPosition(position)
+    if not dodgeAlive() then return nil end
+
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {Character}
+    params.IgnoreWater = false
+
+    local origin = position + Vector3.new(
+        0,
+        DODGE_CONFIG.FLOOR_CHECK_UP,
+        0
+    )
+
+    local direction = Vector3.new(
+        0,
+        -DODGE_CONFIG.FLOOR_CHECK_DOWN,
+        0
+    )
+
+    local result = Workspace:Raycast(
+        origin,
+        direction,
+        params
+    )
+
+    if not result then return nil end
+    if result.Material == Enum.Material.Water then return nil end
+    if result.Normal.Y < 0.65 then return nil end
+
+    local height = Humanoid.HipHeight + Root.Size.Y / 2 + 0.5
+
+    return result.Position + Vector3.new(0, height, 0)
+end
+
+local function findDodgeSafePosition(rings, wedges)
+    if not dodgeAlive() then return nil end
+
+    local origin = Root.Position
+
+    for _, distance in ipairs(DODGE_CONFIG.SEARCH_DISTANCES) do
+        for angle = 0, 359, DODGE_CONFIG.SEARCH_ANGLE_STEP do
+            local radians = math.rad(angle)
+
+            local offset = Vector3.new(
+                math.cos(radians) * distance,
+                0,
+                math.sin(radians) * distance
+            )
+
+            local candidate = origin + offset
+            local ground = getDodgeGroundPosition(candidate)
+
+            if ground and isDodgePositionSafe(ground, rings, wedges) then
+                return ground
+            end
+        end
+    end
+
+    return nil
+end
+
+local function performDodge(rings, wedges)
+    if not dodgeAlive() then return false end
+
+    if os.clock() - DodgeLastTime < DODGE_CONFIG.DODGE_COOLDOWN then
+        return false
+    end
+
+    if #rings == 0 and #wedges == 0 then
+        return false
+    end
+
+    if not isDodgePlayerInDanger(rings, wedges) then
+        return false
+    end
+
+    local safePosition = findDodgeSafePosition(rings, wedges)
+
+    if not safePosition or not dodgeAlive() then
+        return false
+    end
+
+    if not isDodgePositionSafe(safePosition, rings, wedges) then
+        return false
+    end
+
+    DodgeLastTime = os.clock()
+
+    local oldCFrame = Root.CFrame
+
+    -- Pause TP Behind sementara agar tidak berebut posisi.
+    local pauseTP = AutoTP and TP_ACTIVE
+
+    if pauseTP then
+        TP_DODGE_PAUSED = true
+    end
+
+    pcall(function()
+        Root.CFrame = CFrame.new(safePosition) * (
+            oldCFrame - oldCFrame.Position
+        )
+
+        Root.AssemblyLinearVelocity = Vector3.zero
+        Root.AssemblyAngularVelocity = Vector3.zero
     end)
+
+    if pauseTP then
+        task.delay(0.25, function()
+            if Running and AutoDodge and TP_ACTIVE then
+                TP_DODGE_PAUSED = false
+            end
+        end)
+    end
+
+    DodgeStatus = "DODGE! | Ring: " .. #rings .. " Fan: " .. #wedges
+
+    return true
 end
 
 --============================================================
@@ -615,7 +1155,6 @@ local function teleportObject(object)
     if not cf then return false end
 
     updateCharacter()
-
     if not Root then return false end
 
     return pcall(function()
@@ -625,7 +1164,6 @@ end
 
 local function teleportPosition(position)
     updateCharacter()
-
     if not Root then return false end
 
     return pcall(function()
@@ -652,11 +1190,11 @@ local function getDungeonObject(name, path)
 end
 
 --============================================================
--- DUNGEON POINTER MOVEMENT | ROAM MARKER
+-- DUNGEON POINTER MOVEMENT
 --============================================================
 
-local DUNGEON_TP_STEP = 10
-local DUNGEON_TP_DELAY = 0.08
+local DUNGEON_TP_STEP = 3
+local DUNGEON_TP_DELAY = 0.12
 local DUNGEON_PATH_RETRY = 3
 
 local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
@@ -666,18 +1204,18 @@ local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
             and (not canMove or canMove())
     end
 
-    if not object or not active() then
-        return false
-    end
+    if not object or not active() then return false end
 
     updateCharacter()
 
-    if not Root or not Humanoid then
-        return false
-    end
+    if not Root or not Humanoid then return false end
 
     local targetCF = getObjectCFrame(object)
     if not targetCF then return false end
+
+    if (Root.Position - targetCF.Position).Magnitude <= 4 then
+        return true
+    end
 
     local path = PathfindingService:CreatePath({
         AgentRadius = 2,
@@ -705,32 +1243,20 @@ local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
         end
 
         if statusCallback then
-            statusCallback(
-                "Pathfinding retry " .. attempt .. "/" .. DUNGEON_PATH_RETRY
-            )
+            statusCallback("Pathfinding retry " .. attempt .. "/" .. DUNGEON_PATH_RETRY)
         end
 
         task.wait(0.25)
     end
 
-    if not success then
-        if statusCallback then
-            statusCallback("Path gagal! Marker akan dicoba kembali.")
-        end
+    if not success then return false end
 
-        return false
-    end
-
-    local waypoints = path:GetWaypoints()
-
-    for _, waypoint in ipairs(waypoints) do
+    for _, waypoint in ipairs(path:GetWaypoints()) do
         if not active() then return false end
 
         updateCharacter()
 
-        if not Root or not Root.Parent then
-            return false
-        end
+        if not Root or not Root.Parent then return false end
 
         if waypoint.Action == Enum.PathWaypointAction.Jump then
             Humanoid.Jump = true
@@ -741,20 +1267,15 @@ local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
         while active() do
             updateCharacter()
 
-            if not Root or not Root.Parent then
-                return false
-            end
+            if not Root or not Root.Parent then return false end
 
-            local currentPosition = Root.Position
-            local difference = destination - currentPosition
+            local difference = destination - Root.Position
             local distance = difference.Magnitude
 
-            if distance <= 1.5 then
-                break
-            end
+            if distance <= 1.5 then break end
 
             local stepDistance = math.min(DUNGEON_TP_STEP, distance)
-            local nextPosition = currentPosition + difference.Unit * stepDistance
+            local nextPosition = Root.Position + difference.Unit * stepDistance
 
             local moved = pcall(function()
                 Root.CFrame = CFrame.new(nextPosition)
@@ -762,23 +1283,245 @@ local function moveDungeonPointer(object, isAlive, statusCallback, canMove)
                 Root.AssemblyAngularVelocity = Vector3.zero
             end)
 
-            if not moved then
-                return false
-            end
+            if not moved then return false end
 
             task.wait(DUNGEON_TP_DELAY)
         end
 
-        if not active() then
-            return false
-        end
+        if not active() then return false end
     end
 
     return active()
 end
 
 --============================================================
--- ANTI VOID | NORMAL AUTO DUNGEON ONLY
+-- DUNGEON PROGRESS
+--============================================================
+
+local function getDungeonProgress()
+    local playerGui = Player:FindFirstChild("PlayerGui")
+    local gameUI = playerGui and playerGui:FindFirstChild("GameUI")
+    local dungeonBar = gameUI and gameUI:FindFirstChild("DungeonBar")
+    local progress = dungeonBar and dungeonBar:FindFirstChild("Progress")
+    local textFolder = progress and progress:FindFirstChild("Text")
+
+    if not textFolder then
+        return nil, nil, nil
+    end
+
+    local valueObject = textFolder:FindFirstChild("Value")
+    local captionObject = textFolder:FindFirstChild("Caption")
+
+    local rawText = valueObject and valueObject.Text or ""
+    local caption = captionObject and captionObject.Text or ""
+
+    local current, total = rawText:match("(%d+)%s*/%s*(%d+)")
+
+    return tonumber(current), tonumber(total), caption
+end
+
+local function getRoamOuterMarkers()
+    local markers = getDungeonObject(SelectedDungeon, {"Markers"})
+    local result = {}
+
+    if not markers then return result end
+
+    for _, object in ipairs(markers:GetChildren()) do
+        local number = object.Name:match("^Roam_Outer_(%d+)$")
+
+        if number and getObjectCFrame(object) then
+            table.insert(result, {
+                object = object,
+                index = tonumber(number)
+            })
+        end
+    end
+
+    table.sort(result, function(a, b)
+        return a.index < b.index
+    end)
+
+    return result
+end
+
+local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
+    local function status(message)
+        if statusCallback then statusCallback(message) end
+    end
+
+    local function bossOpen()
+        local _, _, caption = getDungeonProgress()
+
+        if caption then
+            local value = string.lower(caption:match("^%s*(.-)%s*$"))
+            return value == "open!" or value == "open"
+        end
+
+        return false
+    end
+
+    local emptyStart = nil
+    local markerIndex = 1
+    local retryAt = 0
+
+    while isAlive() do
+        if RebirthPaused then
+            status("PAUSED | Menunggu Rebirth...")
+            task.wait(0.1)
+            continue
+        end
+
+        if bossOpen() then
+            status("BOSS OPEN! Progress selesai!")
+            return true
+        end
+
+        local enemyCount = getEnemyCount()
+
+        if enemyCount > 0 then
+            emptyStart = nil
+            status("Enemies ditemukan: " .. enemyCount .. " | Combat berjalan...")
+            task.wait(0.15)
+            continue
+        end
+
+        emptyStart = emptyStart or os.clock()
+        local emptyDuration = os.clock() - emptyStart
+
+        if emptyDuration < MOB_EMPTY_CONFIRM_TIME then
+            status("Enemies kosong | Konfirmasi " .. string.format("%.1f", emptyDuration) .. "/2 detik")
+            task.wait(0.15)
+            continue
+        end
+
+        if bossOpen() then
+            status("BOSS OPEN! Progress selesai!")
+            return true
+        end
+
+        local markers = getRoamOuterMarkers()
+
+        if #markers == 0 then
+            status("Roam_Outer tidak ditemukan di Dungeons." .. SelectedDungeon .. ".Markers")
+            task.wait(1)
+            continue
+        end
+
+        if markerIndex > #markers then
+            markerIndex = 1
+        end
+
+        local entry = markers[markerIndex]
+        local marker = entry.object
+
+        if not marker or not marker.Parent then
+            status("Marker hilang! Scan ulang...")
+            task.wait(0.3)
+            continue
+        end
+
+        if os.clock() < retryAt then
+            task.wait(0.1)
+            continue
+        end
+
+        updateCharacter()
+
+        if not Root then
+            task.wait(0.2)
+            continue
+        end
+
+        local markerCF = getObjectCFrame(marker)
+
+        if not markerCF then
+            markerIndex += 1
+            continue
+        end
+
+        local distance = (Root.Position - markerCF.Position).Magnitude
+
+        if distance <= 8 then
+            status("Roam Outer " .. entry.index .. " tercapai | Mencari spawn...")
+            markerIndex += 1
+
+            if markerIndex > #markers then
+                markerIndex = 1
+            end
+
+            local waitStart = os.clock()
+
+            while isAlive() and os.clock() - waitStart < 0.75 do
+                if getEnemyCount() > 0 then break end
+                if bossOpen() then return true end
+                task.wait(0.1)
+            end
+
+            emptyStart = nil
+            continue
+        end
+
+        status("Enemies kosong! Pathfinding Roam_Outer_" .. entry.index .. " | " .. math.floor(distance) .. " studs")
+
+        local function canContinueRoaming()
+            return isAlive()
+                and getEnemyCount() == 0
+                and not bossOpen()
+        end
+
+        local moved = moveDungeonPointer(
+            marker,
+            isAlive,
+            status,
+            canContinueRoaming
+        )
+
+        if not isAlive() then return false end
+
+        if RebirthPaused then
+            status("PAUSED | Rebirth berjalan...")
+
+            while isAlive() and RebirthPaused do
+                task.wait(0.1)
+            end
+
+            emptyStart = nil
+            continue
+        end
+
+        if getEnemyCount() > 0 then
+            status("Mob muncul saat roaming! Combat!")
+            emptyStart = nil
+            task.wait(0.1)
+            continue
+        end
+
+        if bossOpen() then
+            status("BOSS OPEN! Progress selesai!")
+            return true
+        end
+
+        if moved then
+            markerIndex += 1
+
+            if markerIndex > #markers then
+                markerIndex = 1
+            end
+
+            emptyStart = nil
+        else
+            retryAt = os.clock() + 0.5
+            status("Roam Outer " .. entry.index .. " gagal | Retry...")
+        end
+
+        task.wait(0.1)
+    end
+
+    return false
+end
+
+--============================================================
+-- ANTI VOID
 --============================================================
 
 local function stopAntiVoid()
@@ -853,66 +1596,11 @@ local function startAntiVoid(isAlive)
 end
 
 --============================================================
--- ECLIPSE DUNGEON OBJECT FINDER
---============================================================
-
-local function getEclipseDungeonObject(config, attribute, path)
-    local names = {}
-
-    local function addName(value)
-        if value == nil then return end
-
-        local name = tostring(value)
-
-        if name == "" then return end
-
-        for _, existing in ipairs(names) do
-            if existing == name then return end
-        end
-
-        table.insert(names, name)
-    end
-
-    addName(config and config.Name)
-    addName(config and config.Dungeon)
-    addName(config and config.Id)
-    addName(attribute)
-
-    for _, name in ipairs(names) do
-        local object = getDungeonObject(name, path)
-
-        if object then
-            return object
-        end
-    end
-
-    local folders = Workspace:FindFirstChild("Dungeons")
-
-    if folders then
-        for _, dungeon in ipairs(folders:GetChildren()) do
-            local current = dungeon
-
-            for _, childName in ipairs(path) do
-                current = current and current:FindFirstChild(childName)
-            end
-
-            if current then
-                return current
-            end
-        end
-    end
-
-    return nil
-end
-
---============================================================
--- SHARED ENEMY WAIT HELPERS
+-- SHARED ENEMY WAIT
 --============================================================
 
 local function waitForEnemyAppear(isAlive, statusCallback, timeout)
-    if statusCallback then
-        statusCallback("Menunggu mob muncul...")
-    end
+    if statusCallback then statusCallback("Menunggu mob muncul...") end
 
     local deadline = timeout and (os.clock() + timeout) or nil
 
@@ -922,13 +1610,8 @@ local function waitForEnemyAppear(isAlive, statusCallback, timeout)
             continue
         end
 
-        if getEnemyCount() > 0 then
-            return true
-        end
-
-        if deadline and os.clock() >= deadline then
-            return false
-        end
+        if getEnemyCount() > 0 then return true end
+        if deadline and os.clock() >= deadline then return false end
 
         task.wait(0.2)
     end
@@ -968,9 +1651,7 @@ local function waitForEnemyClear(isAlive, statusCallback)
                 task.wait(0.1)
             end
 
-            if not isAlive() then
-                return false
-            end
+            if not isAlive() then return false end
 
             if stayedEmpty and getEnemyCount() == 0 then
                 return true
@@ -982,362 +1663,6 @@ local function waitForEnemyClear(isAlive, statusCallback)
 
             task.wait(0.1)
         end
-    end
-
-    return false
-end
-
---============================================================
--- DUNGEON PROGRESS
---============================================================
-
-local function getDungeonProgress()
-    local playerGui = Player:FindFirstChild("PlayerGui")
-    local gameUI = playerGui and playerGui:FindFirstChild("GameUI")
-    local dungeonBar = gameUI and gameUI:FindFirstChild("DungeonBar")
-    local progress = dungeonBar and dungeonBar:FindFirstChild("Progress")
-    local textFolder = progress and progress:FindFirstChild("Text")
-
-    if not textFolder then
-        return nil, nil, nil
-    end
-
-    local valueObject = textFolder:FindFirstChild("Value")
-    local captionObject = textFolder:FindFirstChild("Caption")
-
-    local rawText = valueObject and valueObject.Text or ""
-    local caption = captionObject and captionObject.Text or ""
-
-    local current, total = rawText:match("(%d+)%s*/%s*(%d+)")
-
-    return tonumber(current), tonumber(total), caption
-end
-
---============================================================
--- NORMAL DUNGEON PROGRESS | ROAM OUTER
---============================================================
-
-local function getRoamOuterMarkers()
-    local markers = getDungeonObject(
-        SelectedDungeon,
-        {"Markers"}
-    )
-
-    local result = {}
-
-    if not markers then
-        return result
-    end
-
-    for _, object in ipairs(markers:GetChildren()) do
-        local number = object.Name:match("^Roam_Outer_(%d+)$")
-
-        if number and getObjectCFrame(object) then
-            table.insert(result, {
-                object = object,
-                index = tonumber(number)
-            })
-        end
-    end
-
-    table.sort(result, function(a, b)
-        return a.index < b.index
-    end)
-
-    return result
-end
-
-local function waitForProgressComplete(isAlive, statusCallback, useBeacon)
-    local function status(message)
-        if statusCallback then
-            statusCallback(message)
-        end
-    end
-
-    local function bossOpen()
-        local current, total, caption = getDungeonProgress()
-
-        if caption then
-            local value = string.lower(
-                caption:match("^%s*(.-)%s*$")
-            )
-
-            if value == "open!" or value == "open" then
-                return true
-            end
-        end
-
-        return false
-    end
-
-    local emptyStart = nil
-    local markerIndex = 1
-    local retryAt = 0
-
-    while isAlive() do
-        if RebirthPaused then
-            status("PAUSED | Menunggu proses Rebirth...")
-            task.wait(0.1)
-            continue
-        end
-
-        if bossOpen() then
-            status("BOSS OPEN! Progress selesai!")
-            return true
-        end
-
-        local enemyCount = getEnemyCount()
-
-        if enemyCount > 0 then
-            emptyStart = nil
-
-            status(
-                "Enemies ditemukan: "
-                .. enemyCount
-                .. " | Combat berjalan..."
-            )
-
-            task.wait(0.15)
-            continue
-        end
-
-        emptyStart = emptyStart or os.clock()
-        local emptyDuration = os.clock() - emptyStart
-
-        if emptyDuration < MOB_EMPTY_CONFIRM_TIME then
-            status(
-                "Enemies kosong | Konfirmasi "
-                .. string.format("%.1f", emptyDuration)
-                .. "/2 detik"
-            )
-
-            task.wait(0.15)
-            continue
-        end
-
-        if bossOpen() then
-            status("BOSS OPEN! Progress selesai!")
-            return true
-        end
-
-        local markers = getRoamOuterMarkers()
-
-        if #markers == 0 then
-            status(
-                "Roam_Outer tidak ditemukan di workspace.Dungeons."
-                .. SelectedDungeon
-                .. ".Markers"
-            )
-
-            task.wait(1)
-            continue
-        end
-
-        if markerIndex > #markers then
-            markerIndex = 1
-        end
-
-        local entry = markers[markerIndex]
-        local marker = entry.object
-
-        if not marker or not marker.Parent then
-            status("Marker hilang! Scan ulang...")
-            task.wait(0.3)
-            continue
-        end
-
-        if os.clock() < retryAt then
-            task.wait(0.1)
-            continue
-        end
-
-        updateCharacter()
-
-        if not Root then
-            task.wait(0.2)
-            continue
-        end
-
-        local markerCF = getObjectCFrame(marker)
-
-        if not markerCF then
-            markerIndex += 1
-            continue
-        end
-
-        local distance = (Root.Position - markerCF.Position).Magnitude
-
-        if distance <= 8 then
-            status(
-                "Roam Outer "
-                .. entry.index
-                .. " tercapai | Mencari spawn berikutnya..."
-            )
-
-            markerIndex += 1
-
-            if markerIndex > #markers then
-                markerIndex = 1
-            end
-
-            local waitStart = os.clock()
-
-            while isAlive() and os.clock() - waitStart < 0.75 do
-                if getEnemyCount() > 0 then
-                    break
-                end
-
-                if bossOpen() then
-                    return true
-                end
-
-                task.wait(0.1)
-            end
-
-            emptyStart = nil
-            continue
-        end
-
-        status(
-            "Enemies kosong! Pathfinding Roam_Outer_"
-            .. entry.index
-            .. " | "
-            .. math.floor(distance)
-            .. " studs"
-        )
-
-        local function canContinueRoaming()
-            return isAlive()
-                and getEnemyCount() == 0
-                and not bossOpen()
-        end
-
-        local moved = moveDungeonPointer(
-            marker,
-            isAlive,
-            status,
-            canContinueRoaming
-        )
-
-        if not isAlive() then
-            return false
-        end
-
-        if RebirthPaused then
-            status("PAUSED | Rebirth berjalan, lanjut dari marker yang sama...")
-
-            while isAlive() and RebirthPaused do
-                task.wait(0.1)
-            end
-
-            emptyStart = nil
-            continue
-        end
-
-        if getEnemyCount() > 0 then
-            status("Mob muncul saat roaming! Combat!")
-            emptyStart = nil
-            task.wait(0.1)
-            continue
-        end
-
-        if bossOpen() then
-            status("BOSS OPEN! Progress selesai!")
-            return true
-        end
-
-        if moved then
-            markerIndex += 1
-
-            if markerIndex > #markers then
-                markerIndex = 1
-            end
-
-            emptyStart = nil
-        else
-            retryAt = os.clock() + 0.5
-
-            status(
-                "Roam Outer "
-                .. entry.index
-                .. " gagal | Retry..."
-            )
-        end
-
-        task.wait(0.1)
-    end
-
-    return false
-end
-
---============================================================
--- NORMAL DUNGEON
---============================================================
-
-local function dungeonAlive(id)
-    return Running and AutoDungeon and DungeonRunId == id
-end
-
-local function waitDungeonUnpaused(isAlive)
-    while isAlive() and RebirthPaused do
-        task.wait(0.1)
-    end
-
-    return isAlive()
-end
-
-local function waitDungeonStart(id)
-    DungeonStatus = "Menunggu posisi 1..."
-
-    while dungeonAlive(id) do
-        if not waitDungeonUnpaused(function()
-            return dungeonAlive(id)
-        end) then
-            return false
-        end
-
-        updateCharacter()
-
-        if Root
-            and (Root.Position - DUNGEON_START).Magnitude <= DUNGEON_TOLERANCE then
-            return true
-        end
-
-        task.wait(DUNGEON_WAIT_DELAY)
-    end
-
-    return false
-end
-
-local function walkDungeonEntry(id)
-    DungeonStatus = SelectedDungeon .. " | Jalan kaki ke posisi 2..."
-
-    local lastOrder = 0
-
-    while dungeonAlive(id) do
-        if not waitDungeonUnpaused(function()
-            return dungeonAlive(id)
-        end) then
-            return false
-        end
-
-        updateCharacter()
-
-        if not Root or not Humanoid or Humanoid.Health <= 0 then
-            return false
-        end
-
-        if (Root.Position - DUNGEON_ENTRY).Magnitude <= ENTRY_TOLERANCE then
-            Humanoid:MoveTo(Root.Position)
-            return true
-        end
-
-        if os.clock() - lastOrder >= 3 then
-            Humanoid:MoveTo(DUNGEON_ENTRY)
-            lastOrder = os.clock()
-        end
-
-        task.wait(0.1)
     end
 
     return false
@@ -1376,9 +1701,7 @@ local function checkRebirthReady()
         return false, "Progression game tidak ditemukan; menunggu"
     end
 
-    local rebirths = tonumber(readPlayerState("Rebirths"))
-        or tonumber(Player:GetAttribute("Rebirths")) or 0
-
+    local rebirths = tonumber(readPlayerState("Rebirths")) or 0
     local power = tonumber(readPlayerState("Power"))
 
     if power == nil then
@@ -1394,11 +1717,7 @@ local function checkRebirthReady()
     end
 
     if power < tonumber(cost) then
-        return false,
-            "Power kurang: "
-            .. tostring(math.floor(power))
-            .. " / "
-            .. tostring(math.floor(cost))
+        return false, "Power kurang: " .. math.floor(power) .. " / " .. math.floor(cost)
     end
 
     local okNeed, needMet = pcall(function()
@@ -1474,8 +1793,7 @@ local function startRebirth()
                 RebirthBusy = false
 
                 if confirmed then
-                    RebirthStatus = "Rebirth sukses: "
-                        .. tostring(readPlayerState("Rebirths"))
+                    RebirthStatus = "Rebirth sukses: " .. tostring(readPlayerState("Rebirths"))
                 elseif not requestOK then
                     RebirthStatus = "Rebirth error: " .. tostring(requestResult)
                 else
@@ -1497,8 +1815,76 @@ local function startRebirth()
 end
 
 --============================================================
--- STOP / START DUNGEON
+-- NORMAL DUNGEON
 --============================================================
+
+local function dungeonAlive(id)
+    return Running and AutoDungeon and DungeonRunId == id
+end
+
+local function waitDungeonUnpaused(isAlive)
+    while isAlive() and RebirthPaused do
+        task.wait(0.1)
+    end
+
+    return isAlive()
+end
+
+local function waitDungeonStart(id)
+    DungeonStatus = "Menunggu posisi 1..."
+
+    while dungeonAlive(id) do
+        if not waitDungeonUnpaused(function()
+            return dungeonAlive(id)
+        end) then
+            return false
+        end
+
+        updateCharacter()
+
+        if Root and (Root.Position - DUNGEON_START).Magnitude <= DUNGEON_TOLERANCE then
+            return true
+        end
+
+        task.wait(DUNGEON_WAIT_DELAY)
+    end
+
+    return false
+end
+
+local function walkDungeonEntry(id)
+    DungeonStatus = SelectedDungeon .. " | Jalan kaki ke posisi 2..."
+
+    local lastOrder = 0
+
+    while dungeonAlive(id) do
+        if not waitDungeonUnpaused(function()
+            return dungeonAlive(id)
+        end) then
+            return false
+        end
+
+        updateCharacter()
+
+        if not Root or not Humanoid or Humanoid.Health <= 0 then
+            return false
+        end
+
+        if (Root.Position - DUNGEON_ENTRY).Magnitude <= ENTRY_TOLERANCE then
+            Humanoid:MoveTo(Root.Position)
+            return true
+        end
+
+        if os.clock() - lastOrder >= 3 then
+            Humanoid:MoveTo(DUNGEON_ENTRY)
+            lastOrder = os.clock()
+        end
+
+        task.wait(0.1)
+    end
+
+    return false
+end
 
 local function stopDungeon()
     AutoDungeon = false
@@ -1546,13 +1932,8 @@ local function startDungeon()
         end
 
         local function restoreAfterExit()
-            if not combatWasOn and AutoCombat then
-                stopCombat()
-            end
-
-            if not skillWasOn and AutoSkill then
-                stopSkill()
-            end
+            if not combatWasOn and AutoCombat then stopCombat() end
+            if not skillWasOn and AutoSkill then stopSkill() end
 
             if DungeonOwnsTP and not tpWasOn and AutoTP then
                 stopTP()
@@ -1599,11 +1980,7 @@ local function startDungeon()
                     math.floor(tonumber(DungeonCountInput.Text) or 3)
                 )
 
-                return RequestRemote:InvokeServer(
-                    "EnterDungeon",
-                    name,
-                    count
-                )
+                return RequestRemote:InvokeServer("EnterDungeon", name, count)
             end)
 
             if not alive() then break end
@@ -1618,18 +1995,9 @@ local function startDungeon()
             startAntiVoid(alive)
             task.wait(0.25)
 
-            -- TP BEHIND OTOMATIS UNTUK DUNGEON
-            if not AutoTP then
-                startTP()
-            end
-
-            if not AutoSkill then
-                startSkill()
-            end
-
-            if not AutoCombat then
-                startCombat()
-            end
+            if not AutoTP then startTP() end
+            if not AutoSkill then startSkill() end
+            if not AutoCombat then startCombat() end
 
             if not waitForProgressComplete(alive, status, true) then
                 break
@@ -1640,10 +2008,7 @@ local function startDungeon()
             stopAntiVoid()
             status("Progress selesai! Mencari FloorGlow...")
 
-            local glow = getDungeonObject(name, {
-                "BossDoor",
-                "FloorGlow"
-            })
+            local glow = getDungeonObject(name, {"BossDoor", "FloorGlow"})
 
             if not glow then
                 status("FloorGlow tidak ditemukan!")
@@ -1660,25 +2025,15 @@ local function startDungeon()
 
             if not alive() then break end
             if not waitDungeonUnpaused(alive) then break end
-
-            if not waitForEnemyClear(alive, status) then
-                break
-            end
-
+            if not waitForEnemyClear(alive, status) then break end
             if not alive() then break end
 
             status("Memastikan Enemies kosong...")
 
-            if not waitForEnemyClear(alive, status) then
-                break
-            end
-
+            if not waitForEnemyClear(alive, status) then break end
             if not alive() then break end
 
-            local exit = getDungeonObject(name, {
-                "Markers",
-                "BossExit"
-            })
+            local exit = getDungeonObject(name, {"Markers", "BossExit"})
 
             if not exit then
                 status("BossExit tidak ditemukan!")
@@ -1703,13 +2058,8 @@ local function startDungeon()
         RebirthBusy = false
 
         if DungeonRunId == id then
-            if not combatWasOn and AutoCombat then
-                stopCombat()
-            end
-
-            if not skillWasOn and AutoSkill then
-                stopSkill()
-            end
+            if not combatWasOn and AutoCombat then stopCombat() end
+            if not skillWasOn and AutoSkill then stopSkill() end
 
             if DungeonOwnsTP and not tpWasOn and AutoTP then
                 stopTP()
@@ -1723,7 +2073,7 @@ local function startDungeon()
 end
 
 --============================================================
--- AUTO ECLIPSE | TP BEHIND UMBRA + SKILL
+-- ECLIPSE
 --============================================================
 
 local function eclipseAlive(id)
@@ -1733,9 +2083,7 @@ end
 local function getCurrentEclipse()
     local attribute = Workspace:GetAttribute("EclipseDungeon")
 
-    if not attribute then
-        return nil, nil
-    end
+    if not attribute then return nil, nil end
 
     local success, config = pcall(function()
         return DungeonConfig.get(attribute)
@@ -1750,10 +2098,7 @@ end
 
 local function findUmbra()
     local enemies = Workspace:FindFirstChild("Enemies")
-
-    if not enemies then
-        return nil
-    end
+    if not enemies then return nil end
 
     for _, mob in ipairs(enemies:GetChildren()) do
         if mob:IsA("Model")
@@ -1774,15 +2119,10 @@ local function teleportToUmbra(mob)
 
     updateCharacter()
 
-    if not Root then
-        return false
-    end
+    if not Root then return false end
 
     local mobRoot = getMobRoot(mob)
-
-    if not mobRoot then
-        return false
-    end
+    if not mobRoot then return false end
 
     return pcall(function()
         local destination = mobRoot.CFrame * CFrame.new(0, 0, 5)
@@ -1797,19 +2137,12 @@ end
 local function leaveEclipseDungeon()
     local enemies = Workspace:FindFirstChild("Enemies")
 
-    if not enemies then
-        return false
-    end
+    if not enemies then return false end
+    if enemies:FindFirstChild("Umbra the Sun-Eater") then return false end
 
-    if enemies:FindFirstChild("Umbra the Sun-Eater") then
-        return false
-    end
-
-    local success, result = pcall(function()
+    return pcall(function()
         return RequestRemote:InvokeServer("LeaveDungeon")
     end)
-
-    return success, result
 end
 
 local function stopEclipse()
@@ -1822,17 +2155,13 @@ local function stopEclipse()
         EclipseOwnsTP = false
     end
 
-    if AutoSkill then
-        stopSkill()
-    end
+    if AutoSkill then stopSkill() end
 
     EclipseStatus = "Eclipse: OFF"
 end
 
 local function startEclipse()
-    if not Running or AutoEclipse then
-        return
-    end
+    if not Running or AutoEclipse then return end
 
     AutoEclipse = true
     EclipseRunId += 1
@@ -1856,10 +2185,7 @@ local function startEclipse()
             status("Menunggu masuk dungeon...")
 
             while alive() do
-                if Player:GetAttribute("Dungeon") then
-                    return true
-                end
-
+                if Player:GetAttribute("Dungeon") then return true end
                 task.wait(0.2)
             end
 
@@ -1870,10 +2196,7 @@ local function startEclipse()
             status("Menunggu keluar dungeon...")
 
             while alive() do
-                if not Player:GetAttribute("Dungeon") then
-                    return true
-                end
-
+                if not Player:GetAttribute("Dungeon") then return true end
                 task.wait(0.25)
             end
 
@@ -1884,15 +2207,10 @@ local function startEclipse()
             status("Menunggu Umbra the Sun-Eater...")
 
             while alive() do
-                if not Player:GetAttribute("Dungeon") then
-                    return nil
-                end
+                if not Player:GetAttribute("Dungeon") then return nil end
 
                 local mob = findUmbra()
-
-                if mob then
-                    return mob
-                end
+                if mob then return mob end
 
                 task.wait(0.2)
             end
@@ -1903,7 +2221,6 @@ local function startEclipse()
         while alive() do
             local config, attribute = getCurrentEclipse()
 
-            -- ECLIPSE PRIORITY: POTONG DUNGEON YANG SEDANG JALAN
             if Player:GetAttribute("Dungeon") then
                 if config then
                     status("ECLIPSE TERSEDIA! Menghentikan dungeon...")
@@ -1911,11 +2228,9 @@ local function startEclipse()
                     ResumeDungeonAfterEclipse = AutoDungeon
                     EclipsePriority = true
 
-                    if AutoDungeon then
-                        stopDungeon()
-                    end
+                    if AutoDungeon then stopDungeon() end
 
-                    status("Memanggil LeaveDungeon untuk prioritas Eclipse...")
+                    status("Memanggil LeaveDungeon...")
 
                     local leaveOK, leaveResult = pcall(function()
                         return RequestRemote:InvokeServer("LeaveDungeon")
@@ -1978,10 +2293,7 @@ local function startEclipse()
             task.wait(0.5)
 
             if not alive() then break end
-
-            if Player:GetAttribute("Dungeon") then
-                continue
-            end
+            if Player:GetAttribute("Dungeon") then continue end
 
             status("Memanggil EclipseEnter...")
 
@@ -1999,10 +2311,7 @@ local function startEclipse()
 
             status("Request terkirim: " .. tostring(result))
 
-            if not waitDungeonEntry() then
-                break
-            end
-
+            if not waitDungeonEntry() then break end
             if not alive() then break end
 
             status("Berhasil masuk! Mencari Umbra...")
@@ -2027,37 +2336,22 @@ local function startEclipse()
                 status("TP Umbra gagal, mencoba ulang...")
 
                 for _ = 1, 10 do
-                    if not alive() or isDead(umbra) then
-                        break
-                    end
-
-                    if teleportToUmbra(umbra) then
-                        break
-                    end
-
+                    if not alive() or isDead(umbra) then break end
+                    if teleportToUmbra(umbra) then break end
                     task.wait(0.3)
                 end
             end
 
             if not alive() then break end
 
-            -- TP BEHIND AKTIF KHUSUS KE UMBRA
             status("Mengaktifkan TP Behind + Skill...")
 
-            if not AutoTP then
-                startTP()
-            end
-
-            if not AutoSkill then
-                startSkill()
-            end
+            if not AutoTP then startTP() end
+            if not AutoSkill then startSkill() end
 
             status("TP Behind + Skill sampai Umbra mati...")
 
-            while alive()
-                and umbra.Parent
-                and not isDead(umbra) do
-
+            while alive() and umbra.Parent and not isDead(umbra) do
                 task.wait(0.2)
             end
 
@@ -2083,9 +2377,7 @@ local function startEclipse()
                 local umbraStillExists = enemies
                     and enemies:FindFirstChild("Umbra the Sun-Eater")
 
-                if not umbraStillExists then
-                    break
-                end
+                if not umbraStillExists then break end
 
                 task.wait(0.2)
             end
@@ -2109,18 +2401,12 @@ local function startEclipse()
             if not alive() then break end
 
             status("Berhasil keluar dari Eclipse!")
-
             EclipsePriority = false
 
-            if ResumeDungeonAfterEclipse
-                and alive()
-                and not AutoDungeon then
-
+            if ResumeDungeonAfterEclipse and alive() and not AutoDungeon then
                 ResumeDungeonAfterEclipse = false
-
-                status("Cooldown Eclipse! Melanjutkan Auto Dungeon...")
+                status("Melanjutkan Auto Dungeon...")
                 task.wait(1)
-
                 startDungeon()
             else
                 ResumeDungeonAfterEclipse = false
@@ -2182,11 +2468,7 @@ local function startClaim()
 
             local remaining = CLAIM_INTERVAL
 
-            while Running
-                and AutoClaim
-                and ClaimRunId == id
-                and remaining > 0 do
-
+            while Running and AutoClaim and ClaimRunId == id and remaining > 0 do
                 task.wait(1)
                 remaining -= 1
             end
@@ -2512,6 +2794,7 @@ local function getActualToggleState(name)
     if name == "AUTO CLAIM ALL REWARDS" then return AutoClaim end
     if name == "AUTO ENCHANT" then return AutoEnchant end
     if name == "AUTO REBIRTH" then return AutoRebirth end
+    if name == "AUTO DODGE" then return AutoDodge end
 
     return false
 end
@@ -2531,70 +2814,74 @@ DungeonNameInput = makeInput("Nama dungeon: S1 / S2 / S3", "Z3")
 DungeonCountInput = makeInput("Jumlah Dungeon", "30")
 
 --============================================================
--- ALL AUTOMATION TOGGLES
+-- ALL 9 AUTOMATION TOGGLES
 --============================================================
 
 addToggle("AUTO SWING + HIT", false, function(state)
-    if state then
-        startCombat()
-    else
-        stopCombat()
-    end
+    if state then startCombat() else stopCombat() end
 end)
 
 addToggle("AUTO SKILL MOB TARGET", false, function(state)
-    if state then
-        startSkill()
-    else
-        stopSkill()
-    end
+    if state then startSkill() else stopSkill() end
 end)
 
 addToggle("TP BEHIND MOB", false, function(state)
-    if state then
-        startTP()
-    else
-        stopTP()
-    end
+    if state then startTP() else stopTP() end
 end)
 
 addToggle("AUTO DUNGEON", false, function(state)
-    if state then
-        startDungeon()
-    else
-        stopDungeon()
-    end
+    if state then startDungeon() else stopDungeon() end
 end)
 
 addToggle("AUTO ECLIPSE", false, function(state)
-    if state then
-        startEclipse()
-    else
-        stopEclipse()
-    end
+    if state then startEclipse() else stopEclipse() end
 end)
 
 addToggle("AUTO CLAIM ALL REWARDS", false, function(state)
-    if state then
-        startClaim()
-    else
-        stopClaim()
-    end
+    if state then startClaim() else stopClaim() end
 end)
 
 addToggle("AUTO ENCHANT", false, function(state)
-    if state then
-        startEnchant()
-    else
-        stopEnchant()
-    end
+    if state then startEnchant() else stopEnchant() end
 end)
 
 addToggle("AUTO REBIRTH", false, function(state)
+    if state then startRebirth() else stopRebirth() end
+end)
+
+addToggle("AUTO DODGE", false, function(state)
+    AutoDodge = state
+
     if state then
-        startRebirth()
+        DodgeStatus = "Dodge: ACTIVE"
+        DodgeLastTime = 0
     else
-        stopRebirth()
+        DodgeStatus = "Dodge: OFF"
+        TP_DODGE_PAUSED = false
+    end
+end)
+
+--============================================================
+-- AUTO DODGE LOOP
+--============================================================
+
+task.spawn(function()
+    while Running do
+        if AutoDodge then
+            local success, rings, wedges = pcall(getDodgeDangerObjects)
+
+            if success then
+                DodgeStatus = "Ring: " .. #rings .. " | Fan: " .. #wedges
+
+                pcall(function()
+                    performDodge(rings, wedges)
+                end)
+            else
+                DodgeStatus = "Deteksi error - mencoba lagi..."
+            end
+        end
+
+        task.wait(DODGE_CONFIG.SCAN_INTERVAL)
     end
 end)
 
@@ -2611,7 +2898,9 @@ task.spawn(function()
                 local mob = getTarget()
                 local count = #getAllMobs()
 
-                if AutoEclipse then
+                if AutoDodge and DodgeStatus:find("DODGE!") then
+                    Status.Text = DodgeStatus .. " | Mobs: " .. count
+                elseif AutoEclipse then
                     Status.Text = EclipseStatus .. " | Mobs: " .. count
                 elseif AutoRebirth then
                     Status.Text = RebirthStatus
@@ -2619,6 +2908,8 @@ task.spawn(function()
                     Status.Text = DungeonStatus .. " | Mobs: " .. count
                 elseif AutoClaim then
                     Status.Text = ClaimStatus
+                elseif AutoDodge then
+                    Status.Text = DodgeStatus
                 elseif mob then
                     Status.Text = "Target: " .. mob.Name .. " | Mobs: " .. count
                 elseif AutoTP then
@@ -2679,7 +2970,10 @@ MiniIcon.Activated:Connect(function()
     updatePanelSize()
 end)
 
+--============================================================
 -- DRAG FLOATING ICON
+--============================================================
+
 local miniDragging = false
 local miniDragStart
 local miniStartPosition
@@ -2692,7 +2986,7 @@ MiniIcon.InputBegan:Connect(function(input)
         miniDragStart = input.Position
         miniStartPosition = MiniIcon.Position
     end
-end)
+end))
 
 track(UserInputService.InputChanged:Connect(function(input)
     if not miniDragging or not MiniIcon.Visible then return end
@@ -2722,7 +3016,7 @@ track(UserInputService.InputEnded:Connect(function(input)
 end))
 
 --============================================================
--- DRAG MAIN GUI | MOUSE + MOBILE TOUCH
+-- DRAG MAIN GUI
 --============================================================
 
 local dragging = false
@@ -2803,6 +3097,9 @@ function Controller.Cleanup()
     AutoClaim = false
     AutoEnchant = false
     AutoRebirth = false
+    AutoDodge = false
+
+    TP_DODGE_PAUSED = false
 
     RebirthPaused = false
     RebirthBusy = false
@@ -2817,8 +3114,19 @@ function Controller.Cleanup()
     ClaimRunId += 1
     EnchantRunId += 1
 
+    TP_ACTIVE = false
+
     stopAntiVoid()
     releaseAllKeys()
+    tpStopMovement()
+
+    local _, finalHumanoid = tpGetCharacter()
+
+    if finalHumanoid and TP_ORIGINAL_WALKSPEED then
+        finalHumanoid.WalkSpeed = TP_ORIGINAL_WALKSPEED
+    end
+
+    TP_ORIGINAL_WALKSPEED = nil
 
     DungeonOwnsTP = false
     EclipseOwnsTP = false
@@ -2855,13 +3163,15 @@ end)
 print("==============================================")
 print("[ANIME FORGING] ULTIMATE HUB LOADED")
 print("1. AUTO SWING + HIT")
-print("2. AUTO SKILL MOB TARGET | Q E R F -> MOB")
+print("2. AUTO SKILL MOB TARGET | Q E R F")
 print("3. TP BEHIND MOB")
 print("4. AUTO DUNGEON")
 print("5. AUTO ECLIPSE")
 print("6. AUTO CLAIM ALL REWARDS")
 print("7. AUTO ENCHANT")
 print("8. AUTO REBIRTH")
+print("9. AUTO DODGE | RING + WEDGE FAN")
 print("TP BEHIND: AUTO DUNGEON + AUTO ECLIPSE")
+print("DODGE: MULTI RING + WEDGE DETECTION")
 print("CLAIM INTERVAL: 300 SECONDS")
 print("==============================================")
