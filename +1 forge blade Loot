@@ -167,9 +167,9 @@ end
 
 
 
-local ORBIT_RADIUS = 12
+local ORBIT_RADIUS = 55
 
-local ORBIT_HEIGHT = 7
+local ORBIT_HEIGHT = 55
 
 local ORBIT_SPEED = 2
 
